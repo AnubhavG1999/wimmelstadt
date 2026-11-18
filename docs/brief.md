@@ -1,6 +1,14 @@
 # Wimmelstadt: the brief
 
-What the collector and Claude agreed in the design interview of 17 and 18 November 2026 (questions Q1 to Q42), with two changes the collector made on seeing the look prototype: real landmarks are welcome, and clean edges matter more than a high frame rate. It is the starting point for building. Terms are used as [CONTEXT.md](../CONTEXT.md) defines them, and decisions that have a record in [docs/adr](adr/) are linked rather than repeated. Where this brief and a later decision record disagree, the record wins.
+What the collector and Claude agreed in the design interview of 17 and 18 November 2026 (questions Q1 to Q42), with the changes the collector made on seeing the look prototype:
+
+- Real landmarks are welcome, each in a district of its theme.
+- Clean edges matter more than a high frame rate, and the focus blur is gentle.
+- The whole city is there from the first day. See [0006](adr/0006-the-whole-city-from-the-first-day.md).
+- The weather has several kinds, and real brands stand among the invented ones.
+- The project goes ahead whatever the generators turn out to deliver.
+
+It is the starting point for building. Terms are used as [CONTEXT.md](../CONTEXT.md) defines them, and decisions that have a record in [docs/adr](adr/) are linked rather than repeated. Where this brief and a later decision record disagree, the record wins.
 
 ## What it is
 
@@ -20,25 +28,26 @@ What the collector and Claude agreed in the design interview of 17 and 18 Novemb
 ## The look
 
 - Real 3D, low-poly and lightly cel-shaded: flat bands of colour and soft outlines, on the city and the heroes alike.
-- An isometric camera at a fixed tilt, with a tilt-shift blur that makes the city read as a miniature.
+- An isometric camera at a fixed tilt, with a gentle tilt-shift blur that makes the city read as a miniature. The blur fades as the collector zooms in, so that a close look is always sharp.
 - By day, a bright, warm miniature.
 - By night, neon in the vein of Blade Runner 2049, Cyberpunk 2077 and Tokyo Drift: haze, wet-look streets, signs reflected softly in vehicle paint, a little spray behind the wheels. Some traffic has underglow. Heroes never do.
 - Time follows the device's clock. A dial lets the collector drag to any hour and pin it.
-- Weather is the city's own and never follows the real forecast. Rain comes now and then, mostly at night.
+- Weather is the city's own and never follows the real forecast. Clear skies, cloud, rain, storms, fog and snow come and go in spells, and each changes the light: lamps and windows come on under a dark sky, streets turn wet, snow settles on roofs and lawns.
 - The bar for reflections and effects is that they feel right, not that they are physically accurate.
 - Straight edges should be clean. Where the device has power to spare, the picture is drawn larger than the screen and scaled down, and frames are capped at about 60 a second rather than drawn as fast as possible.
 
 ## The world
 
-- One continuous city. It is permanent and only grows. See [0002](adr/0002-the-world-only-grows.md).
-- The founding: the collector rolls the first layout as often as they like, then founds and names the city. About four districts exist at the founding.
-- Growth: roughly one more district per ten heroes that have arrived. The collector picks each new district from three teasers. Resting or parting never takes a district away.
-- Dense from the first day, in the manner of Manhattan or a packed Cities: Skylines build.
-- Heightened architecture keeps vehicles in view: elevated expressways that pass between and around towers, a road through a building, spiral ramps, rooftop car parks and cutaways. It stays tasteful. There is no toy track and there are no loops: vehicles stay on roads and obey gravity.
+- One continuous city. It is permanent: nothing already built ever changes. See [0002](adr/0002-the-world-only-grows.md).
+- The whole city is there from the first day: big, varied and built up to its edges, with no empty ground waiting to be filled. What grows with the collection is the number of heroes driving in it. See [0006](adr/0006-the-whole-city-from-the-first-day.md).
+- Every district has a theme, which decides its landmarks, its architecture and the language of its signs. America, Europe and Asia stand beside an invented downtown, and an amusement park and others are to come.
+- The founding: the collector founds and names the city. Whether a layout can still be rolled first, and how much of the city is made by hand and how much by a generator, is decided when the city is built.
+- Dense, in the manner of Manhattan or a packed Cities: Skylines build.
+- Heightened architecture keeps vehicles in view: elevated expressways that pass between and around towers, flyovers with ramps up and down, roads through buildings, streets that cut through a block under a viaduct, spiral ramps, rooftop car parks and cutaways. It stays tasteful and uncluttered. There is no toy track and there are no loops: vehicles stay on roads and obey gravity.
 - The visibility rule: a hero spends most of its time where the camera can see it. In an isometric view a street disappears once the buildings in front of it are taller than the street is wide, which is what the elevated roads, the cutaways and the turntable camera are for.
 - Everything is toy size.
-- Every brand in the city is invented: parody names on signs in a mix of English and Japanese.
-- Landmarks are scattered through the districts. Some are invented, and some are toy versions of famous real ones: the Sears Tower, the Twin Towers, the Statue of Liberty, the Gateway Arch, the Taj Mahal and the like. Where a landmark can carry a road or stand over one, it does, so that vehicles pass through it.
+- Brands are a mixture of invented and real. Most signs carry parody names, in the language of the district's theme. A few carry real names from car culture. The prototype sets those in plain lettering; whether real logos are ever drawn is not decided.
+- Landmarks stand in the districts whose theme they belong to. Some are invented, and some are toy versions of famous real ones: the Sears Tower, the Twin Towers and the Statue of Liberty in America, Big Ben and the Eiffel Tower in Europe, Kyoto Tower and the Taj Mahal in Asia, and the like. Where a landmark can carry a road or stand over one, it does, so that vehicles pass through it.
 
 ## Vehicles and life
 
@@ -50,7 +59,7 @@ What the collector and Claude agreed in the design interview of 17 and 18 Novemb
 - A party trick is made by hand for one special diecast.
 - A new hero arrives by car transporter at the harbour.
 - People are model-railway figures.
-- Vignettes are staged all over the city: still, looping or tied to the calendar. Each has a small reaction when tapped. They are delivered in batches, one with each district, and there should be as many as can be made.
+- Vignettes are staged all over the city: still, looping or tied to the calendar. Each has a small reaction when tapped. They are delivered in batches, and there should be as many as can be made.
 
 ## Camera and touch
 
@@ -110,16 +119,16 @@ Rules around this:
 
 ## Order of building
 
-0. **Prototype**, to be thrown away. It has three jobs: prove the look by day and by night in one small hand-built scene; last an hour on the Duo's stand; and carry one real diecast through two or three generators, the photo alignment and spinning wheels. It ends with a go or no-go from the collector.
+0. **Prototype**, to be thrown away. It has three jobs: prove the look by day and by night in one small hand-built scene; last an hour on the Duo's stand; and carry one real diecast through two or three generators, the photo alignment and spinning wheels. The first job is done, and on seeing it the collector decided that the project goes ahead whatever the other two find. They now decide how the city is tuned for the Duo and how a hero is made, not whether the city is built.
 1. **The hero pipeline.** Backend, capture, generation, bench, roster and card. The collector captures the backlog of 30 to 50 diecasts meanwhile.
-2. **The city.** The founding, a dense downtown with elevated roads, traffic, the clock, explore and drift. **First light** is the day the Duo shows that city with at least ten heroes in it, and it is the definition of version one.
+2. **The city.** The founding, the whole city in its themed districts with elevated roads, traffic, the clock, the weather, explore and drift. **First light** is the day the Duo shows that city with at least ten heroes in it, and it is the definition of version one.
 3. **Life.** Routines, the meet, antics, people, the first vignettes, and follow.
 4. **Music.**
-5. **Growth and extras.** More districts, the teaser choice, party tricks, city sounds, and the iPhone shell if it is still wanted.
+5. **Extras.** Further themes, party tricks, city sounds, and the iPhone shell if it is still wanted.
 
 ## What the prototype has to answer
 
-- Which generating service makes the best hero, and what each one costs.
+- Which generating service makes the best hero, and what each one costs. If none is good enough, how else a hero is made: the city is built either way.
 - The final list of shots in a capture.
 - Whether wheels are better replaced by discs or split off by the generator.
 - How well photos can be lined up with a generated model. This is the hardest engineering in the pipeline.
@@ -132,7 +141,7 @@ Rules around this:
 - A built-in list of every release.
 - Free-hand painting, sculpting and a chat assistant at the bench.
 - Crashes, and any marker that points a hero out.
-- Real brands on the city's signs and buildings.
+- Growth as a reward: districts that unlock as the collection grows.
 - Lock Screen and StandBy widgets, which only an iPhone app could provide.
 
 ## Facts found along the way

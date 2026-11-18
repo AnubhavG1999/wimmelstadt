@@ -1,5 +1,7 @@
 # The world only grows
 
+Superseded in part by [0006](0006-the-whole-city-from-the-first-day.md): the world no longer grows with the collection. Permanence and the append-only rule stand.
+
 The world is generated once and is then permanent. It grows by whole districts as the collection grows, and the layout of anything already built never changes, because a Wimmelbuch works by returning to a place you know and because the city is meant to record the collection's history. We rejected a fresh city on every visit and a city of fixed size.
 
 ## Consequences

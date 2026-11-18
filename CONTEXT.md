@@ -71,23 +71,23 @@ _Avoid_: Spawn, import, unlock
 ### The world
 
 **World**:
-The single continuous city in which the heroes and the traffic live. It is permanent: it grows by whole districts, and nothing already built ever changes.
+The single continuous city in which the heroes and the traffic live. It is permanent: nothing already built ever changes. It does not grow with the collection; only the number of heroes in it does.
 _Avoid_: Map, level, scene
 
 **Founding**:
-The single act that fixes the world's first layout and its name. Before it the collector may roll as many layouts as they like, and after it the world is permanent.
+The single act that fixes the world's layout and its name. After it the world is permanent.
 _Avoid_: Setup, generation, onboarding
 
 **District**:
-A part of the world added as one piece when the collection grows.
-_Avoid_: Zone, chunk, expansion
+A part of the world built around one theme.
+_Avoid_: Zone, chunk, tileset, expansion
 
-**Teaser**:
-A name and a silhouette that stand for a district not yet built. The collector picks each new district from three of them.
-_Avoid_: Preview, card, option
+**Theme**:
+The character a district is built around, which decides its landmarks, its architecture and the language of its signs. America, Europe, Asia and an amusement park are themes.
+_Avoid_: Biome, style, skin
 
 **Landmark**:
-A building or monument whose silhouette is distinctive enough to navigate by. Some are invented, and some are toy versions of famous real ones such as the Sears Tower or the Taj Mahal.
+A building or monument whose silhouette is distinctive enough to navigate by. Some are invented, and some are toy versions of famous real ones such as the Sears Tower or the Taj Mahal. A real one stands in a district of its theme.
 _Avoid_: Monument, icon, wonder
 
 **Cutaway**:
