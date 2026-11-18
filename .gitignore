@@ -1,0 +1,12 @@
+# Secrets and local settings. Only the example file is ever committed.
+.env
+.env.*
+!.env.example
+
+# Dependencies and build output
+node_modules/
+dist/
+
+# Editor and operating-system files
+.DS_Store
+Thumbs.db
