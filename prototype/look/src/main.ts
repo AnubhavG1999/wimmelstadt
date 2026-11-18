@@ -9,6 +9,7 @@ import { Post, makeBackdrop } from './post';
 import { atmosphereAt, formatHour, makeAtmo } from './atmosphere';
 import { U } from './materials';
 import { TURNTABLE_RATE } from './scene-data';
+import { WEATHER_NAMES, Weather, type WeatherName } from './weather';
 
 // --- options, from the address bar ---------------------------------------
 const query = new URLSearchParams(location.search);
@@ -90,6 +91,17 @@ mirror.layers.set(0);
 const post = new Post({ bloom: opts.bloom, outline: opts.outline, tilt: opts.tilt, taps: coarse ? 14 : 20 });
 const atmo = makeAtmo();
 
+// The weather is the city's own unless one kind is asked for: ?weather=rain
+const weather = new Weather();
+{
+  const asked = query.get('weather');
+  if (asked && (WEATHER_NAMES as string[]).includes(asked)) weather.choice = asked as WeatherName;
+}
+
+// How shallow the focus is: gentle by default, or off, or deep.
+const FOCUS = [{ name: 'soft', amount: 1 }, { name: 'off', amount: 0 }, { name: 'deep', amount: 1.7 }];
+let focusMode = Math.max(0, FOCUS.findIndex((f) => f.name === query.get('focus')));
+
 // --- size -------------------------------------------------------------------
 const bufSize = new THREE.Vector2();
 let shadowDirty = true;
@@ -145,6 +157,16 @@ rig.onPan = () => {
   follow = -1;
 };
 const hud = document.getElementById('hud')!;
+const weatherBtn = document.getElementById('weather')!;
+const focusBtn = document.getElementById('focus')!;
+weatherBtn.addEventListener('click', () => {
+  weather.next();
+  wake();
+});
+focusBtn.addEventListener('click', () => {
+  focusMode = (focusMode + 1) % FOCUS.length;
+  wake();
+});
 
 dial.addEventListener('input', () => {
   pinned = Number(dial.value);
@@ -175,6 +197,8 @@ window.addEventListener('keydown', (e) => {
   else if (k === 'd') { pinned = 13; lapse = false; }
   else if (k === 'o') rig.drift = !rig.drift;
   else if (k === 'f') nextHero();
+  else if (k === 'w') weather.next();
+  else if (k === 'b') focusMode = (focusMode + 1) % FOCUS.length;
   else return;
   wake();
 });
@@ -236,15 +260,20 @@ function step(dt: number, now: number): void {
   if (lapse) pinned = ((pinned ?? clockHour()) + (dt * 24) / 80) % 24;
   hour = pinned ?? clockHour();
   atmosphereAt(hour, atmo);
+  weather.update(dt);
+  weather.apply(atmo);
 
   sun.color.copy(atmo.sunColor);
   sun.intensity = atmo.sunI;
+  sun.shadow.intensity = atmo.shadow;
   sun.position.copy(atmo.sunDir).multiplyScalar(450);
   hemi.color.copy(atmo.sky);
   hemi.groundColor.copy(atmo.ground);
   hemi.intensity = atmo.hemiI;
   fog.color.copy(atmo.fog);
+  fog.near = atmo.fogNear;
   fog.far = rig.dist + atmo.fogFar;
+  U.uSnow.value = atmo.snow;
   backdrop.top.copy(atmo.bgTop);
   backdrop.bot.copy(atmo.bgBot);
   U.uNight.value = atmo.night;
@@ -294,6 +323,13 @@ function draw(): void {
     bloom: atmo.bloom,
     exposure: atmo.exposure,
     outline: atmo.outline,
+    tilt: FOCUS[focusMode].amount,
+    saturation: atmo.saturation,
+    time: simTime,
+    rain: atmo.rain,
+    snow: atmo.snowfall,
+    fall: 0.1 + 0.28 * (1 - atmo.night),
+    flash: atmo.flash,
   });
 }
 
@@ -334,7 +370,8 @@ function frame(now: number): boolean {
   ticks++;
   if (ticks % every !== 0) return false;
   const elapsed = now - last;
-  const dt = Math.min(0.05, elapsed / 1000);
+  // never a step backwards, whatever the clock that drives the loop does
+  const dt = Math.max(0, Math.min(0.05, elapsed / 1000));
   last = now;
   lastRender = now;
 
@@ -363,6 +400,10 @@ function frame(now: number): boolean {
     const following = follow >= 0 && follow < vehicles.heroes.length;
     followBtn.classList.toggle('on', following);
     followBtn.textContent = following ? vehicles.heroes[follow].def.name : 'follow';
+    weatherBtn.textContent = weather.choice === 'auto' ? `weather: ${weather.name}` : weather.choice;
+    weatherBtn.classList.toggle('on', weather.choice !== 'auto');
+    focusBtn.textContent = `focus: ${FOCUS[focusMode].name}`;
+    focusBtn.classList.toggle('on', focusMode !== 0);
     hud.classList.toggle('on', showStats);
     if (showStats) {
       const r = renderer.info.render;
@@ -401,7 +442,7 @@ function bench(count = 120): number {
   return benchMs;
 }
 
-interface ShotOptions { w?: number; h?: number; hour?: number; x?: number; z?: number; az?: number; zoom?: number; follow?: number; steps?: number }
+interface ShotOptions { w?: number; h?: number; hour?: number; x?: number; z?: number; az?: number; zoom?: number; follow?: number; steps?: number; weather?: WeatherName }
 
 /**
  * Draws one picture at a chosen size, without the interface, and hands it to the
@@ -419,6 +460,10 @@ async function shot(name: string, o: ShotOptions = {}): Promise<string> {
   rig.set(o.x ?? 0, o.z ?? 4, o.az ?? 42, o.zoom ?? Math.max(268, 372 / (w / h)));
   const keep = follow;
   follow = -1;
+  const keepWeather = weather.choice;
+  weather.choice = o.weather ?? 'clear';
+  // let the weather settle before the picture is taken
+  for (let i = 0; i < 400; i++) weather.update(0.1);
   for (let i = 0; i < (o.steps ?? 2); i++) step(1 / 60, now);
   if (o.follow !== undefined && vehicles.heroes[o.follow]) {
     follow = o.follow;
@@ -437,6 +482,7 @@ async function shot(name: string, o: ShotOptions = {}): Promise<string> {
   ctx.drawImage(canvas, 0, 0, w, h);
   const blob = await new Promise<Blob | null>((done) => out.toBlob(done, 'image/jpeg', 0.9));
   follow = keep;
+  weather.choice = keepWeather;
   resize();
   rig.set(view.x, view.z, view.az, view.viewH);
   if (!blob) return 'could not encode the picture';
@@ -447,7 +493,7 @@ async function shot(name: string, o: ShotOptions = {}): Promise<string> {
 // A handle for poking at the prototype from the console.
 Object.assign(window, {
   wimmel: {
-    opts, rig, renderer, atmo, vehicles, city, bench, frame, shot,
+    opts, rig, renderer, atmo, vehicles, city, weather, bench, frame, shot,
     setHour(h: number | null) { pinned = h; lapse = false; },
     setFollow(i: number) { follow = i; },
     info() { return { calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, fps, avgMs, cpuMs, hour, city: city.stats }; },

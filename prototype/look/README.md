@@ -6,13 +6,13 @@ A throwaway. One small hand-built scene to judge the look by day and by night be
 
 ## What it looks like
 
-| Day, 11:00 | Night, 21:30 |
+| Day, 14:00 | Night, 21:30 |
 | --- | --- |
 | ![The board by day](screenshots/day.jpg) | ![The board at night](screenshots/night.jpg) |
-| ![A hero on the expressway](screenshots/hero-day.jpg) | ![A hero on the wet boulevard, passing the showroom](screenshots/hero-night.jpg) |
-| ![From the west, with the Sears Tower and the Empire State Building](screenshots/west.jpg) | ![Dusk from the south-west](screenshots/dusk.jpg) |
+| ![A hero on the expressway, above a street that cuts through the block](screenshots/hero-day.jpg) | ![A hero on the flyover at night, and another on the expressway above](screenshots/hero-night.jpg) |
+| ![The American blocks from the west: towers, the Gateway Arch and the Golden Gate](screenshots/america.jpg) | ![The Asian blocks in snow: Kyoto Tower, a pagoda, a torii and the Taj Mahal](screenshots/snow.jpg) |
 
-More in [screenshots](screenshots): the arch, the bridge, the Taj Mahal at night, the car park at night.
+More in [screenshots](screenshots): Europe, Asia at night, the flyover, rain, fog, dusk, and the car park at night.
 
 ## Run it
 
@@ -35,8 +35,10 @@ Then open http://localhost:5183. Other commands:
 - **Move:** drag. **Turn:** right-drag, Shift-drag, or twist with two fingers. **Zoom:** wheel or pinch.
 - **The dial** at the bottom drags to any hour and pins it. **live** follows the clock again.
 - **follow** rides along with a hero and cycles through all five. The focus follows the hero too. Dragging the view lets go.
+- **weather** steps through the city's own choice and six kinds: clear, cloudy, rain, storm, fog and snow. Left on its own, the city picks a new kind every six minutes, the same for everyone at the same time.
+- **focus** steps through soft, off and deep. Soft is the default: a gentle blur away from the middle of the view, which fades out as you zoom in.
 - **time-lapse** runs a whole day in 80 seconds. **stats** shows frame time and draw calls.
-- Keys: `D` day, `N` night, `L` live, `T` time-lapse, `F` follow, `S` stats, `O` drift on or off, arrows to move, `Q` `E` to turn, `+` `-` to zoom.
+- Keys: `D` day, `N` night, `L` live, `T` time-lapse, `F` follow, `W` weather, `B` focus, `S` stats, `O` drift on or off, arrows to move, `Q` `E` to turn, `+` `-` to zoom.
 
 Left alone, the interface fades after a few seconds, the camera starts to drift after 12 seconds, and after a minute calm mode caps drawing at 30 frames a second. Any input brings it all back.
 
@@ -51,6 +53,8 @@ Left alone, the interface fades after a few seconds, the camera starts to drift 
 | Option | Meaning |
 | --- | --- |
 | `?hour=22` | Pin the hour |
+| `?weather=snow` | Pin the weather: `clear`, `cloudy`, `rain`, `storm`, `fog` or `snow` |
+| `?focus=off` | The focus blur: `soft`, `off` or `deep` |
 | `?az=42&zoom=250&x=0&z=4` | Start from a given view |
 | `?follow=0` | Follow hero 0 to 4 |
 | `?stats=1`, `?drift=0` | Show stats, stop the drift |
@@ -64,23 +68,29 @@ The last four rows are for finding out what costs what on a phone.
 
 ## What to judge
 
-1. **Does it read as a miniature?** Toy size, the shallow focus, the soft outlines. Too much blur, too little?
+1. **Does it read as a miniature?** Toy size, the shallow focus, the soft outlines. The blur is gentler than it was and goes away as you zoom in. Is that right now, or would you rather have it off?
 2. **The cel shading.** Flat bands of light and soft outlines. Is "lightly cel-shaded" this, or more, or less?
 3. **Density against visibility.** It should feel packed and still show enough road. The elevated expressway, the spiral ramps, the rooftop car park and the showroom are there to keep vehicles in view. Turn the city and see which sides work.
 4. **Spotting a hero.** Five stand-ins drive and park among about 115 plain vehicles. Can you find them zoomed out? Are they clearly somebody when you zoom in? Nothing marks them.
-5. **The landmarks.** Do toy versions of real places sit well among invented buildings?
-6. **Day.** A bright, warm miniature. Try 8:00, 13:00 and 17:00.
-7. **Night.** Neon, haze, wet-look streets with the signs mirrored in them, a sheen of the signs on paint, a little spray behind the wheels. Try 19:00, 20:00 and 22:00.
-8. **Left alone.** Would you leave this on a stand beside you?
+5. **The themes.** Each block is built around one: America in the west, Europe in the north-east, Asia in the east, an invented downtown between them. Do the landmarks, the roofs and the signs make each one read at a glance?
+6. **The roads.** A flyover with ramps, two streets that cut through a block under the expressway, one of them through the base of the gate tower. More variety without clutter, or too much?
+7. **Day.** A bright, warm miniature. Try 8:00, 13:00 and 17:00.
+8. **Night.** Neon, haze, wet-look streets with the signs mirrored in them, a sheen of the signs on paint, a little spray behind the wheels. Try 19:00, 20:00 and 22:00.
+9. **Weather.** Six kinds. Is fog too thick, snow too white, lightning too much for a screen that is always on?
+10. **Left alone.** Would you leave this on a stand beside you?
 
 ## What is in the scene
 
 - Nine blocks on a board of about two by two metres at toy size, with a boulevard, eight streets, and a park in the middle.
 - An invented tower with a glowing ring, an expressway that circles the park and runs through a gate tower, a showroom that opens onto the boulevard with a hero on a turntable, and a car park with five open floors, a roof deck and two spiral ramps.
-- Ten toy versions of famous landmarks:
-  - **On building lots:** the Sears Tower, the Twin Towers, the Empire State Building, Big Ben, the Eiffel Tower and the Leaning Tower of Pisa.
-  - **Standing free:** the Gateway Arch across the boulevard, the Golden Gate Bridge carrying the expressway, the Statue of Liberty in the park's pond, and the Taj Mahal with its garden.
-- 78 moving vehicles on 14 loops, 42 parked, about 220 still figures, 58 trees, 61 signs. Every brand is invented.
+- More roads than a grid: a flyover that lifts the boulevard's two inner lanes onto slim viaducts, with a ramp at each end, and two streets that cut through a block underneath the expressway. One of them runs through a tunnel in the base of the gate tower.
+- Every block has a theme, which sets its landmarks, its roofs and the language of its signs:
+  - **America**, in the west: the Sears Tower, the Twin Towers, the Empire State Building and the Statue of Liberty on building lots, the Gateway Arch across the boulevard and the Golden Gate Bridge carrying the expressway. Diners and motels.
+  - **Europe**, in the north-east: Big Ben, the Eiffel Tower and the Leaning Tower of Pisa, among stucco houses with pitched roofs and chimneys. Cafés and bakeries.
+  - **Asia**, in the east: Kyoto Tower, a five-storey pagoda behind a torii that stands over the street, and the Taj Mahal with its garden. Neon in Japanese.
+  - **Downtown**, in the middle: everything invented.
+- 82 moving vehicles on 16 loops, 42 parked, about 230 still figures, 68 trees, 70 signs.
+- Most brands are invented. Six real names from car culture hang among them, set in plain lettering on plain boards with no logos: Hot Wheels, Mini GT, Tomica, Advan, Michelin and Pirelli.
 - Five hero stand-ins: three bodies, two of them again in other colours and decals. The same casting in another colour is a different hero.
 
 ## How it is put together
@@ -95,7 +105,8 @@ The last four rows are for finding out what costs what on a phone.
 | `src/vehicles.ts` | Traffic in five batches, heroes with decal sheets and turning wheels, the driving itself. |
 | `src/materials.ts` | The cel shading, windows that light up, the ground with its markings and wet look. |
 | `src/atmosphere.ts` | The light at every hour: a dozen hand-set moments, blended. |
-| `src/post.ts` | Glow, outlines from depth, the shallow focus, final colour. |
+| `src/weather.ts` | The six kinds of weather, how the city picks one, and how each bends the light of the hour. |
+| `src/post.ts` | Glow, outlines from depth, the shallow focus, rain and snow in the air, final colour. |
 | `src/camera.ts` | The isometric camera and its controls. |
 | `src/signs.ts` | Draws every sign onto one sheet. |
 | `src/main.ts` | Ties it together: options, the loop, the dial, stats. |
@@ -108,11 +119,11 @@ The pictures in `screenshots/` were taken by the page itself. Under `npm run dev
 
 On the development machine (RTX 3070), drawing 150 frames back to back and waiting for each to finish:
 
-| View on screen | Picture drawn | Day | Night |
-| --- | --- | --- | --- |
-| 1024 × 768 | 2048 × 1536 | 3.2 ms | 3.0 ms |
+| View on screen | Picture drawn | Clear day | Clear night | Rain by day | Snow by day |
+| --- | --- | --- | --- | --- | --- |
+| 1024 × 768 | 2048 × 1536 | 2.2 ms | 2.6 ms | 2.9 ms | 2.6 ms |
 
-By day that is 62 draw calls and 76 thousand triangles. At night it is 112 and 152 thousand, because the mirror image draws the scene a second time.
+On a clear day that is 62 draw calls and 83 thousand triangles. At night, and whenever the streets are wet, it is 112 and 166 thousand, because the mirror image draws the scene a second time.
 
 Nothing has been measured on a phone yet. That is the next job for this prototype.
 
@@ -139,7 +150,9 @@ Nothing has been measured on a phone yet. That is the next job for this prototyp
 ## Things that are faked
 
 - The sun's path is turned 40° against the street grid, as Manhattan's grid is turned against the compass, so that midday light rakes across the streets.
-- Wet streets appear whenever it is night. There is no weather.
+- Streets are wet every night, whatever the weather, because the mirror image suits the neon.
+- Rain and snow in the air are drawn as sheets over the finished picture, not as drops in the scene. Snow on the ground is a colour laid on whatever faces the sky.
+- The flyover carries traffic over nothing. No vehicle crosses the boulevard underneath it, because no loop here ever crosses another.
 - Shopfronts, windows and lamps do not really light anything. A painted map of light does.
 - Vehicles cast only a soft blob of shadow. Buildings cast real ones.
 - The landmarks are not to one scale. Each is sized to fit its lot, as souvenirs are.

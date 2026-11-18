@@ -14,6 +14,15 @@ export interface Atmo {
   hemiI: number;
   fog: THREE.Color;
   fogFar: number;
+  fogNear: number;
+  /** How dark the sun's shadows are, from 0 to 1. */
+  shadow: number;
+  /** Weather: how hard it rains and snows, how much snow lies, and lightning. */
+  rain: number;
+  snowfall: number;
+  snow: number;
+  flash: number;
+  saturation: number;
   bgTop: THREE.Color;
   bgBot: THREE.Color;
   bloom: number;
@@ -80,7 +89,8 @@ export function makeAtmo(): Atmo {
     night: 0,
     sunDir: new THREE.Vector3(0, 1, 0), sunColor: new THREE.Color(), sunI: 1,
     sky: new THREE.Color(), ground: new THREE.Color(), hemiI: 1,
-    fog: new THREE.Color(), fogFar: 1500,
+    fog: new THREE.Color(), fogFar: 1500, fogNear: 500, shadow: 1,
+    rain: 0, snowfall: 0, snow: 0, flash: 0, saturation: 1.14,
     bgTop: new THREE.Color(), bgBot: new THREE.Color(),
     bloom: 0, exposure: 1, wet: 0, outline: 1,
   };
@@ -113,6 +123,14 @@ export function atmosphereAt(hour: number, out: Atmo): Atmo {
   out.exposure = lerp(a.exp, b.exp, t);
   out.wet = lerp(a.wet, b.wet, t);
   out.outline = lerp(a.outline, b.outline, t);
+  // the weather changes these afterwards; this is the clear-sky state
+  out.fogNear = 500;
+  out.shadow = 1;
+  out.rain = 0;
+  out.snowfall = 0;
+  out.snow = 0;
+  out.flash = 0;
+  out.saturation = 1.14;
 
   if (h >= DAWN && h < DUSK) {
     // the sun rises in the east, stands in the south at midday and sets in the west

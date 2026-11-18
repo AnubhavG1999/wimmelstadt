@@ -3,7 +3,7 @@
 // streets, and the light that street lamps and signs throw at night.
 
 import * as THREE from 'three';
-import { BOARD, H_STREETS, MEDIAN_X, PARKS, V_STREETS } from './scene-data';
+import { BOARD, CUTS, H_STREETS, MEDIAN_X, PARKS, STREET_CARR, V_STREETS } from './scene-data';
 
 /** Values shared by every material. Changing one here changes it everywhere. */
 export const U = {
@@ -11,6 +11,7 @@ export const U = {
   uTime: { value: 0 },
   uSkyTint: { value: new THREE.Color(0.5, 0.7, 1.0) },
   uWet: { value: 0 },
+  uSnow: { value: 0 },
   uRefl: { value: null as THREE.Texture | null },
   uReflOn: { value: 0 },
   uMirrorVP: { value: new THREE.Matrix4() },
@@ -55,6 +56,7 @@ const COMMON_VERT_BEGIN = /* glsl */ `
 const COMMON_FRAG_PARS = /* glsl */ `
 uniform float uNight;
 uniform float uTime;
+uniform float uSnow;
 uniform vec3 uSkyTint;
 uniform sampler2D uLightMap;
 uniform vec4 uBoard;
@@ -88,7 +90,17 @@ vec3 streetLight(vec3 wp) {
 }
 `;
 
+/** GLSL that lays snow on surfaces that face the sky. `k` is how much of it this material takes. */
+const snowOn = (k: number): string => /* glsl */ `
+  {
+    float snowAmt = uSnow * smoothstep(0.5, 0.88, vWNrm.y) * ${k.toFixed(2)} * (0.8 + 0.2 * vnoise(vWPos.xz * 0.45));
+    diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.9, 0.94, 1.0), clamp(snowAmt, 0.0, 1.0));
+  }
+`;
+
 interface Patch {
+  /** How much snow settles on this material, from 0 to 1. */
+  snow?: number;
   vertPars?: string;
   vertColor?: string; // replaces the colour chunk
   vertBegin?: string;
@@ -107,7 +119,8 @@ function patch(mat: THREE.Material, key: string, p: Patch): void {
     vs = vs.replace('#include <beginnormal_vertex>', '#include <beginnormal_vertex>\n' + COMMON_VERT_NORMAL);
     vs = vs.replace('#include <begin_vertex>', '#include <begin_vertex>\n' + COMMON_VERT_BEGIN + (p.vertBegin ?? ''));
     fs = fs.replace('#include <common>', '#include <common>\n' + COMMON_FRAG_PARS + (p.fragPars ?? ''));
-    if (p.fragColor) fs = fs.replace('#include <color_fragment>', '#include <color_fragment>\n' + p.fragColor);
+    const colour = (p.fragColor ?? '') + (p.snow ? snowOn(p.snow) : '');
+    if (colour) fs = fs.replace('#include <color_fragment>', '#include <color_fragment>\n' + colour);
     if (p.fragEmissive) fs = fs.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n' + p.fragEmissive);
     shader.vertexShader = vs;
     shader.fragmentShader = fs;
@@ -126,6 +139,7 @@ function toon(extra: THREE.MeshToonMaterialParameters = {}): THREE.MeshToonMater
 export function makeCityMaterial(): THREE.MeshToonMaterial {
   const m = toon();
   patch(m, 'city', {
+    snow: 0.95,
     vertPars: /* glsl */ `
       attribute vec4 aWall;
       attribute vec4 aWin;
@@ -215,6 +229,8 @@ export function makeGroundMaterial(): THREE.MeshToonMaterial {
     uniforms: {
       uVS: { value: vs },
       uHS: { value: hs },
+      // streets that cut through a block: where they run, from where to where, and how wide
+      uCut: { value: CUTS.map((c) => new THREE.Vector4(c.z, c.x0, c.x1, STREET_CARR)) },
       uPark: { value: PARKS.map((r) => new THREE.Vector4(r.x0, r.z0, r.x1, r.z1)) },
       uMedianX: { value: MEDIAN_X },
       uAsphalt: { value: new THREE.Color(0x4a4c52) },
@@ -227,6 +243,7 @@ export function makeGroundMaterial(): THREE.MeshToonMaterial {
     fragPars: /* glsl */ `
       uniform vec4 uVS[4];
       uniform vec4 uHS[4];
+      uniform vec4 uCut[${CUTS.length}];
       uniform vec4 uPark[2];
       uniform float uMedianX;
       uniform vec3 uAsphalt, uWalk, uPaving, uGrass, uPaint, uMedianCol;
@@ -268,13 +285,26 @@ export function makeGroundMaterial(): THREE.MeshToonMaterial {
         }
         lineH = max(lineH, (1.0 - smoothstep(0.1 - aa, 0.1 + aa, abs(d - (carr - 0.45)))) * 0.55);
       }
-      float road = max(inV, inH);
+      // streets that cut through a block end at the kerbs of the streets on either side
+      float inC = 0.0, corC = 0.0, lineC = 0.0;
+      for (int i = 0; i < ${CUTS.length}; i++) {
+        float d = abs(gp.y - uCut[i].x);
+        float carr = uCut[i].w;
+        float along = smoothstep(uCut[i].y - aa, uCut[i].y + aa, gp.x) * (1.0 - smoothstep(uCut[i].z - aa, uCut[i].z + aa, gp.x));
+        inC = max(inC, (1.0 - smoothstep(carr - aa, carr + aa, d)) * along);
+        corC = max(corC, (1.0 - smoothstep(carr + 2.0 - aa, carr + 2.0 + aa, d)) * along);
+        float dash = step(0.5, fract(gp.x / 7.0));
+        lineC = max(lineC, (1.0 - smoothstep(0.14 - aa, 0.14 + aa, d)) * dash);
+        lineC = max(lineC, (1.0 - smoothstep(0.1 - aa, 0.1 + aa, abs(d - (carr - 0.45)))) * 0.55);
+      }
+      float road = max(max(inV, inH), inC);
       med *= (1.0 - inV);
-      float walk = max(corV, corH) * (1.0 - road);
+      float walk = max(max(corV, corH), corC) * (1.0 - road);
       // zebra crossings, where a carriageway passes the crossing street's sidewalk
       float zebra = inV * max(corH - inH, 0.0) * step(0.5, fract(gp.x / 1.5))
                   + inH * max(corV - inV, 0.0) * step(0.5, fract(gp.y / 1.5));
       float lines = max(lineV * inV * (1.0 - corH), lineH * inH * (1.0 - corV));
+      lines = max(lines, lineC * inC * (1.0 - corV));
 
       float park = 0.0;
       for (int i = 0; i < 2; i++) {
@@ -286,6 +316,8 @@ export function makeGroundMaterial(): THREE.MeshToonMaterial {
       albedo = mix(albedo, uAsphalt * (0.9 + 0.2 * vnoise(gp * 0.9)), road);
       albedo = mix(albedo, uMedianCol, med);
       albedo = mix(albedo, uPaint, clamp(lines + zebra, 0.0, 1.0) * road * (1.0 - med));
+      // snow lies thick on lawns and paving, thinner where traffic keeps the road clear
+      albedo = mix(albedo, vec3(0.9, 0.94, 1.0), uSnow * (0.95 - 0.5 * road) * (0.85 + 0.15 * vnoise(gp * 0.5)));
 
       float puddle = smoothstep(0.35, 0.7, vnoise(gp * 0.07 + 3.1));
       float wetArea = road * (1.0 - med) + 0.45 * walk + 0.3 * (1.0 - max(road, walk)) * (1.0 - park);
@@ -325,6 +357,7 @@ export function makeGroundMaterial(): THREE.MeshToonMaterial {
 export function makeDeckMaterial(): THREE.MeshToonMaterial {
   const m = toon();
   patch(m, 'deck', {
+    snow: 0.45,
     uniforms: {
       uAsphalt: { value: new THREE.Color(0x4f5157) },
       uPaint: { value: new THREE.Color(0xf2efe6) },
@@ -367,6 +400,7 @@ export function makeDeckMaterial(): THREE.MeshToonMaterial {
 // ---------------------------------------------------------------------------
 
 const VEHICLE_PATCH: Patch = {
+  snow: 0.35,
   vertPars: /* glsl */ `
     attribute float aPart;
     attribute float aLit;
@@ -435,6 +469,7 @@ export function makeHeroMaterial(map: THREE.Texture): THREE.MeshToonMaterial {
 export function makePropMaterial(extra: THREE.MeshToonMaterialParameters = {}): THREE.MeshToonMaterial {
   const m = toon(extra);
   patch(m, 'prop' + (extra.map ? '-map' : ''), {
+    snow: 0.9,
     fragEmissive: /* glsl */ `
       totalEmissiveRadiance += diffuseColor.rgb * streetLight(vWPos) * uNight * 0.95;
     `,

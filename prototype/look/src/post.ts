@@ -84,11 +84,49 @@ uniform float uOutline;
 uniform float uBloom;
 uniform float uExposure;
 uniform float uTilt;
+uniform float uNear;      // how much of the blur things nearer than the focus get
 uniform float uAspect;
 uniform float uSat;
+uniform float uTime;
+uniform float uRain;
+uniform float uSnow;
+uniform float uFall;      // how bright rain and snow are against the picture
+uniform float uFlash;     // lightning
+uniform float uPx;        // one screen point, as a fraction of the picture's height
 
 float ign(vec2 p) {
   return fract(52.9829189 * fract(dot(p, vec2(0.06711056, 0.00583715))));
+}
+
+float hash11(float n) {
+  return fract(sin(n * 127.1) * 43758.5453);
+}
+
+// One sheet of rain: thin streaks falling in columns, each at its own pace.
+float rainSheet(vec2 uv, float cols, float rows, float speed, float len) {
+  vec2 p = vec2(uv.x * uAspect + uv.y * 0.08, uv.y);
+  float x = p.x * cols;
+  float id = floor(x);
+  float fx = fract(x) - 0.5;
+  float h = hash11(id);
+  float y = fract(p.y * rows * (0.8 + 0.4 * h) + uTime * speed * (0.8 + 0.5 * h) + h * 13.0);
+  float width = 0.9 * uPx * cols;
+  float line = 1.0 - smoothstep(width * 0.4, width, abs(fx));
+  float seg = smoothstep(0.0, len * 0.15, y) * (1.0 - smoothstep(len * 0.4, len, y));
+  return line * seg * step(0.42, h);
+}
+
+// One sheet of snow: soft flakes drifting down and a little sideways.
+float snowSheet(vec2 uv, float scale, float speed) {
+  vec2 p = vec2(uv.x * uAspect, uv.y) * scale;
+  p.y += uTime * speed * scale;
+  p.x += sin(uTime * 0.5 + p.y * 0.6) * 0.3;
+  vec2 id = floor(p);
+  vec2 f = fract(p) - 0.5;
+  float h = fract(sin(dot(id, vec2(127.1, 311.7))) * 43758.5453);
+  vec2 o = (vec2(h, fract(h * 37.0)) - 0.5) * 0.6;
+  float r = 0.07 + 0.08 * fract(h * 91.0);
+  return (1.0 - smoothstep(r * 0.4, r, length(f - o))) * step(0.35, h);
 }
 
 vec3 aces(vec3 x) {
@@ -102,8 +140,10 @@ vec3 toSRGB(vec3 c) {
 void main() {
   float dc = texture(tDepth, vUv).r;
 
-  // shallow focus: the further from the focused depth, the wider the blur
-  float coc = clamp((abs(dc - uFocus) - uBand) * uCocScale, 0.0, uMaxCoc) * uTilt;
+  // shallow focus: the further from the focused depth, the wider the blur.
+  // Things nearer than the focus, such as the tops of towers, blur less.
+  float off = max(abs(dc - uFocus) - uBand, 0.0) * (dc < uFocus ? uNear : 1.0);
+  float coc = clamp(off * uCocScale, 0.0, uMaxCoc) * uTilt;
   vec3 col = texture(tScene, vUv).rgb;
   if (coc > 0.6) {
     float rot = ign(gl_FragCoord.xy) * 6.2831853;
@@ -130,6 +170,19 @@ void main() {
   col = mix(col, col * vec3(0.2, 0.19, 0.3), edge * uOutline);
 
   col += texture(tBloom, vUv).rgb * uBloom;
+
+  // weather that falls: three sheets each, the nearer ones larger and faster
+  if (uRain > 0.01) {
+    float r = rainSheet(vUv, 150.0, 5.0, 1.7, 0.16) * 0.5
+            + rainSheet(vUv + 0.37, 95.0, 3.6, 2.3, 0.2) * 0.75
+            + rainSheet(vUv + 0.71, 55.0, 2.6, 3.0, 0.26);
+    col += vec3(0.72, 0.8, 0.95) * r * uRain * uFall;
+  }
+  if (uSnow > 0.01) {
+    float s = snowSheet(vUv, 34.0, 0.07) * 0.6 + snowSheet(vUv + 0.31, 22.0, 0.1) * 0.85 + snowSheet(vUv + 0.63, 13.0, 0.14);
+    col += vec3(1.0) * s * uSnow * uFall * 1.6;
+  }
+  col += vec3(0.5, 0.56, 0.72) * uFlash * 0.22;
 
   col = aces(col * uExposure);
   vec2 q = (vUv - 0.5) * vec2(uAspect, 1.0);
@@ -215,6 +268,15 @@ export interface FinishParams {
   bloom: number;
   exposure: number;
   outline: number;
+  /** How strong the shallow focus is: 0 is off, 1 is the gentle default. */
+  tilt: number;
+  saturation: number;
+  time: number;
+  rain: number;
+  snow: number;
+  /** How bright falling rain and snow should be, which depends on the hour. */
+  fall: number;
+  flash: number;
 }
 
 const LEVELS = 5;
@@ -246,6 +308,8 @@ export class Post {
       uFocus: { value: 0.4 }, uBand: { value: 0 }, uCocScale: { value: 0 }, uMaxCoc: { value: 8 },
       uEdgeScale: { value: 1 }, uEdgePx: { value: 1 }, uOutline: { value: 1 },
       uBloom: { value: 0 }, uExposure: { value: 1 }, uTilt: { value: 1 }, uAspect: { value: 1 }, uSat: { value: 1.14 },
+      uNear: { value: 0.55 }, uTime: { value: 0 }, uRain: { value: 0 }, uSnow: { value: 0 }, uFall: { value: 0.3 },
+      uFlash: { value: 0 }, uPx: { value: 0.001 },
     }, { TAPS: opts.taps });
   }
 
@@ -329,14 +393,24 @@ export class Post {
     // Focus. A point on the ground at the top or bottom edge of the screen lies this
     // far in depth from the point at the centre:
     const edgeDepth = ((p.viewH / 2) * (Math.cos(p.elev) / Math.sin(p.elev))) / p.depthRange;
-    const band = 0.2;
-    const zoomIn = Math.min(1, Math.max(0, (p.viewH - 50) / 170));
-    const maxCoc = (this.h / 1080) * 9 * (0.45 + 0.55 * zoomIn);
+    // A third of the picture's height stays sharp. The blur is gentle, and it fades
+    // away altogether as the view zooms in, so that a close look is a sharp look.
+    const band = 0.34;
+    const z = Math.min(1, Math.max(0, (p.viewH - 45) / 105));
+    const zoomFade = z * z * (3 - 2 * z);
+    const maxCoc = Math.max(0.001, (this.h / 1080) * 6.5 * zoomFade * p.tilt);
     u.uFocus.value = p.focus;
     u.uBand.value = edgeDepth * band;
     u.uCocScale.value = maxCoc / (edgeDepth * (1 - band));
-    u.uMaxCoc.value = maxCoc * 1.6;
-    u.uTilt.value = this.opts.tilt ? 1 : 0;
+    u.uMaxCoc.value = maxCoc * 1.5;
+    u.uTilt.value = this.opts.tilt && p.tilt > 0 ? 1 : 0;
+    u.uSat.value = p.saturation;
+    u.uTime.value = p.time;
+    u.uRain.value = p.rain;
+    u.uSnow.value = p.snow;
+    u.uFall.value = p.fall;
+    u.uFlash.value = p.flash;
+    u.uPx.value = this.ratio / this.h;
 
     // Outlines. One pixel covers this many world units:
     const worldPerPx = p.viewH / this.h;

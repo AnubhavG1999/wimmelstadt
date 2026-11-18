@@ -42,9 +42,11 @@
         transform: translateX(-50%);
         display: flex;
         align-items: center;
-        gap: 12px;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 8px 12px;
         padding: 8px 14px;
-        border-radius: 999px;
+        border-radius: 22px;
         background: rgba(14, 14, 22, 0.62);
         border: 1px solid rgba(255, 255, 255, 0.12);
         -webkit-backdrop-filter: blur(10px);
@@ -62,7 +64,7 @@
         text-align: center;
       }
       #dial {
-        width: min(46vw, 420px);
+        width: min(38vw, 360px);
         accent-color: #ff3d9a;
         margin: 0;
       }
@@ -127,6 +129,8 @@
       <span class="glyph">☾</span>
       <button id="live" title="Follow the clock (L)">live</button>
       <button id="follow" title="Ride along with a hero (F)">follow</button>
+      <button id="weather" title="The weather: the city's own, or one of six kinds (W)">weather</button>
+      <button id="focus" class="wide" title="How shallow the focus is (B)">focus</button>
       <button id="lapse" class="wide" title="Run a whole day in 80 seconds (T)">time-lapse</button>
       <button id="stats" class="wide" title="Frame time and draw calls (S)">stats</button>
     </div>

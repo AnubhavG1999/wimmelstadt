@@ -5,9 +5,10 @@
 import * as THREE from 'three';
 import { GeoBuilder, NO_WIN, interior, rng, type V3, type WinSpec } from './geo';
 import {
-  ARCH, BLADE_SIGNS, BOARD, BUILDINGS, CARPARK, GOLDEN_GATE, LIBERTY, TAJ, EXPRESS_HALF, EXPRESS_RING, EXPRESS_Y, FASCIA_SIGNS,
-  H_STREETS, LANDMARK, LOOPS, MEDIAN_X, NEON, PARK, SHOWROOM, STOREY, V_STREETS, blockRect,
-  type Building, type Seg, type Style,
+  ARCH, BLOCK_THEME, BOARD, BUILDINGS, CARPARK, CUTS, EXPRESS_HALF, EXPRESS_RING, EXPRESS_Y, FLYOVER, FOUNTAIN, GOLDEN_GATE,
+  H_STREETS, LANDMARK, LOOPS, MEDIAN_X, NEON, PARK, POND, SHOWROOM, SIGN_POOLS, STOREY, STREET_CARR, TAJ, TORII, V_STREETS,
+  blockRect, humpHeight, onCut,
+  type Building, type Seg, type Style, type Theme,
 } from './scene-data';
 import { buildPath, type Path } from './paths';
 import { U, makeCityMaterial, makeDeckMaterial, makeGroundMaterial, makePropMaterial, makeVehicleMaterial } from './materials';
@@ -25,6 +26,15 @@ const PALETTE: Record<Style, number[]> = {
   shop: [0xe8dcc6, 0xe6c9a4, 0xd8e0d6, 0xf0e2c0, 0xdcc8c0, 0xc9d7e0, 0xe9b9a0],
   neon: [0x3d3856, 0x2f3b55, 0x4a3b58, 0x38324e],
   concrete: [0xa9a8a2, 0x9aa0a6, 0xb5b0a6],
+  euro: [0xf0e3c4, 0xe9cfa6, 0xe6d3c8, 0xd9dcc8, 0xf2d9a8, 0xd8c4b0],
+};
+
+/** What pitched roofs are covered with: slate and clay in Europe, dark tile in Asia. */
+const HIP_ROOFS: Record<Theme, number[]> = {
+  europe: [0x5f6b7a, 0xb5654a, 0x6b7785],
+  asia: [0x3d4a4f, 0x35484a],
+  america: [0x7a5a4a, 0x6b6f76],
+  downtown: [0x6b6f76],
 };
 
 const WIN: Record<Style, WinSpec> = {
@@ -34,11 +44,9 @@ const WIN: Record<Style, WinSpec> = {
   shop: { cell: 4.6, storey: STOREY, lit: 0.4, kind: 2 },
   neon: { cell: 4.6, storey: STOREY, lit: 0.22, kind: 3 },
   concrete: { cell: 3.4, storey: STOREY, lit: 0.16, kind: 4 },
+  // narrow bays: an arcade of small shopfronts below, tall windows above
+  euro: { cell: 2.8, storey: STOREY, lit: 0.34, kind: 2 },
 };
-
-/** Tall buildings that carry a lit name near the top. */
-const CROWN_SIGNS: Record<string, string> = { 'A1.2': 'bank', 'C1.3': 'hotel', 'C2.8': 'neko' };
-
 
 const FACE_RIGHT: Record<string, V3> = { S: [1, 0, 0], N: [-1, 0, 0], E: [0, 0, -1], W: [0, 0, 1] };
 const FACE_NORMAL: Record<string, V3> = { S: [0, 0, 1], N: [0, 0, -1], E: [1, 0, 0], W: [-1, 0, 0] };
@@ -145,11 +153,21 @@ export function buildCity(): City {
   // Road decks: a strip of road along a path, with its sides and low walls
   // -------------------------------------------------------------------------
 
-  interface RibbonOpts { thick: number; wall: number; lanes: number; lift?: number; structure?: boolean; step?: number }
+  interface RibbonOpts {
+    thick: number; wall: number; lanes: number; lift?: number; structure?: boolean; step?: number;
+    /** Where the road is lower than this, its sides run down to the ground, as on a ramp of earth. */
+    skirt?: number;
+  }
 
   function ribbon(path: Path, hw: number, o: RibbonOpts): void {
     const n = Math.max(1, Math.ceil(path.length / (o.step ?? 2)));
     const lift = o.lift ?? 0;
+    // how deep the structure is and how tall its low walls are, at one place along the road
+    const dims = (f: { y: number }): { t: number; w: number } => {
+      if (o.skirt === undefined) return { t: o.thick, w: o.wall };
+      const h = f.y - lift;
+      return { t: h < o.skirt ? f.y : o.thick, w: o.wall * Math.min(1, h / 1.2) };
+    };
     const p = new THREE.Vector3(), a = new THREE.Vector3(), b = new THREE.Vector3();
     const frame = (s: number) => {
       path.at(s, p);
@@ -169,17 +187,17 @@ export function buildCity(): City {
       const L1: V3 = [f1.x - f1.rx * hw, f1.y, f1.z - f1.rz * hw], R1: V3 = [f1.x + f1.rx * hw, f1.y, f1.z + f1.rz * hw];
       deckB.quad(L0, R0, R1, L1, [0, 1, 0], ASPHALT, { uvs: [[0, s0], [1, s0], [1, s1], [0, s1]], win });
       if (o.structure !== false) {
-        const t = o.thick, w = o.wall, inset = 0.45;
+        const { t: t0, w: w0 } = dims(f0), { t: t1, w: w1 } = dims(f1), inset = 0.45;
         const nx = (f0.rx + f1.rx) / 2, nz = (f0.rz + f1.rz) / 2;
         const Ri0: V3 = [R0[0] - f0.rx * inset, R0[1], R0[2] - f0.rz * inset], Ri1: V3 = [R1[0] - f1.rx * inset, R1[1], R1[2] - f1.rz * inset];
         const Li0: V3 = [L0[0] + f0.rx * inset, L0[1], L0[2] + f0.rz * inset], Li1: V3 = [L1[0] + f1.rx * inset, L1[1], L1[2] + f1.rz * inset];
-        cityB.quad(up(L0, -t), up(R0, -t), up(R1, -t), up(L1, -t), [0, -1, 0], CONCRETE);
-        cityB.quad(up(R0, -t), up(R1, -t), up(R1, w), up(R0, w), [nx, 0, nz], CONCRETE);
-        cityB.quad(up(L0, -t), up(L1, -t), up(L1, w), up(L0, w), [-nx, 0, -nz], CONCRETE);
-        cityB.quad(Ri0, Ri1, up(Ri1, w), up(Ri0, w), [-nx, 0, -nz], CONCRETE);
-        cityB.quad(Li0, Li1, up(Li1, w), up(Li0, w), [nx, 0, nz], CONCRETE);
-        cityB.quad(up(Ri0, w), up(R0, w), up(R1, w), up(Ri1, w), [0, 1, 0], CONCRETE);
-        cityB.quad(up(Li0, w), up(L0, w), up(L1, w), up(Li1, w), [0, 1, 0], CONCRETE);
+        cityB.quad(up(L0, -t0), up(R0, -t0), up(R1, -t1), up(L1, -t1), [0, -1, 0], CONCRETE);
+        cityB.quad(up(R0, -t0), up(R1, -t1), up(R1, w1), up(R0, w0), [nx, 0, nz], CONCRETE);
+        cityB.quad(up(L0, -t0), up(L1, -t1), up(L1, w1), up(L0, w0), [-nx, 0, -nz], CONCRETE);
+        cityB.quad(Ri0, Ri1, up(Ri1, w1), up(Ri0, w0), [-nx, 0, -nz], CONCRETE);
+        cityB.quad(Li0, Li1, up(Li1, w1), up(Li0, w0), [nx, 0, nz], CONCRETE);
+        cityB.quad(up(Ri0, w0), up(R0, w0), up(R1, w1), up(Ri1, w1), [0, 1, 0], CONCRETE);
+        cityB.quad(up(Li0, w0), up(L0, w0), up(L1, w1), up(Li1, w1), [0, 1, 0], CONCRETE);
       }
       f0 = f1;
       s0 = s1;
@@ -197,8 +215,14 @@ export function buildCity(): City {
       const d = Math.abs(x - v.x);
       if (d < v.carr + 0.8 && d > 0.7) return true;
     }
+    // on a street that cuts through a block, only the line between its two lanes is free
+    for (const c of CUTS) {
+      const d = Math.abs(z - c.z);
+      if (x > c.x0 - 1 && x < c.x1 + 1 && d < STREET_CARR + 0.8 && d > 0.7) return true;
+    }
+    // anything built below the deck is in the way, the gate tower's tunnel included
     for (const b of BUILDINGS) {
-      if (b.y0 === 0 && x > b.x - 1 && x < b.x + b.w + 1 && z > b.z - 1 && z < b.z + b.d + 1) return true;
+      if (b.y0 < 10 && x > b.x - 1 && x < b.x + b.w + 1 && z > b.z - 1 && z < b.z + b.d + 1) return true;
     }
     return false;
   }
@@ -216,10 +240,49 @@ export function buildCity(): City {
     cityB.box(x1 - t, y, z0 + t, x1, y + h, z1 - t, color, { faces: 'EWT' });
   }
 
+  /** A pitched roof with four slopes, standing a little proud of the walls. */
+  function hipRoof(x0: number, z0: number, x1: number, z1: number, y: number, color: number, chimneys: boolean): void {
+    const o = 0.45;
+    const ax0 = x0 - o, az0 = z0 - o, ax1 = x1 + o, az1 = z1 + o;
+    const w = ax1 - ax0, d = az1 - az0;
+    const run = Math.min(w, d) / 2;
+    const rise = Math.min(5.2, run * 0.62);
+    const cx = (ax0 + ax1) / 2, cz = (az0 + az1) / 2;
+    const A: V3 = [ax0, y, az0], B: V3 = [ax1, y, az0], C: V3 = [ax1, y, az1], D: V3 = [ax0, y, az1];
+    const len = Math.hypot(run, rise);
+    const n = (nx: number, nz: number): V3 => [(nx * rise) / len, run / len, (nz * rise) / len];
+    if (w >= d) {
+      const R0: V3 = [ax0 + run, y + rise, cz], R1: V3 = [ax1 - run, y + rise, cz];
+      cityB.quad(D, C, R1, R0, n(0, 1), color);
+      cityB.quad(B, A, R0, R1, n(0, -1), color);
+      cityB.tri(A, D, R0, n(-1, 0), color);
+      cityB.tri(C, B, R1, n(1, 0), color);
+    } else {
+      const R0: V3 = [cx, y + rise, az0 + run], R1: V3 = [cx, y + rise, az1 - run];
+      cityB.quad(A, D, R1, R0, n(-1, 0), color);
+      cityB.quad(C, B, R0, R1, n(1, 0), color);
+      cityB.tri(B, A, R0, n(0, -1), color);
+      cityB.tri(D, C, R1, n(0, 1), color);
+    }
+    cityB.box(ax0, y - 0.3, az0, ax1, y, az1, 0xe9e3d6, { faces: 'NESW' });
+    if (chimneys) {
+      for (const [fx, fz] of [[0.3, 0.34], [0.72, 0.62]]) {
+        const px = x0 + (x1 - x0) * fx, pz = z0 + (z1 - z0) * fz;
+        cityB.box(px - 0.5, y, pz - 0.5, px + 0.5, y + rise + 0.9, pz + 0.5, 0xa5674f, { top: 0x4a4f55 });
+      }
+    }
+  }
+
   function roofDetails(b: Building, x0: number, z0: number, x1: number, z1: number, y: number): void {
     const w = x1 - x0, d = z1 - z0;
     const cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
     if (b.roof === 'none') return;
+    if (b.roof === 'hip') {
+      const theme = BLOCK_THEME[b.block];
+      const pal = HIP_ROOFS[theme];
+      hipRoof(x0, z0, x1, z1, y, pal[b.tint % pal.length], theme === 'europe');
+      return;
+    }
     parapet(x0, z0, x1, z1, y, 0xb0aca4);
     const unit = () => {
       const ux = x0 + 1.2 + rand() * Math.max(0.1, w - 4.6), uz = z0 + 1.2 + rand() * Math.max(0.1, d - 3.8);
@@ -253,7 +316,9 @@ export function buildCity(): City {
     if (b.part || b.y0 > 0) return;
     const faces = b.signs ?? edgeFaces(b);
     const isNeon = b.style === 'neon';
-    if (b.style !== 'shop' && !isNeon) return;
+    if (b.style !== 'shop' && b.style !== 'euro' && !isNeon) return;
+    // the block's theme decides what the signs say, and in which language
+    const pool = SIGN_POOLS[BLOCK_THEME[b.block]];
     let k = idx;
     for (const face of faces) {
       const n = FACE_NORMAL[face], R = FACE_RIGHT[face];
@@ -261,7 +326,7 @@ export function buildCity(): City {
       const faceLen = ns ? b.w : b.d;
       const fx = face === 'E' ? b.x + b.w : face === 'W' ? b.x : b.x + b.w / 2;
       const fz = face === 'S' ? b.z + b.d : face === 'N' ? b.z : b.z + b.d / 2;
-      const id = FASCIA_SIGNS[k++ % FASCIA_SIGNS.length];
+      const id = pool.fascia[k++ % pool.fascia.length];
       const h = isNeon ? 3.0 : 2.1;
       const cy = b.y1 < 7.6 ? b.y1 + h / 2 + 0.25 : isNeon ? 6.3 : 5.7;
       signs.add(id, fx + n[0] * 0.12, cy, fz + n[2] * 0.12, face, h, faceLen - 1.5);
@@ -271,7 +336,7 @@ export function buildCity(): City {
 
       if (isNeon && b.y1 >= 14) {
         // a blade sign that stands out from the wall, readable from both sides
-        const bid = BLADE_SIGNS[(idx + k) % BLADE_SIGNS.length];
+        const bid = pool.blade[(idx + k) % pool.blade.length];
         const rect = atlas.rects.get(bid)!;
         const bh = Math.min(b.y1 - 8, 15), bw = bh * rect.aspect;
         const along = faceLen / 2 - 0.9;
@@ -295,10 +360,12 @@ export function buildCity(): City {
       glows.push({ x: b.x + b.w - 0.2, y, z: b.z + b.d / 2, sx: 0.3, sy: 0.3, sz: b.d, color: col });
       if (b.y1 <= 50) {
         // a billboard on the roof, readable from the south and from the north
-        const cx = b.x + b.w / 2, cz = b.z + b.d / 2, bh = 5;
+        const board = pool.billboard[idx % pool.billboard.length];
+        const cx = b.x + b.w / 2, cz = b.z + b.d / 2;
+        const bh = Math.min(5, (b.w - 1) / atlas.rects.get(board)!.aspect);
         const cy = b.y1 + 1.8 + bh / 2;
-        const bw = signs.add('billboard', cx, cy, cz + 0.12, 'S', bh, b.w - 1);
-        signs.add('billboard', cx, cy, cz - 0.12, 'N', bh, b.w - 1);
+        const bw = signs.add(board, cx, cy, cz + 0.12, 'S', bh, b.w - 1);
+        signs.add(board, cx, cy, cz - 0.12, 'N', bh, b.w - 1);
         cityB.box(cx - bw / 2, cy - bh / 2, cz - 0.1, cx + bw / 2, cy + bh / 2, cz + 0.1, 0x14141c);
         cityB.box(cx - bw / 2 + 0.6, b.y1, cz - 0.15, cx - bw / 2 + 0.9, cy - bh / 2, cz + 0.15, 0x5d5a55);
         cityB.box(cx + bw / 2 - 0.9, b.y1, cz - 0.15, cx + bw / 2 - 0.6, cy - bh / 2, cz + 0.15, 0x5d5a55);
@@ -335,7 +402,7 @@ export function buildCity(): City {
       glows.push({ x: x1 - 0.5, y: top + 1.1, z: z1 - 0.5, sx: 0.6, sy: 0.6, sz: 0.6, color: '#ff3b3b' });
     }
     signage(b, i);
-    const crown = CROWN_SIGNS[b.id];
+    const crown = b.sign;
     if (crown) {
       signs.add(crown, b.x + b.w / 2, b.y1 - 4.5, b.z + b.d + 0.12, 'S', 4.4, b.w - 2);
       signs.add(crown, b.x + b.w + 0.12, b.y1 - 4.5, b.z + b.d / 2, 'E', 4.4, b.d - 2);
@@ -346,11 +413,27 @@ export function buildCity(): City {
 
   // The big screen on the gate tower, facing the boulevard, and its twin on the far side.
   {
-    const t = BUILDINGS.find((b) => b.id === 'B1.4')!;
+    const t = BUILDINGS.find((b) => b.name === 'gate-upper')!;
     const cx = t.x + t.w / 2;
     signs.add('screen', cx, 53, t.z + t.d + 0.15, 'S', 13.5);
     signs.add('screen', cx, 53, t.z - 0.15, 'N', 13.5);
     lights.push({ x: cx, z: t.z + t.d + 10, r: 22, color: '#ff3d9a', k: 0.35 });
+  }
+
+  // The street through the gate tower's base: a tunnel with lit walls.
+  {
+    const t = BUILDINGS.find((b) => b.name === 'gate-lintel')!;
+    const x0 = t.x, x1 = t.x + t.w, z0 = t.z, z1 = t.z + t.d, h = t.y0;
+    cityB.box(x0, 0, z0, x1, h, z0 + 0.1, 0xd9d5cb, { faces: 'S', win: interior(0.55) });
+    cityB.box(x0, 0, z1 - 0.1, x1, h, z1, 0xd9d5cb, { faces: 'N', win: interior(0.55) });
+    // a dark band over each mouth, so the opening reads from a distance
+    cityB.box(x1, h - 0.9, z0 - 0.4, x1 + 0.16, h + 0.5, z1 + 0.4, 0x3d4650, { faces: 'ENSTB' });
+    cityB.box(x0 - 0.16, h - 0.9, z0 - 0.4, x0, h + 0.5, z1 + 0.4, 0x3d4650, { faces: 'WNSTB' });
+    const zc = (z0 + z1) / 2;
+    for (const x of [x0 + 4, (x0 + x1) / 2, x1 - 4]) lights.push({ x, z: zc, r: 11, color: '#ffe2ae', k: 0.6 });
+    for (const x of [x0 - 0.3, x1 + 0.3]) {
+      glows.push({ x, y: h - 0.2, z: zc, sx: 0.3, sy: 0.3, sz: z1 - z0 - 1.5, color: '#ffe2ae' });
+    }
   }
 
   // -------------------------------------------------------------------------
@@ -380,12 +463,27 @@ export function buildCity(): City {
     }
     lights.push({ x: m.x, z: m.z, r: 26, color: '#c77dff', k: 0.5 });
 
-    // paths across the park and a pond
+    // paths across the park and a pond with a rowing boat on it
     cityB.box(m.x - 1.6, 0, PARK.z0 + 0.5, m.x + 1.6, 0.08, PARK.z1 - 0.5, 0xd8d2c4, { faces: 'T' });
     cityB.box(PARK.x0 + 0.5, 0, m.z - 1.6, PARK.x1 - 0.5, 0.08, m.z + 1.6, 0xd8d2c4, { faces: 'T' });
+    cityB.cyl(POND.x, POND.z, 0, 0.1, POND.r + 0.6, POND.r + 0.6, 20, 0xcfc8b8);
+    cityB.cyl(POND.x, POND.z, 0.1, 0.16, POND.r, POND.r, 20, 0x6fb7d9);
+    cityB.obox(POND.x + 1.6, 0.36, POND.z - 1.1, 1.3, 0.2, 0.55, 0.6, 0xc8523f, { top: 0xe9dcc3 });
   }
 
-  // Toy versions of famous monuments: the arch, the statue, the bridge and the Taj Mahal.
+  // The square in block B3, with its fountain.
+  {
+    const f = FOUNTAIN;
+    cityB.cyl(f.x, f.z, 0, 0.09, f.r + 3.4, f.r + 3.4, 22, 0xd8d2c4);
+    cityB.cyl(f.x, f.z, 0.09, 0.7, f.r, f.r, 14, 0xcfc8b8);
+    cityB.cyl(f.x, f.z, 0.7, 0.75, f.r - 0.45, f.r - 0.45, 14, 0x6fb7d9);
+    cityB.cyl(f.x, f.z, 0.75, 2.1, 0.55, 0.35, 8, 0xcfc8b8);
+    cityB.cyl(f.x, f.z, 2.1, 2.3, 1.3, 1.3, 10, 0xcfc8b8);
+    cityB.cyl(f.x, f.z, 2.3, 2.36, 1.0, 1.0, 10, 0x8fd3e8, { win: interior(0.8) });
+    lights.push({ x: f.x, z: f.z, r: 12, color: '#cfe8ff', k: 0.5 });
+  }
+
+  // Toy versions of famous monuments: the arch, the bridge, the torii and the Taj Mahal.
   buildMonuments({ b: cityB, glows, lights });
 
   // -------------------------------------------------------------------------
@@ -535,6 +633,30 @@ export function buildCity(): City {
   }
 
   // -------------------------------------------------------------------------
+  // The flyover: a slim viaduct for each of the boulevard's two inner lanes
+  // -------------------------------------------------------------------------
+
+  {
+    const f = FLYOVER;
+    const thick = 0.8;
+    for (const side of [-1, 1]) {
+      const z = f.z + side * f.offset;
+      const seg: Seg = { t: 'poly', pts: [[f.x0 - 1, z], [f.x3 + 1, z]], y: 0, r: 0 };
+      ribbon(buildPath([seg], false, f), f.half, { thick, wall: 0.8, lanes: 1, lift: 0.05, skirt: 3.3, step: 1.5 });
+      // piers where the deck is open underneath, clear of the cross streets
+      for (const x of [-54, -43, -21.5, 0, 21.5, 43, 54]) {
+        const top = humpHeight(f, x) - thick;
+        cityB.box(x - 0.5, 0, z - 1.2, x + 0.5, top, z + 1.2, CONCRETE);
+        cityB.box(x - 0.8, top - 0.6, z - f.half + 0.3, x + 0.8, top, z + f.half - 0.3, CONCRETE, { faces: 'NESWB' });
+      }
+      // a string of lamps along the outer edge
+      for (let x = f.x1 + 4; x <= f.x2 - 4; x += 10) {
+        glows.push({ x, y: f.y + 1.05, z: z + side * (f.half - 0.22), sx: 0.4, sy: 0.4, sz: 0.4, color: '#ffc27a' });
+      }
+    }
+  }
+
+  // -------------------------------------------------------------------------
   // Street lamps
   // -------------------------------------------------------------------------
 
@@ -556,7 +678,7 @@ export function buildCity(): City {
         if (!crossesV(x + 11)) lampSpots.push({ x: x + 11, z: h.z + h.carr + 1.3, yaw: -Math.PI / 2 });
       }
     }
-    const spots = lampSpots.filter((s) => s.x > BOARD.x0 + 1 && s.x < BOARD.x1 - 1 && s.z > BOARD.z0 + 1 && s.z < BOARD.z1 - 1);
+    const spots = lampSpots.filter((s) => s.x > BOARD.x0 + 1 && s.x < BOARD.x1 - 1 && s.z > BOARD.z0 + 1 && s.z < BOARD.z1 - 1 && !onCut(s.x, s.z, 2));
     const pb = new GeoBuilder();
     pb.box(-0.18, 0, -0.18, 0.18, 8, 0.18, 0x4b4f57);
     pb.box(0, 7.75, -0.14, 2.3, 8.0, 0.14, 0x4b4f57, { faces: 'NESWTB' });
@@ -587,7 +709,7 @@ export function buildCity(): City {
       const x = PARK.x0 + 3 + rand() * (PARK.x1 - PARK.x0 - 6), z = PARK.z0 + 3 + rand() * (PARK.z1 - PARK.z0 - 6);
       if (Math.hypot(x - m.x, z - m.z) < 15.2) continue;
       if (Math.abs(x - m.x) < 3 || Math.abs(z - m.z) < 3) continue;
-      if (Math.hypot(x - LIBERTY.x, z - LIBERTY.z) < LIBERTY.pondR + 2.8) continue;
+      if (Math.hypot(x - POND.x, z - POND.z) < POND.r + 2.8) continue;
       if (x < PARK.x0 + 15 && z > PARK.z1 - 13) continue; // the pavilion
       if (spots.some((t) => Math.hypot(t.x - x, t.z - z) < 4.2)) continue;
       spots.push({ x, z, s: 0.85 + rand() * 0.7 });
@@ -597,14 +719,18 @@ export function buildCity(): City {
       if (V_STREETS.some((v) => Math.abs(x - v.x) < v.carr + 3)) continue;
       spots.push({ x, z: blvd.z, s: 0.7 });
     }
-    // small squares under the expressway's curves
+    // small squares under the expressway's curves, clear of the streets that cut through
     for (const id of ['B1', 'B3'] as const) {
       const r = blockRect(id);
-      const zs = id === 'B1' ? [22, 31] : [9, 18];
+      const zs = id === 'B1' ? [31.8, 36] : [6, 12];
       for (const lz of zs) {
         spots.push({ x: r.x0 + 3.5, z: r.z0 + lz, s: 0.75 });
         spots.push({ x: r.x1 - 3.5, z: r.z0 + lz, s: 0.75 });
       }
+    }
+    // the square around the fountain
+    for (const [dx, dz] of [[-5.2, -4.6], [5.2, -4.6], [-5.2, 4.6], [5.2, 4.6]]) {
+      spots.push({ x: FOUNTAIN.x + dx, z: FOUNTAIN.z + dz, s: 0.7 });
     }
     // the garden of the Taj Mahal: slender trees along the pool, rounder ones at its edges
     {
@@ -681,8 +807,17 @@ export function buildCity(): City {
       for (let i = 0; i < 5; i++) {
         spots.push({ x: ARCH.x + (rand() < 0.5 ? -1 : 1) * (2.8 + rand() * 1.1), z: ARCH.z + (side * ARCH.span) / 2 + rand() * 6 - 3 });
       }
+      // and under the torii
+      for (let i = 0; i < 4; i++) {
+        spots.push({ x: TORII.x + (rand() < 0.5 ? -1 : 1) * (1.4 + rand() * 2.4), z: TORII.z + side * (TORII.half + rand() * 1.0 - 0.1) });
+      }
     }
-    const inBoard = spots.filter((s) => s.x > BOARD.x0 + 0.6 && s.x < BOARD.x1 - 0.6 && s.z > BOARD.z0 + 0.6 && s.z < BOARD.z1 - 0.6);
+    // around the fountain
+    for (let i = 0; i < 11; i++) {
+      const a = rand() * Math.PI * 2, r = FOUNTAIN.r + 0.9 + rand() * 2.0;
+      spots.push({ x: FOUNTAIN.x + Math.cos(a) * r, z: FOUNTAIN.z + Math.sin(a) * r });
+    }
+    const inBoard = spots.filter((s) => s.x > BOARD.x0 + 0.6 && s.x < BOARD.x1 - 0.6 && s.z > BOARD.z0 + 0.6 && s.z < BOARD.z1 - 0.6 && !onCut(s.x, s.z, 0.8));
     peopleCount = inBoard.length;
 
     const body = new THREE.BoxGeometry(0.8, 1.9, 0.5).translate(0, 0.95, 0).toNonIndexed();

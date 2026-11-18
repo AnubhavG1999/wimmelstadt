@@ -496,7 +496,7 @@ export function buildVehicles(): Vehicles {
   });
 
   for (const def of LOOPS) {
-    const path = buildPath(def.segs, true);
+    const path = buildPath(def.segs, true, def.hump);
     const list: Veh[] = [];
     const n = def.count + (def.hero !== undefined ? 1 : 0);
     const heroSlot = def.hero !== undefined ? Math.floor(n / 2) : -1;

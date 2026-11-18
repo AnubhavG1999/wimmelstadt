@@ -5,7 +5,7 @@
 import type { GeoBuilder, V3, WinSpec } from './geo';
 import { interior } from './geo';
 import {
-  ARCH, EXPRESS_HALF, EXPRESS_Y, GOLDEN_GATE, LIBERTY, TAJ, type Building,
+  ARCH, EXPRESS_HALF, EXPRESS_Y, GOLDEN_GATE, TAJ, TORII, type Building,
 } from './scene-data';
 
 export interface Light { x: number; z: number; r: number; color: string; k: number }
@@ -194,44 +194,10 @@ function pisa(l: Building, ctx: LandmarkCtx): void {
   ctx.lights.push({ x: cx, z: cz + 3, r: 9, color: '#fff3dd', k: 0.6 });
 }
 
-export function buildLandmarkLot(l: Building, ctx: LandmarkCtx): void {
-  switch (l.landmark) {
-    case 'sears': return sears(l, ctx);
-    case 'wtc-north': return twinTower(l, ctx, true);
-    case 'wtc-south': return twinTower(l, ctx, false);
-    case 'empire': return empire(l, ctx);
-    case 'bigben': return bigBen(l, ctx);
-    case 'eiffel': return eiffel(l, ctx);
-    case 'pisa': return pisa(l, ctx);
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Monuments that stand on their own
-// ---------------------------------------------------------------------------
-
-/** The Gateway Arch, spanning the boulevard so that traffic drives through it. */
-function gatewayArch({ b, lights }: LandmarkCtx): void {
-  const k = 3.0, n = 34;
-  const pts: V3[] = [], radii: number[] = [];
-  for (let i = 0; i <= n; i++) {
-    const u = (i / n) * 2 - 1;
-    const y = ARCH.height * (1 - (Math.cosh(k * u) - 1) / (Math.cosh(k) - 1));
-    pts.push([ARCH.x, y, ARCH.z + (u * ARCH.span) / 2]);
-    radii.push(2.3 - 1.5 * (y / ARCH.height)); // thick at the feet, slender at the crown
-  }
-  b.sweep(pts, radii, 0xc9d3db, { win: interior(0.34) });
-  for (const side of [-1, 1]) {
-    const z = ARCH.z + (side * ARCH.span) / 2;
-    b.box(ARCH.x - 4.5, 0, z - 4.5, ARCH.x + 4.5, 0.14, z + 4.5, 0xd8d2c4, { faces: 'NESWT' });
-    lights.push({ x: ARCH.x, z, r: 11, color: '#e6f0ff', k: 0.6 });
-  }
-}
-
-/** The Statue of Liberty, on an island in the park's pond, facing south-east. */
-function liberty(ctx: LandmarkCtx): void {
+/** The Statue of Liberty, on an island in a pond of her own, facing south-east. */
+function liberty(l: Building, ctx: LandmarkCtx): void {
   const { b } = ctx;
-  const L = LIBERTY;
+  const L = { x: l.x + l.w / 2, z: l.z + l.d / 2, pondR: Math.min(l.w, l.d) / 2 - 0.7, top: l.y1 * 0.45 };
   const COPPER = 0x7dbfa6, STONE = 0xcdbfa6, CORNICE = 0xb9ad96;
   const g = interior(0.5);
   const D = Math.SQRT1_2;
@@ -269,6 +235,136 @@ function liberty(ctx: LandmarkCtx): void {
   // the tablet, held in the other arm
   b.obox(L.x - R.x * 1.05 + F.x * 0.35, y0 + 7.4, L.z - R.z * 1.05 + F.z * 0.35, 0.5, 0.85, 0.17, Math.PI / 4 + Math.PI / 2, COPPER, { win: g });
   ctx.lights.push({ x: L.x, z: L.z, r: 12, color: '#bfe8d8', k: 0.55 });
+}
+
+/** Kyoto Tower: a white candle with a red-ringed lantern, standing on a hotel block. */
+function kyoto(l: Building, ctx: LandmarkCtx): void {
+  const { b } = ctx;
+  const WHITE = 0xf1eee6, RED = 0xe2532f, ROOF = 0x8d8a83;
+  const cx = l.x + l.w / 2, cz = l.z + l.d / 2, H = l.y1;
+  // the block it stands on: shops below, hotel rooms above
+  b.box(l.x + 0.5, 0, l.z + 0.5, l.x + l.w - 0.5, 12.5, l.z + l.d - 0.5, 0xe6e1d6, { win: { cell: 2.6, storey: 5, lit: 0.5, kind: 2 }, seed: 0.37, top: ROOF });
+  b.box(l.x + 2.4, 12.5, l.z + 2.4, l.x + l.w - 2.4, 16, l.z + l.d - 2.4, 0xdcd6c9, { win: { cell: 2.3, storey: 3.5, lit: 0.45, kind: 0 }, seed: 0.52, top: ROOF });
+  // the shaft: slender at the waist, flaring towards the lantern
+  const y0 = 16, yPod = H * 0.72;
+  turned(b, cx, cz, [[y0, 3.0], [y0 + 3, 2.1], [y0 + (yPod - y0) * 0.55, 1.45], [yPod - 2.5, 1.9], [yPod, 3.3]], 12, WHITE, interior(0.55));
+  // the lantern: a red ring, a band of windows and a white cap
+  b.cyl(cx, cz, yPod, yPod + 1.3, 4.3, 4.3, 14, RED, { win: interior(0.9), cap: RED });
+  b.cyl(cx, cz, yPod + 1.3, yPod + 3.6, 3.7, 3.7, 14, 0x9cc3d3, { win: { cell: 1.1, storey: 2.3, lit: 1, kind: 1 }, seed: 0.2, cap: WHITE });
+  b.cyl(cx, cz, yPod + 3.6, yPod + 4.4, 4.0, 3.5, 14, WHITE, { win: interior(0.5), cap: WHITE });
+  b.cyl(cx, cz, yPod + 4.4, yPod + 6.6, 2.4, 1.2, 12, WHITE, { win: interior(0.5), cap: WHITE });
+  b.cyl(cx, cz, yPod + 6.6, H - 4, 0.7, 0.4, 8, RED, { win: interior(0.6), cap: false });
+  b.cyl(cx, cz, H - 4, H, 0.28, 0.06, 6, 0xe9e9ec, { cap: false });
+  lamp(ctx, cx, H + 0.4, cz, 0.55);
+  ctx.lights.push({ x: cx, z: cz + l.d / 2 + 3, r: 12, color: '#ffe9c4', k: 0.5 });
+  ctx.lights.push({ x: cx + l.w / 2 + 3, z: cz, r: 12, color: '#ffe9c4', k: 0.5 });
+}
+
+/** A five-storey pagoda in a gravel garden, lit from within like a lantern. */
+function pagoda(l: Building, ctx: LandmarkCtx): void {
+  const { b } = ctx;
+  const RED = 0xc8402a, WHITE = 0xf4e6c8, TILE = 0x3d4a4f, WOOD = 0x6b3b2a, GOLD = 0xd9b24a, STONE = 0x9a968c;
+  const cx = l.x + l.w / 2, cz = l.z + l.d / 2;
+  const D = Math.SQRT2; // a four-sided "cylinder" is measured to its corners
+  const Q = Math.PI / 4;
+  b.box(l.x + 0.4, 0, l.z + 0.4, l.x + l.w - 0.4, 0.08, l.z + l.d - 0.4, 0xd8d2c4, { faces: 'T' });
+  b.box(cx - 5, 0.08, cz - 5, cx + 5, 0.9, cz + 5, 0xb9b2a2);
+  const tiers = 5;
+  let y = 0.9;
+  const tierH = (l.y1 * 0.78 - y) / tiers;
+  for (let i = 0; i < tiers; i++) {
+    const hw = 3.5 - i * 0.42; // half the width of this storey
+    const bodyH = tierH * 0.56;
+    // paper walls that glow at night, storey above storey
+    b.box(cx - hw, y, cz - hw, cx + hw, y + bodyH, cz + hw, WHITE, { win: interior(1.15) });
+    // a red rail around the storey, and red posts at its corners
+    b.box(cx - hw - 0.3, y, cz - hw - 0.3, cx + hw + 0.3, y + 0.5, cz + hw + 0.3, RED);
+    for (const [sx, sz] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) {
+      b.box(cx + sx * hw - 0.22, y + 0.5, cz + sz * hw - 0.22, cx + sx * hw + 0.22, y + bodyH, cz + sz * hw + 0.22, RED, { faces: 'NESW' });
+    }
+    // the roof: a wide eave that sweeps in to the storey above
+    const eave = hw + 2.3 - i * 0.12, next = hw - 0.17;
+    b.cyl(cx, cz, y + bodyH, y + bodyH + 0.35, eave * D, eave * D, 4, WOOD, { phase: Q, cap: false });
+    b.cyl(cx, cz, y + bodyH + 0.35, y + tierH, eave * D, next * D, 4, TILE, { phase: Q, cap: TILE });
+    y += tierH;
+  }
+  // the finial: a mast with rings
+  b.cyl(cx, cz, y, y + 1.0, 0.9, 0.5, 8, TILE, { cap: false });
+  b.cyl(cx, cz, y + 1.0, l.y1, 0.2, 0.05, 6, GOLD, { win: interior(0.6), cap: false });
+  for (let k = 0; k < 5; k++) {
+    const r = 0.62 - k * 0.07;
+    b.cyl(cx, cz, y + 1.6 + k * 0.75, y + 1.85 + k * 0.75, r, r, 8, GOLD, { win: interior(0.6) });
+  }
+  // stone lanterns on either side of the way in
+  for (const side of [-1, 1]) {
+    const lx = cx + side * 2.4, lz = l.z + l.d - 1.5;
+    b.box(lx - 0.25, 0.08, lz - 0.25, lx + 0.25, 1.3, lz + 0.25, STONE);
+    b.box(lx - 0.45, 1.3, lz - 0.45, lx + 0.45, 1.9, lz + 0.45, 0xfff1c9, { win: interior(3) });
+    b.cyl(lx, lz, 1.9, 2.5, 0.85, 0.1, 4, STONE, { phase: Q, cap: false });
+    ctx.lights.push({ x: lx, z: lz, r: 6, color: '#ffd9a0', k: 0.5 });
+  }
+  ctx.lights.push({ x: cx, z: cz, r: 14, color: '#ffb48a', k: 0.55 });
+}
+
+export function buildLandmarkLot(l: Building, ctx: LandmarkCtx): void {
+  switch (l.landmark) {
+    case 'sears': return sears(l, ctx);
+    case 'wtc-north': return twinTower(l, ctx, true);
+    case 'wtc-south': return twinTower(l, ctx, false);
+    case 'empire': return empire(l, ctx);
+    case 'liberty': return liberty(l, ctx);
+    case 'bigben': return bigBen(l, ctx);
+    case 'eiffel': return eiffel(l, ctx);
+    case 'pisa': return pisa(l, ctx);
+    case 'kyoto': return kyoto(l, ctx);
+    case 'pagoda': return pagoda(l, ctx);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Monuments that stand on their own
+// ---------------------------------------------------------------------------
+
+/** The Gateway Arch, spanning the boulevard so that traffic drives through it. */
+function gatewayArch({ b, lights }: LandmarkCtx): void {
+  const k = 3.0, n = 34;
+  const pts: V3[] = [], radii: number[] = [];
+  for (let i = 0; i <= n; i++) {
+    const u = (i / n) * 2 - 1;
+    const y = ARCH.height * (1 - (Math.cosh(k * u) - 1) / (Math.cosh(k) - 1));
+    pts.push([ARCH.x, y, ARCH.z + (u * ARCH.span) / 2]);
+    radii.push(2.3 - 1.5 * (y / ARCH.height)); // thick at the feet, slender at the crown
+  }
+  b.sweep(pts, radii, 0xc9d3db, { win: interior(0.34) });
+  for (const side of [-1, 1]) {
+    const z = ARCH.z + (side * ARCH.span) / 2;
+    b.box(ARCH.x - 4.5, 0, z - 4.5, ARCH.x + 4.5, 0.14, z + 4.5, 0xd8d2c4, { faces: 'NESWT' });
+    lights.push({ x: ARCH.x, z, r: 11, color: '#e6f0ff', k: 0.6 });
+  }
+}
+
+/** A great torii astride the street, so that traffic drives through it. */
+function torii(ctx: LandmarkCtx): void {
+  const { b } = ctx;
+  const T = TORII;
+  const RED = 0xd8432b, BLACK = 0x23262b;
+  const g = interior(0.5);
+  const top = T.height;
+  for (const side of [-1, 1]) {
+    const z = T.z + side * T.half;
+    b.cyl(T.x, z, 0, 1.0, 1.0, 0.85, 8, BLACK);
+    b.cyl(T.x, z, 1.0, top - 1.0, 0.62, 0.52, 8, RED, { win: g, cap: false });
+    ctx.lights.push({ x: T.x, z, r: 9, color: '#ffb48a', k: 0.5 });
+  }
+  const zA = T.z - T.half - 2.6, zB = T.z + T.half + 2.6;
+  // the tie beam, the strut above it, and the two beams of the lintel
+  b.box(T.x - 0.32, top - 3.6, T.z - T.half - 1.2, T.x + 0.32, top - 2.8, T.z + T.half + 1.2, RED, { win: g, faces: 'NESWTB' });
+  b.box(T.x - 0.34, top - 2.8, T.z - 0.5, T.x + 0.34, top - 1.0, T.z + 0.5, BLACK);
+  b.box(T.x - 0.45, top - 1.0, zA + 0.5, T.x + 0.45, top - 0.1, zB - 0.5, RED, { win: g, faces: 'NESWTB' });
+  b.box(T.x - 0.6, top - 0.1, zA + 2.0, T.x + 0.6, top + 0.75, zB - 2.0, BLACK, { faces: 'NESWTB' });
+  // its ends turn up
+  b.beam([T.x, top + 0.33, zA + 2.0], [T.x, top + 0.95, zA - 0.2], 0.52, 0.46, BLACK);
+  b.beam([T.x, top + 0.33, zB - 2.0], [T.x, top + 0.95, zB + 0.2], 0.52, 0.46, BLACK);
 }
 
 /** The Golden Gate Bridge, carrying the expressway over the boulevard. */
@@ -399,7 +495,7 @@ function taj(ctx: LandmarkCtx): void {
 
 export function buildMonuments(ctx: LandmarkCtx): void {
   gatewayArch(ctx);
-  liberty(ctx);
   goldenGate(ctx);
+  torii(ctx);
   taj(ctx);
 }

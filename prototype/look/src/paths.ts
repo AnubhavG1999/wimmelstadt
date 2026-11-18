@@ -2,7 +2,7 @@
 // road decks can follow, sampled evenly along their length.
 
 import * as THREE from 'three';
-import type { Seg } from './scene-data';
+import { humpHeight, type Hump, type Seg } from './scene-data';
 
 const STEP = 0.5;
 
@@ -119,7 +119,7 @@ export function segPoints(seg: Seg): THREE.Vector3[] {
   return out;
 }
 
-export function buildPath(segs: Seg[], closed: boolean): Path {
+export function buildPath(segs: Seg[], closed: boolean, hump?: Hump): Path {
   const all: THREE.Vector3[] = [];
   for (const seg of segs) {
     for (const p of segPoints(seg)) {
@@ -128,5 +128,8 @@ export function buildPath(segs: Seg[], closed: boolean): Path {
     }
   }
   if (closed && all.length > 1 && all[0].distanceToSquared(all[all.length - 1]) < 1e-6) all.pop();
-  return new Path(all, closed);
+  const flat = new Path(all, closed);
+  if (!hump) return flat;
+  // lift the road over the hump, then space the samples evenly again along the slope
+  return new Path(flat.pts.map((p) => new THREE.Vector3(p.x, p.y + humpHeight(hump, p.x), p.z)), closed);
 }

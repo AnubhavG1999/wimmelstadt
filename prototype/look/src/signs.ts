@@ -21,7 +21,7 @@ const EN = '"Arial Black", "Segoe UI Black", "Helvetica Neue", Arial, sans-serif
 function pixelSize(s: SignDef): [number, number] {
   if (s.kind === 'screen') return [640, 360];
   if (s.kind === 'p') return [160, 160];
-  if (s.aspect < 1) return [112, Math.round(112 / s.aspect)];
+  if (s.aspect < 1) return [96, Math.round(96 / s.aspect)];
   if (s.aspect === 1) return [176, 176];
   const h = s.lines.length > 1 ? 176 : 120;
   return [Math.round(h * s.aspect), h];
@@ -103,7 +103,7 @@ function drawNeon(ctx: CanvasRenderingContext2D, s: SignDef, w: number, h: numbe
 
 function drawBox(ctx: CanvasRenderingContext2D, s: SignDef, w: number, h: number): void {
   // a lightbox: a bright panel with dark lettering
-  const dark = s.id === 'mochi' ? '#c2183a' : s.id === 'billboard' ? '#0b2a4a' : '#0f3b66';
+  const dark = s.ink ?? '#0f3b66';
   ctx.fillStyle = lighten(s.color, s.id === 'mochi' ? 0 : 0.35);
   roundRect(ctx, 0, 0, w, h, 8);
   ctx.fill();
@@ -220,6 +220,7 @@ export function buildSignAtlas(): SignAtlas {
     rects.set(s.id, { u0: x / SIZE, u1: (x + w) / SIZE, vTop: y / SIZE, vBottom: (y + h) / SIZE, aspect: w / h, color: s.color });
     x += w + PAD;
   }
+  if (y + shelf > SIZE) console.warn(`The sign sheet is full: ${y + shelf} rows of ${SIZE} are needed, so some signs are cut off.`);
 
   const texture = new THREE.CanvasTexture(cv);
   texture.colorSpace = THREE.SRGBColorSpace;

@@ -45,6 +45,18 @@ export function blockRect(id: BlockId): Rect {
 }
 export const BLOCK_IDS: BlockId[] = ['A1', 'B1', 'C1', 'A2', 'B2', 'C2', 'A3', 'B3', 'C3'];
 
+/**
+ * What each block is built around. A theme decides the block's landmarks, the
+ * look of its buildings and the language of its signs.
+ */
+export type Theme = 'downtown' | 'america' | 'europe' | 'asia';
+export const BLOCK_THEME: Record<BlockId, Theme> = {
+  A1: 'america', A2: 'america',
+  C1: 'europe',
+  C2: 'asia', C3: 'asia',
+  B1: 'downtown', B2: 'downtown', B3: 'downtown', A3: 'downtown',
+};
+
 /** The park is the whole of block B2. */
 export const PARK: Rect = blockRect('B2');
 
@@ -63,8 +75,15 @@ export function inCorridor(x: number, z: number, pad = 0): boolean {
 // Buildings
 // ---------------------------------------------------------------------------
 
-export type Style = 'glass' | 'office' | 'resi' | 'shop' | 'neon' | 'concrete';
-export type Roof = 'bare' | 'units' | 'tank' | 'helipad' | 'garden' | 'none';
+export type Style = 'glass' | 'office' | 'resi' | 'shop' | 'neon' | 'concrete' | 'euro';
+/** `hip` is a pitched roof: slate or tile, depending on the block's theme. */
+export type Roof = 'bare' | 'units' | 'tank' | 'helipad' | 'garden' | 'hip' | 'none';
+
+/** A toy version of a famous building that stands on a lot instead of a plain one. */
+export type LandmarkKind =
+  | 'sears' | 'wtc-north' | 'wtc-south' | 'empire' | 'liberty'
+  | 'bigben' | 'eiffel' | 'pisa'
+  | 'kyoto' | 'pagoda';
 
 export interface Building {
   id: string;
@@ -78,17 +97,18 @@ export interface Building {
   spire?: number;
   /** Faces that carry signs, as compass letters. Defaults to the faces on the block's edge. */
   signs?: string;
+  /** A lit name near the top, on all four sides: the id of a sign. */
+  sign?: string;
   /** Part of a larger building: no ground floor shopfront, no roof details. */
   part?: boolean;
-  /** A toy version of a famous building stands on this lot instead of a plain one. */
   landmark?: LandmarkKind;
+  /** A handle for the few buildings that something else refers to. */
+  name?: string;
 }
-
-export type LandmarkKind = 'sears' | 'wtc-north' | 'wtc-south' | 'empire' | 'bigben' | 'eiffel' | 'pisa';
 
 interface BOpts {
   y0?: number; tint?: number; roof?: Roof; crown?: { inset: number; h: number };
-  spire?: number; signs?: string; part?: boolean; landmark?: LandmarkKind;
+  spire?: number; signs?: string; sign?: string; part?: boolean; landmark?: LandmarkKind; name?: string;
 }
 
 export const BUILDINGS: Building[] = [];
@@ -106,84 +126,104 @@ function b(block: BlockId, lx: number, lz: number, w: number, d: number, top: nu
     style,
     tint: o.tint ?? n,
     roof: o.roof ?? (top > 60 ? 'units' : top > 24 ? 'tank' : 'bare'),
-    crown: o.crown, spire: o.spire, signs: o.signs, part: o.part, landmark: o.landmark,
+    crown: o.crown, spire: o.spire, signs: o.signs, sign: o.sign, part: o.part, landmark: o.landmark, name: o.name,
   });
 }
 
-// A1, north-west. The far corner in the default view, so the tallest cluster.
-b('A1', 1, 1, 21, 21, 140, 'glass', { landmark: 'sears' });
-b('A1', 23, 1, 24, 14, 78, 'office', { roof: 'helipad' });
-b('A1', 1, 23, 14, 24, 62, 'resi');
-b('A1', 17, 23, 14, 12, 96, 'glass', { crown: { inset: 3, h: 8 }, roof: 'none' });
-b('A1', 33, 17, 14, 14, 44, 'office');
-// (the lot at 17, 37 is left open: the Gateway Arch's north foot stands there)
-b('A1', 33, 33, 14, 14, 30, 'neon');
+// --- America, in the west ----------------------------------------------------
 
-// B1, north-centre. The expressway runs through the gate tower at local z 18..30.
-b('B1', 10, 8, 28, 32, 18, 'office', { tint: 2, roof: 'none', signs: '' });
+// A1: Chicago and New York stand shoulder to shoulder at the back of the board.
+b('A1', 1, 1, 21, 21, 140, 'glass', { landmark: 'sears' });
+b('A1', 24, 1, 13, 13, 128, 'glass', { landmark: 'wtc-north' });
+b('A1', 39, 1, 8, 13, 34, 'office');
+b('A1', 34, 16, 13, 13, 128, 'glass', { landmark: 'wtc-south' });
+b('A1', 1, 24, 14, 23, 58, 'resi');
+b('A1', 17, 24, 14, 11, 36, 'resi');
+// (the lot at 17, 37 is left open: the Gateway Arch's north foot stands there)
+b('A1', 33, 31, 14, 16, 26, 'neon');
+
+// A2: the Empire State Building, brownstones, a diner row, and Liberty in her pond.
+b('A2', 1, 1, 14, 22, 112, 'office', { landmark: 'empire' });
+// (the lot at 17, 1 is left open: the Gateway Arch's south foot stands there)
+b('A2', 1, 25, 14, 22, 50, 'resi');
+b('A2', 17, 17, 12, 14, 28, 'resi');
+b('A2', 17, 33, 14, 14, 30, 'shop', { landmark: 'liberty' });
+b('A2', 33, 1, 14, 12, 16, 'shop');
+b('A2', 33, 15, 14, 16, 20, 'shop');
+b('A2', 33, 33, 14, 14, 14, 'neon');
+
+// --- Downtown, the invented middle ---------------------------------------------
+
+// B1: the gate tower. The expressway runs through it at local z 18..30, and a
+// street runs through its base on the ground, straight underneath.
+b('B1', 10, 8, 28, 9.5, 18, 'office', { tint: 2, roof: 'none', signs: '' });
+b('B1', 10, 30.5, 28, 9.5, 18, 'office', { tint: 2, roof: 'none', signs: '' });
+b('B1', 10, 17.5, 28, 13, 18, 'office', { y0: 7.5, tint: 2, roof: 'none', part: true, signs: '', name: 'gate-lintel' });
 b('B1', 10, 8, 28, 9.5, 36, 'office', { y0: 18, tint: 2, roof: 'none', part: true, signs: '' });
 b('B1', 10, 30.5, 28, 9.5, 36, 'office', { y0: 18, tint: 2, roof: 'none', part: true, signs: '' });
-b('B1', 10, 8, 28, 32, 104, 'office', { y0: 36, tint: 2, part: true, roof: 'units', crown: { inset: 6, h: 10 }, signs: '' });
+b('B1', 10, 8, 28, 32, 104, 'office', { y0: 36, tint: 2, part: true, roof: 'units', crown: { inset: 6, h: 10 }, signs: '', name: 'gate-upper' });
 b('B1', 1, 1, 8, 15, 46, 'resi');
 b('B1', 39, 1, 8, 15, 58, 'glass');
 b('B1', 10, 41, 28, 6, 9, 'shop', { signs: 'S' });
-b('B1', 1, 39, 7, 8, 17.5, 'shop', { landmark: 'pisa' });
+b('B1', 1, 39, 7, 8, 8, 'shop');
 b('B1', 40, 39, 7, 8, 8, 'shop');
 
-// C1, north-east. The showroom (a cutaway) takes the south edge and is built separately.
-b('C1', 2, 2, 13, 13, 128, 'glass', { landmark: 'wtc-north' });
-b('C1', 18, 3, 13, 13, 128, 'glass', { landmark: 'wtc-south' });
-b('C1', 33, 1, 14, 20, 88, 'glass', { roof: 'helipad' });
-b('C1', 1, 19, 12, 13, 52, 'resi');
-b('C1', 15, 17, 16, 15, 36, 'office');
-b('C1', 33, 23, 14, 9, 40, 'neon');
-
-// A2, west-centre. Low along the expressway street on its east side.
-b('A2', 1, 1, 14, 22, 112, 'office', { landmark: 'empire' });
-b('A2', 1, 25, 14, 22, 54, 'resi');
-// (the lot at 17, 1 is left open: the Gateway Arch's south foot stands there)
-b('A2', 17, 17, 12, 14, 30, 'concrete');
-b('A2', 17, 33, 14, 14, 44, 'neon');
-b('A2', 33, 1, 14, 12, 16, 'shop');
-b('A2', 33, 15, 14, 16, 20, 'shop');
-b('A2', 33, 33, 14, 14, 14, 'shop');
-
-// B2 is the park. Only a small pavilion stands in it besides the landmark.
+// B2 is the park. Only a small pavilion stands in it besides the tower.
 b('B2', 3, 37, 10, 8, 6, 'shop', { roof: 'garden', signs: 'S' });
-
-// C2, east-centre. Low on its west and north sides to keep the centre open.
-b('C2', 1, 1, 14, 14, 20, 'neon');
-b('C2', 1, 17, 14, 14, 18, 'shop');
-b('C2', 1, 33, 14, 14, 52, 'office', { landmark: 'bigben' });
-b('C2', 17, 1, 14, 12, 26, 'office');
-b('C2', 17, 15, 14, 16, 48, 'resi');
-b('C2', 17, 33, 14, 14, 36, 'office');
-b('C2', 33, 1, 14, 20, 44, 'glass');
-b('C2', 33, 23, 14, 24, 52, 'office');
 
 // A3 is the car park with its two spiral ramps, built separately.
 
-// B3, south-centre. The expressway crosses at local z 18..30, so the south row stays low.
+// B3: a street runs under the expressway here too. The middle of the south row is
+// left open as a small square, so that the street underneath can be seen.
 b('B3', 8, 1, 14, 15, 34, 'resi');
 b('B3', 24, 1, 16, 15, 44, 'office');
-b('B3', 1, 32, 14, 15, 12, 'shop');
-b('B3', 17, 32, 14, 15, 42, 'office', { landmark: 'eiffel' });
-b('B3', 33, 32, 14, 15, 10, 'shop');
+b('B3', 1, 33, 14, 14, 10, 'shop');
+b('B3', 33, 33, 14, 14, 8, 'shop');
 
-// C3, south-east. Nearest the default camera, so low and open.
-// The Taj Mahal and its garden fill the whole block; see TAJ below.
+// --- Europe, in the north-east -------------------------------------------------
 
-/** The landmark in the middle of the park. */
+// C1: Big Ben and the Eiffel Tower stand at the back among stucco houses with
+// pitched roofs; the Leaning Tower of Pisa leans over the boulevard at the front.
+// The showroom takes the middle of the south edge and is built separately.
+b('C1', 1, 1, 14, 14, 52, 'office', { landmark: 'bigben' });
+b('C1', 17, 1, 17, 17, 58, 'office', { landmark: 'eiffel' });
+b('C1', 36, 1, 11, 13, 18, 'euro', { roof: 'hip' });
+b('C1', 1, 17, 14, 15, 22, 'euro', { roof: 'hip' });
+b('C1', 17, 20, 17, 12, 20, 'euro', { roof: 'hip' });
+b('C1', 36, 16, 11, 16, 26, 'euro', { roof: 'hip' });
+b('C1', 1, 37, 6, 10, 9, 'shop', { roof: 'hip' });
+b('C1', 41, 36, 7, 10, 17.5, 'shop', { landmark: 'pisa' });
+
+// --- Asia, in the east ---------------------------------------------------------
+
+// C2: Kyoto Tower on the corner, a pagoda beside it behind its torii, neon behind.
+b('C2', 1, 1, 14, 14, 22, 'neon');
+b('C2', 17, 1, 14, 12, 16, 'shop', { roof: 'hip' });
+b('C2', 33, 1, 14, 20, 44, 'glass', { roof: 'helipad', sign: 'hotel' });
+b('C2', 1, 17, 14, 14, 52, 'office', { sign: 'neko' });
+b('C2', 17, 15, 14, 16, 36, 'neon');
+b('C2', 33, 23, 14, 8, 24, 'neon');
+b('C2', 1, 33, 14, 14, 12, 'shop', { roof: 'hip' });
+b('C2', 17, 33, 14, 14, 30, 'shop', { landmark: 'pagoda' });
+b('C2', 33, 33, 14, 14, 58, 'office', { landmark: 'kyoto' });
+
+// C3: the Taj Mahal and its garden fill the whole block; see TAJ below.
+
+/** The invented tower in the middle of the park. */
 export const LANDMARK = { x: 0, z: 9, podiumR: 11, podiumH: 9, shaftR0: 7.2, shaftR1: 4.4, shaftTop: 120, podTop: 131, podR: 8.5, spireTop: 166, haloY: 110, haloR: 14.5 };
 
 // Famous monuments that stand on their own rather than on a building lot.
 
 /** The Gateway Arch spans the boulevard, so traffic drives through it. */
 export const ARCH = { x: -64, z: -32, span: 52, height: 52 };
-/** The Statue of Liberty stands on an island in the park's pond. `top` is the top of her pedestal. */
-export const LIBERTY = { x: 15.5, z: -6.5, pondR: 7.6, top: 13.5 };
-/** The Golden Gate Bridge carries the expressway over the boulevard on its east side. */
-export const GOLDEN_GATE = { x: 32, z0: -46.5, z1: -17.5, top: 56 };
+/** The Golden Gate Bridge carries the expressway over the boulevard on its west side. */
+export const GOLDEN_GATE = { x: -32, z0: -46.5, z1: -17.5, top: 56 };
+/** A great torii stands over the street between the two Asian blocks, in front of the pagoda. */
+export const TORII = { x: 64, z: 41, half: 6.6, height: 12 };
+/** A plain pond in the park. */
+export const POND = { x: 15.5, z: -6.5, r: 6.8 };
+/** A small square with a fountain, in the gap in block B3's south row. */
+export const FOUNTAIN = { x: 0, z: 89, r: 3.2 };
 /** The Taj Mahal and its garden fill the south-east block. */
 export const TAJ: Rect = blockRect('C3');
 /** Everything that is lawn rather than paving. */
@@ -216,6 +256,17 @@ export type Seg =
   | { t: 'poly'; pts: [number, number][]; y: number; r: number } // open, interior corners filleted
   | { t: 'helix'; cx: number; cz: number; R: number; phi0: number; phi1: number; y0: number; y1: number };
 
+/** A rise in a road that runs east to west: up between x0 and x1, level to x2, down to x3. */
+export interface Hump { x0: number; x1: number; x2: number; x3: number; y: number }
+
+export function humpHeight(h: Hump, x: number): number {
+  const ease = (t: number) => t * t * (3 - 2 * t);
+  if (x <= h.x0 || x >= h.x3) return 0;
+  if (x < h.x1) return h.y * ease((x - h.x0) / (h.x1 - h.x0));
+  if (x <= h.x2) return h.y;
+  return h.y * ease((h.x3 - x) / (h.x3 - h.x2));
+}
+
 export type LoopKind = 'street' | 'boulevard' | 'perimeter' | 'express' | 'carpark';
 
 export interface LoopDef {
@@ -226,6 +277,7 @@ export interface LoopDef {
   count: number; // traffic vehicles on the loop
   /** Index into HEROES of a hero that drives this loop. */
   hero?: number;
+  hump?: Hump;
 }
 
 export const EXPRESS_Y = 24;
@@ -233,23 +285,73 @@ export const EXPRESS_HALF = 6;
 /** The centreline of the elevated expressway: a rounded rectangle around the park. */
 export const EXPRESS_RING: Seg = { t: 'ring', pts: [[-32, -73], [32, -73], [32, 73], [-32, 73]], y: EXPRESS_Y, r: 14 };
 
+/**
+ * The flyover: each of the boulevard's two inner lanes climbs a ramp onto a slim
+ * viaduct of its own, passes over both cross streets and under the expressway,
+ * and comes back down. The median, its trees and the expressway's piers stand
+ * in the gap between the two decks.
+ */
+export const FLYOVER: Hump & { z: number; offset: number; half: number } = {
+  x0: -76, x1: -44, x2: 44, x3: 76, y: 6.5, z: -32, offset: 5.5, half: 2.9,
+};
+
+/**
+ * Streets that cut through a block, east to west, underneath the expressway.
+ * The one in B1 also runs through the base of the gate tower.
+ */
+export const CUT_THROUGH: Partial<Record<BlockId, number>> = { B1: -73, B3: 73 };
+
+/** The same streets as stretches of road, each from one cross street's kerb to the other's. */
+export const CUTS: { block: BlockId; z: number; x0: number; x1: number }[] = BLOCK_IDS.flatMap((block) => {
+  const z = CUT_THROUGH[block];
+  if (z === undefined) return [];
+  const r = blockRect(block);
+  const kerb = STREET_CORR - STREET_CARR;
+  return [{ block, z, x0: r.x0 - kerb, x1: r.x1 + kerb }];
+});
+
+/** Whether a point lies on one of the cut-through streets, give or take `pad`. */
+export function onCut(x: number, z: number, pad = 0): boolean {
+  return CUTS.some((c) => x > c.x0 - pad && x < c.x1 + pad && Math.abs(z - c.z) < STREET_CARR + pad);
+}
+
 export const LOOPS: LoopDef[] = [];
 
 // One clockwise loop around every block, in the kerb lanes. Clockwise means right
-// turns only, so these loops never cross each other or anything else.
+// turns only, so these loops never cross each other or anything else. A block with
+// a street cut through it gets two loops instead, one around each half.
 for (const id of BLOCK_IDS) {
   const r = blockRect(id);
   const north = id[1] === '2' ? 6.5 : 5.5; // row 2 faces the boulevard on its north side
   const south = id[1] === '1' ? 6.5 : 5.5; // row 1 faces it on its south side
   const xw = r.x0 - 5.5, xe = r.x1 + 5.5, zn = r.z0 - north, zs = r.z1 + south;
-  LOOPS.push({
-    id: `block-${id}`,
-    kind: 'street',
-    segs: [{ t: 'ring', pts: [[xw, zn], [xe, zn], [xe, zs], [xw, zs]], y: 0, r: 4 }],
-    speed: 15,
-    count: id === 'B2' ? 5 : 4,
-    hero: id === 'B2' ? 2 : undefined,
-  });
+  const cut = CUT_THROUGH[id];
+  if (cut === undefined) {
+    LOOPS.push({
+      id: `block-${id}`,
+      kind: 'street',
+      segs: [{ t: 'ring', pts: [[xw, zn], [xe, zn], [xe, zs], [xw, zs]], y: 0, r: 4 }],
+      speed: 15,
+      count: id === 'B2' ? 5 : 4,
+      hero: id === 'B2' ? 2 : undefined,
+    });
+  } else {
+    // westbound traffic keeps to the cut's north lane, eastbound to its south lane
+    LOOPS.push({
+      id: `block-${id}-north`,
+      kind: 'street',
+      segs: [{ t: 'ring', pts: [[xw, zn], [xe, zn], [xe, cut - 2.5], [xw, cut - 2.5]], y: 0, r: 4 }],
+      speed: 14,
+      count: 3,
+    });
+    LOOPS.push({
+      id: `block-${id}-south`,
+      kind: 'street',
+      segs: [{ t: 'ring', pts: [[xw, cut + 2.5], [xe, cut + 2.5], [xe, zs], [xw, zs]], y: 0, r: 4 }],
+      speed: 14,
+      count: 3,
+    });
+  }
 }
 
 // The outer lane of the perimeter streets, counter-clockwise around the whole board.
@@ -261,7 +363,8 @@ LOOPS.push({
   count: 11,
 });
 
-// The boulevard's two inner lanes, with a U-turn through the median gap at each end.
+// The boulevard's two inner lanes: over the flyover, with a U-turn through the
+// median gap at each end.
 LOOPS.push({
   id: 'boulevard',
   kind: 'boulevard',
@@ -269,6 +372,7 @@ LOOPS.push({
   speed: 21,
   count: 8,
   hero: 1,
+  hump: FLYOVER,
 });
 
 // The expressway: the inner lane runs clockwise, the outer lane counter-clockwise.
@@ -363,7 +467,8 @@ export const PARKED: ParkedSpot[] = [];
 }
 
 // ---------------------------------------------------------------------------
-// Signs. Every brand here is invented.
+// Signs. Most brands are invented. A few are real, as a nod to car culture:
+// they appear as plain lettering on a plain board, never as a copied logo.
 // ---------------------------------------------------------------------------
 
 export interface SignDef {
@@ -374,38 +479,111 @@ export interface SignDef {
   jp?: boolean;
   aspect: number; // width over height
   kind?: 'neon' | 'box' | 'screen' | 'p';
+  /** For a board: the colour of the lettering. */
+  ink?: string;
+  /** The name of a real company. */
+  real?: boolean;
 }
 
+const neon = (id: string, lines: string[], color: string, aspect: number): SignDef => ({ id, lines, color, aspect });
+const blade = (id: string, text: string, color: string, jp = false): SignDef => ({
+  id, lines: [text], color, vertical: true, jp, aspect: Math.min(0.42, 1.25 / [...text].length),
+});
+/** A real name, in plain dark lettering on a plain pale board. */
+const real = (id: string, name: string): SignDef => ({
+  id, lines: [name], color: '#d6d3c8', ink: '#16161a', aspect: 3.6, kind: 'box', real: true,
+});
+
 export const SIGNS: SignDef[] = [
-  { id: 'kaiju', lines: ['KAIJU', 'KARAOKE'], color: '#ff3d9a', aspect: 2.6 },
-  { id: 'neko', lines: ['NEKO COLA'], color: '#35e0ff', aspect: 4.2 },
-  { id: 'donut', lines: ['DONUT', 'GALAXY'], color: '#ffd23f', aspect: 2.6 },
-  { id: 'hotel', lines: ['HOTEL MINI'], color: '#9fd8ff', aspect: 4.2 },
-  { id: 'tofu', lines: ['TOFU TURBO'], color: '#7dff9b', aspect: 4.2 },
-  { id: 'wanwan', lines: ['WANWAN', 'TIRES'], color: '#ff7a1a', aspect: 2.6 },
-  { id: 'bank', lines: ['BIG BANANA', 'BANK'], color: '#ffe45c', aspect: 2.8 },
-  { id: 'club', lines: ['CLUB 64'], color: '#c77dff', aspect: 3.4 },
-  { id: 'arcade', lines: ['PIXEL', 'ARCADE'], color: '#35e0ff', aspect: 2.6 },
-  { id: 'mochi', lines: ['MOCHI MOTORS'], color: '#ffffff', aspect: 5.4, kind: 'box' },
-  { id: 'ponpoko', lines: ['PONPOKO PARKING'], color: '#7fd0ff', aspect: 6.4, kind: 'box' },
-  { id: 'open', lines: ['24H'], color: '#7dff9b', aspect: 2.2 },
-  { id: 'kaiju-jp', lines: ['怪獣カラオケ'], color: '#ff3d9a', vertical: true, jp: true, aspect: 0.2 },
-  { id: 'ramen-jp', lines: ['らーめん竜巻'], color: '#ffb02e', vertical: true, jp: true, aspect: 0.2 },
-  { id: 'yume-jp', lines: ['ゆめ電気'], color: '#7dff9b', vertical: true, jp: true, aspect: 0.27 },
-  { id: 'sushi-jp', lines: ['ネオン寿司'], color: '#ff5a4f', vertical: true, jp: true, aspect: 0.24 },
-  { id: 'donut-jp', lines: ['ドーナツ銀河'], color: '#ffd23f', vertical: true, jp: true, aspect: 0.2 },
-  { id: 'neko-jp', lines: ['ネココーラ'], color: '#35e0ff', vertical: true, jp: true, aspect: 0.24 },
-  { id: 'game-jp', lines: ['ゲーム'], color: '#c77dff', vertical: true, jp: true, aspect: 0.36 },
-  { id: 'yu-jp', lines: ['湯'], color: '#ff5a4f', jp: true, aspect: 1 },
-  { id: 'kusuri-jp', lines: ['薬'], color: '#7dff9b', jp: true, aspect: 1 },
+  // downtown: the invented mix the city started with
+  neon('kaiju', ['KAIJU', 'KARAOKE'], '#ff3d9a', 2.6),
+  neon('neko', ['NEKO COLA'], '#35e0ff', 4.2),
+  neon('donut', ['DONUT', 'GALAXY'], '#ffd23f', 2.6),
+  neon('hotel', ['HOTEL MINI'], '#9fd8ff', 4.2),
+  neon('tofu', ['TOFU TURBO'], '#7dff9b', 4.2),
+  neon('wanwan', ['WANWAN', 'TIRES'], '#ff7a1a', 2.6),
+  neon('bank', ['BIG BANANA', 'BANK'], '#ffe45c', 2.8),
+  neon('club', ['CLUB 64'], '#c77dff', 3.4),
+  neon('arcade', ['PIXEL', 'ARCADE'], '#35e0ff', 2.6),
+  neon('open', ['24H'], '#7dff9b', 2.2),
+  blade('kaiju-jp', '怪獣カラオケ', '#ff3d9a', true),
+  blade('ramen-jp', 'らーめん竜巻', '#ffb02e', true),
+  blade('yume-jp', 'ゆめ電気', '#7dff9b', true),
+  blade('sushi-jp', 'ネオン寿司', '#ff5a4f', true),
+  blade('donut-jp', 'ドーナツ銀河', '#ffd23f', true),
+  blade('neko-jp', 'ネココーラ', '#35e0ff', true),
+  blade('game-jp', 'ゲーム', '#c77dff', true),
+
+  // America: diners and motels
+  neon('diner', ['DINER'], '#ff5a4f', 3.2),
+  neon('motel', ['MOTEL'], '#35e0ff', 3.2),
+  neon('burgers', ['BURGERS', '& SHAKES'], '#ffd23f', 2.6),
+  neon('deli', ['DELI'], '#7dff9b', 2.6),
+  neon('bowl', ['BOWL-O-RAMA'], '#ff7a1a', 4.6),
+  neon('route', ['ROUTE 64'], '#f4f1e8', 3.6),
+  blade('hotel-v', 'HOTEL', '#ff5a4f'),
+  blade('diner-v', 'DINER', '#35e0ff'),
+  blade('jazz-v', 'JAZZ', '#c77dff'),
+  blade('eat-v', 'EAT', '#ffd23f'),
+
+  // Europe: cafes and bakeries
+  neon('cafe', ['CAFÉ'], '#ffd9a0', 2.8),
+  neon('boulangerie', ['BOULANGERIE'], '#ffe45c', 5.0),
+  neon('gelato', ['GELATO'], '#ff9ccb', 3.4),
+  neon('pub', ['THE PUB'], '#7dff9b', 3.4),
+  neon('pizzeria', ['PIZZERIA'], '#ff5a4f', 4.0),
+  neon('tabac', ['TABAC'], '#ff7a1a', 3.0),
+  blade('cafe-v', 'CAFÉ', '#ffd9a0'),
+  blade('pub-v', 'PUB', '#7dff9b'),
+
+  // Asia: the words on any Tokyo side street
+  neon('ramen', ['ラーメン'], '#ffb02e', 3.4),
+  neon('karaoke', ['カラオケ'], '#ff3d9a', 3.4),
+  neon('pachinko', ['パチンコ'], '#35e0ff', 3.4),
+  neon('konbini', ['コンビニ 24'], '#7dff9b', 4.4),
+  neon('sushi', ['寿司'], '#ff5a4f', 2.2),
+  neon('izakaya', ['居酒屋'], '#ffd23f', 2.8),
+
+  // boards
+  { id: 'mochi', lines: ['MOCHI MOTORS'], color: '#ffffff', ink: '#c2183a', aspect: 5.4, kind: 'box' },
+  { id: 'ponpoko', lines: ['PONPOKO PARKING'], color: '#b9e2ff', ink: '#0f3b66', aspect: 6.4, kind: 'box' },
+  { id: 'billboard', lines: ['DRINK', 'NEKO COLA'], color: '#8fecff', ink: '#0b2a4a', aspect: 2.2, kind: 'box' },
   { id: 'p', lines: ['P'], color: '#ffffff', aspect: 1, kind: 'p' },
-  { id: 'billboard', lines: ['DRINK', 'NEKO COLA'], color: '#35e0ff', aspect: 2.2, kind: 'box' },
   { id: 'screen', lines: ['NOW PLAYING', 'Midnight Wangan Loop', 'The Diecasts'], color: '#ff3d9a', aspect: 1.78, kind: 'screen' },
+
+  // real names
+  real('hotwheels', 'HOT WHEELS'),
+  real('minigt', 'MINI GT'),
+  real('tomica', 'TOMICA'),
+  real('advan', 'ADVAN'),
+  real('michelin', 'MICHELIN'),
+  real('pirelli', 'PIRELLI'),
 ];
 
-export const FASCIA_SIGNS = ['kaiju', 'neko', 'donut', 'hotel', 'tofu', 'wanwan', 'bank', 'club', 'arcade', 'open'];
-export const BLADE_SIGNS = ['kaiju-jp', 'ramen-jp', 'yume-jp', 'sushi-jp', 'donut-jp', 'neko-jp', 'game-jp'];
-export const SQUARE_SIGNS = ['yu-jp', 'kusuri-jp'];
+/** Which signs each theme draws from: over shopfronts, standing out from walls, and on rooftops. */
+export const SIGN_POOLS: Record<Theme, { fascia: string[]; blade: string[]; billboard: string[] }> = {
+  downtown: {
+    fascia: ['kaiju', 'neko', 'donut', 'hotel', 'tofu', 'wanwan', 'bank', 'club', 'arcade', 'open'],
+    blade: ['kaiju-jp', 'ramen-jp', 'yume-jp', 'sushi-jp', 'donut-jp', 'neko-jp', 'game-jp'],
+    billboard: ['billboard'],
+  },
+  america: {
+    fascia: ['diner', 'motel', 'burgers', 'deli', 'bowl', 'route', 'bank'],
+    blade: ['hotel-v', 'diner-v', 'jazz-v', 'eat-v'],
+    billboard: ['hotwheels'],
+  },
+  europe: {
+    // no rooftop boards among the pitched roofs, so the tyre makers hang over shopfronts
+    fascia: ['cafe', 'michelin', 'boulangerie', 'gelato', 'pub', 'pirelli', 'pizzeria', 'tabac'],
+    blade: ['cafe-v', 'pub-v', 'hotel-v'],
+    billboard: ['michelin', 'pirelli'],
+  },
+  asia: {
+    fascia: ['ramen', 'karaoke', 'pachinko', 'konbini', 'sushi', 'izakaya', 'neko'],
+    blade: ['kaiju-jp', 'ramen-jp', 'yume-jp', 'sushi-jp', 'donut-jp', 'neko-jp', 'game-jp'],
+    billboard: ['minigt', 'tomica', 'advan'],
+  },
+};
 
 /** Neon colours used for light strips and for the light that spills onto the street. */
 export const NEON = ['#ff3d9a', '#35e0ff', '#ffb02e', '#7dff9b', '#c77dff', '#ff5a4f'];
