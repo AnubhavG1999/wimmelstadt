@@ -14,6 +14,12 @@ export interface DeckOpts {
   thick: number; wall: number; lanes: number; lift?: number; structure?: boolean; step?: number;
   /** Where the road is lower than this, its sides run down to the ground, as on a ramp of earth. */
   skirt?: number;
+  /**
+   * Says where a low wall is left out, so that another road can join this one:
+   * asked with how far along the path, and which side, -1 for the left of the
+   * way the path runs and 1 for the right.
+   */
+  open?: (s: number, side: -1 | 1) => boolean;
 }
 
 /**
@@ -43,6 +49,8 @@ export function roadDeck(k: Build, path: Path, hw: number, o: DeckOpts): void {
   const win: WinSpec = { cell: o.lanes, storey: hw * 2, lit: 0, kind: 0 };
   const up = (q: V3, dy: number): V3 => [q[0], q[1] + dy, q[2]];
   let f0 = frame(0), s0 = 0;
+  // whether the wall on each side was left out along the piece before: the left, then the right
+  const was = [false, false];
   for (let i = 1; i <= n; i++) {
     const s1 = (i / n) * path.length;
     const f1 = frame(s1);
@@ -52,15 +60,25 @@ export function roadDeck(k: Build, path: Path, hw: number, o: DeckOpts): void {
     if (o.structure !== false) {
       const { t: t0, w: w0 } = dims(f0), { t: t1, w: w1 } = dims(f1), inset = 0.45;
       const nx = (f0.rx + f1.rx) / 2, nz = (f0.rz + f1.rz) / 2;
-      const Ri0: V3 = [R0[0] - f0.rx * inset, R0[1], R0[2] - f0.rz * inset], Ri1: V3 = [R1[0] - f1.rx * inset, R1[1], R1[2] - f1.rz * inset];
-      const Li0: V3 = [L0[0] + f0.rx * inset, L0[1], L0[2] + f0.rz * inset], Li1: V3 = [L1[0] + f1.rx * inset, L1[1], L1[2] + f1.rz * inset];
       cityB.quad(up(L0, -t0), up(R0, -t0), up(R1, -t1), up(L1, -t1), [0, -1, 0], CONCRETE);
-      cityB.quad(up(R0, -t0), up(R1, -t1), up(R1, w1), up(R0, w0), [nx, 0, nz], CONCRETE);
-      cityB.quad(up(L0, -t0), up(L1, -t1), up(L1, w1), up(L0, w0), [-nx, 0, -nz], CONCRETE);
-      cityB.quad(Ri0, Ri1, up(Ri1, w1), up(Ri0, w0), [-nx, 0, -nz], CONCRETE);
-      cityB.quad(Li0, Li1, up(Li1, w1), up(Li0, w0), [nx, 0, nz], CONCRETE);
-      cityB.quad(up(Ri0, w0), up(R0, w0), up(R1, w1), up(Ri1, w1), [0, 1, 0], CONCRETE);
-      cityB.quad(up(Li0, w0), up(L0, w0), up(L1, w1), up(Li1, w1), [0, 1, 0], CONCRETE);
+      // each side in turn: the left, then the right
+      const sides: [V3, V3, number, number][] = [[L0, L1, -1, 0], [R0, R1, 1, 1]];
+      for (const [E0, E1, side, slot] of sides) {
+        const gone = o.open?.((s0 + s1) / 2, side as -1 | 1) ?? false;
+        const h0 = gone ? 0 : w0, h1 = gone ? 0 : w1;
+        cityB.quad(up(E0, -t0), up(E1, -t1), up(E1, h1), up(E0, h0), [nx * side, 0, nz * side], CONCRETE);
+        const I0: V3 = [E0[0] - f0.rx * inset * side, E0[1], E0[2] - f0.rz * inset * side], I1: V3 = [E1[0] - f1.rx * inset * side, E1[1], E1[2] - f1.rz * inset * side];
+        if (!gone) {
+          cityB.quad(I0, I1, up(I1, w1), up(I0, w0), [-nx * side, 0, -nz * side], CONCRETE);
+          cityB.quad(up(I0, w0), up(E0, w0), up(E1, w1), up(I1, w1), [0, 1, 0], CONCRETE);
+        }
+        // where the wall stops or starts again it gets an end, so that it is not hollow
+        if (gone !== was[slot] && i > 1 && w0 > 0) {
+          const along = gone ? 1 : -1;
+          cityB.quad(E0, I0, up(I0, w0), up(E0, w0), [f0.rz * along, 0, -f0.rx * along], CONCRETE);
+        }
+        was[slot] = gone;
+      }
     }
     f0 = f1;
     s0 = s1;
