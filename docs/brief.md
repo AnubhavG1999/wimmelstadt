@@ -11,6 +11,10 @@ What the collector and Claude agreed in the design interview of 17 and 18 Novemb
 - After the first generator trial: a Mini GT can be made from Mini GT's own pictures, and Rodin 2.5 makes the models. See [0007](adr/0007-a-mini-gt-can-be-made-from-mini-gts-own-pictures.md).
 - A first attempt at the city, one continuous island, was built and set aside: beside the prototype its density and its layout did not hold up. The world is made of hand-built tiles instead, one district to a tile, each the size of the prototype's board and on a base of its own. See [0009](adr/0009-a-city-of-hand-built-tiles.md).
 - The city is built first. The Countach from the first trial is its first hero, and more follow as they are made.
+- The tiles stand together on one table, each on its own base, in the order they were built: the board. See [0010](adr/0010-the-tiles-stand-together-on-a-table.md).
+- The heroes sit behind a PIN, which the collector gives to whoever may see them. See [0011](adr/0011-the-heroes-sit-behind-a-pin.md).
+- Heights are roughly to one scale across the city, and looking good comes before it.
+- The view is free and stays where it is left, and nothing on the screen explains the controls.
 
 It is the starting point for building. Terms are used as [CONTEXT.md](../CONTEXT.md) defines them, and decisions that have a record in [docs/adr](adr/) are linked rather than repeated. Where this brief and a later decision record disagree, the record wins.
 
@@ -20,6 +24,7 @@ It is the starting point for building. Terms are used as [CONTEXT.md](../CONTEXT
 - Every diecast the collector adds drives in it as a hero among plain traffic, at roughly one hero to ten traffic vehicles. A typical view holds one or two heroes among about twenty traffic vehicles.
 - A hero is found by its detail alone. Nothing glows, and nothing is marked.
 - There is one collector. Every record still carries its owner, so that others could be let in later.
+- Others can watch. Whoever the collector gives the PIN to is a viewer: they see the heroes, and can change nothing.
 - It is not a collection manager.
 
 ## Where it runs
@@ -36,7 +41,7 @@ It is the starting point for building. Terms are used as [CONTEXT.md](../CONTEXT
 - An isometric camera at a fixed tilt, with a gentle tilt-shift blur that makes the city read as a miniature. The blur fades as the collector zooms in, so that a close look is always sharp.
 - By day, a bright, warm miniature.
 - By night, neon in the vein of Blade Runner 2049, Cyberpunk 2077 and Tokyo Drift: haze, wet-look streets, signs reflected softly in vehicle paint, a little spray behind the wheels. Some traffic has underglow. Heroes never do.
-- Time follows the device's clock. A dial lets the collector drag to any hour and pin it.
+- Time follows the device's clock. A dial lets the collector drag to any hour and pin it. The controls are made to look like things of brass lying on the table: the dial, a token for each kind of weather, and a few keys. They are out of sight until the screen is touched.
 - Weather is the city's own and never follows the real forecast. Clear skies, cloud, rain, storms, fog and snow come and go in spells, and each changes the light: lamps and windows come on under a dark sky, streets turn wet, snow settles on roofs and lawns.
 - The bar for reflections and effects is that they feel right, not that they are physically accurate.
 - Straight edges should be clean. Where the device has power to spare, the picture is drawn larger than the screen and scaled down, and frames are capped at about 60 a second rather than drawn as fast as possible.
@@ -46,15 +51,16 @@ It is the starting point for building. Terms are used as [CONTEXT.md](../CONTEXT
 - One city, made of tiles. It is permanent: nothing already built ever changes. See [0002](adr/0002-the-world-only-grows.md) and [0009](adr/0009-a-city-of-hand-built-tiles.md).
 - The city is whole at every stage: every tile is built up to its edges, with no empty ground waiting to be filled. It grows by whole tiles, when a new place or idea is added, and each arrives complete. Growth is not a reward for collecting: what grows with the collection is the number of heroes. See [0006](adr/0006-the-whole-city-from-the-first-day.md), as 0009 qualifies it.
 - Twenty-two districts, each built by hand around one real or imagined place, on a tile of its own or, when it is small, on one it shares. A tile's ground and its street pattern are its own, and no tile is another in different clothes.
-- The districts: North America (New York, Chicago, St. Louis, San Francisco and Seattle), which also holds the city's invented things, the Southwest, Los Angeles and the Boardwalk; Mexico, Rio and Havana; Merseyside and Scotland; Europe (London, Paris and Italy), Germany, the Alps and Monaco; Westeros; Japan, China, Hong Kong and Singapore; Delhi; Dubai and Egypt; Australia; and Iceland. Where their tiles stand beside each other is not fixed yet.
+- The districts: North America (New York, Chicago, St. Louis, San Francisco and Seattle), which also holds the city's invented things, the Southwest, Los Angeles and the Boardwalk; Mexico, Rio and Havana; Merseyside and Scotland; Europe (London, Paris and Italy), Germany, the Alps and Monaco; Westeros; Japan, China, Hong Kong and Singapore; Delhi; Dubai and Egypt; Australia; and Iceland. Their tiles stand on the board in the order they are built.
 - A tile is the size of the prototype's board, 208 units by 226, and stands on a base of its own, like a model on a table. Inside its edge its ground is whatever its place needs: a harbour, a hill, a canyon, a wall of ice.
-- Every tile holds at least the prototype's density of recognisable things: landmarks, named businesses and set-piece scenes. The prototype had 17 and North America has 20. Ordinary buildings are only what stands between them. A place that cannot fill a tile shares one with a neighbour.
-- Inside a tile the roads can be as elaborate as the place deserves, and each district keeps a road worth driving, from the Stelvio Pass to Route 66. How the tiles sit together, and how a hero gets from one to the next, is not decided.
+- Every tile holds at least the prototype's density of recognisable things: landmarks, named businesses and set-piece scenes. The prototype had 17, North America has 20, Japan 41 and Hong Kong 39. Ordinary buildings are only what stands between them. A place that cannot fill a tile shares one with a neighbour.
+- Inside a tile the roads can be as elaborate as the place deserves, and each district keeps a road worth driving, from the Stelvio Pass to Route 66. The tiles stand edge to edge on one table, and no road joins two of them: see [0010](adr/0010-the-tiles-stand-together-on-a-table.md). How a hero gets from one tile to the next is not decided.
+- Agreed for the board, and not built yet: an opening sweep in which the tiles rise into place, weather of its own for each tile, things that cross the board such as a blimp and birds, a car transporter on a road printed on the table, and sound for each tile.
 - The founding: the collector founds and names the city. Every tile is made by hand; nothing is rolled or laid out by a generator. Where the tiles stand can change while the city is being built, and when that stops is not decided.
 - Dense, in the manner of Manhattan or a packed Cities: Skylines build.
 - Heightened architecture keeps vehicles in view: elevated expressways that pass between and around towers, flyovers with ramps up and down, roads through buildings, streets that cut through a block under a viaduct, spiral ramps, rooftop car parks and cutaways. It stays tasteful and uncluttered. There is no toy track and there are no loops: vehicles stay on roads and obey gravity.
 - The visibility rule: a hero spends most of its time where the camera can see it. In an isometric view a street disappears once the buildings in front of it are taller than the street is wide, which is what the elevated roads, the cutaways and the turntable camera are for.
-- Everything is toy size.
+- Everything is toy size. Towers are roughly to one scale with each other across the whole city, about 3.2 metres to a unit, small landmarks are larger than that so that they can be recognised, and mountains are toys. Where scale and a good look pull apart, the look wins.
 - Brands are a mixture of invented and real. Most signs carry parody names, in the language of the district's theme. A few carry real names from car culture. The prototype sets those in plain lettering; whether real logos are ever drawn is not decided.
 - Landmarks stand in the districts whose theme they belong to. Some are invented, and some are toy versions of famous real ones: the Sears Tower, the Twin Towers and the Statue of Liberty in America, Big Ben and the Eiffel Tower in Europe, Kyoto Tower in Japan, the Taj Mahal in Delhi, and the like. Where a landmark can carry a road or stand over one, it does, so that vehicles pass through it.
 
@@ -66,13 +72,14 @@ It is the starting point for building. Terms are used as [CONTEXT.md](../CONTEXT
 - A meet gathers parked heroes from 9 to 11 at night.
 - One or two antics are under way somewhere at any moment, only where they can be seen and never in the way of traffic: doughnuts under a bridge, a drift down the spiral ramp, a burnout at the lights, a midnight drag race along the harbour.
 - A party trick is made by hand for one special diecast.
-- A new hero arrives by car transporter. Where it comes in is not decided: no tile has a harbour yet.
+- A new hero arrives by car transporter. Where it comes in is not decided. Japan has a car carrier at a pier and Hong Kong a car ferry, and either could bring one.
 - People are model-railway figures.
 - Vignettes are staged all over the city: still, looping or tied to the calendar. Each has a small reaction when tapped. They are delivered in batches, and there should be as many as can be made.
 
 ## Camera and touch
 
 - Three modes: explore, drift and follow. The camera turns freely like a turntable at its fixed tilt, and zooms.
+- The view stays wherever it is left, over one tile or across several. Double-clicking a tile goes to it, and double-clicking the table goes back to the whole board. A plate at the top left names the tile under the view.
 - Drift leans gently towards whatever is happening. When the collector leaves the screen alone, drift takes over at a calmer frame rate.
 - Taps: a hero opens its card, a vignette sets off its reaction, traffic honks or flashes its headlights, and anything else does nothing.
 - The roster takes the camera straight to any hero.
@@ -121,17 +128,17 @@ Rules around this:
 ## Behind it
 
 - Backend: the Supabase project Wimmelstadt, in the organisation Diecast City, on the free plan. See [0004](adr/0004-a-personal-backend-the-city-never-waits-for.md).
-- Sign-in is a one-time code sent by email, and the collector's is the only account.
+- The heroes are seen with a PIN, which is all a viewer needs: see [0011](adr/0011-the-heroes-sit-behind-a-pin.md). The collector's own sign-in, which adding a diecast from the phone will need, is not built. A one-time code sent by email was the plan for it.
 - The city runs from files cached on the device. Only adding, finishing and editing need the backend.
 - One action exports everything.
-- The code lives in a public GitHub repository and the app is served by GitHub Pages. The collection itself sits behind the sign-in.
+- The code lives in a public GitHub repository and the app is served by GitHub Pages. The collection itself sits behind the PIN.
 - Keys and tokens live in `.env.local` on the development machine or in the backend's own secrets, never in the repository.
 - Technology to start with, to be changed if it does not feel good: TypeScript, Vite, three.js driving the city directly on WebGL 2, and React only for the thin interface around it (card, roster, widget, bench).
 
 ## Order of building
 
 0. **Prototype**, to be thrown away. It has three jobs: prove the look by day and by night in one small hand-built scene; last an hour on the Duo's stand; and carry one real diecast through two or three generators, the photo alignment and spinning wheels. The first job is done, and on seeing it the collector decided that the project goes ahead whatever the other two find. They now decide how the city is tuned for the Duo and how a hero is made, not whether the city is built. The generator trial is done too; the Duo hour, the wheels and the photo alignment are not.
-1. **The city.** The collector moved this ahead of the pipeline once the trial had shown that heroes can be made. A first attempt, one continuous island, was built and set aside. The city is built tile by tile instead, each to its full detail before the next. North America is first, and it is the prototype's board itself: what on it was North American or invented stays, and the rest is replaced. With the tiles come traffic, the clock, the weather, explore and drift. The black Countach from the first trial is carried through by hand as the first hero and drives on the tile's expressway.
+1. **The city.** The collector moved this ahead of the pipeline once the trial had shown that heroes can be made. A first attempt, one continuous island, was built and set aside. The city is built tile by tile instead, each to its full detail before the next. North America is first, and it is the prototype's board itself: what on it was North American or invented stays, and the rest is replaced. With the tiles come traffic, the clock, the weather, explore and drift. The black Countach from the first trial is carried through by hand as the first hero. Three tiles are built and stand together on the board: North America, Japan and Hong Kong. Round the tiles the app has its board, its controls and the heroes behind their PIN, and what is agreed for the board comes next.
 2. **The hero pipeline.** Backend, capture, generation, bench, roster and card, and with them the rest of the collection: 30 to 50 diecasts to begin with. For a Mini GT that means picking its page on Mini GT's site. **First light** is the day the Duo shows the city with at least ten heroes in it, and it is the definition of version one.
 3. **Life.** Routines, the meet, antics, people, the first vignettes, and follow.
 4. **Music.**
@@ -158,7 +165,7 @@ Still open:
 ## Deliberately left out
 
 - Prices, wish lists and checklists of missing releases.
-- Sign-up, sharing, billing and moderation.
+- Sign-up, billing and moderation. Sharing goes no further than the PIN.
 - A built-in list of every release.
 - Free-hand painting, sculpting and a chat assistant at the bench.
 - Crashes, and any marker that points a hero out.
@@ -183,3 +190,6 @@ Checked in November 2026. Check again before relying on them.
 - **Spotify.** A personal app in development mode needs its owner to have Premium and allows five named listeners. Reading and steering playback, the collector's playlists and search are available. Playing sound inside the page on an iPhone is reported as unreliable, and beat-level analysis is no longer offered to new apps.
 - **Catalogue sources.** Neither Mattel nor Mini GT publishes a catalogue. hobbyDB offers one by arrangement for a four-figure setup fee. The Hot Wheels fan wiki answers searches through its public interface at `https://hotwheels.fandom.com/api.php`; its text is under CC BY-SA and its images are not reusable. No comparable wiki was found for Mini GT.
 - **Backend limits.** Guides to Supabase's free plan list 1 GB of file storage and a pause after seven days without activity, which has to be lifted by hand.
+- **The first hero in the published city.** On 19 November 2026 the Countach's model, 1.5 MB, was sent to the backend, and the app showed it once the collector had entered the PIN. A device keeps what it is given, so the city starts with its heroes when the backend is asleep.
+- **Three tiles on the board.** On 19 November 2026, with North America, Japan and Hong Kong on the board, a frame took about 7 ms on the desktop: 660,000 triangles in some 280 draws. The Duo has not been measured.
+- **Heights.** Measured on the same day, the towers of all three tiles were within a tenth of one scale, 3.2 metres to a unit, without anybody having set out to keep to it: the Sears Tower's roof is 140 units up and 442 m in life, Tokyo Tower 112 and 333 m, ICC 145 and 484 m.

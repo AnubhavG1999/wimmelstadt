@@ -50,6 +50,14 @@ _Avoid_: Garage, inventory
 Said of a diecast the collector no longer owns. Its hero stays in the world.
 _Avoid_: Sold, removed, deleted
 
+**Viewer**:
+Somebody the collector has given the PIN to. A viewer sees the heroes in the world and can change nothing.
+_Avoid_: Guest, member, user, account
+
+**PIN**:
+The one secret the collector hands out to let a viewer see the heroes. Changing it shuts every viewer out until they are given the new one.
+_Avoid_: Password, passcode, key
+
 ### Making a hero
 
 **Capture**:
@@ -77,6 +85,10 @@ _Avoid_: Map, level, scene
 **Tile**:
 The piece of ground a district is built on: the size of the look prototype's board, made by hand, filled to its edges, and standing on a base of its own like a model on a table. It needs to know nothing about any other tile.
 _Avoid_: Board, chunk, cell, island
+
+**Board**:
+Every tile of the world standing edge to edge on one table, each on its own base. A single tile is never called a board.
+_Avoid_: Map, grid, overworld
 
 **Plan**:
 The record of one tile's layout: its ground, its roads, and where each building and landmark stands. The tile is built from it.
