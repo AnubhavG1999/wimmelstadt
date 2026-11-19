@@ -125,6 +125,15 @@ Five on show, each open to the south-east: the turntable in the Auto Expo's hall
 
 On the roads a hero is best seen on Kartavya Path, on the flyovers, beside the river, on the Signature Bridge, on the east bank, and on Kaifi Azmi Marg in front of the school.
 
+## Screens for music
+
+Two, hung as ordinary signs of kind `screen`, which the engine fills with what is playing and with a picture of its own when nothing is. North America's gate tower has one: see `SIGNS` in its `plan.ts`. Nothing for the music is built in this folder.
+
+- On the roof of Connaught Place's south-east block, where its hoardings stand in life.
+- On the front of Bharat Mandapam's hall, over the Auto Expo's forecourt.
+
+Both face the south-east, and neither is near a place of worship, a tomb or a memorial.
+
 ## Sight lines
 
 Asked of the layout with `hiddenBy`'s sums, for 67 points: every place for a hero, the middle of every road worth watching, and the foot and the middle of every landmark. 61 are seen from the opening view. The six that are not:
@@ -153,6 +162,16 @@ So far, in the layout:
 ## Real names on signs
 
 None yet. Each is checked as it is written, and entered here with what confirmed it.
+
+## When `main` is merged
+
+The main session is changing the engine while this tile is planned, and says when to merge. What that merge brings, and what the tile then owes:
+
+- **The tile's place in the world.** The `TileDef` gets `place: { lon: 77.2, lat: 28.6 }`, for its pin in the map the table stands on.
+- **`wimmel.fights('delhi')`** lists surfaces that lie in one plane. The tile must pass it.
+- **The view tilts up and down.** The tile is looked at from low angles as well as from above, so whatever is seen from below needs its underside: the flyovers, the Metro's viaduct, the bridge's deck, every canopy.
+- **Road markings are cleared wherever two streets overlap**, not only where they cross.
+- **The screens for music** work from then on.
 
 ## Asked of the collector with the plan
 
