@@ -11,16 +11,16 @@ import { train, track } from '../../engine/rail';
 import { ASPHALT, CONCRETE, lampsAlong, roadDeck, street } from '../../engine/roads';
 import type { Build, TileParts } from '../../engine/tile';
 import { checkRoads } from './check';
-import { fine, flat, lengths3, pathOf, rounded, stretch, type P2, type P3 } from './geom';
+import { fine, flat, lengths, lengths3, pathOf, rounded, stretch, type P2, type P3 } from './geom';
 import { ESCALATOR, MODELS, OPEN, extras } from './landmarks';
 import { busCar, dragonBoat, ferryBoat, junkBoat, lighter, peakTramCar, sampan, tramCar, type Car } from './movers';
 import {
-  BOARD, BUSES, FILL, FUNICULAR, HARBOUR, HERO_SPOTS, HILL, KOWLOON, LION, LION_GROUND, LOTS, PARKED, PEAK, PEAK_GROUND, POINT, RACECOURSE, ROUTES, RUN, SHELTER, SHORE, TRAM, TUNNEL,
+  BOARD, BUSES, FILL, FUNICULAR, HARBOUR, HERO_SPOTS, HILL, KOWLOON, LION, LION_GROUND, LOTS, PARKED, PEAK, PEAK_GROUND, POINT, ROUTES, RUN, SHELTER, SHORE, TRAM, TRAM_STOPS, TUNNEL,
   groundAt, type Lot,
 } from './plan';
 import { drawField } from './terrain';
 
-const SEA = 0x3f8fb0, QUAY = 0xa9a59a, ROCK = 0x9a8f7c, DARK = 0x0c0c10, TURF = 0x5fa04e;
+const SEA = 0x3f8fb0, QUAY = 0xa9a59a, ROCK = 0x9a8f7c, DARK = 0x0c0c10;
 const GRASS = [0x6fa85a, 0x74ad5c, 0x67a052], SCRUB = [0x5c8f52, 0x578a55], CRAG = [0x9a8f7c, 0x8d8376, 0xa3977f];
 const N = BOARD.z0;
 /** Half the width of the tunnel's two lanes and their kerbs. */
@@ -81,7 +81,6 @@ export function buildCity(k: Build): TileParts {
   area(k, rect(10.4, -42, 28, -2), PLAZA);
   area(k, rect(34.4, 62, 43, BOARD.z1 - 0.4), PLAZA);
   area(k, rect(BOARD.x0, N, HILL.x1, HILL.north + 2.2), 0x86b96a); // Sheung Wan, at the foot of the north face
-  area(k, rect(RACECOURSE.x0, RACECOURSE.z0, RACECOURSE.x1, RACECOURSE.z1), TURF, 0.03);
 
   // -------------------------------------------------------------------------
   // The Peak: sloping ground, with the road and the tram's line cut into it
@@ -215,7 +214,21 @@ export function buildCity(k: Build): TileParts {
     track(k, rails, { sleepers: false });
     // most trams are dark green; a few are painted all over, as the ones that carry advertising are
     const liveries = [tramCar(), tramCar(0xb5332a, 0xf2e6c4), tramCar(), tramCar(0x2f5fa8, 0xf2d58f), tramCar(), tramCar(0xe0a92e, 0x2a2c31)];
-    liveries.forEach((car, i) => train(k, rails, { cars: 1, speed: 10, from: (rails.length * i) / liveries.length, car }));
+    // every tram stops at every stop, for as long as the others do, so that they keep their distance from one another
+    const along = lengths(TRAM);
+    const stops = TRAM_STOPS.map(([x, z]) => along[TRAM.reduce((best, p, i) => (Math.hypot(p[0] - x, p[1] - z) < Math.hypot(TRAM[best][0] - x, TRAM[best][1] - z) ? i : best), 0)]).sort((a, c) => a - c);
+    liveries.forEach((car, i) => train(k, rails, { cars: 1, speed: 10, from: (rails.length * i) / liveries.length + 7, car, stops, dwell: 4 }));
+    // at each stop a shelter on the landward side of the rails, a board with its name, and people waiting
+    for (const [sx, sz] of TRAM_STOPS) {
+      const x = (sx < -50 ? sx : SHORE.tramN) - 3.1;
+      b.box(x - 0.7, 3.0, sz - 2.4, x + 0.7, 3.2, sz + 2.4, 0x1f6b3a, { faces: 'NESWTB', top: 0xf2e6c4 });
+      for (const dz of [-2.1, 2.1]) b.box(x - 0.58, 0, sz + dz - 0.08, x - 0.42, 3.0, sz + dz + 0.08, 0x1f6b3a, { faces: 'NESW' });
+      b.box(x - 0.64, 0.9, sz - 2.1, x - 0.58, 2.4, sz + 2.1, 0xbfd3df, { faces: 'EW' });
+      k.sign('tram-stop', x + 0.72, 3.5, sz, 1, 0, 0.6, 4.4);
+      b.box(x + 0.64, 3.2, sz - 1.0, x + 0.7, 3.8, sz + 1.0, 0x1f6b3a, { faces: 'NESWT' });
+      for (let i = 0; i < 3; i++) k.person(x + (k.rand() - 0.5) * 0.5, sz - 1.6 + k.rand() * 3.2);
+      k.lights.push({ x, z: sz, r: 6, color: '#fff0d6', k: 0.6 });
+    }
     const buses = pathOf(flat(BUSES, 0.02), true);
     [busCar(), busCar(0xe8c24a, 0x3f6fb5), busCar()].forEach((car, i) => train(k, buses, { cars: 1, speed: 11, from: (buses.length * i) / 3, car }));
   }
@@ -248,13 +261,6 @@ export function buildCity(k: Build): TileParts {
 
   // the Convention Centre's link, over the shore road and the tram
   b.box(-45, 6.6, 8, -19, 10.2, 14, 0xdfe6ea, { faces: 'NESWTB', win: { cell: 2.6, storey: 3.6, lit: 0.6, kind: 1 } });
-  // the racecourse: a ring of turf round a lawn, and a grandstand, as plain shapes for now
-  {
-    const R = RACECOURSE, inset = 4.5;
-    area(k, rect(R.x0 + inset, R.z0 + inset, R.x1 - inset, R.z1 - inset), 0x7fb85f, 0.04);
-    b.box(R.x1 - 2.8, 0, R.z0 + 2, R.x1 + 0.4, 7, R.z1 - 2, 0xe9e6df, { top: 0x8d8a83 });
-    k.signs.add('happy-valley', (R.x0 + R.x1) / 2, 2, R.z1 + 0.6, 'S', 2.6);
-  }
   // the breakwater of the typhoon shelter, and a few boats in it
   b.box(SHELTER.x1 - 0.6, -1.4, SHELTER.z0 + 4.5, SHELTER.x1 + 0.6, 0.5, SHELTER.step.z, QUAY);
   {
@@ -398,7 +404,6 @@ export function buildCity(k: Build): TileParts {
     crowd(22, 35, 64, 42, 110); // watching the dragon boats
     crowd(18, -82, -22.5, -64.5, -17); // at the lookout on the Peak
     crowd(8, -84, -36, -79.5, -25);
-    crowd(20, RACECOURSE.x1 - 5, RACECOURSE.z0 + 3, RACECOURSE.x1 - 3.2, RACECOURSE.z1 - 3); // along the rail at the races
     crowd(10, -44.8, 75, -42.7, 101); // on the quay of the typhoon shelter
     crowd(12, -8.1, 20, -6.5, 50); // on the Convention Centre's point, by the water
     crowd(8, -84.5, -111.5, -73.5, -102.6); // Sheung Wan

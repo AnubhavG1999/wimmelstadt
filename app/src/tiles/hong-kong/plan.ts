@@ -285,6 +285,9 @@ export const TRAM: P2[] = line([
 ], [5.5, 5.5, 2, 3, 4, 4, 3, 2, 8.5, 8.5, 4, 4, 4, 4], true);
 
 /** The buses' two lanes down the middle of Nathan Road. */
+/** Where the trams stop: a point on the rails for each. */
+export const TRAM_STOPS: P2[] = [[SHORE.tramN, -68], [SHORE.tramS, -24], [SHORE.tramN, 26], [-54, 96]];
+
 export const BUSES: P2[] = line([[46, KOWLOON.lanes.busEast], [86, KOWLOON.lanes.busEast], [86, KOWLOON.lanes.busWest], [46, KOWLOON.lanes.busWest]], 2.5, true);
 
 // ---------------------------------------------------------------------------
@@ -371,7 +374,7 @@ export const FILL: Lot[] = [
 export const HERO_SPOTS: HeroSpot[] = [
   { id: 'peak-lookout', x: -68, y: HILL.top + 0.04, z: -21, heading: 0 },
   { id: 'peninsula', x: 46.6, y: 0.06, z: -19.4, heading: 0 },
-  { id: 'car-ferry', x: 3, y: 3.05, z: 105.5, heading: 0 },
+  { id: 'car-ferry', x: 3.6, y: 0.94, z: 106.4, heading: Math.PI },
   { id: 'choi-hung', x: 89.75, y: 9.06, z: 84.6, heading: -Math.PI / 2 },
 ];
 

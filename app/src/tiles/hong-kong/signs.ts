@@ -2,7 +2,7 @@
 // in English, as the real ones are. The name of a real place or business is
 // plain lettering on a plain board, and NOTES.md says how each was checked.
 
-import { CHINESE, type SignDef } from '../../engine/signs';
+import { CHINESE, EN, type SignDef } from '../../engine/signs';
 import { MODELS } from './landmarks';
 import { LOTS } from './plan';
 
@@ -41,6 +41,17 @@ function clockFace(ctx: CanvasRenderingContext2D, _s: SignDef, w: number, h: num
   hand(10 / 60, 0.68, 0.1);
 }
 
+/** The board at a racecourse that shows the odds: rows of amber figures on black. */
+function toteBoard(ctx: CanvasRenderingContext2D, _s: SignDef, w: number, h: number): void {
+  ctx.fillStyle = '#15161a';
+  ctx.fillRect(0, 0, w, h);
+  ctx.fillStyle = '#ffb83d';
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'left';
+  ctx.font = `900 ${h * 0.15}px ${EN}`;
+  ['1   3.2     6   12', '2   5.5     7   9.4', '3   21      8   4.1', '4   8.0     9   15', '5   2.6    10   33'].forEach((row, i) => ctx.fillText(row, w * 0.07, h * (0.14 + i * 0.18)));
+}
+
 /** The signs of the things that have been modelled. */
 const NAMED: SignDef[] = [
   board('star-ferry', ['天星小輪', 'STAR FERRY'], '#f2efe6', '#1f5a3e', 3.2, { real: true }),
@@ -51,6 +62,11 @@ const NAMED: SignDef[] = [
   board('temple-street', ['廟街  TEMPLE STREET'], '#8f1f18', '#f2cf6a', 6.6, { real: true, size: [528, 80] }),
   board('dai-pai-dong', ['大牌檔'], '#f2efe6', '#b3261e', 3.6, { size: [260, 72] }),
   board('works', ['工程進行中', 'WORKS IN PROGRESS'], '#f2c94c', '#23252b', 3.4, { size: [326, 96] }),
+  board('happy-valley', ['跑馬地馬場', 'HAPPY VALLEY RACECOURSE'], '#1d5a3c', '#f2e6c4', 5.2, { real: true, size: [624, 120] }),
+  board('noonday-gun', ['午炮  NOONDAY GUN'], '#3a4250', '#f2e6c4', 4.4, { real: true, size: [308, 70] }),
+  board('car-ferry', ['汽車渡輪  VEHICULAR FERRY'], '#2f4f7a', '#f7f4ea', 7, { size: [504, 72] }),
+  board('tram-stop', ['電車站'], '#1f6b3a', '#f2e6c4', 3.2, { size: [192, 60] }),
+  { id: 'tote', lines: [], color: '#ffb83d', aspect: 2.17, size: [416, 192], paint: toteBoard },
   board('tunnel', ['海底隧道', 'CROSS-HARBOUR TUNNEL'], '#f4f1e8', '#1c1c22', 6, { real: true, size: [576, 96] }),
   { id: 'clock', lines: [], color: '#f6f2e6', aspect: 1, size: [96, 96], paint: clockFace },
 ];
@@ -61,8 +77,4 @@ const BLOCKOUT: SignDef[] = LOTS.filter((l) => l.name && !MODELS[l.id]).map((l):
   return { id: l.id, lines: [l.name], color: '#f4f1e8', ink: '#1c1c22', aspect, size: [Math.round(72 * aspect), 72], kind: 'board' };
 });
 
-export const SIGNS: SignDef[] = [
-  ...NAMED,
-  ...BLOCKOUT,
-  { id: 'happy-valley', lines: ['HAPPY VALLEY RACECOURSE'], color: '#f4f1e8', ink: '#1c1c22', aspect: 7, size: [504, 72], kind: 'board' },
-];
+export const SIGNS: SignDef[] = [...NAMED, ...BLOCKOUT];

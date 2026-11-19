@@ -4,8 +4,12 @@
 
 import * as THREE from 'three';
 import { GeoBuilder, interior, type V3, type WinSpec } from '../../engine/geo';
+import { area } from '../../engine/ground';
+import { train } from '../../engine/rail';
 import type { Build } from '../../engine/tile';
-import { FUNICULAR, HILL, LION, groundAt, type Lot } from './plan';
+import { eased, flat, lengths, pathOf, raised, rounded, through } from './geom';
+import { horse, jumbo } from './movers';
+import { FUNICULAR, HILL, LION, LOTS, RACECOURSE, groundAt, type Lot } from './plan';
 import { beacon, centre, chamfered, drum, face3, gable, hip, prism, railing, shell, slab, slope3, type XZ } from './shapes';
 
 type Model = (k: Build, l: Lot) => void;
@@ -866,6 +870,234 @@ const manMo: Model = (k, l) => {
   k.lights.push({ x: l.x1 + 2.5, z: zm, r: 9, color: '#ffb070', k: 0.8 });
 };
 
+// ---------------------------------------------------------------------------
+// The Island's south: Happy Valley, Causeway Bay, the typhoon shelter
+// ---------------------------------------------------------------------------
+
+/**
+ * The Monster Building: a wall of small flats along the west, three wings
+ * that reach out from it, and between the wings two yards so narrow that
+ * people come to stand in them and look up. Every length of it is painted a
+ * colour of its own, and its walls are hung with air conditioners and washing.
+ */
+const monster: Model = (k, l) => {
+  const b = k.b, H = l.h, sx = l.x0 + 3.6;
+  const PAINT = [0xd9c9b8, 0x9fc4c9, 0xe0b9b0, 0xcfd6a8, 0xb9c3d9], CLOTHES = [0xe86a6a, 0xf2c94c, 0x5fbfc9, 0xf7f4ea, 0xa884d9, 0x6f8fe0];
+  const win: WinSpec = { cell: 0.95, storey: 2.0, lit: 0.55, kind: 4 };
+  const n = 6, dz = (l.z1 - l.z0) / n;
+  for (let i = 0; i < n; i++) b.box(l.x0, 0, l.z0 + i * dz, sx, H + (i % 2) * 1.2, l.z0 + (i + 1) * dz, PAINT[i % PAINT.length], { win, seed: 0.1 + i * 0.17, top: 0x8d8a83 });
+  const wing = 10, yard = (l.z1 - l.z0 - 3 * wing) / 2;
+  /** An air conditioner on a wall that faces (nx, nz), at a window. */
+  const cooler = (x: number, y: number, z: number, nx: number, nz: number): void => {
+    if (nz > 0) b.box(x - 0.28, y, z, x + 0.28, y + 0.42, z + 0.32, 0xe6e8ea, { faces: 'ESWTB' });
+    else if (nx > 0) b.box(x, y, z - 0.28, x + 0.32, y + 0.42, z + 0.28, 0xe6e8ea, { faces: 'NESTB' });
+  };
+  for (let w = 0; w < 3; w++) {
+    const z0 = l.z0 + w * (wing + yard), z1 = z0 + wing;
+    for (let i = 0; i < 3; i++) {
+      const x0 = sx + ((l.x1 - sx) * i) / 3, x1 = sx + ((l.x1 - sx) * (i + 1)) / 3;
+      b.box(x0, 0, z0, x1, H - 0.8 + ((w + i) % 3) * 0.9, z1, PAINT[(w * 2 + i + 1) % PAINT.length], { win, seed: 0.3 + w * 0.2 + i * 0.11, top: 0x8d8a83 });
+    }
+    // shops at the foot of its end, under an awning
+    b.box(l.x1, 0, z0 + 0.3, l.x1 + 0.06, 2.3, z1 - 0.3, 0xe9e3d6, { win: { cell: 1.6, storey: 2.3, lit: 0.9, kind: 2 }, seed: w * 0.3, faces: 'E' });
+    b.box(l.x1, 2.3, z0, l.x1 + 0.9, 2.5, z1, w % 2 ? 0x2f7d5b : 0xc8322b, { faces: 'NESWTB' });
+    k.lights.push({ x: l.x1 + 2.5, z: (z0 + z1) / 2, r: 9, color: '#ffe2ae', k: 0.6 });
+    // what hangs on the walls that the view can see: the south side, and the end
+    for (let j = 0; j < 26; j++) {
+      const x = sx + 0.5 + Math.floor(k.rand() * 7) * 0.95, y = 4.3 + Math.floor(k.rand() * 15) * 2.0;
+      cooler(x, y, z1, 0, 1);
+    }
+    for (let j = 0; j < 20; j++) cooler(l.x1, 4.3 + Math.floor(k.rand() * 15) * 2.0, z0 + 0.6 + Math.floor(k.rand() * 9) * 0.95, 1, 0);
+  }
+  // the two yards: paving, washing on lines from wing to wing, and people looking up
+  for (let w = 0; w < 2; w++) {
+    const z0 = l.z0 + wing + w * (wing + yard), z1 = z0 + yard;
+    b.box(sx, 0, z0, l.x1, 0.06, z1, 0xbfb9ac, { faces: 'T' });
+    for (let j = 0; j < 5; j++) {
+      const x = sx + 1.0 + j * 1.45, y = 5 + ((j * 7 + w * 3) % 5) * 5.2;
+      b.beam([x, y, z0], [x, y, z1], 0.03, 0.03, 0x4a4f55);
+      for (let c = 0; c < 5; c++) b.box(x - 0.03, y - 0.75, z0 + 0.7 + c * ((yard - 1.4) / 4) - 0.3, x + 0.03, y, z0 + 0.7 + c * ((yard - 1.4) / 4) + 0.3, CLOTHES[(j + c * 2 + w) % CLOTHES.length], { faces: 'EW' });
+    }
+    for (let j = 0; j < 12; j++) cooler(sx, 4.3 + Math.floor(k.rand() * 15) * 2.0, z0 + 0.6 + Math.floor(k.rand() * 7) * 0.95, 1, 0);
+    for (let i = 0; i < 7; i++) k.person(sx + 0.8 + k.rand() * (l.x1 - sx - 1.2), z0 + 0.8 + k.rand() * (yard - 1.6), 0.06);
+    k.lights.push({ x: (sx + l.x1) / 2, z: (z0 + z1) / 2, r: 7, color: '#ffd9a0', k: 0.8 });
+  }
+};
+
+/**
+ * The Noonday Gun: a small naval gun on the quay of the typhoon shelter,
+ * inside a white rail, with the bell that is rung before it is fired.
+ */
+const noondayGun: Model = (k, l) => {
+  const b = k.b, { cx, cz } = centre(l), NAVY = 0x3a4250, BRASS = 0xc9a13a;
+  b.box(l.x0, 0, l.z0, l.x1, 0.3, l.z1, 0xd6d0c2, { top: 0xcfc8b8 });
+  railing(b, l.x0, l.z0, l.x1, l.z1, 0.3, 0xf2efe6, 'NSW', 0.9);
+  b.cyl(cx - 0.2, cz, 0.3, 1.0, 0.42, 0.3, 8, NAVY);
+  b.beam([cx - 0.55, 1.15, cz], [cx + 1.5, 1.45, cz], 0.2, 0.12, NAVY);
+  b.box(cx - 0.8, 1.0, cz - 0.2, cx - 0.45, 1.36, cz + 0.2, BRASS);
+  b.box(l.x0 + 0.3, 0.3, l.z1 - 0.5, l.x0 + 0.42, 1.7, l.z1 - 0.38, 0xf2efe6, { faces: 'NESW' });
+  b.box(l.x0 + 0.2, 1.45, l.z1 - 0.62, l.x0 + 0.54, 1.8, l.z1 - 0.28, BRASS);
+  k.person(cx - 0.6, cz - 0.9, 0.3);
+  b.box(cx - 1.05, 0.3, l.z1 + 0.02, cx + 1.05, 1.0, l.z1 + 0.08, 0x3a4250, { faces: 'NESWT' });
+  k.sign('noonday-gun', cx, 0.65, l.z1 + 0.1, 0, 1, 0.58, 2.0);
+  k.lights.push({ x: cx, z: cz, r: 6, color: '#ffe2ae', k: 0.9 });
+};
+
+/** How high the car ferry's deck is, where a hero stands. */
+export const FERRY_DECK = 0.9;
+
+/**
+ * The car ferry, tied up at its pier with its ramp down: an open deck for
+ * cars, with the house, the wheelhouse and the funnel along one side, so that
+ * what stands on the deck can be seen. A hero stands there.
+ */
+const carFerry: Model = (k, l) => {
+  const b = k.b, HULL = 0x2f4f7a, WHITE = 0xf2efe6, DECK = 0x6f7780, y = FERRY_DECK;
+  const x0 = l.x0 + 0.2, x1 = l.x1, z0 = l.z0 + 0.8, z1 = l.z1 - 0.8;
+  const plan: XZ[] = [[x0, z0], [x1 - 1.4, z0], [x1, z0 + 1.3], [x1, z1 - 1.3], [x1 - 1.4, z1], [x0, z1]];
+  prism(b, plan, -1.5, y - 0.45, HULL, { top: false });
+  prism(b, plan, y - 0.45, y, WHITE, { top: DECK });
+  b.box(x0, y, z1 - 0.2, x1 - 1.4, y + 0.8, z1, WHITE);
+  b.box(x0, y, z0, x1 - 1.4, y + 0.8, z0 + 0.2, WHITE);
+  b.box(x1 - 0.2, y, z0 + 1.3, x1, y + 0.8, z1 - 1.3, WHITE);
+  // the house along the north side
+  const hx0 = x0 + 3.4, hx1 = x1 - 3.0, hz1 = z0 + 2.0;
+  b.box(hx0, y, z0 + 0.2, hx1, y + 4.4, hz1, WHITE, { win: { cell: 1.1, storey: 2.2, lit: 0.7, kind: 0 }, seed: 0.3, top: 0xd9d4c7 });
+  b.box(hx0 + 1.6, y + 4.4, z0 + 0.3, hx0 + 4.0, y + 6.1, hz1 - 0.1, WHITE, { win: interior(1.0), top: HULL });
+  b.cyl(hx1 - 1.0, z0 + 1.1, y + 4.4, y + 7.2, 0.55, 0.48, 8, 0xe8b93a, { cap: 0x2a2c31 });
+  b.cyl(hx1 - 1.0, z0 + 1.1, y + 6.7, y + 7.2, 0.58, 0.52, 8, 0x2a2c31, { cap: false });
+  railing(b, hx0, z0 + 0.2, hx1, hz1, y + 4.4, 0xd9dde0, 'ES', 0.8);
+  for (let i = 0; i < 3; i++) k.person(hx0 + 0.5 + k.rand() * 1.0, z0 + 0.6 + k.rand() * 1.0, y + 4.4);
+  // lanes on the deck, the ramp let down on to the quay, and a gantry with its name over the way on
+  const mid = (hz1 + z1 - 0.2) / 2;
+  for (const z of [hz1 + 0.15, z1 - 0.47]) b.box(x0 + 0.6, y + 0.01, z, x1 - 2.0, y + 0.03, z + 0.12, 0xf7f4ea, { faces: 'T' });
+  slab(b, [x0 + 0.15, y, mid], [x0 - 2.3, 0.07, mid], 2.3, 0.18, DECK);
+  for (const z of [mid - 2.9, mid + 2.9]) b.box(x0 - 1.75, 0, z - 0.16, x0 - 1.43, 5.4, z + 0.16, 0x59636d, { faces: 'NESW' });
+  b.box(x0 - 1.75, 4.5, mid - 2.9, x0 - 1.43, 5.5, mid + 2.9, 0x2f4f7a, { faces: 'NESWTB' });
+  k.sign('car-ferry', x0 - 1.79, 5.0, mid, -1, 0, 0.8, 5.4);
+  k.sign('car-ferry', x0 - 1.39, 5.0, mid, 1, 0, 0.8, 5.4);
+  k.person(x0 + 1.0, z1 - 0.8, y);
+  k.person(x1 - 2.4, hz1 + 0.6, y);
+  k.lights.push({ x: (x0 + x1) / 2, z: mid, r: 10, color: '#fff0d6', k: 0.9 });
+  k.lights.push({ x: x0 - 3, z: mid, r: 8, color: '#fff0d6', k: 0.7 });
+};
+
+/** A line round a course that is two straights and two half circles: `r` from its middle line, the straights `ls` to each side of its middle. It runs clockwise, as the horses do. */
+const course = (r: number, step = 2): XZ[] => {
+  const R = RACECOURSE, cx = TRACK.cx, cz = (R.z0 + R.z1) / 2, ls = (R.z1 - R.z0) / 2 - TRACK.r, pts: XZ[] = [];
+  const turn = Math.max(6, Math.ceil((Math.PI * r) / step)), run = Math.max(2, Math.ceil((2 * ls) / step));
+  for (let i = 0; i < run; i++) pts.push([cx + r, cz - ls + (2 * ls * i) / run]);
+  for (let i = 0; i < turn; i++) pts.push([cx + Math.cos((Math.PI * i) / turn) * r, cz + ls + Math.sin((Math.PI * i) / turn) * r]);
+  for (let i = 0; i < run; i++) pts.push([cx - r, cz + ls - (2 * ls * i) / run]);
+  for (let i = 0; i < turn; i++) pts.push([cx - Math.cos((Math.PI * i) / turn) * r, cz - ls - Math.sin((Math.PI * i) / turn) * r]);
+  return pts;
+};
+
+/** Happy Valley's track: where its middle is, how far out its outer rail is, and how wide the turf is. */
+const TRACK = { cx: -69, r: 11, wide: 4 };
+
+/**
+ * Happy Valley Racecourse: a ring of turf between white rails, a lawn with a
+ * pitch inside it, a grandstand along the west side, floodlights on masts for
+ * the races at night, and horses that run.
+ */
+function racecourse(k: Build): void {
+  const b = k.b, R = RACECOURSE, T = TRACK, WHITE = 0xf7f4ea, cz = (R.z0 + R.z1) / 2;
+  area(k, [[R.x0, R.z0], [R.x1, R.z0], [R.x1, R.z1], [R.x0, R.z1]], 0x86b96a, 0.03);
+  area(k, course(T.r), 0x4f9a48, 0.04);
+  area(k, course(T.r - T.wide), 0x7fb85f, 0.05);
+  for (const r of [T.r, T.r - T.wide]) {
+    const line = course(r, 2.4);
+    line.forEach((p, i) => {
+      const q = line[(i + 1) % line.length];
+      b.beam([p[0], 0.85, p[1]], [q[0], 0.85, q[1]], 0.06, 0.06, WHITE);
+      b.box(p[0] - 0.06, 0, p[1] - 0.06, p[0] + 0.06, 0.85, p[1] + 0.06, WHITE, { faces: 'NESW' });
+    });
+  }
+  // a pitch on the lawn, and the board that shows the odds
+  const px0 = T.cx - 4.2, px1 = T.cx + 4.2, pz0 = cz - 7, pz1 = cz + 7, L = 0.1;
+  for (const [x0, z0, x1, z1] of [[px0, pz0, px1, pz0 + L], [px0, pz1 - L, px1, pz1], [px0, pz0, px0 + L, pz1], [px1 - L, pz0, px1, pz1], [px0, cz - L / 2, px1, cz + L / 2]]) b.box(x0, 0.05, z0, x1, 0.075, z1, WHITE, { faces: 'T' });
+  b.cyl(T.cx, cz, 0.05, 0.07, 1.6, 1.6, 16, WHITE);
+  b.cyl(T.cx, cz, 0.07, 0.08, 1.5, 1.5, 16, 0x7fb85f);
+  const bz = cz + 13.5;
+  for (const x of [T.cx - 2.6, T.cx + 2.6]) b.box(x - 0.14, 0, bz - 0.14, x + 0.14, 2.2, bz + 0.14, 0x59636d, { faces: 'NESW' });
+  b.box(T.cx - 3.3, 2.2, bz - 0.18, T.cx + 3.3, 5.4, bz + 0.18, 0x23252b);
+  k.sign('tote', T.cx, 3.8, bz + 0.2, 0, 1, 2.9, 6.3);
+  k.sign('tote', T.cx, 3.8, bz - 0.2, 0, -1, 2.9, 6.3);
+  // the grandstand: three tiers that step up to the back, boxes of glass behind them, and a roof that reaches forward
+  const gx0 = R.x0 + 0.1, gx1 = T.cx - T.r - 0.7, gz0 = cz - 13.5, gz1 = cz + 13.5, tier = (gx1 - gx0) / 3;
+  for (let i = 0; i < 3; i++) {
+    const x1 = gx1 - i * tier, top = 2.1 * (i + 1);
+    b.box(x1 - tier, 0, gz0, x1, top, gz1, 0xd9d4c7, { top: 0xbfb9ac });
+    for (let j = 0; j < 22; j++) k.person(x1 - tier + 0.35 + k.rand() * (tier - 0.7), gz0 + 0.5 + k.rand() * (gz1 - gz0 - 1), top);
+  }
+  b.box(gx0, 6.3, gz0, gx0 + 1.1, 10.6, gz1, 0x8fb4cf, { win: { cell: 1.6, storey: 2.1, lit: 0.9, kind: 1 }, seed: 0.3 });
+  b.box(gx0, 10.6, gz0, gx0 + 0.5, 12.4, gz1, 0xe9e6df);
+  slab(b, [gx0 - 0.2, 12.5, cz], [gx1 + 1.3, 14.4, cz], (gz1 - gz0) / 2 + 0.6, 0.3, 0xf2efe6, { under: 0xd9d4c7 });
+  for (const z of [gz0 + 0.3, cz, gz1 - 0.3]) b.beam([gx0 + 0.25, 12.3, z], [gx1 + 0.9, 13.9, z], 0.16, 0.1, 0x9aa3ab);
+  b.box(gx1 + 1.0, 13.3, gz0 + 2, gx1 + 1.3, 14.9, gz1 - 2, 0x1d5a3c, { faces: 'NESWTB' });
+  k.sign('happy-valley', gx1 + 1.34, 14.1, cz, 1, 0, 1.3, gz1 - gz0 - 5);
+  k.sign('happy-valley', (gx0 + gx1) / 2, 9.3, gz1 + 0.06, 0, 1, 1.1, gx1 - gx0 - 0.4);
+  b.box(gx0, 6.3, gz1 - 0.05, gx1, 10.6, gz1, 0xe9e6df, { faces: 'S' });
+  for (const z of [gz0 + 5, cz, gz1 - 5]) k.lights.push({ x: gx1 - 1, z, r: 11, color: '#fff0d6', k: 0.9 });
+  // floodlights: a mast at each corner, and its pool of light on the turf
+  for (const [sx, sz] of [[1, -1], [1, 1], [-1, 1], [-1, -1]]) {
+    const x = sx > 0 ? R.x1 - 1.2 : T.cx - T.r + 2.2, z = cz + sz * ((R.z1 - R.z0) / 2 - 1.4);
+    b.box(x - 0.2, 0, z - 0.2, x + 0.2, 17, z + 0.2, 0x9aa3ab, { faces: 'NESW' });
+    b.box(x - 1.3, 17, z - 0.3, x + 1.3, 18.5, z + 0.3, 0x59636d, { faces: 'NESWTB' });
+    for (const dx of [-0.8, 0, 0.8]) k.glows.push({ x: x + dx, y: 17.75, z: z - sz * 0.36, sx: 0.55, sy: 1.0, sz: 0.2, color: '#f4fbff' });
+    k.lights.push({ x: x - sx * 5, z: z - sz * 9, r: 20, color: '#f4fbff', k: 0.75 });
+  }
+  // the winning post, and the field
+  const wx = T.cx + T.r + 0.5;
+  b.box(wx - 0.08, 0, cz - 0.08, wx + 0.08, 3.2, cz + 0.08, WHITE, { faces: 'NESW' });
+  b.cyl(wx, cz, 3.2, 4.1, 0.5, 0.5, 8, 0xc8322b, { cap: 0xc8322b });
+  const SILKS = [0xc8322b, 0xf2c94c, 0x3f6fb5, 0x2f8f5f, 0xa884d9], COATS = [0x6b4a32, 0x8a5a36, 0xb9b5ac, 0x2e2620, 0x7a4a2a];
+  SILKS.forEach((silks, i) => {
+    const lane = flat(course(T.r - T.wide / 2 + (i - 2) * 0.62, 1.2), 0.06);
+    train(k, pathOf(lane, true), { cars: 1, speed: 13.4 + [0.3, -0.2, 0.5, 0, -0.4][i], car: horse(silks, COATS[i]), from: 3 + i * 1.3 });
+  });
+}
+
+/**
+ * A Symphony of Lights: at night, beams of light from the roofs of the tall
+ * buildings on both shores swing to and fro across the sky.
+ */
+function symphony(k: Build): void {
+  const from: [string, string][] = [['ifc', '#7dffb0'], ['bank-of-china', '#ffffff'], ['central-plaza', '#ff8ae0'], ['hsbc', '#9fdcff'], ['icc', '#7dffb0'], ['icc', '#ffffff'], ['hkcec', '#9fdcff'], ['jardine', '#fff1a8']];
+  const beams = from.map(([id, color], i) => {
+    const l = LOTS.find((q) => q.id === id)!, len = 95;
+    const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, toneMapped: false });
+    const arm = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 0.12, len, 5, 1, true).translate(0, len / 2, 0), mat), pivot = new THREE.Object3D();
+    pivot.position.set((l.x0 + l.x1) / 2, (l.y0 ?? 0) + l.h + (id === 'hkcec' ? 4 : 1), (l.z0 + l.z1) / 2);
+    arm.frustumCulled = false;
+    pivot.add(arm);
+    pivot.visible = false;
+    k.group.add(pivot);
+    return { arm, pivot, mat, phase: i * 1.7 };
+  });
+  k.each((_dt, time, night) => {
+    const on = Math.max(0, (night - 0.55) / 0.45);
+    for (const q of beams) {
+      q.pivot.visible = on > 0.01;
+      q.mat.opacity = 0.17 * on;
+      q.pivot.rotation.y = q.phase + Math.sin(time * 0.21 + q.phase) * 1.1;
+      q.arm.rotation.z = 0.5 + 0.35 * Math.sin(time * 0.33 + q.phase * 2);
+    }
+  });
+}
+
+/**
+ * A jumbo jet on the old approach to Kai Tak: low over the roofs of Kowloon,
+ * round over the harbour, and back again, like a toy aeroplane on a wire.
+ */
+function kaiTak(k: Build): void {
+  const round = rounded([[8, -64], [88, -64], [88, 100], [8, 100]], 24, true, 3);
+  const total = lengths(round)[round.length - 1];
+  const way = eased(raised(round, through([[0, 68], [total * 0.2, 70], [total * 0.32, 62], [total * 0.55, 42], [total * 0.63, 42], [total * 0.82, 58], [total, 68]])), 22, true);
+  train(k, pathOf(way, true), { cars: 1, speed: 15, car: jumbo(), from: total * 0.3 });
+}
+
 /** A small pavilion to look out from, as Chinese gardens have: red posts, and a roof of green tile that comes to a point. */
 function pavilion(k: Build, x: number, z: number, y: number): void {
   const b = k.b, R = 2.1;
@@ -1011,6 +1243,9 @@ export function extras(k: Build): void {
   escalator(k);
   avenueOfStars(k);
   lionCrag(k);
+  racecourse(k);
+  symphony(k);
+  kaiTak(k);
   // on the summit: a pavilion at the lookout, and a rail along its edge
   pavilion(k, -81, -18.6, HILL.top);
   k.b.box(-87.5, HILL.top + 0.85, -15.5, -64.4, HILL.top + 1.05, -15.36, 0xf2efe6, { faces: 'NESWTB' });
@@ -1045,4 +1280,7 @@ export const MODELS: Record<string, Model> = {
   'choi-hung-b': estate,
   'choi-hung-park': courts,
   'night-market': nightMarket,
+  monster,
+  'noonday-gun': noondayGun,
+  'car-ferry': carFerry,
 };

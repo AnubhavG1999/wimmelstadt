@@ -151,6 +151,78 @@ export function peakTramCar(): Car {
 }
 
 // ---------------------------------------------------------------------------
+// A racehorse, and an airliner
+// ---------------------------------------------------------------------------
+
+type V3 = [number, number, number];
+
+/**
+ * A flat plate with four corners: a wing, a fin. `down` is the way its
+ * thickness goes, and `thick` how far.
+ */
+function plate(b: GeoBuilder, p: V3[], thick: number, color: number, down: V3 = [0, -1, 0]): void {
+  const q = p.map((v): V3 => [v[0] + down[0] * thick, v[1] + down[1] * thick, v[2] + down[2] * thick]);
+  const up: V3 = [-down[0], -down[1], -down[2]];
+  b.quad(p[0], p[1], p[2], p[3], up, color);
+  b.quad(q[0], q[1], q[2], q[3], down, color);
+  const cx = (p[0][0] + p[1][0] + p[2][0] + p[3][0]) / 4, cy = (p[0][1] + p[1][1] + p[2][1] + p[3][1]) / 4, cz = (p[0][2] + p[1][2] + p[2][2] + p[3][2]) / 4;
+  for (let i = 0; i < 4; i++) {
+    const a = p[i], c = p[(i + 1) % 4];
+    const ex = c[0] - a[0], ey = c[1] - a[1], ez = c[2] - a[2];
+    // across the edge and across the thickness: the way the edge faces, turned to point away from the middle
+    let nx = ey * down[2] - ez * down[1], ny = ez * down[0] - ex * down[2], nz = ex * down[1] - ey * down[0];
+    const l = Math.hypot(nx, ny, nz) || 1;
+    nx /= l; ny /= l; nz /= l;
+    if (nx * ((a[0] + c[0]) / 2 - cx) + ny * ((a[1] + c[1]) / 2 - cy) + nz * ((a[2] + c[2]) / 2 - cz) < 0) { nx = -nx; ny = -ny; nz = -nz; }
+    b.quad(a, c, q[(i + 1) % 4], q[i], [nx, ny, nz], color);
+  }
+}
+
+/** A racehorse at the gallop, with a jockey up in silks of one colour. */
+export function horse(silks: number, coat = 0x6b4a32): Car {
+  const b = new GeoBuilder();
+  b.box(-1.0, 1.0, -0.28, 0.9, 1.7, 0.28, coat);
+  b.beam([0.8, 1.6, 0], [1.5, 2.25, 0], 0.22, 0.17, coat);
+  b.box(1.3, 2.05, -0.16, 1.95, 2.4, 0.16, coat);
+  b.beam([-1.0, 1.6, 0], [-1.55, 1.2, 0], 0.07, 0.04, 0x2a2018);
+  for (const s of [-0.18, 0.18]) {
+    b.beam([0.7, 1.05, s], [1.35, 0.08, s], 0.09, 0.07, coat);
+    b.beam([-0.8, 1.05, s], [-1.45, 0.08, s], 0.09, 0.07, coat);
+  }
+  b.box(-0.2, 1.7, -0.2, 0.45, 2.25, 0.2, silks);
+  b.box(0.3, 2.2, -0.16, 0.62, 2.52, 0.16, 0xf2efe6, { top: silks });
+  return { geometry: b.build(), length: 3.5 };
+}
+
+/**
+ * A jumbo jet, at toy size: a white body with a hump behind its nose, swept
+ * wings with two engines under each, and a tail in one plain colour. It
+ * carries no airline's name.
+ */
+export function jumbo(): Car {
+  const b = new GeoBuilder(), WHITE = 0xf4f3ef, GREY = 0xc9ced2, TAIL = 0x1f7a6b, GLASS = 0x2a3442;
+  b.sweep([[-14, 2.7, 0], [-10, 2.1, 0], [-4, 1.8, 0], [8, 1.8, 0], [12, 1.7, 0], [14.2, 1.4, 0]], [0.35, 1.3, 1.75, 1.75, 1.25, 0.35], WHITE);
+  b.box(4.5, 3.2, -1.15, 11, 4.3, 1.15, WHITE);
+  b.box(11, 3.2, -1.0, 12.2, 3.9, 1.0, WHITE);
+  b.box(11.3, 3.45, -1.04, 12.3, 3.8, 1.04, GLASS, { win: interior(1.0), faces: 'NES' });
+  for (const s of [-1, 1]) {
+    b.box(-8, 2.25, s * 1.77 - 0.03, 10, 2.5, s * 1.77 + 0.03, GLASS, { win: interior(1.4), faces: s > 0 ? 'S' : 'N' });
+    b.box(-11, 1.45, s * 1.77 - 0.03, 11.6, 1.75, s * 1.77 + 0.03, TAIL, { faces: s > 0 ? 'S' : 'N' });
+    plate(b, [[3.6, 1.3, s * 1.4], [-2.6, 1.3, s * 1.4], [-7.8, 2.0, s * 13.2], [-5.7, 2.0, s * 13.2]], 0.32, GREY);
+    plate(b, [[-10.4, 2.5, s * 0.8], [-13.2, 2.5, s * 0.8], [-14.6, 2.7, s * 5.2], [-13.3, 2.7, s * 5.2]], 0.2, GREY);
+    for (const [ex, ez] of [[1.3, 4.7], [-2.3, 8.8]]) {
+      b.box(ex - 1.1, 0.15, s * ez - 0.5, ex + 1.6, 1.15, s * ez + 0.5, WHITE, { faces: 'NESWTB' });
+      b.box(ex + 1.6, 0.25, s * ez - 0.4, ex + 1.66, 1.05, s * ez + 0.4, 0x3a3f46, { faces: 'E' });
+    }
+    b.box(-7.2, 1.95, s * 13.2 - 0.14, -6.5, 2.2, s * 13.2 + 0.14, s > 0 ? 0x3fd96b : 0xff4a4a, { win: interior(3), faces: 'NESWTB' });
+  }
+  plate(b, [[-9.4, 3.2, -0.16], [-13.5, 3.2, -0.16], [-14.7, 8.4, -0.16], [-12.7, 8.4, -0.16]], 0.32, TAIL, [0, 0, 1]);
+  b.box(13.95, 0.95, -0.3, 14.3, 1.35, 0.3, 0xfff4d6, { win: interior(3), faces: 'NESWTB' });
+  b.box(-1, 0.05, -0.2, -0.6, 0.3, 0.2, 0xff4a4a, { win: interior(3), faces: 'NESWTB' });
+  return { geometry: b.build(), length: 28 };
+}
+
+// ---------------------------------------------------------------------------
 // Boats that stay where they are
 // ---------------------------------------------------------------------------
 
