@@ -199,7 +199,7 @@ export const LONDON_GROUND: [string, number, number, number, number][] = [
   ['Buckingham Palace', -103.8, -79, -99.0, -45],
   ["Buckingham Palace's railings", -94.95, -79, -94.0, -45],
   ['Piccadilly Circus, the back of it', -103.8, -40.4, -101.0, -19.6],
-  ['The Gherkin', -74.8, -112.3, -62.2, -99.7],
+  ['The Gherkin', -74.9, -112.4, -62.1, -99.6],
   ['Ace Cafe', -100, 9.2, -70, 13.6],
 ];
 
@@ -559,7 +559,8 @@ export function piccadillyCircus(k: Build): void {
 export function gherkin(k: Build): void {
   const b = k.b;
   const GLASS = 0x9cc3d3, DARK = 0x2c4a5e;
-  const cx = -68.5, cz = -106, H = 50, R = 6.2, sides = 18, twist = 3.4;
+  // (180 m in life, which is 56 at the city's scale of 3.2 m to a unit: it stands a little above Big Ben, as it does in life)
+  const cx = -68.5, cz = -106, H = 58, R = 6.4, sides = 18, twist = 3.9;
   /** How far up each ring is, and how wide, as parts of the whole. */
   const rings: [number, number][] = [
     [0, 0.86], [0.07, 0.915], [0.14, 0.955], [0.21, 0.985], [0.28, 0.998], [0.35, 1], [0.42, 0.99], [0.49, 0.965], [0.56, 0.925], [0.63, 0.87],

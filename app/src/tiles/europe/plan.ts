@@ -155,7 +155,7 @@ export const THINGS: Thing[] = [
   T(5, 'st-pauls', "ST PAUL'S", 'london', -77, -61.4, 14, 22.4, 36.5),
   T(6, 'palace', 'BUCKINGHAM PALACE', 'london', -103.8, -79, 9.4, 34, 15.8),
   T(7, 'piccadilly', 'PICCADILLY CIRCUS', 'london', -103.8, -40.3, 7, 20.6, 18),
-  T(8, 'gherkin', 'THE GHERKIN', 'london', -74.7, -112.2, 12.4, 12.4, 50),
+  T(8, 'gherkin', 'THE GHERKIN', 'london', -74.9, -112.4, 12.8, 12.8, 58),
   T(9, 'ace-cafe', 'ACE CAFE', 'london', -100, 9.2, 30, 4.4, 7.7),
   // Paris
   T(10, 'eiffel', 'EIFFEL TOWER', 'paris', -17, 45, 30, 30, 110),
@@ -170,7 +170,7 @@ export const THINGS: Thing[] = [
   // Italy
   T(19, 'pisa', 'LEANING TOWER OF PISA', 'italy', -34.8, 96.9, 43.6, 13.4, 24),
   T(20, 'colosseum', 'COLOSSEUM', 'italy', COLOSSEUM.x - 14, COLOSSEUM.z - 11.5, 28, 23, 17),
-  T(21, 'duomo', 'DUOMO OF FLORENCE', 'italy', 90, 1.7, 13.2, 34, 28),
+  T(21, 'duomo', 'DUOMO OF FLORENCE', 'italy', 90, 1.7, 13.2, 34, 35.5),
   T(22, 'ponte-vecchio', 'PONTE VECCHIO', 'italy', 69.5, 53, 17, 6, 6),
   T(23, 'venice', 'VENICE & RIALTO', 'italy', 87.3, 76.5, 16.5, 36, 32),
   T(24, 'piazza', 'PIAZZA & FOUNTAIN', 'italy', -68, 49, 26, 23, 25),
