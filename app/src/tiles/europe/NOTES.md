@@ -1,6 +1,6 @@
 # Europe: notes
 
-What a later reader cannot see in the code. Everything on the list below is built. The collector has not yet called the tile final.
+What a later reader cannot see in the code. Everything on the list below is built, and the collector called the tile final on 19 November 2026.
 
 ## The things on the tile
 
@@ -48,6 +48,40 @@ The numbers are the ones in `THINGS` in `plan.ts`.
 29. A Montgolfier balloon, over the left bank
 
 Besides these: Westminster Bridge, Parliament Square, a bus stand with a double-decker, telephone boxes and pillar boxes in London; the Arc du Carrousel, the Tuileries, a merry-go-round, a bandstand in a garden and a painters' square in Paris; the palace of the doges and the bell tower in Venice, a vineyard with its farmhouse, and the baptistery in front of Florence's cathedral in Italy; and two boats on the river.
+
+## How high things stand
+
+The page for tile builders sets one scale for heights across the city: about 3.2 metres to a unit for a tower known by its height, and up to about twice that for a small landmark, so that it can be recognised. It was written after this tile was built and called final. This is how the tile stands against it.
+
+| | In life | At the city's scale | On the tile | |
+| --- | --- | --- | --- | --- |
+| The Eiffel Tower | 330 m | 103 | 110 | to scale |
+| The Gherkin | 180 m | 56 | 50 | a little low |
+| The London Eye | 135 m | 42 | 46 | to scale |
+| Florence's dome, to its cross | 114.5 m | 36 | 28 | low |
+| St Paul's, to its cross | 111 m | 35 | 36.5 | to scale |
+| The bell tower of Venice | 98.6 m | 31 | 32 | to scale |
+| The Victoria Tower | 98.5 m | 31 | 38, and 44 to its turrets | tall |
+| Big Ben | 96 m | 30 | 56 | nearly twice, as a clock tower may be |
+| Notre-Dame's spire | 96 m | 30 | 28 | to scale |
+| Florence's bell tower | 84.7 m | 26 | 23 | a little low |
+| Sacré-Cœur's dome, above its terrace | 83 m | 26 | 26 | to scale |
+| Notre-Dame's towers | 69 m | 22 | 20.5 | to scale |
+| Tower Bridge | 65 m | 20 | 35 | nearly twice |
+| The Leaning Tower | 56 m | 17.5 | 24 | a third over |
+| Pisa's baptistery | 55 m | 17 | 15 | a little low |
+| The Arc de Triomphe | 50 m | 16 | 22 | a third over |
+| The Colosseum | 48 m | 15 | 17.6 | a little over |
+| Lingotto | five storeys, some 25 m | 8 | 25 | three times: five of the tile's storeys |
+| The White Tower | 27 m | 8 | 11.4 | a third over |
+| The obelisk of the Concorde | 23 m | 7 | 21 | three times |
+
+Where it does not keep to the rule:
+
+- **Big Ben stands above the Gherkin and the Eye**, which in life are both taller. The clock tower came from the look prototype at 56 and Parliament was built to it. Raising the Gherkin to about 58 would put it above the clock tower again. To stand below the Eye as well, the clock tower would have to come down to about 44.
+- **Florence's dome is low.** At scale it would stand eight higher, and above St Paul's.
+- **The obelisk and Lingotto are three times their height.** At scale the obelisk would be a post in the middle of a roundabout, and Lingotto a slab with nothing to see under its track.
+- **Montmartre is 12 high.** At scale the hill would be 40.
 
 ## Where each thing is built
 
@@ -150,14 +184,24 @@ Everything else is generic or invented: THE RED LION, TEA ROOMS, FISH & CHIPS, B
 
 ## What it costs
 
-On the machine it was built on, with the tile alone: about 34,700 triangles that stand still, 440 people, 97 trees and 89 vehicles, and 3 to 4.5 thousandths of a second for a frame with `wimmel.bench(60)`. North America, on the same machine, is about 43,000 triangles and 5 thousandths of a second. The Eiffel Tower is about 3,300 of the triangles and the Colosseum about 2,800: they are the two things the collector asked to have more work on.
+About 34,700 triangles that stand still, 440 people, 97 trees and 89 vehicles. North America has about 42,400 triangles, 260 people and 86 vehicles. The Eiffel Tower is about 3,300 of Europe's triangles and the Colosseum about 2,800: they are the two things the collector asked to have more work on.
+
+Measured as the page sets it out, each tile alone at `?tiles=<id>&drift=0`, in the same minute and the same window, three times each with `wimmel.bench()`:
+
+| | By day, at 14 | At night, at 21 |
+| --- | --- | --- |
+| Europe | 5.6 to 5.8 ms | 4.5 to 5.0 ms |
+| North America | 3.8 to 4.8 ms | 4.4 to 5.2 ms |
+
+At night the two cost the same. By day Europe costs about four tenths more, and that is its river: a tile with water is drawn a second time at every hour, as its mirror image, and a dry tile only at night.
 
 ## Checks
 
 All on 19 November 2026, the last of them after `main` was merged in at `f493936`.
 
-- **Traffic.** Fifteen minutes, stepped a quarter of a second at a time with `wimmel.advance`: no two of the 89 vehicles at the same height came closer than 4.95, none stood still, and `vehicles.shared()` was empty. The nearest are in neighbouring lanes of the star.
-- **Heroes.** With `?place=`, each of the six places took a hero, standing where the plan says, and a ray from it towards the camera met nothing. On the two routes tried, `paris-circuit` and `montmartre`, a hero drove. No picture of a hero was taken.
+- **Traffic.** The page's own check, twenty minutes in steps of a twentieth of a second: no two of the 89 vehicles came nearer than 4.95, none stood still, no vehicle came nearer than 11 to the next on its own route (that was on the Champs-Élysées; every other route kept 12.8 or more), and `vehicles.shared()` was empty. The nearest two are in neighbouring lanes of the star.
+- **Nothing in a road.** Every figure and every tree was tried against every carriageway, from the page's console. Five cypresses stood in the outer lane of the Colosseum's road, where they had been since the blockout, and are moved onto the pavement. No figure stood in a road.
+- **Heroes.** With `?place=`, each of the six places took a hero, standing where the plan says, and a ray from it towards the camera met nothing. On the two routes tried, `paris-circuit` and `montmartre`, a hero drove. No picture of a hero was taken. Each hero on show faces east or south, towards the first view.
 - **Nothing in a street.** `clear` is asked about every plot and every box in each quarter's list, and says nothing.
 - **Weather and hours.** Looked at by day and by night from all four sides, and in rain and in snow.
 - `npm run typecheck` and `npm run build` pass, and the console shows no warnings and no errors.
@@ -214,6 +258,8 @@ What building Europe taught, for someone who is about to start a tile and has no
 6. **Thin bars come out dark.** The outline is drawn round every bar, so ironwork is mostly outline. Paint it a good deal lighter than it should look.
 7. **Taking pictures in the pane the collector is looking at.** `wimmel.shot` moves the view and the hour of whatever page it is called on, and he may have gone to another address by then: I got pictures of the whole city where I expected my tile. Open a tab of your own for checks and leave his alone.
 8. **A session that is summarised forgets its files.** Read the file again before editing it. For anything longer than a line, write a small script that swaps one exact piece of text for another and stops if the piece is not there: it cannot half-apply, and it is a record of what was done.
+
+9. **Trees in the road.** My check for things in streets was asked about buildings only. A row of cypresses stood half a unit inside a lane from the blockout until the day the tile was called final, and cars brushed their trunks in every picture I took. Ask the same question of every tree and every figure: their places can be read back from the page, from the tile's meshes that are drawn many times over.
 
 ### What I would do differently from the start
 
