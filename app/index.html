@@ -47,8 +47,8 @@
         --edge: #6e531f;
       }
       body.idle #ui, body.idle #hint { opacity: 0; }
-      #ui button, #ui .dial { pointer-events: auto; }
-      body.idle #ui button, body.idle #ui .dial { pointer-events: none; }
+      #ui button, #ui .dial, #ui .options, #ui .pin { pointer-events: auto; }
+      body.idle #ui button, body.idle #ui .dial, body.idle #ui .options, body.idle #ui .pin { pointer-events: none; }
 
       /* The plates at the top left, like the plates on the tiles: one says where the
          view is, and a second one names the hero it is following. */
@@ -212,6 +212,7 @@
         cursor: pointer;
       }
       .options button:hover { background: rgba(201, 163, 82, 0.2); }
+      .options button[hidden] { display: none; }
       .options b {
         min-width: 34px;
         padding: 2px 9px;
@@ -223,6 +224,59 @@
         text-align: center;
       }
       .options b.on { background: var(--brass); border-color: var(--edge); }
+
+      /* The card that asks for the PIN, where the heroes are behind one. It lies near
+         the top of the screen, clear of the keys a phone brings up to type on. */
+      .pin {
+        position: absolute;
+        left: 50%;
+        top: max(74px, 16%);
+        transform: translateX(-50%);
+        box-sizing: border-box;
+        width: min(284px, calc(100vw - 32px));
+        margin: 0;
+        padding: 4px 14px 13px;
+        border-radius: 9px;
+        background: linear-gradient(#fbf4de, #f1e5c2);
+        border: 1px solid var(--edge);
+        box-shadow: 0 0 0 2px #c9a352, 0 0 0 3px var(--edge), 0 8px 22px rgba(0, 0, 0, 0.5);
+        color: var(--ink);
+      }
+      .pin[hidden], .pin [hidden] { display: none; }
+      .pin .options-title { padding: 8px 0 7px; }
+      .pin p { margin: 0 0 10px; font: 13px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+      .pin-input {
+        box-sizing: border-box;
+        width: 100%;
+        padding: 7px 10px;
+        border-radius: 6px;
+        border: 1px solid rgba(110, 83, 31, 0.6);
+        background: rgba(255, 255, 255, 0.78);
+        color: var(--ink);
+        /* sixteen pixels, or a phone zooms the page in to the field */
+        font: 600 16px/1.3 system-ui, -apple-system, "Segoe UI", sans-serif;
+        letter-spacing: 0.24em;
+        text-align: center;
+        outline: none;
+        -webkit-user-select: text;
+        user-select: text;
+      }
+      .pin-input::placeholder { color: rgba(58, 42, 16, 0.42); letter-spacing: 0.24em; }
+      .pin-input:focus { border-color: var(--edge); box-shadow: 0 0 0 2px #c9a352; }
+      .pin .pin-note { min-height: 1.45em; margin: 8px 0 9px; font-size: 12px; color: #8a2a1c; }
+      .pin-keys { display: flex; justify-content: flex-end; gap: 8px; }
+      .pin-keys button {
+        min-width: 72px;
+        padding: 6px 14px;
+        border-radius: 999px;
+        border: 1px solid var(--edge);
+        background: rgba(255, 255, 255, 0.55);
+        color: var(--ink);
+        font: 600 12.5px/1.2 system-ui, -apple-system, "Segoe UI", sans-serif;
+        cursor: pointer;
+      }
+      .pin-keys .pin-main { background: var(--brass); box-shadow: inset 0 1px 0 rgba(255, 244, 205, 0.55); }
+      .pin-keys button:disabled { opacity: 0.55; cursor: default; }
 
       #hud {
         position: fixed;
@@ -259,6 +313,10 @@
         .cluster { transform: scale(0.82); }
         .plate { padding: 5px 12px 4px 14px; font-size: 12px; }
         .plate-hero { padding: 4px 11px 4px 8px; font-size: 10.5px; }
+      }
+      /* a phone on its side has little height, and its keys take most of it */
+      @media (max-height: 520px) {
+        .pin { top: calc(10px + env(safe-area-inset-top)); }
       }
     </style>
   </head>

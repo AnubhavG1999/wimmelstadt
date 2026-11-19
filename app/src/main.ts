@@ -2,9 +2,10 @@
 // by the hour and the weather, and lets the view roam over them.
 
 import * as THREE from 'three';
+import { openCollection, sourceFor } from './collection';
 import { buildBoard } from './engine/board';
 import { IsoRig } from './engine/camera';
-import { loadHeroes, sizeOutline } from './engine/hero';
+import { sizeOutline } from './engine/hero';
 import { atmosphereAt, makeAtmo } from './engine/look/atmosphere';
 import { U } from './engine/look/materials';
 import { Post, makeBackdrop } from './engine/look/post';
@@ -82,8 +83,10 @@ const boardMid = new THREE.Vector3((board.bounds.x0 + board.bounds.x1) / 2, 0, (
 
 // The heroes, each made from a real diecast. Every time the page loads, each
 // one is put on a tile picked at random, somewhere on its roads or on show.
-// Only the development server has any; without them the city has traffic alone.
-void loadHeroes().then((list) => {
+// On the collector's desk they come from the captures beside the app. Anywhere
+// else they are in the collection, behind a PIN, and until the device has been
+// unlocked the city has traffic alone. See src/collection.
+const collection = openCollection(sourceFor(query), (list) => {
   for (const h of list) if (!PARTY_TRICKS[h.info.capture]) console.warn(`${h.info.name} has no party trick yet. Every hero gets one: see src/heroes.`);
   // ?place=express-inner puts them on one road or spot instead, for looking at it
   board.placeHeroes(list, PARTY_TRICKS, query.get('place'));
@@ -222,6 +225,9 @@ const controls = buildControls(document.getElementById('ui')!, {
   focus() { focusMode = (focusMode + 1) % FOCUS.length; },
   stats() { showStats = !showStats; },
   turning() { rig.drift = !rig.drift; },
+  unlock: (pin) => collection.unlock(pin),
+  // the heroes leave with the lock, and the plainest way to take them out of the city is to load the page afresh
+  lock() { void collection.lock().then(() => location.reload()); },
   touched: () => wake(),
 });
 
@@ -238,6 +244,7 @@ function showControls(): void {
     title: wide && !following ? 'Wimmelstadt' : tile.def.name,
     hero: following ? board.heroes[follow].name : '',
     heroes: board.heroes.length, following,
+    lock: collection.state,
     focus: FOCUS[focusMode].name, stats: showStats, turning: rig.drift,
   });
 }
@@ -439,7 +446,8 @@ function frame(now: number): boolean {
   frames++;
   acc += elapsed;
   worst = Math.max(worst, elapsed);
-  if (now - lastWake > 4500) document.body.classList.add('idle');
+  // nothing fades away under somebody who is in the middle of typing the PIN
+  if (now - lastWake > 4500 && !controls.busy()) document.body.classList.add('idle');
 
   if (now - hudAt > 400) {
     fps = (frames * 1000) / Math.max(1, acc);
@@ -551,7 +559,7 @@ async function shot(name: string, o: ShotOptions = {}): Promise<string> {
 // A handle for poking at the city from the console.
 Object.assign(window, {
   wimmel: {
-    opts, rig, renderer, atmo, board, weather, bench, frame, shot,
+    opts, rig, renderer, atmo, board, weather, collection, bench, frame, shot,
     setHour(h: number | null) { pinned = h; lapse = false; },
     /** Lets this many seconds pass at once, without drawing them: for looking at what happens later. */
     advance(seconds: number) {

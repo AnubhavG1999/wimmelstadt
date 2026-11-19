@@ -91,29 +91,11 @@ function settle(root: THREE.Object3D, info: HeroInfo): LoadedHero {
 }
 
 /**
- * Loads every hero the development server has. A built copy of the app has
- * none yet, and that is not an error: the city simply has traffic and no heroes.
+ * Makes a hero of its model, which is a binary glTF file as the bench leaves
+ * it. Where the model comes from is the collection's business: see
+ * src/collection.
  */
-export async function loadHeroes(): Promise<LoadedHero[]> {
-  // a built copy does not go looking for them: there is nowhere for it to find any
-  if (!import.meta.env.DEV) return [];
-  let list: HeroInfo[];
-  try {
-    const res = await fetch('captures/heroes.json');
-    if (!res.ok || !(res.headers.get('Content-Type') ?? '').includes('json')) return [];
-    list = (await res.json()) as HeroInfo[];
-  } catch {
-    return [];
-  }
-  const loader = new GLTFLoader();
-  const heroes: LoadedHero[] = [];
-  for (const info of list) {
-    try {
-      const gltf = await loader.loadAsync(`captures/${info.capture}/hero/${info.model}`);
-      heroes.push(settle(gltf.scene, info));
-    } catch (e) {
-      console.warn(`Could not load the hero of ${info.capture}`, e);
-    }
-  }
-  return heroes;
+export async function heroFromModel(model: ArrayBuffer, info: HeroInfo): Promise<LoadedHero> {
+  const gltf = await new GLTFLoader().parseAsync(model, '');
+  return settle(gltf.scene, info);
 }
