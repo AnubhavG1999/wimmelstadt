@@ -669,8 +669,8 @@ export function champDeMars(k: Build, x: number, z: number, s: number, H: number
     area(k, rect(x - 5.5, z + d * (s - 1.2) - 1.5, x + 5.5, z + d * (s - 1.2) + 1.5), LAWN, 0.03);
   }
   for (const [sx, sz] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) {
-    // a booth beside each foot, with a queue at two of them
-    const bx = x + sx * (s - 4.2), bz = z + sz * (s - 0.2);
+    // a booth between the feet on the north and south sides, with a queue at two of them
+    const bx = x + sx * 6.2, bz = z + sz * (s - 1.6);
     b.box(bx - 0.9, 0, bz - 0.7, bx + 0.9, 2.2, bz + 0.7, 0x6a5444, { win: { cell: 1.8, storey: 2.2, lit: 0.9, kind: 2 }, seed: sx * 0.3 + sz * 0.1 });
     b.box(bx - 1.1, 2.2, bz - 0.9, bx + 1.1, 2.4, bz + 0.9, 0x4a3a30);
     if (sz > 0) for (let i = 0; i < 6; i++) k.person(bx - sx * (1.5 + i * 0.75), bz - 0.2 + (i % 2) * 0.3);

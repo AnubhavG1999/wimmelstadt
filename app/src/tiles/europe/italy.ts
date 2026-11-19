@@ -41,48 +41,63 @@ export const ITALY_GROUND: [string, number, number, number, number][] = [
 // ---------------------------------------------------------------------------
 
 /**
- * The Colosseum: an oval of arches. Its outer wall stands four storeys high
- * round the north side only, as the real one's does, and ends in a slope of
- * brick at either end. Round the south side the lower ring behind it shows,
- * and over that one sees the seats going down to the arena, with the walls of
- * the cellars laid bare in its floor.
+ * The Colosseum: an oval of arches, three tiers of them, each arch between
+ * two flat columns and under a cornice. Its outer wall stands four storeys
+ * high round the north side only, as the real one's does, and ends in a slope
+ * of brick at either end. Round the south side the lower ring behind it
+ * shows, with stumps of the lost wall in front of it, and over that one sees
+ * the seats going down to the arena, with the walls of the cellars laid bare
+ * in its floor.
  */
 export function colosseum(k: Build): void {
   const b = k.b;
   const { x: cx, z: cz } = COLOSSEUM;
-  const STONE = 0xdcc9a6, SHADE = 0xc9b58f, SEATS = 0xcfbb95, BRICK = 0xc29a74, SAND = 0xe2cfa0, EARTH = 0x7a6a55, HOLLOW = 0x4a3d30;
-  const RX = 14, RZ = 11.5, N = 36, st = 4.1, H = st * 4, LOW = st * 3;
+  const SHADE = 0xc9b58f, BAND = 0xe8d9b8, BRICK = 0xc29a74, SAND = 0xe2cfa0, EARTH = 0x7a6a55, HOLLOW = 0x4a3d30, STAIR = 0xa8956f;
+  /** Travertine, a little lighter here and a little darker there, as the real wall is; and the seats, in rings of two shades. */
+  const STONES = [0xdcc9a6, 0xd5c19c, 0xe1cfae, 0xd9c5a1], SEATS = [0xd6c39c, 0xc7b38b];
+  const RX = 14, RZ = 11.5, N = 44, st = 4.4, H = st * 4, LOW = st * 3;
+  /** The heights of the walk between the two banks of seats, and of the wall round the arena. */
+  const yM = 7.7, yA = 2.4;
+  const angle = (i: number): number => (i / N) * Math.PI * 2;
+  const mid = (i: number): number => angle(i + 0.5);
   /** A corner of the oval, `inset` in from its outer wall. */
-  const pt = (i: number, inset: number): P2 => {
-    const a = (i / N) * Math.PI * 2;
-    return [cx + Math.cos(a) * (RX - inset), cz + Math.sin(a) * (RZ - inset)];
-  };
-  const mid = (i: number): number => ((i + 0.5) / N) * Math.PI * 2;
+  const pt = (i: number, inset: number): P2 => [cx + Math.cos(angle(i)) * (RX - inset), cz + Math.sin(angle(i)) * (RZ - inset)];
   /** A stretch of upright wall between two corners, from y0 up to ya at one end and yb at the other. `out` is 1 if it faces outwards. */
-  const wall = (i: number, inset: number, y0: number, ya: number, yb: number, color: number, out: number, win?: WinSpec): void => {
+  const wall = (i: number, inset: number, y0: number, ya: number, yb: number, color: number, out: number): void => {
     const p = pt(i, inset), q = pt(i + 1, inset);
-    b.quad([p[0], y0, p[1]], [q[0], y0, q[1]], [q[0], yb, q[1]], [p[0], ya, p[1]], [Math.cos(mid(i)) * out, 0, Math.sin(mid(i)) * out], color, { win, seed: 0.3, L: Math.hypot(q[0] - p[0], q[1] - p[1]) });
+    b.quad([p[0], y0, p[1]], [q[0], y0, q[1]], [q[0], yb, q[1]], [p[0], ya, p[1]], [Math.cos(mid(i)) * out, 0, Math.sin(mid(i)) * out], color);
   };
   /**
    * An arch in a stretch of wall: a dark opening with a round head, which glows from within at night. The engine's
    * windows are panes of glass, and a ring of those is an office block. With `square` it is a small window instead.
    */
-  const arch = (i: number, inset: number, y0: number, square = false): void => {
+  const arch = (i: number, inset: number, y0: number, out = 1, square = false): void => {
     const p = pt(i, inset), q = pt(i + 1, inset), len = Math.hypot(q[0] - p[0], q[1] - p[1]);
-    const ux = (q[0] - p[0]) / len, uz = (q[1] - p[1]) / len, nx = Math.cos(mid(i)), nz = Math.sin(mid(i));
-    const mx = (p[0] + q[0]) / 2 + nx * 0.05, mz = (p[1] + q[1]) / 2 + nz * 0.05, hw = len * (square ? 0.16 : 0.29);
+    const ux = (q[0] - p[0]) / len, uz = (q[1] - p[1]) / len, nx = Math.cos(mid(i)) * out, nz = Math.sin(mid(i)) * out;
+    const mx = (p[0] + q[0]) / 2 + nx * 0.05, mz = (p[1] + q[1]) / 2 + nz * 0.05, hw = len * (square ? 0.17 : 0.3);
     const at = (u: number, y: number): V3 => [mx + ux * u, y, mz + uz * u];
     const o = { win: interior(6) };
     if (square) {
-      b.quad(at(-hw, y0 + 1.5), at(hw, y0 + 1.5), at(hw, y0 + 2.5), at(-hw, y0 + 2.5), [nx, 0, nz], HOLLOW, o);
+      b.quad(at(-hw, y0 + 1.6), at(hw, y0 + 1.6), at(hw, y0 + 2.7), at(-hw, y0 + 2.7), [nx, 0, nz], HOLLOW, o);
       return;
     }
-    const ys = y0 + st * 0.52;
-    b.quad(at(-hw, y0 + 0.4), at(hw, y0 + 0.4), at(hw, ys), at(-hw, ys), [nx, 0, nz], HOLLOW, o);
+    const ys = y0 + st * 0.5;
+    b.quad(at(-hw, y0 + 0.45), at(hw, y0 + 0.45), at(hw, ys), at(-hw, ys), [nx, 0, nz], HOLLOW, o);
     for (let j = 0; j < 3; j++) {
       const a0 = (j / 3) * Math.PI, a1 = ((j + 1) / 3) * Math.PI;
       tri(b, at(0, ys), at(Math.cos(a0) * hw, ys + Math.sin(a0) * hw), at(Math.cos(a1) * hw, ys + Math.sin(a1) * hw), [nx, 0, nz], HOLLOW, o);
     }
+  };
+  /** A flat column up the wall at a corner of the oval, from the ground to `top`. */
+  const column = (i: number, inset: number, top: number): void => {
+    const a = angle(i), [x, z] = pt(i, inset - 0.1), tx = -Math.sin(a) * 0.17, tz = Math.cos(a) * 0.17;
+    b.quad([x - tx, 0, z - tz], [x + tx, 0, z + tz], [x + tx, top, z + tz], [x - tx, top, z - tz], [Math.cos(a), 0, Math.sin(a)], BAND);
+  };
+  /** A cornice along a stretch of wall at height `y`: a band that stands proud of it, and the ledge on top of the band. */
+  const cornice = (i: number, inset: number, y: number): void => {
+    const p = pt(i, inset - 0.16), q = pt(i + 1, inset - 0.16), p0 = pt(i, inset), q0 = pt(i + 1, inset);
+    b.quad([p[0], y - 0.3, p[1]], [q[0], y - 0.3, q[1]], [q[0], y + 0.06, q[1]], [p[0], y + 0.06, p[1]], [Math.cos(mid(i)), 0, Math.sin(mid(i))], BAND);
+    b.quad([p[0], y + 0.06, p[1]], [q[0], y + 0.06, q[1]], [q0[0], y + 0.06, q0[1]], [p0[0], y + 0.06, p0[1]], [0, 1, 0], BAND);
   };
   /** A stretch of floor between two rings of the oval, which may slope down from the outer to the inner. */
   const floor = (i: number, in0: number, y0: number, in1: number, y1: number, color: number): void => {
@@ -90,42 +105,69 @@ export function colosseum(k: Build): void {
     const slope = (y0 - y1) / (in1 - in0), nl = Math.hypot(1, slope);
     b.quad([a[0], y0, a[1]], [c[0], y0, c[1]], [d[0], y1, d[1]], [e[0], y1, e[1]], [(-Math.cos(mid(i)) * slope) / nl, 1 / nl, (-Math.sin(mid(i)) * slope) / nl], color);
   };
+  /** A stair down through a bank of seats, along the line in from a corner of the oval. */
+  const stair = (i: number, in0: number, y0: number, in1: number, y1: number): void => {
+    const a = angle(i), tx = -Math.sin(a) * 0.16, tz = Math.cos(a) * 0.16, p = pt(i, in0), q = pt(i, in1);
+    b.quad([p[0] - tx, y0 + 0.06, p[1] - tz], [p[0] + tx, y0 + 0.06, p[1] + tz], [q[0] + tx, y1 + 0.06, q[1] + tz], [q[0] - tx, y1 + 0.06, q[1] - tz], [-Math.cos(a) * 0.6, 0.8, -Math.sin(a) * 0.6], STAIR);
+  };
 
   for (let i = 0; i < N; i++) {
-    const north = i >= N / 2;
-    if (north) {
-      // the outer wall: full height, but for the stretch at either end, where it slopes down
-      const ya = i === N / 2 ? LOW : H, yb = i === N - 1 ? LOW : H, brick = ya !== yb;
-      wall(i, 0, 0, ya, yb, brick ? BRICK : STONE, 1);
-      for (let s = 0; s < 3; s++) arch(i, 0, s * st);
-      if (!brick) arch(i, 0, LOW, true);
-      wall(i, 1.6, LOW, ya, yb, SHADE, -1);
-      const p = pt(i, 0), q = pt(i + 1, 0), r = pt(i + 1, 1.6), s = pt(i, 1.6);
-      b.quad([p[0], ya, p[1]], [q[0], yb, q[1]], [r[0], yb, r[1]], [s[0], ya, s[1]], [0, 1, 0], SHADE);
-    } else {
-      wall(i, 2.0, 0, LOW, LOW, STONE, 1);
-      for (let s = 0; s < 3; s++) arch(i, 2.0, s * st);
+    const north = i >= N / 2, inset = north ? 0 : 2.0;
+    // how high the outer wall stands at the two ends of this stretch: it slopes down over the last stretch at either end
+    const ya = north && i !== N / 2 ? H : LOW, yb = north && i !== N - 1 ? H : LOW, brick = ya !== yb;
+    // --- three tiers of arches, each under its cornice ---
+    for (let s = 0; s < 3; s++) {
+      wall(i, inset, s * st, (s + 1) * st, (s + 1) * st, brick ? BRICK : STONES[(i * 5 + s * 3) % 4], 1);
+      arch(i, inset, s * st);
+      cornice(i, inset, (s + 1) * st);
     }
-    // the walk along the top of the lower ring, the seats in two banks with a walk between them, and the wall round the arena
+    column(i, i === 0 ? 0 : inset, i > N / 2 ? H : LOW);
+    if (north) {
+      // --- the fourth storey of the outer wall: plain, with a small window, and at either end the slope of brick ---
+      wall(i, 0, LOW, ya, yb, brick ? BRICK : STONES[(i * 5 + 1) % 4], 1);
+      if (!brick) {
+        arch(i, 0, LOW, 1, true);
+        cornice(i, 0, H);
+      }
+      // its inner side, which is seen across the arena, with an arch in every stretch, and its top
+      wall(i, 1.6, LOW, ya, yb, SHADE, -1);
+      if (!brick) arch(i, 1.6, LOW, -1);
+      const p = pt(i, 0), q = pt(i + 1, 0), r = pt(i + 1, 1.6), t = pt(i, 1.6);
+      b.quad([p[0], ya, p[1]], [q[0], yb, q[1]], [r[0], yb, r[1]], [t[0], ya, t[1]], [0, 1, 0], SHADE);
+    }
+    // --- inside: the walk along the top of the lower ring, the seats in two banks with a walk between, and the wall round the arena ---
     floor(i, north ? 1.6 : 2.0, LOW, 3.4, LOW, SHADE);
-    floor(i, 3.4, LOW, 5.3, 7.4, SEATS);
-    floor(i, 5.3, 7.4, 5.9, 7.4, SHADE);
-    floor(i, 5.9, 7.4, 7.5, 2.4, SEATS);
-    wall(i, 7.5, 0.5, 2.4, 2.4, SHADE, -1);
+    floor(i, 3.4, LOW, 4.35, (LOW + yM) / 2, SEATS[0]);
+    floor(i, 4.35, (LOW + yM) / 2, 5.3, yM, SEATS[1]);
+    floor(i, 5.3, yM, 5.9, yM, SHADE);
+    floor(i, 5.9, yM, 6.7, (yM + yA) / 2, SEATS[0]);
+    floor(i, 6.7, (yM + yA) / 2, 7.5, yA, SEATS[1]);
+    wall(i, 7.5, 0.5, yA, yA, SHADE, -1);
+    if (i % 4 === 0) {
+      stair(i, 3.4, LOW, 5.3, yM);
+      stair(i, 5.9, yM, 7.5, yA);
+    }
   }
   // where the outer wall ends, its thickness shows, in brick
   for (const i of [0, N / 2]) {
     const p = pt(i, 0), q = pt(i, 2.0);
     b.quad([p[0], 0, p[1]], [q[0], 0, q[1]], [q[0], LOW, q[1]], [p[0], LOW, p[1]], [0, 0, 1], BRICK);
   }
-  // the arena: bare earth, the walls of the cellars under it, and a piece of the floor laid over them again
+  // stumps of the lost outer wall, round the south side
+  for (let i = 2; i < N / 2; i += 2) {
+    const [x, z] = pt(i, 0.45), high = 0.5 + ((i * 7) % 5) * 0.28;
+    b.obox(x, high / 2, z, 0.42, high / 2, 0.42, angle(i), STONES[i % 4]);
+  }
+
+  // --- the arena: bare earth, the walls of the cellars under it, and a piece of the floor laid over them again ---
   flat(b, oval(cx, cz, RX - 7.5, RZ - 7.5, N), 0.5, EARTH);
   for (const [dz, half] of [[-2.4, 4.4], [-0.8, 5.8], [0.8, 5.8], [2.4, 4.4]]) b.box(cx - half, 0.5, cz + dz - 0.13, cx + 2.6, 1.4, cz + dz + 0.13, SHADE);
+  for (const dx of [-3.4, -1.2, 1.0]) b.box(cx + dx - 0.13, 0.5, cz - 2.4, cx + dx + 0.13, 1.4, cz + 2.4, SHADE);
   b.box(cx + 2.6, 1.3, cz - 2.9, cx + 5.7, 1.5, cz + 2.9, SAND);
 
   for (let i = 0; i < 16; i++) {
     const a = k.rand() * Math.PI * 2, south = Math.sin(a) > 0;
-    const inset = south ? 0.2 + k.rand() * 1.2 : -0.5 - k.rand() * 0.8;
+    const inset = south ? 0.9 + k.rand() * 0.8 : -0.5 - k.rand() * 0.8;
     k.person(cx + Math.cos(a) * (RX - inset), cz + Math.sin(a) * (RZ - inset));
   }
   for (let i = 0; i < 7; i++) {
@@ -134,7 +176,7 @@ export function colosseum(k: Build): void {
   }
   for (let i = 0; i < 6; i++) {
     const a = k.rand() * Math.PI * 2;
-    k.person(cx + Math.cos(a) * (RX - 5.6), cz + Math.sin(a) * (RZ - 5.6), 7.4);
+    k.person(cx + Math.cos(a) * (RX - 5.6), cz + Math.sin(a) * (RZ - 5.6), yM);
   }
   for (const a of [45, 135, 225, 315]) k.lights.push({ x: cx + Math.cos(rad(a)) * 15, z: cz + Math.sin(rad(a)) * 12.5, r: 13, color: '#ffcf8a', k: 0.65 });
   k.lights.push({ x: cx, z: cz, r: 9, color: '#ffe2ae', k: 0.5 });

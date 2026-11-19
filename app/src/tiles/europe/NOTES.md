@@ -60,7 +60,7 @@ Besides these: Westminster Bridge, Parliament Square, a bus stand with a double-
 | `london-city.ts` | The Tower, St Paul's, the palace, Piccadilly Circus, the Gherkin, Ace Cafe, and London's pavements |
 | `paris.ts` | Everything in Paris but the Eiffel Tower itself |
 | `italy.ts` | Everything in Italy but the Leaning Tower itself |
-| `landmarks.ts` | Big Ben, the Eiffel Tower and the Leaning Tower, which came from the look prototype |
+| `landmarks.ts` | Big Ben and the Leaning Tower, which came from the look prototype, and the Eiffel Tower, built again as open ironwork |
 | `parts.ts` | Small parts that several landmarks share |
 | `air.ts`, `water.ts` | Concorde and the balloon; the boats |
 
@@ -117,10 +117,11 @@ The London Eye turns. The guard marches up and down the palace's forecourt. The 
 - **The Moulin Rouge stands at the west foot of Montmartre**, with a merry-go-round and the painters' square beside it. The real painters are at the top of the hill.
 - **The Trocadéro's wings are straight.** The real ones curve. It stands inside the river's bend, with the Pont d'Iéna beside it.
 - **The flag hangs under the Arc de Triomphe every day**, and the lamp at the top of the Eiffel Tower sweeps round every night.
+- **The Eiffel Tower is slimmer than the real one.** Its feet are 29 apart and it is 110 high, where the real one's would be 46 apart. Its ironwork is a few dozen bars to a leg, with a cross in every panel.
 
 **Italy**
 
-- **The Colosseum's outer wall stands round its north side**, as the real one's does, and it is set so that one looks into the arena from the south-east.
+- **The Colosseum's outer wall stands round its north side**, as the real one's does, and it is set so that one looks into the arena from the south-east. It has 44 arches to a tier, where the real one has 80.
 - **Pisa's tower leans a little more than the real one**, and to the south, towards whoever is looking.
 - **Florence's cathedral looks south.** The real one looks west. Its square is open to the south for the same reason the hero places are.
 - **The Ponte Vecchio's corridor runs along its south side.**
@@ -149,9 +150,17 @@ Everything else is generic or invented: THE RED LION, TEA ROOMS, FISH & CHIPS, B
 
 ## What it costs
 
-On the machine it was built on: about 30,000 triangles, 440 people, 97 trees and 89 vehicles, and 3 to 4 thousandths of a second for a frame with `wimmel.bench(60)`. North America, on the same machine, is about 43,000 triangles and 5 thousandths of a second.
+On the machine it was built on, with the tile alone: about 34,700 triangles that stand still, 440 people, 97 trees and 89 vehicles, and 3 to 4.5 thousandths of a second for a frame with `wimmel.bench(60)`. North America, on the same machine, is about 43,000 triangles and 5 thousandths of a second. The Eiffel Tower is about 3,300 of the triangles and the Colosseum about 2,800: they are the two things the collector asked to have more work on.
 
-Fifteen minutes of traffic, stepped a quarter of a second at a time with `wimmel.advance`: no two vehicles at the same height came closer than 4.95, none stood still, and `vehicles.shared()` was empty.
+## Checks
+
+All on 19 November 2026, the last of them after `main` was merged in at `f493936`.
+
+- **Traffic.** Fifteen minutes, stepped a quarter of a second at a time with `wimmel.advance`: no two of the 89 vehicles at the same height came closer than 4.95, none stood still, and `vehicles.shared()` was empty. The nearest are in neighbouring lanes of the star.
+- **Heroes.** With `?place=`, each of the six places took a hero, standing where the plan says, and a ray from it towards the camera met nothing. On the two routes tried, `paris-circuit` and `montmartre`, a hero drove. No picture of a hero was taken.
+- **Nothing in a street.** `clear` is asked about every plot and every box in each quarter's list, and says nothing.
+- **Weather and hours.** Looked at by day and by night from all four sides, and in rain and in snow.
+- `npm run typecheck` and `npm run build` pass, and the console shows no warnings and no errors.
 
 ## For the engine
 
@@ -172,9 +181,53 @@ Missed:
 
 - **`tri` trusts the order of its corners, and `quad` does not.** A triangle given the wrong way round is drawn only from behind, so a gable or the end of a hipped roof is a hole from the side it is meant to be seen from. Parliament's roof and Tower Bridge's had this until it was found. `tri` in `parts.ts` puts the corners right, as `quad` does.
 - **A window is always a pane of glass.** A ring of them made the Colosseum an office block. Its arches are built instead, five triangles each: a dark opening that glows at night. A kind of window that is a dark arch would have saved 570 triangles there, and would suit every old building in Europe.
-- **A car that has stopped at a merge can wait for ever.** Montmartre's two roads were first laid to share a lane for 21 units, and the engine found it. In fifteen minutes of traffic, one car of the hill's loop stood at the merge for 895 of the 900 seconds. The other road carried 14 vehicles on about 520 units, one every 37 units, and at 10 units a second that is a gap of under four seconds. A stopped car is given the lane only when the next one is clearly later than it, and from a standstill it needs about three and a half seconds to reach the lane. So a steady stream never lets it in. The tile now gives the hill's first level two lanes, and shares none. A waiting car that has waited long enough needs to be let in.
+- **A car that had stopped at a merge could wait for ever.** This is mended on `main` since `9b09ca6`: a vehicle that has stood waiting for two and a half seconds is let in. It was found here. Montmartre's two roads were first laid to share a lane for 21 units, and in fifteen minutes of traffic one car of the hill's loop stood at the merge for 895 of the 900 seconds, because the other road's 14 vehicles came by every four seconds and a car starting from rest needs about three and a half to reach the lane. The tile gives the hill's first level two lanes and shares none, and that is kept: it was built, and it shows the two roads side by side.
 - **Traffic cannot be made to wait**, so a bridge cannot lift while a road crosses it. Tower Bridge stays down.
 - **No vehicle of a tile's own shape in the traffic**, as the page says. London's moving buses are the plain bus in red.
 - **The tile's people cannot be dressed.** The guard, the Yeoman Warders and the gondolier are built as boxes in the tile's own mesh.
 - **Pitched roofs are hip roofs only.** The ordinary houses of Paris have them in zinc, where they would have mansards.
 - **Where two streets meet at a T, the one that ends has to run on to the far kerb of the other** for its junction to be found, and its sidewalks then lie on the other street's. They are the same colour, so nothing shows.
+
+## For the next tile
+
+What building Europe taught, for someone who is about to start a tile and has not seen this one. Written on 19 November 2026, against `main` at `f493936`. Japan's notes say a great deal that held here too: what hides what, the heights the engine lays its streets at, how to check a hero's place without looking at a hero. This is what Europe adds.
+
+### Worth doing again
+
+- **Roads that are not a grid, from a small kernel of your own.** `lanes.ts` lays a lane from straights and circles and works out the bends between them. With it a roundabout, an avenue that leaves one at any angle and a hairpin are each a line or two. It depends on nothing else in this folder.
+- **Give every loop its own lane, and let roundabouts sort them.** Each quarter here has a ring of two lanes. The inner lane is one loop and never leaves. The outer lane is another, and goes off on a tour and comes back. Where loops meet at a roundabout, each takes a different part of the circle: the one going the long way round has the outer lane, the short way the inner. No lane is shared and nothing crosses, so nobody ever waits.
+- **Two rules of the road on one tile.** London keeps left and Paris right. London's loops are simply the other way round, and the two never share a street: a row of trees on a lawn is the border.
+- **A plan from straight above.** It is in "For the engine". Every decision about where a road or a building went was made on it.
+- **Ask the engine's paths whether anything stands in a street**, and ask about every footprint, not only the boxes of the blockout. `clear` in `index.ts` found a wing of the Louvre in a roundabout's road, and a round thing's corner on a sidewalk, that no picture had shown. Round and slanted things need several small boxes: one big box gives false alarms.
+- **A file for each quarter, and one for the parts they share.** By the third quarter a dome, a roof, an arch and a rose window were one call each (`parts.ts`), and a landmark took a quarter of the time the first ones had.
+- **Decide heights together.** Before building, write the real heights of the tall things side by side and choose each toy height from them, so that Big Ben, a dome and a glass tower stand in the right order. Plan sizes come from the ground there is. Heights come from each other.
+- **Small things that move.** A guard that marches, sails, a merry-go-round, a gondola, a boat on the river, a lamp that sweeps: each is one mesh and a few lines in `k.each`, and they are what the collector's eye goes to.
+- **Send pictures after each quarter, and ask one question early.** After the first group of landmarks I asked whether that was the right amount of detail. The answer was "Yes, carry on", and nothing more had to be asked until the end.
+
+### What cost time, and the way past it
+
+1. **A hero's place behind a building.** Two of my first five were hidden from the first view: one behind the house on the piazza's south side, one behind the very gate it stood at. The view looks down at 38 degrees from the south-east, so anything h high hides 1.3 h of ground to its north-west. I found it only at the end, by sending a ray from each place towards the camera and trying it against the tile's triangles: in the console, take the biggest mesh in `wimmel.board.tiles[0].standing.group` that has an `aWall` attribute, and for a few points on the car see whether a line that goes 38 degrees up and 42 degrees round from south towards east meets any of its triangles. Do it at the blockout. Open each square to the south-east, and put the show side of each landmark to the south or the east.
+2. **The engine's windows are glass.** That is right for a house and wrong for a ruin: the Colosseum with windows was an office block. Its arches are built now, five triangles each, dark, with `interior(6)` so that they glow at night. For old buildings generally: tall slits (`kind: 6`) pass for Gothic windows, small ones (`kind: 4`) for a castle's, and anything round-headed has to be built.
+3. **Rows of windows are counted from the ground, not from the bottom of the wall.** A wall that starts at height 10.5 with storeys of 4 gets its windows cut in half at its foot. Make the heights of a building's stages whole numbers of its `storey`, or give the stage a `storey` that divides its own foot.
+4. **`tri` draws nothing from the front if its corners run the wrong way.** `quad` puts its corners right and `tri` does not. Four of my roof ends were holes until a later pass found them, and no picture from the usual side had shown it. Use `tri` in `parts.ts`.
+5. **The most looked-at things got the least work.** I carried the Eiffel Tower over from the prototype as six solid bars and gave the Colosseum the engine's windows, and those are the two the collector sent back. The tallest thing on the tile and its best-known ruin deserve the triangles: I had finished 13,000 under North America's count with them unspent.
+6. **Thin bars come out dark.** The outline is drawn round every bar, so ironwork is mostly outline. Paint it a good deal lighter than it should look.
+7. **Taking pictures in the pane the collector is looking at.** `wimmel.shot` moves the view and the hour of whatever page it is called on, and he may have gone to another address by then: I got pictures of the whole city where I expected my tile. Open a tab of your own for checks and leave his alone.
+8. **A session that is summarised forgets its files.** Read the file again before editing it. For anything longer than a line, write a small script that swaps one exact piece of text for another and stops if the piece is not there: it cannot half-apply, and it is a record of what was done.
+
+### What I would do differently from the start
+
+- Check hero places and footprints at the blockout, as above.
+- Build the tile's centrepiece first and properly, and show it, before the smaller things.
+- Keep a list of footprints for the street check from the first box.
+- Leave the numbered boards up only as long as a thing is a box, and take each down with its box. I did, and it made every picture show how much was left.
+
+### What the page for new tiles leaves out or has wrong
+
+- That `tri` trusts the order of its corners.
+- That rows of windows are counted from the ground.
+- That `interior(lit)` on a dark colour with a large `lit` makes a thing that is dark by day and glows at night: an arch, a doorway, a lamp-lit porch.
+- That `k.b.moved(x, y, z, yaw, fn)` turns and moves whatever is added inside it. A building written along x can be stood along z with one line, without `placed`.
+- That `walls` and `flat` in `ground.ts` build any outline's walls and floor, which is how a curved front or an oval is made.
+- That `wimmel.info().city` has the tile's own counts, and `wimmel.rig.elev` the angle the view looks down at.
+- That a hero's place has to be seen from the first view, not only be there. It says "can be seen", and a place can pass `?place=` and still be behind a wall.

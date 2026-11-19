@@ -16,8 +16,9 @@
 // No lane is shared either. The engine lets two loops take turns on one lane,
 // and Montmartre's two roads did so along the hill's first level, until a
 // quarter of an hour's traffic showed a car of the hill's loop waiting at the
-// merge for all of it: a steady stream leaves a stopped car no gap. So the
-// first level has two lanes, one for each road.
+// merge for all of it: a steady stream left a stopped car no gap. So the
+// first level has two lanes, one for each road. The engine has since been
+// mended, and a car that waits is now let in. The two lanes stay as they are.
 
 import type { StreetOpts } from '../../engine/roads';
 import type { Seg } from '../../engine/paths';
