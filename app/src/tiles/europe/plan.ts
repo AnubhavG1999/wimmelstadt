@@ -170,7 +170,7 @@ export const THINGS: Thing[] = [
   // Italy
   T(19, 'pisa', 'LEANING TOWER OF PISA', 'italy', -34.8, 96.9, 43.6, 13.4, 24),
   T(20, 'colosseum', 'COLOSSEUM', 'italy', COLOSSEUM.x - 14, COLOSSEUM.z - 11.5, 28, 23, 17),
-  T(21, 'duomo', 'DUOMO OF FLORENCE', 'italy', 90, 1.7, 13.2, 34, 35.5),
+  T(21, 'duomo', 'DUOMO OF FLORENCE', 'italy', 90, 1.7, 13.2, 34, 37.6),
   T(22, 'ponte-vecchio', 'PONTE VECCHIO', 'italy', 69.5, 53, 17, 6, 6),
   T(23, 'venice', 'VENICE & RIALTO', 'italy', 87.3, 76.5, 16.5, 36, 32),
   T(24, 'piazza', 'PIAZZA & FOUNTAIN', 'italy', -68, 49, 26, 23, 25),
