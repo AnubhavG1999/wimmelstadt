@@ -495,11 +495,12 @@ export function buildCity(): City {
     const s = SHOWROOM;
     const wall = 0xe9e3d6, inner = 0xf5f1e8;
     cityB.box(s.x0, 0, s.z0, s.x1, 0.06, s.z1, 0xe9e6df, { faces: 'T', win: interior(0.9) });
-    cityB.box(s.x0, 0, s.z0, s.x1, s.h, s.z0 + 0.6, wall, { faces: 'NEWT' });
+    // (the walls have no tops of their own: the roof lies on them, and two tops at one height flicker)
+    cityB.box(s.x0, 0, s.z0, s.x1, s.h, s.z0 + 0.6, wall, { faces: 'NEW' });
     cityB.box(s.x0 + 0.6, 0.06, s.z0 + 0.5, s.x1 - 0.6, s.h - 0.7, s.z0 + 0.6, inner, { faces: 'S', win: interior(0.75) });
-    cityB.box(s.x0, 0, s.z0 + 0.6, s.x0 + 0.6, s.h, s.z1, wall, { faces: 'WST' });
+    cityB.box(s.x0, 0, s.z0 + 0.6, s.x0 + 0.6, s.h, s.z1, wall, { faces: 'WS' });
     cityB.box(s.x0 + 0.5, 0.06, s.z0 + 0.6, s.x0 + 0.6, s.h - 0.7, s.z1, inner, { faces: 'E', win: interior(0.75) });
-    cityB.box(s.x1 - 0.6, 0, s.z0 + 0.6, s.x1, s.h, s.z1, wall, { faces: 'EST' });
+    cityB.box(s.x1 - 0.6, 0, s.z0 + 0.6, s.x1, s.h, s.z1, wall, { faces: 'ES' });
     cityB.box(s.x1 - 0.6, 0.06, s.z0 + 0.6, s.x1 - 0.5, s.h - 0.7, s.z1, inner, { faces: 'W', win: interior(0.75) });
     cityB.box(s.x0 - 0.4, s.h - 0.7, s.z0 - 0.2, s.x1 + 0.4, s.h, s.z1 + 0.9, 0xd9d4ca, { top: 0x8d8a83 });
     cityB.box(s.x0 + 0.6, s.h - 0.75, s.z0 + 0.6, s.x1 - 0.6, s.h - 0.7, s.z1, 0xffffff, { faces: 'B', win: interior(0.95) });
@@ -539,10 +540,15 @@ export function buildCity(): City {
     const c = CARPARK;
     const slab = 0xc4c0b6, wall = 0xb3aea3;
     cityB.box(c.x0, 0, c.z0, c.x1, 0.05, c.z1, slab, { faces: 'T', win: interior(0.5) });
+    // The floors and the roof stop inside the walls, and a hair short of the open
+    // side. If their edges reached the outside they would lie in the same plane as
+    // the walls' faces and the columns' fronts, and the two would flicker through
+    // each other: at night, when the floors glow, that showed as ragged bright bands.
+    const fx0 = c.x0 + 0.6, fx1 = c.x1 - 0.6, fz0 = c.z0 + 0.6, fz1 = c.z1 - 0.04;
     for (let f = 1; f < c.floors; f++) {
-      cityB.box(c.x0, f * STOREY - 0.5, c.z0, c.x1, f * STOREY, c.z1, slab, { faces: 'NESWTB', win: interior(0.5) });
+      cityB.box(fx0, f * STOREY - 0.5, fz0, fx1, f * STOREY, fz1, slab, { faces: 'STB', win: interior(0.5) });
     }
-    cityB.box(c.x0, c.roofY - 0.7, c.z0, c.x1, c.roofY, c.z1, slab, { top: ASPHALT });
+    cityB.box(fx0, c.roofY - 0.7, fz0, fx1, c.roofY, fz1, slab, { faces: 'ST', top: ASPHALT });
     cityB.box(c.x0 + 0.6, c.roofY - 0.75, c.z0 + 0.6, c.x1 - 0.6, c.roofY - 0.7, c.z1, 0xffffff, { faces: 'B', win: interior(0.6) });
     // the back and side walls: plain outside, lit inside
     cityB.box(c.x0, 0, c.z0, c.x1, c.roofY + 1, c.z0 + 0.6, wall, { faces: 'NEWT' });

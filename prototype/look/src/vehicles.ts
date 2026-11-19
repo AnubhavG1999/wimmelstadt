@@ -575,11 +575,30 @@ export function buildVehicles(): Vehicles {
     g.addColorStop(0, '#fff'); g.addColorStop(0.55, '#bbb'); g.addColorStop(1, '#000');
     ctx.fillStyle = g; ctx.fillRect(0, 0, 64, 64);
   });
-  const poolTex = radialTexture(128, 64, (ctx) => {
-    ctx.setTransform(1, 0, 0, 0.5, 0, 16);
-    const g = ctx.createRadialGradient(10, 32, 0, 10, 32, 116);
-    g.addColorStop(0, '#fff'); g.addColorStop(0.25, '#999'); g.addColorStop(0.6, '#333'); g.addColorStop(1, '#000');
-    ctx.fillStyle = g; ctx.fillRect(0, -32, 128, 128);
+  // A beam, not a patch: narrow at the lamps, fanning out and fading with distance,
+  // and dark at every edge of the square it is drawn on, so that no edge ever shows.
+  const poolTex = radialTexture(128, 128, (ctx) => {
+    const S = 128, img = ctx.createImageData(S, S);
+    const smooth = (a: number, b: number, x: number) => {
+      const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
+      return t * t * (3 - 2 * t);
+    };
+    for (let y = 0; y < S; y++) {
+      for (let x = 0; x < S; x++) {
+        const u = (x + 0.5) / S; // along the beam, away from the car
+        const v = Math.abs(((y + 0.5) / S) * 2 - 1); // across it, from the middle outwards
+        const half = 0.3 + 0.7 * Math.pow(u, 0.85); // how wide the beam is here
+        const across = 1 - smooth(0.4, 1, v / half);
+        const along = Math.pow(1 - u, 1.5) * smooth(0, 0.05, u);
+        // close to the car the two lamps still read as two
+        const lamps = Math.exp(-(((v - 0.19) / 0.1) ** 2)) * (1 - smooth(0.05, 0.4, u));
+        const c = Math.round(255 * Math.min(1, across * along * (0.8 + 0.6 * lamps)));
+        const i = (y * S + x) * 4;
+        img.data[i] = img.data[i + 1] = img.data[i + 2] = c;
+        img.data[i + 3] = 255;
+      }
+    }
+    ctx.putImageData(img, 0, 0);
   });
   const sprayTex = radialTexture(64, 64, (ctx) => {
     for (const [x, y, r, a] of [[46, 32, 16, 0.9], [30, 24, 13, 0.6], [30, 41, 13, 0.6], [14, 32, 12, 0.35]]) {
@@ -628,10 +647,11 @@ export function buildVehicles(): Vehicles {
     m4.makeBasis(sx, up, sz).setPosition(p2);
     shadows.setMatrixAt(v.shadow, m4);
     if (!moving || v.fx < 0) return;
-    // the pool of light ahead
-    sx.copy(fwd).multiplyScalar(11);
-    sz.copy(right).multiplyScalar(v.wid + 3.6);
-    p2.copy(pos).addScaledVector(fwd, v.len / 2 + 5.0).addScaledVector(up, 0.09);
+    // the beam ahead: it starts at the nose, as wide as the lamps are apart, and
+    // stays within the lane at its far end
+    sx.copy(fwd).multiplyScalar(13);
+    sz.copy(right).multiplyScalar(v.wid + 3.8);
+    p2.copy(pos).addScaledVector(fwd, v.len / 2 + 6.3).addScaledVector(up, 0.09);
     m4.makeBasis(sx, up, sz).setPosition(p2);
     pools.setMatrixAt(v.fx, m4);
     // the spray behind, longer the faster it goes
