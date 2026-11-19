@@ -90,6 +90,25 @@ On the roads a hero is best seen on the viaduct, on the Peak road, on the Island
 
 Ten plain vehicles are parked: two on the summit, one waiting for the car ferry, and the rest in Sheung Wan and Kowloon. Two public light buses and the Peninsula's green car are shapes of the tile's own that stand still.
 
+## How high things stand
+
+Added by the main session on 19 November 2026, when the tile joined the board. The city's towers are roughly to one scale, about 3.2 metres to a unit, which North America's set: see [the page for tile builders](../../../../docs/building-a-tile.md).
+
+| | Units | In life | At that scale |
+| --- | --- | --- | --- |
+| ICC | 145 | 484 m | 153 |
+| Two IFC | 125 | 416 m | 132 |
+| Central Plaza, to the top of its mast | 121 | 374 m | 118 |
+| Bank of China Tower, to its roof | 110 | 315 m | 100 |
+| Bank of China Tower, to the top of its masts | 125 | 367 m | 116 |
+| Jardine House | 60 | 179 m | 57 |
+| HSBC | 55 | 179 m | 57 |
+| The Clock Tower | 30 | 44 m | 14 |
+| The Coliseum | 24 | 41 m | 13 |
+| The Peak | 39 | 552 m | 175 |
+
+The towers are within a tenth of the scale and stand in the order they do in life. The Clock Tower and the Coliseum are small landmarks and stand about twice their scale height, so that they can be recognised. The Peak is a toy, as every mountain is. The heights in life are the commonly published ones.
+
 ## Liberties taken with the real place
 
 - **Where the Peak stands.** It is in the middle of the Island's west side, south of Central, with its road on the south face. On a first layout it stood behind Central, as it does in life, and Central's towers hid all of it from the opening view. Mid-Levels and the Peak Tram are on its north face, towards Central.

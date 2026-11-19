@@ -90,6 +90,18 @@ Traffic keeps left. A loop round one block runs anticlockwise in the lanes next 
 
 How many vehicles a route carries is not free. A bend of radius 3.5 is driven at about 7.7, and at that speed a lane passes one vehicle every two seconds. With more than that on a route, a queue forms that never clears and backs up into a fast stretch, and vehicles arriving there cannot stop in time: they drive through each other. Each route here has about three quarters of what its slowest stretch can pass, or less. See "Checks".
 
+## How high things stand
+
+Added by the main session on 19 November 2026, when the tile joined the board. The city's towers are roughly to one scale, about 3.2 metres to a unit, which North America's set: see [the page for tile builders](../../../../docs/building-a-tile.md).
+
+| | Units | In life | At that scale |
+| --- | --- | --- | --- |
+| Tokyo Tower | 112 | 333 m | 105 |
+| Kyoto Tower, with the hotel under it | 58 | 131 m | 41 |
+| Mount Fuji | 60 | 3,776 m | 1,195 |
+
+Tokyo Tower is within a tenth of the scale. Kyoto Tower is a small landmark and stands taller than its scale height, so that it can be recognised. Fuji is a toy, as every mountain is. The heights in life are the commonly published ones.
+
 ## Liberties taken with the real place
 
 - Fuji, the pass, the snow monkeys and the thatched farmhouses share one corner. In life the pass is Haruna's, the monkeys are Jigokudani's and the farmhouses are Shirakawa-go's, all far from Fuji. They are together because the corner is the tile's one piece of mountain.
