@@ -1,9 +1,9 @@
 // Europe: London, Paris and Italy along one river.
 //
 // The ground, the river, the roads and the traffic are as they will be, and
-// London's river front is built. The rest of the things that will stand on
-// the tile are still plain boxes with their numbers on, or rough shapes where
-// the shape decides how a road runs: see NOTES.md for which is which.
+// London is built. The things that will stand in Paris and Italy are still
+// plain boxes with their numbers on, or rough shapes where the shape decides
+// how a road runs: see NOTES.md for which is which.
 
 import * as THREE from 'three';
 import { placed } from '../../engine/build';
@@ -17,6 +17,7 @@ import type { Build, HeroSpot, ParkedSpot, TileDef, TileParts } from '../../engi
 import { balloon, concorde } from './air';
 import { eiffel, pisa } from './landmarks';
 import { bridgeStreetLamps, londonEye, parliament, towerBridge, westminsterBridge } from './london';
+import { LONDON_GROUND, LONDON_SIGNS, aceCafe, buckinghamPalace, gherkin, londonStreets, piccadillyCircus, stPauls, towerOfLondon } from './london-city';
 import {
   ARC, ARNO_X, BEND_1, BEND_2, CANAL, COLOSSEUM, CONCORDE, HILL, IENA_X, ISLAND, LINGOTTO_ROOF, NEUF_X, PLOTS, RIVER_WIDTH, SEINE_Z,
   THAMES_X, THINGS, WATER_DROP, onHill, type Quarter, type Thing,
@@ -53,6 +54,7 @@ const SHOPS: Record<Quarter, SignDef[]> = {
 const SIGNS: SignDef[] = [
   ...THINGS.map((t): SignDef => ({ id: `thing-${t.id}`, lines: [String(t.n), t.name], color: BOARD[t.quarter], ink: '#ffffff', aspect: 2.2, size: [264, 120], kind: 'board' })),
   ...Object.values(SHOPS).flat(),
+  ...LONDON_SIGNS,
 ];
 
 /** A plot with the quarter it stands in, which decides its roof and its signs. */
@@ -200,8 +202,6 @@ function build(k: Build): TileParts {
   // Victoria Tower Gardens, beside Parliament, and the Tuileries, between the Louvre and the Champs-Élysées
   area(k, rect(-60, 15, -47, 21.3), LAWN);
   area(k, [[47, -49.5], [60, -41.5], [60, -36.5], [47, -36.5]], LAWN);
-  // Ace Cafe's forecourt
-  area(k, rect(-83, 9, -66, 20.5), 0x55575d);
 
   // -------------------------------------------------------------------------
   // Streets, and the bridges that carry them over the river
@@ -270,6 +270,16 @@ function build(k: Build): TileParts {
   towerBridge(k);
   londonEye(k);
   bridgeStreetLamps(k);
+
+  // --- London away from the river ---
+  for (const [name, x0, z0, x1, z1] of LONDON_GROUND) clear(name, x0, z0, x1, z1);
+  towerOfLondon(k);
+  stPauls(k);
+  buckinghamPalace(k);
+  piccadillyCircus(k);
+  gherkin(k);
+  aceCafe(k);
+  londonStreets(k);
 
   // --- The Eiffel Tower ---
   {
@@ -411,8 +421,6 @@ function build(k: Build): TileParts {
     scatter(10, -66, 58, -44, 71); // the piazza
     scatter(8, 88, 31, 103, 34); // in front of the Duomo
     scatter(6, 70, 54.5, 86, 57.5); // on the Ponte Vecchio
-    scatter(9, -82, 13.6, -67, 16.4); // Ace Cafe's forecourt
-    scatter(6, -95.5, -76, -94, -48); // at the palace railings
     scatter(8, 42, -34, 68, -24); // the Louvre's court
     for (let i = 0; i < 9; i++) {
       const [x, z] = onHill(13 + rand() * 15, 24.8 + rand() * 1.6);
@@ -432,16 +440,15 @@ function build(k: Build): TileParts {
   // -------------------------------------------------------------------------
 
   const heroSpots: HeroSpot[] = [
-    { id: 'ace-cafe', x: -75.8, y: 0.04, z: 11.6, heading: Math.PI / 2 },
+    { id: 'ace-cafe', x: -79.5, y: 0.04, z: 18.2, heading: 0 },
     { id: 'trocadero', x: -16.5, y: 0.02, z: -7, heading: 1.25 },
     { id: 'maranello', x: -55, y: 0.02, z: 93.4, heading: 0 },
     { id: 'piazza', x: -50, y: 0.02, z: 66, heading: -0.6 },
     { id: 'lingotto-roof', x: -93.2, y: LINGOTTO_ROOF.y + 0.05, z: 57, heading: -Math.PI / 2 },
   ];
   const parked: ParkedSpot[] = [{ x: -62, y: 0.02, z: 62, heading: 1.1 }, { x: -46, y: 0.02, z: 60, heading: -2.2 }];
-  // Ace Cafe's forecourt: two rows nose to tail, with the bay nearest the door kept for a hero
-  for (const x of [-80, -71.6, -67.6]) parked.push({ x, y: 0.04, z: 11.6, heading: Math.PI / 2 });
-  for (const x of [-80, -75.8, -71.6]) parked.push({ x, y: 0.04, z: 18, heading: -Math.PI / 2 });
+  // Ace Cafe's forecourt: a line of cars beyond the motorbikes, with one bay of it kept for a hero
+  for (const x of [-96.5, -88, -71]) parked.push({ x, y: 0.04, z: 18.2, heading: x < -90 ? Math.PI : 0 });
 
   return { routes: ROUTES, parked, heroSpots };
 }

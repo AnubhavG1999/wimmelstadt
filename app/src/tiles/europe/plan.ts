@@ -143,13 +143,13 @@ export const THINGS: Thing[] = [
   // London
   T(1, 'parliament', 'PARLIAMENT & BIG BEN', 'london', -58.6, -22, 12.4, 36, 56, { shaped: true }),
   T(2, 'tower-bridge', 'TOWER BRIDGE', 'london', -46, -98, 20, 12, 34, { shaped: true }),
-  T(3, 'tower', 'TOWER OF LONDON', 'london', -76, -82, 14, 18, 13),
+  T(3, 'tower', 'TOWER OF LONDON', 'london', -77.4, -82.9, 14.8, 19.1, 18, { shaped: true }),
   T(4, 'eye', 'LONDON EYE', 'london', -26, -82, 6, 42, 46, { shaped: true }),
-  T(5, 'st-pauls', "ST PAUL'S", 'london', -77, -62, 15, 20, 26),
-  T(6, 'palace', 'BUCKINGHAM PALACE', 'london', -104, -79, 8, 34, 14),
-  T(7, 'piccadilly', 'PICCADILLY CIRCUS', 'london', -75, -21.5, 13, 13, 18),
-  T(8, 'gherkin', 'THE GHERKIN', 'london', -74.5, -112, 12, 12, 60),
-  T(9, 'ace-cafe', 'ACE CAFE', 'london', -103, 10, 19, 10, 7),
+  T(5, 'st-pauls', "ST PAUL'S", 'london', -77, -61.4, 14, 22.4, 36.5, { shaped: true }),
+  T(6, 'palace', 'BUCKINGHAM PALACE', 'london', -103.8, -79, 9.4, 34, 15.8, { shaped: true }),
+  T(7, 'piccadilly', 'PICCADILLY CIRCUS', 'london', -103.8, -40.3, 7, 20.6, 18, { shaped: true }),
+  T(8, 'gherkin', 'THE GHERKIN', 'london', -74.7, -112.2, 12.4, 12.4, 50, { shaped: true }),
+  T(9, 'ace-cafe', 'ACE CAFE', 'london', -100, 9.2, 30, 4.4, 7.7, { shaped: true }),
   // Paris
   T(10, 'eiffel', 'EIFFEL TOWER', 'paris', -17, 45, 30, 30, 110, { shaped: true }),
   T(11, 'arc', 'ARC DE TRIOMPHE', 'paris', ARC[0] - 7, ARC[1] - 3.5, 14, 7, 22, { shaped: true }),
@@ -184,9 +184,13 @@ export interface Plot { quarter: Quarter; x: number; z: number; w: number; d: nu
 const lot = (quarter: Quarter, style: Style, x: number, z: number, w: number, d: number, h: number, signs = ''): Plot => ({ quarter, style, x, z, w, d, h, signs });
 
 export const PLOTS: Plot[] = [
-  // London: terraces north of the two bridges' street
+  // London: terraces north of the two bridges' street, and along the north edge behind Tower Hill
   lot('london', 'brick', -61, -112, 13, 12, 16, 'S'),
   lot('london', 'stucco', -24, -112, 20, 12, 18, 'S'),
+  lot('london', 'brick', -103, -112.6, 25, 6, 14, 'S'),
+  // London: the corner behind Parliament, and the side of the road down to Ace Cafe
+  lot('london', 'brick', -75, -21.5, 13, 13, 18, 'NW'),
+  lot('london', 'stucco', -103.5, -19, 9.2, 6.5, 16, 'E'),
   // Paris: the wedges between avenue Kléber and the Champs-Élysées
   lot('paris', 'haussmann', 24, -54, 14, 14, 25, 'ES'),
   lot('paris', 'haussmann', 40, -49, 8, 11, 25, 'E'),

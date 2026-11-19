@@ -11,29 +11,13 @@ import { placed } from '../../engine/build';
 import { GeoBuilder, interior, type V3, type WinSpec } from '../../engine/geo';
 import type { Build } from '../../engine/tile';
 import { bigBen } from './landmarks';
+import { D, Q, lantern, pinnacle, tri, unionFlag } from './parts';
 import { EMBANKMENT_X, SOUTH_BANK_X, STRAND_X, THAMES_X, TOWER_Z, WATER_DROP, WESTMINSTER_Z } from './plan';
 
-const Q = Math.PI / 4;
-/** A four-sided "cylinder" is measured to its corners: this turns half a width into that radius. */
-const D = Math.SQRT2;
 /** The bed of the river, as far down as anything that stands in it needs to go. */
 const BED = -(WATER_DROP + 0.6);
 /** The two banks of the Thames, where its bridges begin and end. */
 const WEST = THAMES_X - 10, EAST = THAMES_X + 10;
-
-/** A pinnacle: a small block with a spike on it. */
-function pinnacle(b: GeoBuilder, x: number, z: number, y: number, h: number, r: number, color: number): void {
-  b.box(x - r, y, z - r, x + r, y + h * 0.38, z + r, color);
-  b.cyl(x, z, y + h * 0.38, y + h, r * D, 0.03, 4, color, { phase: Q, cap: false });
-}
-
-/** A street lamp of the old kind: a post with a lantern on it, lit at night. */
-function lantern(k: Build, x: number, z: number, y: number, h: number, post: number): void {
-  k.b.box(x - 0.11, y, z - 0.11, x + 0.11, y + h, z + 0.11, post);
-  k.b.box(x - 0.3, y + h, z - 0.3, x + 0.3, y + h + 0.14, z + 0.3, post);
-  k.glows.push({ x, y: y + h + 0.42, z, sx: 0.44, sy: 0.5, sz: 0.44, color: '#ffe2ae' });
-  k.lights.push({ x, z, r: 8, color: '#ffd9a0', k: 0.4 });
-}
 
 // ---------------------------------------------------------------------------
 // The Houses of Parliament, and Big Ben
@@ -46,7 +30,7 @@ function lantern(k: Build, x: number, z: number, y: number, h: number, post: num
  */
 export function parliament(k: Build): void {
   const b = k.b;
-  const STONE = 0xc9b584, SHADE = 0xb7a273, SLATE = 0x4a4f55, GOLD = 0xd9b24a;
+  const STONE = 0xc9b584, SHADE = 0xb7a273, SLATE = 0x4a4f55;
   const storey = 3.6, h = storey * 3;
   const win: WinSpec = { cell: 1.1, storey, lit: 0.55, kind: 6 };
   const x0 = -58.6, x1 = -48.2, z0 = -15.0, z1 = 7.0, xr = (x0 + x1) / 2;
@@ -56,8 +40,8 @@ export function parliament(k: Build): void {
   const eave = h + 0.02, ridge = h + 2.8, in0 = x0 + 0.7, in1 = x1 - 0.7;
   b.quad([in1, eave, z1 - 0.4], [in1, eave, z0 + 0.4], [xr, ridge, z0 + 0.4], [xr, ridge, z1 - 0.4], [0.6, 0.8, 0], SLATE);
   b.quad([in0, eave, z0 + 0.4], [in0, eave, z1 - 0.4], [xr, ridge, z1 - 0.4], [xr, ridge, z0 + 0.4], [-0.6, 0.8, 0], SLATE);
-  b.tri([in0, eave, z0 + 0.4], [in1, eave, z0 + 0.4], [xr, ridge, z0 + 0.4], [0, 0, -1], SLATE);
-  b.tri([in1, eave, z1 - 0.4], [in0, eave, z1 - 0.4], [xr, ridge, z1 - 0.4], [0, 0, 1], SLATE);
+  tri(b, [in0, eave, z0 + 0.4], [in1, eave, z0 + 0.4], [xr, ridge, z0 + 0.4], [0, 0, -1], SLATE);
+  tri(b, [in1, eave, z1 - 0.4], [in0, eave, z1 - 0.4], [xr, ridge, z1 - 0.4], [0, 0, 1], SLATE);
   for (let z = z0 + 1.1; z < z1 - 0.5; z += 2.2) {
     for (const x of [x1, x0]) {
       const out = x === x1 ? 1 : -1;
@@ -99,19 +83,8 @@ export function parliament(k: Build): void {
     b.cyl(x, z, 0, top + 2.2, 0.82, 0.82, 8, STONE, { cap: SHADE });
     b.cyl(x, z, top + 2.2, top + 6.2, 0.9, 0.04, 8, STONE, { win: interior(0.3), cap: false });
   }
-  // the flagstaff, and the flag: red and white crosses on blue
-  b.cyl(tx, tz, top, top + 10.5, 0.14, 0.07, 6, 0xdadada, { cap: false });
-  const fy = top + 8.3, fl = 3.4, fh = 2.0;
-  for (const side of [-1, 1]) {
-    const face = (u0: number, v0: number, u1: number, v1: number, out: number, color: number): void =>
-      b.quad([tx + 0.1 + u0, fy + v0, tz + side * out], [tx + 0.1 + u1, fy + v0, tz + side * out], [tx + 0.1 + u1, fy + v1, tz + side * out], [tx + 0.1 + u0, fy + v1, tz + side * out], [0, 0, side], color);
-    face(0, 0, fl, fh, 0.02, 0x23408f);
-    face(0, fh * 0.34, fl, fh * 0.66, 0.035, 0xf4f1e8);
-    face(fl * 0.4, 0, fl * 0.6, fh, 0.035, 0xf4f1e8);
-    face(0, fh * 0.42, fl, fh * 0.58, 0.05, 0xc8202c);
-    face(fl * 0.45, 0, fl * 0.55, fh, 0.05, 0xc8202c);
-  }
-  b.cyl(tx, tz, top + 10.5, top + 10.9, 0.2, 0.2, 6, GOLD);
+  // the flagstaff, and the flag
+  unionFlag(b, tx, tz, top, 10.5);
 
   // --- the clock tower, at the bridge ---
   placed(k, -51, -18.5, 0, (q) => bigBen(q, 56));
@@ -213,8 +186,8 @@ export function towerBridge(k: Build): void {
     const e = eaves + 0.3, rz = hw - 3.4;
     b.quad([tx + hd, e, cz + hw], [tx + hd, e, cz - hw], [tx, peak, cz - rz], [tx, peak, cz + rz], [0.9, 0.4, 0], ROOF);
     b.quad([tx - hd, e, cz - hw], [tx - hd, e, cz + hw], [tx, peak, cz + rz], [tx, peak, cz - rz], [-0.9, 0.4, 0], ROOF);
-    b.tri([tx - hd, e, cz - hw], [tx + hd, e, cz - hw], [tx, peak, cz - rz], [0, 0.5, -0.87], ROOF);
-    b.tri([tx + hd, e, cz + hw], [tx - hd, e, cz + hw], [tx, peak, cz + rz], [0, 0.5, 0.87], ROOF);
+    tri(b, [tx - hd, e, cz - hw], [tx + hd, e, cz - hw], [tx, peak, cz - rz], [0, 0.5, -0.87], ROOF);
+    tri(b, [tx + hd, e, cz + hw], [tx - hd, e, cz + hw], [tx, peak, cz + rz], [0, 0.5, 0.87], ROOF);
     for (const z of [cz - rz, cz + rz]) b.cyl(tx, z, peak, peak + 2.4, 0.2, 0.03, 4, GOLD, { win: interior(0.8), cap: false });
 
     // the chains to the bank: down from the tower in a curve, with rods to the deck, and a small tower where they come to ground
