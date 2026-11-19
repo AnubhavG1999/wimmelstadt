@@ -208,6 +208,8 @@ interface Veh {
   s: number; v: number; vmax: number;
   /** How fast it likes to drive, as a share of the speed of whatever road it is on. */
   pace: number;
+  /** How many seconds it has stood waiting to join a lane that it shares with another route. */
+  held: number;
   len: number; wid: number; wb: number;
   type: number; inst: number; // traffic: which batch and which slot in it
   hero: Hero | null;
@@ -248,6 +250,9 @@ interface Loop { def: Route; path: Path; list: Veh[]; shares: Share[] }
 const MERGE_LOOK = 60;
 /** How far short of the shared lane a vehicle waits for another to go first: where the two lanes are still a car's width apart. */
 const MERGE_HOLD = 7;
+
+/** How long a vehicle waits to join a busy lane before the traffic on it has to let it in. */
+const PATIENCE = 2.5;
 
 /** How far past the end of a shared lane a vehicle is still in the way of the one behind it, though their ways have parted. */
 const PART_CLEAR = 9;
@@ -359,7 +364,7 @@ export function buildVehicles(k: Build, routes: Route[], parked: ParkedSpot[], h
   const paints = new Map<Veh, number[]>();
 
   const blank = (): Veh => ({
-    id: serial++, path: null, s: 0, v: 0, vmax: 0, pace: 1, len: 7, wid: 3, wb: 4.4, type: -1, inst: -1, hero: null,
+    id: serial++, path: null, s: 0, v: 0, vmax: 0, pace: 1, held: 0, len: 7, wid: 3, wb: 4.4, type: -1, inst: -1, hero: null,
     heading: 0, turn: 0, lit: false, fx: -1, shadow: -1, phase: rand() * 10, pos: new THREE.Vector3(),
   });
 
@@ -611,12 +616,14 @@ export function buildVehicles(k: Build, routes: Route[], parked: ParkedSpot[], h
           aheadV = lead.v;
         }
         // And whoever it meets on a lane that it shares with another route.
+        let coming = false, waiting = false;
         for (const sh of shares) {
           // Where it is: on the shared lane, or coming up to where that starts. It can
           // be both at once, on a ring that the other route leaves and soon joins again.
           const mr = pastStart(v.s, sh.a0, L);
           const myOn = mr < sh.len ? mr : null, myBefore = mr - L > -MERGE_LOOK ? mr - L : null;
           if (myOn === null && myBefore === null) continue;
+          if (myBefore !== null) coming = true;
           const LB = sh.other.path.length;
           for (const w of sh.other.list) {
             const wr = pastStart(w.s, sh.b0, LB);
@@ -639,15 +646,21 @@ export function buildVehicles(k: Build, routes: Route[], parked: ParkedSpot[], h
             // is clear of it: `myRoom` is how far it still has to that place.
             if (myBefore !== null && theirBefore !== null) {
               const myRoom = -myBefore - v.len / 2 - MERGE_HOLD, theirRoom = -theirBefore - w.len / 2 - MERGE_HOLD;
+              // whether each could still stop short of that place, braking as hard as it can
+              const iMust = myRoom < (v.v * v.v) / 48, theyMust = theirRoom < (w.v * w.v) / 48;
               // how much sooner it would get there than the other, in seconds
               const sooner = -theirBefore / Math.max(w.v, 3) - -myBefore / Math.max(v.v, 3);
               let first: boolean;
-              if (myRoom < 0 !== theirRoom < 0) first = myRoom < 0; // one of them is already too near to wait
+              if (iMust !== theyMust) first = iMust; // one of them can no longer stop in time
+              else if (v.held > PATIENCE !== w.held > PATIENCE) first = v.held > PATIENCE; // one of them has waited long enough
               else if (Math.abs(sooner) > 1) first = sooner > 0; // one of them is clearly there first
               else first = v.v !== w.v ? v.v > w.v : v.id > w.id; // it is close: the faster one keeps going
-              if (!first && myRoom < g) {
-                g = myRoom;
-                speed = 0;
+              if (!first) {
+                waiting = true;
+                if (myRoom < g) {
+                  g = myRoom;
+                  speed = 0;
+                }
               }
             }
             if (g < gap) {
@@ -657,6 +670,10 @@ export function buildVehicles(k: Build, routes: Route[], parked: ParkedSpot[], h
             }
           }
         }
+        // It counts the time it stands waiting to join a lane, and keeps the count
+        // until it has joined: once that is long enough, the others let it in.
+        if (waiting && v.v < 2) v.held += dt;
+        else if (!coming) v.held = 0;
         // slow for bends, for a stretch with a speed of its own, and for whoever is ahead
         const r = Math.min(path.radiusAt(v.s + v.len * 0.5), path.radiusAt(v.s + v.len * 0.5 + v.v * 0.5));
         const bend = Math.max(5.5, r * 2.2);

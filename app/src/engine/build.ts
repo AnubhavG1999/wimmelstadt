@@ -59,6 +59,13 @@ function buildLightMap(lights: Light[], board: Rect): THREE.CanvasTexture {
 }
 
 /**
+ * The base a tile stands on, like a model on a table: how far it reaches
+ * beyond the tile's ground on every side, where its top and its underside
+ * are, how deep the hollow under the ground is (for water), and its colour.
+ */
+export const BASE = { rim: 3.5, top: -0.06, bottom: -9.06, floor: -2.4, color: 0x3a2f2a };
+
+/**
  * Builds something somewhere else. Whatever `fn` adds, as if around (0, 0), is
  * turned by `turn` degrees and moved to (x, y, z): its shapes, its signs, its
  * lights, its trees and its people. For a model that was written to stand at
@@ -149,12 +156,12 @@ export function startBuild(def: TileDef, ox: number, oz: number): { k: Build; fi
     // The base the tile stands on, like a model on a table: a frame round the
     // ground, and a floor well below it, so that water can lie in a hollow.
     const base = new GeoBuilder();
-    const BASE = 0x3a2f2a, rim = 3.5, top = -0.06, bottom = -9.06, floor = -2.4;
-    base.box(board.x0 - rim, bottom, board.z0 - rim, board.x1 + rim, top, board.z0, BASE);
-    base.box(board.x0 - rim, bottom, board.z1, board.x1 + rim, top, board.z1 + rim, BASE);
-    base.box(board.x0 - rim, bottom, board.z0, board.x0, top, board.z1, BASE);
-    base.box(board.x1, bottom, board.z0, board.x1 + rim, top, board.z1, BASE);
-    base.box(board.x0, bottom, board.z0, board.x1, floor, board.z1, BASE, { faces: 'T' });
+    const { rim, top, bottom, floor, color } = BASE;
+    base.box(board.x0 - rim, bottom, board.z0 - rim, board.x1 + rim, top, board.z0, color);
+    base.box(board.x0 - rim, bottom, board.z1, board.x1 + rim, top, board.z1 + rim, color);
+    base.box(board.x0 - rim, bottom, board.z0, board.x0, top, board.z1, color);
+    base.box(board.x1, bottom, board.z0, board.x1 + rim, top, board.z1, color);
+    base.box(board.x0, bottom, board.z0, board.x1, floor, board.z1, color, { faces: 'T' });
     const slab = new THREE.Mesh(base.build(), mat.prop());
     slab.receiveShadow = true;
     slab.layers.set(1); // layer 1 is left out of the mirror image used for wet streets

@@ -5,12 +5,13 @@ import * as THREE from 'three';
 import { buildBoard } from './engine/board';
 import { IsoRig } from './engine/camera';
 import { loadHeroes, sizeOutline } from './engine/hero';
-import { atmosphereAt, formatHour, makeAtmo } from './engine/look/atmosphere';
+import { atmosphereAt, makeAtmo } from './engine/look/atmosphere';
 import { U } from './engine/look/materials';
 import { Post, makeBackdrop } from './engine/look/post';
 import { WEATHER_NAMES, Weather, type WeatherName } from './engine/look/weather';
 import { PARTY_TRICKS } from './heroes';
 import { tilesFor } from './tiles';
+import { buildControls } from './ui/controls';
 
 // --- options, from the address bar ---------------------------------------
 const query = new URLSearchParams(location.search);
@@ -71,14 +72,13 @@ scene.add(backdrop.mesh);
 const board = buildBoard(tilesFor(query));
 scene.add(board.group);
 
-// The sun's shadows have to reach every tile on the board.
+// The sun's shadows. `reach` is how far from the middle of the board they have
+// to go to cover every tile. On a board of many tiles they are drawn only for
+// the part that is in view, with room to spare, so that they stay crisp
+// however large the board grows: see `aimShadows`.
 const reach = Math.hypot(board.bounds.x1 - board.bounds.x0, board.bounds.z1 - board.bounds.z0) / 2 + 36;
 const sunDist = 260 + reach;
-{
-  const c = sun.shadow.camera;
-  c.left = -reach; c.right = reach; c.top = reach; c.bottom = -reach; c.near = 20; c.far = sunDist + reach + 310;
-  c.updateProjectionMatrix();
-}
+const boardMid = new THREE.Vector3((board.bounds.x0 + board.bounds.x1) / 2, 0, (board.bounds.z0 + board.bounds.z1) / 2);
 
 // The heroes, each made from a real diecast. Every time the page loads, each
 // one is put on a tile picked at random, somewhere on its roads or on show.
@@ -143,6 +143,52 @@ window.addEventListener('resize', resize);
 resize();
 if (startView) rig.set(num('x', 0), num('z', 4), num('az', 42), num('zoom', 250));
 
+/** Half the width of the ground the shadows are drawn for now. */
+let shadowHalf = 0;
+/** Points the sun's shadows at what is in view, and redraws them only when the view has left what they cover or could be much sharper. */
+function aimShadows(): void {
+  const g = rig.goal;
+  // what can be seen of the ground, and room round it for whatever casts a shadow into it
+  const seen = Math.hypot(g.viewH * rig.aspect, g.viewH / Math.sin(rig.elev)) / 2 + 60;
+  const whole = seen * 1.2 >= reach;
+  const need = whole ? reach : Math.max(160, seen);
+  const ax = whole ? boardMid.x : g.x, az = whole ? boardMid.z : g.z;
+  const at = sun.target.position;
+  if (shadowHalf > 0 && Math.hypot(ax - at.x, az - at.z) + need <= shadowHalf && need * 1.2 >= shadowHalf * 0.62) return;
+  shadowHalf = whole ? reach : Math.min(reach, need * 1.2);
+  at.set(ax, 0, az);
+  sun.target.updateMatrixWorld();
+  const c = sun.shadow.camera;
+  c.left = -shadowHalf; c.right = shadowHalf; c.top = shadowHalf; c.bottom = -shadowHalf; c.near = 20; c.far = sunDist + reach + 310;
+  c.updateProjectionMatrix();
+  shadowDirty = true;
+}
+
+// --- the board, a tile, a hero: the three distances the view settles at -----------
+const many = board.tiles.length > 1;
+const toBoard = (): void => rig.fly(boardMid.x, boardMid.z + 4, rig.fitBoard);
+/** The tile nearest to a place on the ground. */
+const nearestTile = (x: number, z: number) => board.tiles.reduce((a, b) => (Math.hypot(b.x - x, b.z - z) < Math.hypot(a.x - x, a.z - z) ? b : a));
+// When the hand lets go, the view settles: on the whole board if it has been
+// zoomed well out, on the nearest tile if a tile about fills it. Closer in
+// than that it stays where it was put, for looking round a tile.
+rig.onRest = () => {
+  if (!many || follow >= 0) return;
+  const g = rig.goal, fit = rig.fitTile;
+  if (g.viewH > fit * 1.3) toBoard();
+  else if (g.viewH > fit * 0.8) {
+    const t = nearestTile(g.x, g.z);
+    rig.fly(t.x, t.z + 4, fit);
+  }
+};
+// Twice on a tile goes to that tile, and twice on the table goes back to the board.
+rig.onDouble = (x, z) => {
+  const t = board.tileAt(x, z);
+  follow = -1;
+  if (t) rig.fly(t.x, t.z + 4, rig.fitTile);
+  else toBoard();
+};
+
 // --- time of day ------------------------------------------------------------
 let follow = query.has('follow') ? num('follow', 0) : -1;
 let pinned: number | null = opts.hour;
@@ -153,58 +199,52 @@ const clockHour = (): number => {
   return d.getHours() + d.getMinutes() / 60 + d.getSeconds() / 3600;
 };
 
-const timeEl = document.getElementById('time')!;
-const dial = document.getElementById('dial') as HTMLInputElement;
-const liveBtn = document.getElementById('live')!;
-const lapseBtn = document.getElementById('lapse')!;
-const statsBtn = document.getElementById('stats')!;
-const followBtn = document.getElementById('follow')!;
 const nextHero = (): void => {
   follow = follow + 1 >= board.heroes.length ? -1 : follow + 1;
 };
-followBtn.addEventListener('click', () => {
-  nextHero();
-  wake();
-});
 rig.onPan = () => {
   follow = -1;
 };
 const hud = document.getElementById('hud')!;
-const weatherBtn = document.getElementById('weather')!;
-const focusBtn = document.getElementById('focus')!;
-weatherBtn.addEventListener('click', () => {
-  weather.next();
-  wake();
-});
-focusBtn.addEventListener('click', () => {
-  focusMode = (focusMode + 1) % FOCUS.length;
-  wake();
-});
-
-dial.addEventListener('input', () => {
-  pinned = Number(dial.value);
-  lapse = false;
-  wake();
-});
-liveBtn.addEventListener('click', () => {
-  pinned = null;
-  lapse = false;
-  wake();
-});
-lapseBtn.addEventListener('click', () => {
+let showStats = opts.stats;
+const toggleLapse = (): void => {
   lapse = !lapse;
   if (lapse && pinned === null) pinned = clockHour();
-  wake();
+};
+
+// The controls: a dial for the hour, tokens for the weather and a few keys. See ui/controls.ts.
+const controls = buildControls(document.getElementById('ui')!, {
+  hour(h) { pinned = h; lapse = false; },
+  live() { pinned = null; lapse = false; },
+  lapse: toggleLapse,
+  weather(w) { weather.choice = w; },
+  follow: nextHero,
+  focus() { focusMode = (focusMode + 1) % FOCUS.length; },
+  stats() { showStats = !showStats; },
+  turning() { rig.drift = !rig.drift; },
+  touched: () => wake(),
 });
-let showStats = opts.stats;
-statsBtn.addEventListener('click', () => {
-  showStats = !showStats;
-  wake();
-});
+
+/** Brings the controls up to date: the hour, the weather, and what the plate says about where the view is. */
+function showControls(): void {
+  const following = follow >= 0 && follow < board.heroes.length;
+  const g = rig.goal;
+  // the whole board is the city; anything closer is the tile the view is on
+  const wide = many && g.viewH > rig.fitTile * 1.3;
+  const tile = following ? board.heroes[follow].tile : (board.tileAt(g.x, g.z - 4) ?? nearestTile(g.x, g.z));
+  controls.show({
+    hour, live: pinned === null, lapse,
+    weather: weather.choice, actual: weather.name,
+    title: wide && !following ? 'Wimmelstadt' : tile.def.name,
+    hero: following ? board.heroes[follow].name : '',
+    heroes: board.heroes.length, following,
+    focus: FOCUS[focusMode].name, stats: showStats, turning: rig.drift,
+  });
+}
 window.addEventListener('keydown', (e) => {
   const k = e.key.toLowerCase();
   if (k === 's') showStats = !showStats;
-  else if (k === 't') { lapse = !lapse; if (lapse && pinned === null) pinned = clockHour(); }
+  else if (k === 't') toggleLapse();
   else if (k === 'l') { pinned = null; lapse = false; }
   else if (k === 'n') { pinned = 22; lapse = false; }
   else if (k === 'd') { pinned = 13; lapse = false; }
@@ -212,6 +252,7 @@ window.addEventListener('keydown', (e) => {
   else if (k === 'f') nextHero();
   else if (k === 'w') weather.next();
   else if (k === 'b') focusMode = (focusMode + 1) % FOCUS.length;
+  else if (k === 'escape') { follow = -1; toBoard(); }
   else return;
   wake();
 });
@@ -279,7 +320,8 @@ function step(dt: number, now: number): void {
   sun.color.copy(atmo.sunColor);
   sun.intensity = atmo.sunI;
   sun.shadow.intensity = atmo.shadow;
-  sun.position.copy(atmo.sunDir).multiplyScalar(sunDist);
+  aimShadows();
+  sun.position.copy(atmo.sunDir).multiplyScalar(sunDist).add(sun.target.position);
   hemi.color.copy(atmo.sky);
   hemi.groundColor.copy(atmo.ground);
   hemi.intensity = atmo.hemiI;
@@ -391,6 +433,7 @@ function frame(now: number): boolean {
   const t0 = performance.now();
   step(dt, now);
   draw();
+  showControls();
   cpuAcc += performance.now() - t0;
 
   frames++;
@@ -405,19 +448,6 @@ function frame(now: number): boolean {
     cpuMs = cpuAcc / Math.max(1, frames);
     frames = 0; acc = 0; worst = 0; cpuAcc = 0;
     hudAt = now;
-    timeEl.textContent = formatHour(hour);
-    if (document.activeElement !== dial || lapse || pinned === null) dial.value = String(hour);
-    liveBtn.classList.toggle('on', pinned === null);
-    lapseBtn.classList.toggle('on', lapse);
-    statsBtn.classList.toggle('on', showStats);
-    const following = follow >= 0 && follow < board.heroes.length;
-    followBtn.classList.toggle('on', following);
-    followBtn.textContent = following ? board.heroes[follow].name : 'follow';
-    followBtn.hidden = board.heroes.length === 0;
-    weatherBtn.textContent = weather.choice === 'auto' ? `weather: ${weather.name}` : weather.choice;
-    weatherBtn.classList.toggle('on', weather.choice !== 'auto');
-    focusBtn.textContent = `focus: ${FOCUS[focusMode].name}`;
-    focusBtn.classList.toggle('on', focusMode !== 0);
     hud.classList.toggle('on', showStats);
     if (showStats) {
       const r = renderer.info.render;
