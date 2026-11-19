@@ -36,19 +36,15 @@ Most of the time lost on Hong Kong was lost for not doing sums with the opening 
 - **The road worth watching, and every place for a hero, goes on the south or the east side of what it belongs to.** On Hong Kong's first layout the towers of Central hid the whole road up the Peak, and two places for a hero were hidden by the buildings they belong to. Europe had two more: one behind the house on a piazza's south side, and one behind the very gate it stood at. A place has to be seen, not only be there, and it can pass `?place=` and still stand behind a wall. Open each square to the south-east.
 - **A thing whose outline is the point lies across the view.** The lion on Lion Rock lay end-on at first and looked like a pile of rock.
 
-Do these sums on the map in text, before the collector sees it, and give every lot its height in the blockout, the ordinary buildings too. Then check with numbers and not by eye. On the development server the page can read a tile's own plan. Pasted into the console, this says which lots stand between a point and the camera, where a lot is `{ id, x0, z0, x1, z1, top }` and a point `{ x, y, z }`:
+Do these sums on the map in text, before the collector sees it, and give every lot its height in the blockout, the ordinary buildings too. Then check with numbers and not by eye. `hiddenBy` in `engine/checks.ts` says which lots stand between a point and the camera, from the plan alone, where a lot is `{ id, x0, z0, x1, z1, top }` and a point `{ x, y, z }`. A tile can call it as it builds, or it can be asked in the console of the development server:
 
 ```js
+const { hiddenBy } = await import('/src/engine/checks.ts');
 const plan = await import('/src/tiles/<id>/plan.ts');
-const E = Math.sin(42 * Math.PI / 180), S = Math.cos(42 * Math.PI / 180), UP = Math.tan(38 * Math.PI / 180);
-const hides = (p, lots) => lots.filter((l) => {
-  const tx = [(l.x0 - p.x) / E, (l.x1 - p.x) / E], tz = [(l.z0 - p.z) / S, (l.z1 - p.z) / S];
-  const t0 = Math.max(Math.min(...tx), Math.min(...tz), 0), t1 = Math.min(Math.max(...tx), Math.max(...tz));
-  return t1 > t0 && p.y + UP * t0 < l.top;
-}).map((l) => l.id);
+hiddenBy({ x: 46.6, y: 1, z: -19.4 }, plan.LOTS.map((l) => ({ ...l, top: l.h })))
 ```
 
-Ask it about the foot and the middle of every landmark, the middle of every street worth watching and every place for a hero, after the blockout and again whenever a height changes.
+Ask it about the foot and the middle of every landmark, the middle of every street worth watching and every place for a hero, after the blockout and again whenever a height changes. Once things are built, `wimmel.seen(x, y, z)` in the console says the same of what really stands there: whether a place is seen from where the view is, or how far off the first thing in the way is.
 
 On the board a tile has neighbours, and the view can be turned, so nothing should depend on being seen from one side only. But the opening view is the one that is seen most.
 
@@ -58,8 +54,8 @@ On the board a tile has neighbours, and the view can be turned, so nothing shoul
 2. **Draw the map in text, with heights on it**, and do the sums above for the road worth watching, the places for heroes and the landmarks at the front.
 3. **Put the tile to the collector before building anything.** In chat, give the list of things that will stand on it, its ground, its road pattern, where heroes will be seen, and the map. Then wait for the reaction. A drawn map comes after that, if it is wanted.
 4. **Write the tile as data**, in `plan.ts`, which draws nothing: the water, the streets as middle lines, the ground inside each block's sidewalks, the long roads, the routes, and every lot as a rectangle with a height. Every model takes its place and its size from there, so that moving a street later moves what stands beside it. A short script that draws the plan flat on a canvas is the quickest way to see the whole layout.
-5. **Block it out**: the ground, the roads and the traffic, and a plain box for every lot with its name on a board that faces the opening view. Write a check that runs on every load and says in the console when two roads cross on the level, a road runs through a lot, or two lots overlap. Run the traffic check and the sight-line check now, not at the end. Show the collector the opening view, the night and one other side, and say where you think it is thin.
-6. **Merge `main`, then build what the engine lacks** before any landmark: ground that slopes, a tunnel, a road with heights. Landmarks stand on it. The engine may have gained what you need since you branched.
+5. **Block it out**: the ground, the roads and the traffic, and a plain box for every lot with its name on a board that faces the opening view. Call the engine's checks on every load, so that the console says when two roads cross on the level or a road runs through a lot (`checkRoads`), and when a lot stands in a street (`clearOfStreets`). Run the traffic check and the sight-line check now, not at the end. Show the collector the opening view, the night and one other side, and say where you think it is thin.
+6. **Merge `main`, then build what the engine lacks** before any landmark, since landmarks stand on it. The engine has ground that slopes, roads with heights, roundabouts and a tunnel's mouth, which the first tiles built for themselves, and it may have gained more since you branched.
 7. **What moves on a line of its own**: trams, boats, a train.
 8. **The landmarks**, largest first and about ten to a batch. Build the tile's centrepiece first and properly, and show it: the tallest thing on a tile and its best-known sight deserve the most triangles. On Europe the Eiffel Tower and the Colosseum had the least work at first, and they are the two the collector sent back. Look at each landmark from two opposite sides, by day and by night, before going on. Most faults show only in a close picture from the far side. A file for the small parts that landmarks share, such as a dome, a roof, an arch or a rose window, makes each later one quicker.
 9. **The ordinary buildings and their signs.** Check every real name as it is written, and enter it in `NOTES.md` at once with what confirmed it.
@@ -141,10 +137,11 @@ In the page's console, `wimmel` is a handle on the city:
   - `zoom` is how many units the picture is high, and it stops at 34: about 270 shows a whole tile, 120 a quarter, 60 to 90 one landmark, and 34 a shopfront.
   - `w` and `h` are the size of the picture. 1,100 to 1,300 wide is enough to judge a landmark.
   - It moves the view and the hour of whatever page it is called on. If the collector may be looking at that page, open a tab of your own for checks and leave theirs alone.
-  - For a plan from straight above, with north at the top: open the page with `?tilt=0`, set `wimmel.rig.elev = 1.553` in the console, and take the picture with `az: 0`. Set `elev` back to what it was afterwards. On Europe every decision about where a road or a building went was made on such a picture.
+  - `plan: true` takes the picture from straight above, with north at the top and nothing blurred. On Europe every decision about where a road or a building went was made on such a picture.
 - `wimmel.info()` gives the triangles and draw calls of the last frame, and `wimmel.info().city` the tile's own counts. `wimmel.bench()` gives the milliseconds a frame takes.
 - `wimmel.advance(60)` lets a minute pass at once, without drawing it.
 - `wimmel.board.tiles[0].vehicles.shared()` lists the lanes that routes were found to share, and `.positions()` says where every moving vehicle is, on which route and how fast.
+- `wimmel.seen(x, y, z)` says whether a place is seen from where the view is now, or how far off the first built thing in the way is. People, trees and vehicles are not counted.
 
 After an edit the running page can hold a mix of old and new. Load the page afresh before trusting a picture or a check, read the last lines of the console only, and read its warnings as well as its errors: a sign whose id is not on the sheet only warns, and is simply not there.
 
@@ -189,7 +186,7 @@ for (let step = 0; step < 24000; step++) {
 
 Budget a route's count from this before choosing it. A count can pass the check and still be at the very edge.
 
-**Places for heroes, without looking at a hero.** A picture with a hero in it may not be kept or shown, so check where a hero stands and not what it looks like. Either read positions: open the tile with `?place=<id>` in a frame of its own, and read `wimmel.board.heroes[0].pos`, as Japan's notes show. Or stand a plain box the size of a car, 7 by 2.6 by 3, on each place from the console and take an ordinary picture, as Hong Kong's notes show. Whether a place can be seen is a matter of what stands in front of it. The sight-line check says so from the plan, and Europe's notes describe a ray sent from the place towards the camera and tried against the tile's own triangles.
+**Places for heroes, without looking at a hero.** A picture with a hero in it may not be kept or shown, so check where a hero stands and not what it looks like. Either read positions: open the tile with `?place=<id>` in a frame of its own, and read `wimmel.board.heroes[0].pos`, as Japan's notes show. Or stand a plain box the size of a car, 7 by 2.6 by 3, on each place from the console and take an ordinary picture, as Hong Kong's notes show. Whether a place can be seen is a matter of what stands in front of it. `hiddenBy` says so from the plan, and `wimmel.seen(x, y, z)` from what is built, for a few points on the car: its middle and its two ends, a unit or two above the ground.
 
 **Cost.** Measure your tile and a built one in the same minute, at the same size of window and the same hour, one straight after the other, each alone on the board (`?tiles=<id>&drift=0`): `wimmel.setHour(14)`, wait a moment, then `await wimmel.bench()` three times, and the same at 21. The numbers move with the size of the window, with the engine, and with what else the machine is doing. What stands still on the built tiles, from `wimmel.info().city`:
 
@@ -208,21 +205,37 @@ Stay within about twice that. People, trees, lamps and glows are cheap however m
 
 ## The kit
 
-A tile is a `TileDef`: an id, a name, a seed, its signs, and a `build(k)` that builds everything that stands still and hands back the tile's routes, its parked vehicles and its places for heroes. `k` is the `Build`, described in `app/src/engine/tile.ts`. Everything is in `app/src/engine/`, and every piece below is used in the sample tile unless it says otherwise.
+A tile is a `TileDef`: an id, a name, a seed, its signs, and a `build(k)` that builds everything that stands still and hands back the tile's routes, its parked vehicles and its places for heroes. `k` is the `Build`, described in `app/src/engine/tile.ts`. Everything is in `app/src/engine/`. The pieces in the first table are each used once in the sample tile. Those in the second were built by the first tiles for themselves and then moved into the engine, and the tile named beside each is where to see it used.
 
 | File | What it gives |
 | --- | --- |
 | `tile.ts` | `TileDef`, `Build`, `Route`, `ParkedSpot`, `HeroSpot`, and the size of the board, `TILE`. |
 | `geo.ts` | `k.b`, the builder everything solid goes into: `box`, `obox` (a box at an angle), `cyl` (a cylinder, a cone or a prism), `quad`, `tri`, `sweep` and `beam` (bars along a line). A wall's `win` gives it windows that light up at night. |
-| `ground.ts` | `ground` (the paving, with holes for water), `area` (a lawn, a square, a beach), `flat` (the same with holes in it, for a moat, a pond or a cutting: Japan and Hong Kong use it), `water`, `terrace` (one level of a hill), and the shapes `rect`, `oval` and `band`. |
+| `ground.ts` | `ground` (the paving, with holes for water), `area` (a lawn, a square, a beach), `flat` and `walls` (the floor and the walls of any outline: a moat, a pond, a cutting, a curved front), `water`, `terrace` (one level of a hill), and the shapes `rect`, `oval` and `band`. A band's width can change along its length, for a river. `onBoard` cuts a shape off at the edge of the board. |
 | `paths.ts` | `buildPath`: a line that roads, rails and vehicles follow, from stretches of four kinds: `ring` (closed, with rounded corners), `poly` (open), `ramp` (open and rising) and `helix` (a spiral, or any arc). A stretch can have a `speed` of its own. `joined` and `stretch` make one path out of pieces of others. |
-| `roads.ts` | `street` (a street on the ground along any path: junctions and zebra crossings are made where streets cross), `lampsAlong`, and `roadDeck` (a road above the ground: a viaduct, a bridge, a ramp). `open` leaves a gap in a deck's low wall where another road joins it. |
+| `roads.ts` | `street` (a street on the ground along any path: junctions and zebra crossings are made where streets cross), `lampsAlong`, and `roadDeck` (a road above the ground: a viaduct, a bridge, a ramp). `open` leaves a gap in a deck's low wall where another road joins it. `clearOfStreets` warns in the console when a lot stands in a street. |
 | `buildings.ts` | `ordinaryBuildings`: boxes in the tile's own styles, with roofs, shopfronts and signs, from a list of lots. A lot is a corner and a size (`x`, `z`, `w`, `d`, `y0`, `y1`), not two corners. |
 | `rail.ts` | `track`, `trestle` (the steel under a raised track), `station` and `train`. A train can have a car of the tile's own shape, so the same pieces make a tram, a bullet train, a ferry, a racehorse or a jumbo jet. A line can end (`ends`): the train changes ends there and goes back. Trains that share track wait for each other (`blocks`). North America's `l.ts` does both. |
 | `air.ts` | `helicopter`: it rests on a pad, and now and then takes off, flies a round and lands. |
 | `effects.ts` | `Smoke`: exhaust, and steam over a hot pool. Japan uses it. |
 | `build.ts` | `placed`: builds something elsewhere and at an angle. For anything that is not square to the board, and for a model written to stand at (0, 0). |
 | `signs.ts` | `SignDef`: neon lettering, lit boxes, painted boards, and signs a tile paints itself. `font` sets a sign in another script: `JAPANESE`, `CHINESE` and `DEVANAGARI` are there, and a tile can name its own. |
+
+| File | What it gives | Where to see it used |
+| --- | --- | --- |
+| `lanes.ts` | Roads that are not a grid: a lane from straights and circles, with the bends between them worked out. A roundabout, an avenue that leaves one at any angle, lanes that stay side by side round a bend, a teardrop to turn in. | Europe |
+| `lines.ts` | A road drawn as with a pen: straight stretches and arcs, each with a height at its ends, so that a road can climb through hairpins or run on stilts. A lane beside it keeps the road's own height round a bend. `thereAndBack` makes one route of a road with a turning loop at each end. | Japan |
+| `corners.ts` | A road as a list of corners, rounded and then given heights, with the changes of slope eased. Lanes beside it, and the road handed over as a path. Also for a line that a train, a boat or an aeroplane follows. | Hong Kong |
+| `terrain.ts` | Ground that slopes: `field` works out a hill's height over a grid, `drawField` draws it in flat facets, green or rock by how steep each is, `carved` cuts a level bench into it for a road, and `heightOn` gives its height anywhere, so that trees, people and buildings stand on the slope. | Hong Kong |
+| `tunnel.ts` | `tunnelMouth`: a cutting, a hood, and darkness a little way in, where a vehicle goes out of sight. | Hong Kong |
+| `shapes.ts` | Shapes for landmarks: `face3` (a triangle that always faces the way it is told to), `prism` (walls round a plan of any number of corners), `gable` and `hip` (roofs), `slab` (between two points at different heights), `shell` (a roof that follows a line), `drum`, `railing`, and `beacon` (a lamp for the top of a tower). | Hong Kong |
+| `parts.ts` | Small parts for landmarks: `lathe` (a dome, a cap or a basin turned from an outline), `hipped` (a roof with four slopes: a mansard), `archway`, `roundel` (a rose window or a clock), `pinnacle`, `wheel` (on a level axle), flags, `parasol`, `twoWheeler`, `figure` (a person in uniform: a guard, a statue), and a `tri` that faces the way it is told to. | Europe |
+| `props.ts` | Small things for a street: `vending` machines, a paper `lantern`, a lamp `mast`, `standingCar` (a car in given colours that is part of a scene and never drives), a `dekotora`, and `hungSign` (a sign hung out over a street, read from both ways). | Japan, Hong Kong |
+| `movers.ts` | Cars for `train`, each a shape that goes along a line of its own: a tram and a bus with two decks, a ferry, a junk, a dragon boat, a funicular's car, a racehorse, a jumbo jet, and a sampan, a minibus and a lighter that stand still. | Hong Kong |
+| `aircraft.ts`, `dragon.ts` | Things in the air that never land: `concorde`, a `balloon`, and a `dragon` that flies a round after a pearl. | Europe, Japan |
+| `checks.ts` | `checkRoads` (two roads that cross on the level, a road that runs through something built) and `hiddenBy` (what stands between a place and the camera). They speak in the console. | Hong Kong |
+
+Three of these lay out a road, and which to use depends on the road. On the flat, with roundabouts or bends that are not corners of a grid: `lanes.ts`. Up and down, drawn stretch by stretch: `lines.ts`. Up and down, given as corners: `corners.ts`. A grid of streets needs none of them: `ring` and `poly` in `paths.ts` do it.
 
 `k` also plants and places the small things, which are drawn together however many there are: `k.tree`, `k.person`, `k.lamp`, `k.sign`, and `k.glows` and `k.lights` for whatever shines at night. `k.tree`, `k.person` and `k.lamp` each take a height as their last argument, so they can stand on a terrace, a roof or a deck. `k.each` is called on every frame, for the few things that move.
 
@@ -246,7 +259,7 @@ Traps the earlier tiles fell into:
 - **`lampsAlong` comes after every street.** Its `off` is how far the lamps stand from the middle of the road: about 1.2 more than half the carriageway. It keeps lamps out of other streets, but it knows nothing of buildings or hills.
 - **A sign shows from one side.** A sign that hangs in the air needs a second one back to back, and a thin dark box between the two. Give a small sign a `size` in pixels, or it takes a whole row of the sheet.
 - **A glow and a light are different things.** A glow (`k.glows`) is a box that is always drawn, dim by day and bright by night. A light (`k.lights`) is a pool on the ground by night and nothing by day. A landmark with no light near it stands in the dark with its windows lit: give each one or two.
-- **`quad` turns itself to face its normal and `tri` does not.** A triangle given the wrong way round is drawn only from behind, so a gable is a hole from the side it is meant to be seen from. Three tiles fell into this. Have a triangle of your own that always faces its normal, and use it for every triangle.
+- **`quad` turns itself to face its normal and `tri` does not.** A triangle given the wrong way round is drawn only from behind, so a gable is a hole from the side it is meant to be seen from. Three tiles fell into this. Use `face3` in `shapes.ts` or `tri` in `parts.ts` for every triangle: both always face the way they are told to.
 - **The engine's windows are panes of glass.** That is right for a house and wrong for a ruin: the Colosseum with windows was an office block. Tall slits (`kind: 6`) pass for Gothic windows and small ones (`kind: 4`) for a castle's, and anything round-headed has to be built. A dark colour with `interior(lit)` and a large `lit` is dark by day and glows at night: an arch, a doorway, a porch with a lamp in it.
 - **Thin bars come out dark**, because the outline is drawn round every bar. Paint ironwork a good deal lighter than it should look.
 - **Where two streets meet at a T**, the one that ends has to run on to the far kerb of the other for its junction to be found.
@@ -256,13 +269,18 @@ Traps the earlier tiles fell into:
 - **Heights under the ground.** The ground is at 0, water at -0.9 and the floor of the base at -2.4. A hull goes down to -1.2 or lower. A hole in `ground` must not touch the edge of the board: bring water that runs to the edge in by 0.2.
 - **For something that turns**, build it with a `GeoBuilder` of its own, make a mesh of it with `k.mat.city()`, add it to `k.group` and turn it in `k.each`.
 
-The kit does not yet have: vehicles of a tile's own shape in the traffic (a rickshaw, a double-decker), people who walk, or traffic that waits at a crossing. Three more things have been built inside tiles and wait to be moved into the engine. Until they are, copy them from there:
+What the kit does not yet have, as the first tiles found:
 
-- **Ground that slopes**: `terrain.ts` in Japan and in Hong Kong, a hill as a sheet of facets over a grid, with a bench cut where a road runs.
-- **A road of any shape, with heights**: `lines.ts` in Japan and `geom.ts` in Hong Kong.
-- **Roads that are not a grid**: `lanes.ts` in Europe lays a lane from straights and circles and works out the bends between them, so that a roundabout, an avenue that leaves one at any angle and a hairpin are each a line or two.
-- **A tunnel's mouth**: `portal` in Hong Kong's `city.ts`.
-- **Checks that run on every load**: `check.ts` in Hong Kong, for roads that cross on the level or run through a lot, and `clear` in Europe's `index.ts`, for anything that stands in a street.
+- **Vehicles of a tile's own shape in the traffic**: a rickshaw, a double-decker. A tram or a bus is a `train` on a lane that no route uses, and a train does not see traffic.
+- **Traffic that waits**: at a crossing where people walk, or for a bridge that lifts.
+- **People who walk, and people who can be dressed.** A guard or a gondolier is built as boxes with `figure` in `parts.ts`.
+- **A window that is not a pane of glass**, such as a dark arch, and **roofs other than hip roofs** on ordinary buildings.
+- **Kinds of tree.** Nine in ten come out green. Japan's cherry trees are its own, in its `scenes.ts`.
+- **A shadow under a train**, and **boats that bob.**
+- **A place for a hero that moves**, such as the deck of a ferry that sails.
+- **A mirror image that leaves out what is under the ground.** At night the lamps of vehicles in a tunnel under water show faintly in the water above.
+
+Where a tile needs one of these, build it in the tile's folder with `k.group` and `k.each`, as `train` in `rail.ts` does, and note it for the engine. One thing a tile may still want to read rather than use: Japan's own `terrain.ts`, which shapes a mountain with a level bench wherever a road runs, straight from its plan.
 
 ## What to reuse
 
@@ -278,7 +296,7 @@ Much of the thinking for every district has been done, and some of the building.
   - `prototype/look/src/scene-data.ts` has the look prototype's Japanese signs and the brands with Japanese names.
 - **The tiles that are built**, as worked examples of a whole tile. In each, `plan.ts` is the tile as data, `city.ts` builds it and `landmarks.ts` holds its models. Their pictures are in `app/screenshots/`.
   - **North America**: `l.ts` is a railway with branches, and `ground.ts` a ground material of its own.
-  - **Japan**: a mountain and a pass (`terrain.ts`, `lines.ts`), a road on stilts over water with parking areas (`wangan.ts`), a train of its own shape (`shinkansen.ts`), something that flies (`dragon.ts`), and small things used all over (`props.ts`).
-  - **Hong Kong**: a harbour between two shores, a road up a hill and through a tunnel (`geom.ts`, `terrain.ts`), everything that goes round a line of its own (`movers.ts`), shapes such as pitched roofs and walls round any plan (`shapes.ts`), and a check for roads that runs on every load (`check.ts`).
-  - **Europe**: roads that are not a grid, with roundabouts (`lanes.ts`, `roads.ts`), traffic that keeps left in one quarter and right in the others, a river of changing width (`riverShape` in `index.ts`), a file for each quarter and one for the small parts they share (`parts.ts`: domes, hipped roofs, arches, rose windows, figures in uniform), and things in the air and on the water (`air.ts`, `water.ts`).
+  - **Japan**: a mountain and a pass (its own `terrain.ts`, with the engine's `lines.ts`), a road on stilts over water with parking areas (`wangan.ts`), a train of its own shape (`shinkansen.ts`), and many small scenes (`scenes.ts`).
+  - **Hong Kong**: a harbour between two shores, a road up a hill and through a tunnel (`city.ts`, with the engine's `corners.ts`, `terrain.ts` and `tunnel.ts`), trams, buses, ferries and a jumbo jet each on a line of its own, and checks that run on every load.
+  - **Europe**: roads that are not a grid, with roundabouts (`roads.ts`, with the engine's `lanes.ts`), traffic that keeps left in one quarter and right in the others, a river of changing width with a canal let into its bank (`riverShape` in `index.ts`), a file for each quarter, and boats on the river (`water.ts`).
 - **The stack**, in `prototype/two-tiles`: four ramps between a boulevard and a freeway above it. A road pattern waiting for a tile.

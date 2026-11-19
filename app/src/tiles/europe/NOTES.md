@@ -54,15 +54,15 @@ Besides these: Westminster Bridge, Parliament Square, a bus stand with a double-
 | File | What is in it |
 | --- | --- |
 | `plan.ts` | The tile as numbers: the river, the streets' lines, the hill, the list of things, the plots of ordinary buildings |
-| `lanes.ts`, `roads.ts` | How a lane is laid from straights and circles, and the tile's streets and loops |
+| `roads.ts` | The tile's streets and loops, laid from straights and circles with the engine's `lanes.ts`, which was written here |
 | `index.ts` | The ground, the river, the hill, the streets, the ordinary buildings, trees, and the places for heroes |
 | `london.ts` | Parliament and Big Ben, Westminster Bridge, Tower Bridge, the Eye |
 | `london-city.ts` | The Tower, St Paul's, the palace, Piccadilly Circus, the Gherkin, Ace Cafe, and London's pavements |
 | `paris.ts` | Everything in Paris but the Eiffel Tower itself |
 | `italy.ts` | Everything in Italy but the Leaning Tower itself |
 | `landmarks.ts` | Big Ben and the Leaning Tower, which came from the look prototype, and the Eiffel Tower, built again as open ironwork |
-| `parts.ts` | Small parts that several landmarks share |
-| `air.ts`, `water.ts` | Concorde and the balloon; the boats |
+| `app/src/engine/parts.ts` | Small parts that several landmarks share. It was written here and moved. |
+| `water.ts` | The boats. Concorde and the balloon are the engine's `aircraft.ts`, which was written here. |
 
 ## Places for heroes
 
@@ -205,6 +205,8 @@ All on 19 November 2026. The traffic, the roads and the heroes were checked afte
 - `npm run typecheck` and `npm run build` pass, and the console shows no warnings and no errors.
 
 ## For the engine
+
+On 19 November 2026 the main session moved these into the engine as they were, and this tile uses them from there: `lanes.ts` and `parts.ts` under their own names, `air.ts` as `aircraft.ts`, and `onBoard` into `ground.ts`. From what is described below the engine also gained four things for any tile: `clearOfStreets` in `roads.ts`, which does what this tile's `clear` does; a `band` in `ground.ts` whose width can change along its length, for a river; `wimmel.seen(x, y, z)`, which says whether a place is seen from where the view is; and `wimmel.shot(name, { plan: true })`, which takes the picture from straight above. This tile keeps its own `clear`, which names the street, and its own river, which has a canal let into its bank. Where these notes say that a moved file is in this folder, read it with that in mind.
 
 Built in this folder, and of use to any tile:
 

@@ -5,13 +5,13 @@ This file records what a later reader cannot see in the code.
 ## Where things are
 
 - `plan.ts` is the tile as data: the water, the streets, the three long roads, the railway, where each thing stands, the routes, and the parked vehicles.
-- `lines.ts` draws a road's middle line and takes the lanes from it.
+- A road's middle line, and the lanes taken from it, are drawn with the engine's `lines.ts`, which was written here.
 - `terrain.ts` shapes Fuji and the hills.
 - `city.ts` builds the ground and the streets, and calls the rest.
-- `wangan.ts` builds the Wangan, Daikoku and Tatsumi. `shinkansen.ts` builds the viaduct and the trains. `dragon.ts` builds the dragon.
+- `wangan.ts` builds the Wangan, Daikoku and Tatsumi. `shinkansen.ts` builds the viaduct and the trains. The dragon is the engine's `dragon.ts`, which was written here.
 - `landmarks.ts` builds the towers, the temples and shrines, the castle and the stations.
 - `scenes.ts` builds the smaller things: the scramble, the places where cars gather, the mountain's scenes, what floats on the water, and the lanterns.
-- `props.ts` holds the small things used all over: vending machines, lanterns, lamp masts, the dekotora.
+- The small things used all over, which are vending machines, lanterns, lamp masts and the dekotora, are the engine's `props.ts`, which was written here.
 - `signs.ts` holds the signs.
 
 ## The things on the tile
@@ -126,6 +126,8 @@ The real names are names of roads and places, and what a real thing says on itse
 - 忠犬ハチ公: "the faithful dog Hachikō", on the plate under the statue.
 
 ## For the engine
+
+On 19 November 2026 the main session moved three of these into the engine as they were, and this tile uses them from there: `lines.ts`, `dragon.ts` and `props.ts` are now in `app/src/engine/` under the same names. `terrain.ts` stays here, because it shapes Fuji and Kyoto's hill from this tile's own plan. Where these notes say that one of the three is in this folder, read it with that in mind.
 
 Built in this folder, and worth moving:
 

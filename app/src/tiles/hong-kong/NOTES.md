@@ -156,6 +156,8 @@ Temples are shown from outside only, with what stands in front of every such tem
 
 ## For the engine
 
+On 19 November 2026 the main session moved these into the engine as they were, and this tile uses them from there. In `app/src/engine/`: `geom.ts` is now `corners.ts`, `check.ts` is `checks.ts`, and `terrain.ts`, `shapes.ts` and `movers.ts` keep their names. The tunnel's mouth is `tunnelMouth` in `tunnel.ts`, and the sign hung out over a street is `hungSign` in `props.ts`. The check of what hides what, under "For the next tile", is `hiddenBy` in `checks.ts`. Where these notes say that one of them is in this folder, read it with that in mind.
+
 Built in this folder, and worth having in the engine:
 
 - **A road of any shape.** `geom.ts` makes a road from corners: it rounds them, gives every point a height, runs lanes beside it, and hands it to the engine as short `ramp` stretches. The Peak road, the viaduct, the tunnel's ramps and the jumbo's flight are made this way.
