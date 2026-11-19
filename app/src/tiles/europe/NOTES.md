@@ -51,7 +51,9 @@ Besides these: Westminster Bridge, Parliament Square, a bus stand with a double-
 
 ## How high things stand
 
-The page for tile builders sets one scale for heights across the city: about 3.2 metres to a unit for a tower known by its height, and up to about twice that for a small landmark, so that it can be recognised. It was written after this tile was built and called final. The collector was shown where the tile departed from it, and on 19 November 2026 had the Gherkin and Florence's cathedral raised: the Gherkin from 50 to 58, and the cathedral's cross from 28 to 35.5, with its nave, its drum and its bell tower in proportion. This is how the tile stands now. The heights on the tile were read back from what is built, in the page's console, and the heights in life are the commonly published ones.
+[The page for tile builders](../../../../docs/building-a-tile.md) sets one scale for heights across the city, the one North America's towers set: about 3.2 metres to a unit for a tower known by its height, and up to about twice that for a small landmark, so that it can be recognised. The collector's word on it, as the main session wrote it down here, is that things should be roughly to scale, and that looking good comes first. The rule was written after this tile was built and called final. The collector was shown where the tile departed from it, and on 19 November 2026 had the Gherkin and Florence's cathedral raised: the Gherkin from 50 to 58, and the cathedral's cross from 28 to 35.5, with its nave, its drum and its bell tower in proportion. This is how the tile stands now. The heights on the tile were read back from what is built, in the page's console, and the heights in life are the commonly published ones.
+
+When the tile joined the board, the main session put a shorter table of its own here. It had the Gherkin at 50 and Florence's cathedral at 28, and said that Big Ben was kept a little above the Gherkin. The collector had the two raised after that, so this table takes that one's place.
 
 | | In life | At the city's scale | On the tile | |
 | --- | --- | --- | --- | --- |
@@ -196,14 +198,14 @@ At night the two cost the same. By day Europe costs about four tenths more, and 
 
 ## Checks
 
-All on 19 November 2026. The traffic, the roads and the heroes were checked after `main` was merged in at `b9c0ae8`.
+All on 19 November 2026. The traffic, the roads and the heroes were checked after `main` was merged in at `b9c0ae8`. `main` was merged in once more at `4d282dd`, after the two buildings were raised: it brought the tile's place on the board and no change to the engine.
 
 - **Traffic.** The page's own check, twenty minutes in steps of a twentieth of a second: no two of the 89 vehicles came nearer than 4.95, none stood still, no vehicle came nearer than 11 to the next on its own route (that was on the Champs-Élysées; every other route kept 12.8 or more), and `vehicles.shared()` was empty. The nearest two are in neighbouring lanes of the star.
 - **Nothing in a road.** Every figure and every tree was tried against every carriageway, from the page's console. Five cypresses stood in the outer lane of the Colosseum's road, where they had been since the blockout, and are moved onto the pavement. No figure stood in a road.
 - **Heroes.** With `?place=`, each of the six places took a hero, standing where the plan says, and a ray from it towards the camera met nothing. On the two routes tried, `paris-circuit` and `montmartre`, a hero drove. No picture of a hero was taken. Each hero on show faces east or south, towards the first view.
 - **Nothing in a street.** `clear` is asked about every plot and every box in each quarter's list, and says nothing.
 - **Weather and hours.** Looked at by day and by night from all four sides, and in rain and in snow.
-- **After the Gherkin and Florence's cathedral were raised.** `clear` was given the Gherkin's wider foot and says nothing. Both were looked at by day, at night and in rain, the cathedral from two sides, and London and Florence from the side with the view laid nearly flat, to see the heights against one another. No road, no route and no place for a hero was touched, and neither building stands between a place and the first view, so the traffic and the heroes were not checked again.
+- **After the Gherkin and Florence's cathedral were raised.** `clear` was given the Gherkin's wider foot and says nothing. Both were looked at by day, at night and in rain, the cathedral from two sides, and London and Florence from the side with the view laid nearly flat, to see the heights against one another. The sight lines were asked again, as the page says to when a height changes. A ray from each of the six places for a hero towards the camera meets nothing, and no thing's foot, middle or top stands behind either building. The cathedral's dome hides a little more of the quay behind it than it did: about 15 units of each of the two lanes there, where the lower dome hid about 9 of one and 14 of the other, so a car is out of sight for a second. On the board, the Gherkin stands in front of a little more of the south-west corner of the tile to the north, which is Japan's as the board stands. No road and no route was touched, so the traffic was not run again.
 - `npm run typecheck` and `npm run build` pass, and the console shows no warnings and no errors.
 
 ## For the engine

@@ -8,7 +8,7 @@ import type { TileDef } from '../engine/tile';
 const found = import.meta.glob<{ default: TileDef }>('./*/index.ts', { eager: true });
 
 /** The order the tiles stand in on the board. A tile that is not named here comes after these, by name. */
-const ORDER = ['north-america', 'japan', 'hong-kong'];
+const ORDER = ['north-america', 'japan', 'hong-kong', 'europe'];
 const rank = (t: TileDef): number => (ORDER.includes(t.id) ? ORDER.indexOf(t.id) : ORDER.length);
 
 /** Every tile there is, the hidden ones included. */
