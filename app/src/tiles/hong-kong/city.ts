@@ -10,6 +10,7 @@ import { ASPHALT, CONCRETE, lampsAlong, roadDeck, street } from '../../engine/ro
 import type { Build, TileParts } from '../../engine/tile';
 import { checkRoads } from './check';
 import { fine, flat, lengths3, pathOf, rounded, stretch, type P2, type P3 } from './geom';
+import { busCar, dragonBoat, ferryBoat, junkBoat, lighter, peakTramCar, sail, sampan, shuttle, tramCar } from './movers';
 import {
   BOARD, BUSES, FILL, FUNICULAR, HARBOUR, HERO_SPOTS, HILL, KOWLOON, LEVELS, LOTS, PARKED, PEAK, POINT, RACECOURSE, ROUTES, RUN, SHELTER, SHORE, TRAM, TUNNEL,
   hillHeight, type Lot,
@@ -217,9 +218,11 @@ export function buildCity(k: Build): TileParts {
     const rails = pathOf(flat(TRAM, 0.04), true);
     street(k, rails, { lanes: 1, width: 3, sidewalk: 0, color: 0x55575d, zebras: false });
     track(k, rails, { sleepers: false });
-    for (const f of [0, 0.25, 0.5, 0.75]) train(k, rails, { cars: 1, speed: 10, from: rails.length * f, body: 0x1f6b3a, stripe: 0xf2efe6 });
+    // most trams are dark green; a few are painted all over, as the ones that carry advertising are
+    const liveries = [tramCar(), tramCar(0xb5332a, 0xf2e6c4), tramCar(), tramCar(0x2f5fa8, 0xf2d58f), tramCar(), tramCar(0xe0a92e, 0x2a2c31)];
+    liveries.forEach((car, i) => train(k, rails, { cars: 1, speed: 10, from: (rails.length * i) / liveries.length, car }));
     const buses = pathOf(flat(BUSES, 0.02), true);
-    for (const f of [0, 0.34, 0.67]) train(k, buses, { cars: 1, speed: 11, from: buses.length * f, body: 0xc8322b, stripe: 0xf2efe6 });
+    [busCar(), busCar(0xe8c24a, 0x3f6fb5), busCar()].forEach((car, i) => train(k, buses, { cars: 1, speed: 11, from: (buses.length * i) / 3, car }));
   }
 
   // -------------------------------------------------------------------------
@@ -254,17 +257,122 @@ export function buildCity(k: Build): TileParts {
   }
   // the breakwater of the typhoon shelter, and a few boats in it
   b.box(SHELTER.x1 - 0.6, -1.4, SHELTER.z0 + 4, SHELTER.x1 + 0.6, 0.5, SHELTER.z1, QUAY);
-  for (const [x, z] of [[-37, 84], [-34, 90], [-37, 94], [-23, 86], [-23, 93]]) b.box(x - 1.1, -0.95, z - 2.2, x + 1.1, 0.5, z + 2.2, 0x8a5a3c, { top: 0xd8c9a8 });
+  for (const [x, z, a, c] of [[-37, 84, 1.5, 0x4f8f6a], [-34, 89, 1.7, 0xc8523f], [-37, 94, 1.5, 0x3f6fa3], [-22.8, 86, 1.6, 0xd1b25a], [-22.8, 93, 1.5, 0x4f8f6a]]) sampan(b, x, z, a, c);
 
   // -------------------------------------------------------------------------
-  // Lamps, and a first few figures
+  // On the water, and up the hill
+  // -------------------------------------------------------------------------
+
+  const SEA_Y = -0.9;
+  {
+    // the Star Ferry: two boats that pass each other, between Central's piers and Tsim Sha Tsui
+    const a: P2 = [-3.3, -84.6], c: P2 = [5.5, -44.8], l = Math.hypot(c[0] - a[0], c[1] - a[1]);
+    const ox = ((c[1] - a[1]) / l) * 2.3, oz = (-(c[0] - a[0]) / l) * 2.3;
+    const boat = ferryBoat();
+    shuttle(k, boat, [a[0] + ox, SEA_Y, a[1] + oz], [c[0] + ox, SEA_Y, c[1] + oz], { speed: 4.2, dwell: 7, bob: 0.05 });
+    shuttle(k, boat, [a[0] - ox, SEA_Y, a[1] - oz], [c[0] - ox, SEA_Y, c[1] - oz], { speed: 4.2, dwell: 7, start: 0.5, bob: 0.05 });
+    // a junk under red sails, round the south of the harbour
+    sail(k, junkBoat(), pathOf(flat(fine(rounded([[-11, 60], [17, 60], [17, 93], [-11, 93]], 10, true)), SEA_Y), true), { speed: 3.2, bob: 0.07 });
+    // dragon boats in Hung Hom's bay: three crews, down the course and back
+    [0xc8322b, 0xe8c24a, 0x3f6fb5].forEach((team, i) => {
+      const x = 24.4 + i * 3;
+      const course = pathOf(flat(fine(rounded([[x, 68], [x, 108], [x + 1.5, 108], [x + 1.5, 68]], 0.75, true)), SEA_Y), true);
+      sail(k, dragonBoat(team), course, { speed: 6.4 + i * 0.5, from: 0.02 + i * 0.03, bob: 0.03 });
+    });
+    // what lies at anchor: a lighter working cargo off the Convention Centre, another off Central, sampans off Tsim Sha Tsui
+    lighter(b, 7.5, 16, Math.PI / 2 - 0.2);
+    lighter(b, 8, -104, 0.15);
+    sampan(b, 4, -8, 0.4, 0xc8523f);
+    sampan(b, 3, 2, -0.5);
+    sampan(b, 18, 30, 1.2, 0x3f6fa3);
+    // the Peak Tram's car, up and down its incline
+    const F = FUNICULAR, z0 = F.z0 + 4.5, z1 = F.z1 - 2.5;
+    const slope = (F.y(z1) - F.y(z0)) / (z1 - z0);
+    shuttle(k, peakTramCar(slope), [F.x, F.y(z0) + 0.16, z0], [F.x, F.y(z1) + 0.16, z1], { speed: 5, dwell: 6 });
+  }
+
+  // -------------------------------------------------------------------------
+  // Trees
+  // -------------------------------------------------------------------------
+
+  const built = [...LOTS, ...FILL];
+  const inLot = (x: number, z: number, pad: number): boolean => built.some((l) => x > l.x0 - pad && x < l.x1 + pad && z > l.z0 - pad && z < l.z1 + pad);
+  {
+    // the Peak is green wherever nothing is built: on every level, clear of the road, the tram's cut and the houses
+    const road = PEAK.road, clear = (PEAK.half + 1.7) ** 2;
+    const nearRoad = (x: number, z: number): boolean => road.some((p) => (p[0] - x) ** 2 + (p[2] - z) ** 2 < clear);
+    const spots: P2[] = [];
+    for (let i = 0; i < 2600 && spots.length < 170; i++) {
+      const x = HILL.x0 + 1.6 + k.rand() * (HILL.x1 - HILL.x0 - 3.2), z = N + 2 + k.rand() * (LEVELS[0].south - N - 3);
+      const y = hillHeight(x, z);
+      if (y === HILL.top) continue; // the summit is paved
+      if ([[-1.7, 0], [1.7, 0], [0, -1.7], [0, 1.7]].some(([dx, dz]) => hillHeight(x + dx, z + dz) !== y)) continue;
+      if (nearRoad(x, z) || inLot(x, z, 1.5)) continue;
+      if (x > HILL.cut.x0 - 1.9 && x < HILL.cut.x1 + 1.9 && z < FUNICULAR.z1 + 4) continue;
+      if (spots.some((t) => (t[0] - x) ** 2 + (t[1] - z) ** 2 < 8)) continue;
+      spots.push([x, z]);
+      k.tree(x, z, 0.55 + k.rand() * 0.5, false, y);
+    }
+  }
+  // along both promenades, round the racecourse, and on the Convention Centre's point
+  for (let z = -54; z < 0; z += 9) k.tree(-22.6, z, 0.6);
+  for (let z = 4; z < 60; z += 8) k.tree(25.2, z, 0.6);
+  for (let z = -38; z < -4; z += 8.5) k.tree(29, z, 0.55);
+  for (const [x, z] of [[-17, 30], [-8.5, 20.5], [-8.5, 30.5], [-22.5, 48], [-22.5, 66], [-22.5, 74], [-42, 100], [-30, 111], [-36, 111], [39, 66], [39, 78], [39, 90], [39, 102]]) k.tree(x, z, 0.6);
+  for (const [x, z] of [[46, -50], [58, -50], [70, -50], [82, -62], [90, -62], [80, -50], [92, -50], [82, 48], [80, 94], [92, 80], [47, 60], [58, 62], [47, 88], [58, 90]]) k.tree(x, z, 0.65);
+
+  // -------------------------------------------------------------------------
+  // Light at night: lamps on the streets, and a string of lamps along every road above the ground
   // -------------------------------------------------------------------------
 
   for (let z = -76; z < 60; z += 17) k.lamp(-24.3, z, Math.PI);
   lampsAlong(k, nathan, 11.2);
   lampsAlong(k, salisbury, 6.2);
-  for (let i = 0; i < 40; i++) k.person(-24.6 + k.rand() * 4.2, -56 + k.rand() * 56);
-  for (let i = 0; i < 40; i++) k.person(23 + k.rand() * 4.4, 2 + k.rand() * 56);
+  {
+    const string = (pts: P3[], hw: number, every: number, to = Infinity): void => {
+      const along = lengths3(pts);
+      let next = every / 2;
+      for (let i = 1; i < pts.length - 1; i++) {
+        if (along[i] < next || along[i] > to) continue;
+        next = along[i] + every;
+        const tx = pts[i + 1][0] - pts[i - 1][0], tz = pts[i + 1][2] - pts[i - 1][2], l = Math.hypot(tx, tz) || 1;
+        for (const side of [-1, 1]) {
+          k.glows.push({ x: pts[i][0] + (-tz / l) * (hw - 0.22) * side, y: pts[i][1] + 1.25, z: pts[i][2] + (tx / l) * (hw - 0.22) * side, sx: 0.4, sy: 0.4, sz: 0.4, color: '#ffc27a' });
+        }
+        if (i % 2 === 0) k.lights.push({ x: pts[i][0], z: pts[i][2], r: 12, color: '#ffc98a', k: 0.45 });
+      }
+    };
+    string(RUN.viaduct, 2.9, 8);
+    string(PEAK.road, PEAK.half, 8, PEAK.sTop);
+  }
+  for (const [x, z] of [[-93, -27], [-70, -19], [-62, -30]]) k.lights.push({ x, z, r: 14, color: '#ffe2ae', k: 0.5 });
+
+  // -------------------------------------------------------------------------
+  // People: still figures, as on a model railway
+  // -------------------------------------------------------------------------
+
+  {
+    const crowd = (n: number, x0: number, z0: number, x1: number, z1: number, y = 0): void => {
+      for (let i = 0; i < n; i++) {
+        const x = x0 + k.rand() * (x1 - x0), z = z0 + k.rand() * (z1 - z0);
+        if (!inLot(x, z, 0.5)) k.person(x, z, y);
+      }
+    };
+    crowd(34, -24.6, -56, -20.6, 0); // Central's promenade
+    crowd(16, -24, -110, -11.5, -60); // by the ferry piers and the wheel
+    crowd(40, 23, 2, 27.4, 58); // the Avenue of Stars
+    crowd(16, 11.5, -40, 27, -3); // round the Clock Tower
+    crowd(22, 35, 64, 42, 110); // watching the dragon boats
+    crowd(26, 60.5, 96.8, 101, 100.2); // at the night market
+    crowd(16, -66, -23, -60.5, -16, HILL.top); // at the lookout on the Peak
+    crowd(8, -100, -30, -89, -24, HILL.top);
+    crowd(20, RACECOURSE.x1 - 5, RACECOURSE.z0 + 3, RACECOURSE.x1 - 3.2, RACECOURSE.z1 - 3); // along the rail at the races
+    crowd(10, -44, 82, -40.6, 97); // on the quay of the typhoon shelter
+    crowd(12, -19, 20, -7, 33); // on the Convention Centre's point
+    crowd(10, -102, -112, -60, -102); // Sheung Wan
+    for (const z of [-12.5, 6.5]) crowd(18, 42, z - 1.2, 96, z + 1.2); // Nathan Road's pavements
+    crowd(12, 40.5, -34, 46.5, -18); // the Peninsula's forecourt
+  }
 
   if (import.meta.env.DEV) checkRoads(ROUTES, { tram: flat(TRAM, 0.04), buses: flat(BUSES, 0.02) });
 

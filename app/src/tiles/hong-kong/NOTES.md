@@ -1,6 +1,6 @@
 # Hong Kong: notes
 
-What a later reader cannot see in the code. The tile is at the blockout stage: its ground, its roads and its traffic are built, and every thing on it is still a plain box with its name on a board.
+What a later reader cannot see in the code. The tile is at the blockout stage: its ground, its roads, its traffic and whatever moves on rails or on the water are built, and every building on it is still a plain box with its name on a board.
 
 ## How the tile lies
 
@@ -33,11 +33,13 @@ Wan Chai and Causeway Bay
 16. The Monster Building
 
 The harbour
-17. The Star Ferry
-18. A junk under red sails (not placed yet)
-19. A dragon boat race (not placed yet)
+17. The Star Ferry: two boats that cross between Central's piers and Tsim Sha Tsui
+18. A junk under red sails
+19. A dragon boat race, in Hung Hom's bay
 20. The car ferry at its pier (a place for a hero)
 21. A Symphony of Lights (not built yet)
+
+Besides these, two lighters with derricks lie at anchor, and sampans are moored in the typhoon shelter and off Tsim Sha Tsui.
 
 Tsim Sha Tsui
 22. The Clock Tower
@@ -92,4 +94,7 @@ Built in this folder, and worth having in the engine:
 Missed, or found wanting:
 
 - **The mirror image shows what is under the ground.** Water and wet streets mirror the city from a camera below the ground, and that camera draws every vehicle, including those in a tunnel under the water. At night their lamps show faintly in the harbour above the tunnel.
-- **Vehicles of a tile's own shape.** The trams and the buses are `train`s with the L's car for now. They need lanes that no route uses.
+- **Vehicles of a tile's own shape in the traffic.** The trams and the double-decker buses are `train`s with a car of their own shape (`movers.ts`). A train does not see traffic, so they have lanes that no route uses: the trams their own tracks, the buses the two middle lanes of Nathan Road. A bus that could drive a route among the cars would be better.
+- **Things that go to and fro, and things that sail.** `shuttle` in `movers.ts` carries a shape between two points without turning it round, for the Star Ferry and the Peak Tram. `sail` takes a boat round a closed path. `train` covers neither: it always runs a loop, nose first.
+- **A place for a hero that moves.** The car ferry is moored, because a hero's place on show cannot move. A ferry that carried a hero across the harbour would need the engine's help.
+- **Cost.** With water on a tile the whole city is drawn twice, once for the mirror image. The blockout takes about 3.1 ms a frame where North America takes 2.6, with half North America's triangles.
