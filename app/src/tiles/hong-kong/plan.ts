@@ -151,14 +151,18 @@ const PEAK_CUTS: Bench[] = [
 export const PEAK_GROUND: Field = field(HILL.x0, HILL.z0, HILL.x1, HILL.z1, 2, (x, z) => carved(x, z, peakNatural(x, z), PEAK_CUTS));
 
 /** Lion Rock: the ground it covers in Kowloon's north-east corner, and the mouths of the tunnel through it. */
-export const LION = { x0: 76, z0: BOARD.z0, x1: BOARD.x1, z1: -84, gate: 5.4, half: 3.2, lane: 99.5, street: -103.5 };
+export const LION = { x0: 76, z0: BOARD.z0, x1: BOARD.x1, z1: -84, gate: 5.4, half: 3.2, lane: 99.5, street: -103.5, ridge: -99 };
 const LION_TUNNEL: P2[] = line([[LION.lane, LION.z1], [LION.lane, LION.street], [LION.x0, LION.street]], [0, 4, 0]);
 
-/** Lion Rock's ground: a ridge that rises towards the east, and at least a tunnel's height wherever the road runs under it. */
+/**
+ * Lion Rock's ground: a dome, and along its top a ridge that runs east and
+ * west, on which the lion lies. It is at least a tunnel's height wherever the
+ * road runs under it.
+ */
 export const LION_GROUND: Field = field(LION.x0, LION.z0, LION.x1, LION.z1, 2, (x, z) => {
   const u = x - LION.x0, v = LION.z1 - z;
-  let h = 19 * smooth(0, 12, u) * smooth(0, 12, v) + 8 * Math.exp(-((z + 103) ** 2) / 60) * smooth(4, 17, u);
-  h += 1.1 * Math.sin(x * 0.5 + 0.4) * Math.cos(z * 0.43) * smooth(0, 6, h);
+  let h = 15 * smooth(0, 11, u) * smooth(0, 10, v) + 9 * Math.exp(-((z - LION.ridge) ** 2) / 40) * smooth(1.5, 9, u);
+  h += 1.0 * Math.sin(x * 0.5 + 0.4) * Math.cos(z * 0.43) * smooth(0, 6, h);
   if (LION_TUNNEL.some((q) => Math.hypot(q[0] - x, q[1] - z) < LION.half + 0.8)) h = Math.max(h, LION.gate + 1.3);
   return h;
 });
@@ -317,19 +321,19 @@ export const LOTS: Lot[] = [
   lot('car-ferry', 'CAR FERRY', -3.6, 101, 9.5, 110, 3, 0xe9e6df),
   // Tsim Sha Tsui
   lot('star-ferry', 'STAR FERRY', 2, -38, 10, -32, 4, 0x3f7f5a),
-  lot('clock-tower', 'CLOCK TOWER', 12, -30, 16, -26, 30, 0xb5654a),
+  lot('clock-tower', 'CLOCK TOWER', 17, -30, 21, -26, 30, 0xb5654a),
   lot('cultural-centre', 'CULTURAL CENTRE', 12, -23, 27, -12, 13, PINK),
   lot('space-museum', 'SPACE MUSEUM', 16.5, -10, 25.5, -3, 7, 0xf5f1e8, { round: true }),
-  lot('peninsula', 'THE PENINSULA', 48, -34.5, 60.5, -17, 22, 0xf0e3c4),
+  lot('peninsula', 'THE PENINSULA', 43, -35, 61, -16.3, 44, 0xf0e3c4),
   // Kowloon
   lot('icc', 'ICC', 43, -99, 57, -85, 145, 0x6f95b5),
   lot('mong-kok', 'MONG KOK SHOPS', 43, -66, 74, -55, 16, WARM),
   lot('wong-tai-sin', 'TEMPLE', 78, -80, 90, -67, 8, 0xc8523f),
-  lot('bamboo', 'BAMBOO SCAFFOLDING', 77, 11, 94, 23, 34, 0x8aa07a),
+  lot('bamboo', 'BAMBOO SCAFFOLDING', 77, 11, 94, 23, 27.2, 0x8aa07a),
   lot('coliseum', 'COLISEUM', 44, 66, 62, 84, 24, 0xcfc8b8),
   lot('choi-hung-a', 'CHOI HUNG ESTATE', 77, 34, 94, 42, 26, 0xf2c14e),
-  lot('choi-hung-b', 'CHOI HUNG ESTATE', 87, 46, 94, 76, 22, 0xe9836b),
-  lot('choi-hung-park', 'CAR PARK AND COURTS', 77, 58, 86, 90, 9, 0x8fb4cf),
+  lot('choi-hung-b', 'CHOI HUNG ESTATE', 77, 50, 84, 86, 22, 0xe9836b),
+  lot('choi-hung-park', 'CAR PARK AND COURTS', 85.5, 56, 94, 90, 9, 0x8fb4cf),
   lot('night-market', 'TEMPLE STREET NIGHT MARKET', 60, 100.5, 102, 110.5, 4, 0xc8402a),
 ];
 
@@ -354,8 +358,8 @@ export const FILL: Lot[] = [
   lot('wan-chai-1', '', -58.5, -17, -46, -6, 22, WARM), lot('wan-chai-2', '', -58.5, -3, -46, 2, 16, 0xe6c7b8),
   lot('wan-chai-3', '', -58.5, 33, -46, 45, 18, 0xdfe6d4),
   // Nathan Road's blocks
-  lot('nathan-n1', '', 76, -34, 91, -17, 36, WARM), lot('nathan-s1', '', 43, 11, 56, 24, 40, 0xe6c7b8),
-  lot('tst-east', '', 43, 28, 56, 42, 28, 0xcfe0e8),
+  lot('nathan-n1', '', 76, -34, 91, -17, 26, WARM), lot('nathan-s1', '', 43, 11, 56, 24, 22, 0xe6c7b8),
+  lot('tst-east', '', 43, 28, 56, 42, 18, 0xcfe0e8),
   // West Kowloon
   lot('west-kowloon', '', 61, -99, 73, -88, 48, 0xcfe0e8), lot('yau-ma-tei', '', 61, -82, 74, -70, 30, 0xe9dcc3),
 ];
@@ -366,9 +370,9 @@ export const FILL: Lot[] = [
 
 export const HERO_SPOTS: HeroSpot[] = [
   { id: 'peak-lookout', x: -68, y: HILL.top + 0.04, z: -21, heading: 0 },
-  { id: 'peninsula', x: 45, y: 0.04, z: -25.75, heading: Math.PI / 2 },
+  { id: 'peninsula', x: 46.6, y: 0.06, z: -19.4, heading: 0 },
   { id: 'car-ferry', x: 3, y: 3.05, z: 105.5, heading: 0 },
-  { id: 'choi-hung', x: 81.5, y: 9.05, z: 84, heading: -Math.PI / 2 },
+  { id: 'choi-hung', x: 89.75, y: 9.06, z: 84.6, heading: -Math.PI / 2 },
 ];
 
 export const PARKED: ParkedSpot[] = [];

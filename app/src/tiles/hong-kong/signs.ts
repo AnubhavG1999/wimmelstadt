@@ -46,6 +46,11 @@ const NAMED: SignDef[] = [
   board('star-ferry', ['天星小輪', 'STAR FERRY'], '#f2efe6', '#1f5a3e', 3.2, { real: true }),
   board('peak-tram', ['山頂纜車', 'PEAK TRAM'], '#1d5a3c', '#f2e6c4', 2.9, { real: true }),
   board('man-mo', ['文武廟'], '#5e1410', '#e8c15a', 3.3, { real: true, size: [240, 72] }),
+  board('peninsula', ['THE PENINSULA', '半島酒店'], '#1f4a3a', '#f2e6c4', 4.4, { real: true, size: [560, 128] }),
+  board('wong-tai-sin', ['黃大仙祠'], '#8f1f18', '#f2cf6a', 4, { real: true, size: [288, 72] }),
+  board('temple-street', ['廟街  TEMPLE STREET'], '#8f1f18', '#f2cf6a', 6.6, { real: true, size: [528, 80] }),
+  board('dai-pai-dong', ['大牌檔'], '#f2efe6', '#b3261e', 3.6, { size: [260, 72] }),
+  board('works', ['工程進行中', 'WORKS IN PROGRESS'], '#f2c94c', '#23252b', 3.4, { size: [326, 96] }),
   board('tunnel', ['海底隧道', 'CROSS-HARBOUR TUNNEL'], '#f4f1e8', '#1c1c22', 6, { real: true, size: [576, 96] }),
   { id: 'clock', lines: [], color: '#f6f2e6', aspect: 1, size: [96, 96], paint: clockFace },
 ];

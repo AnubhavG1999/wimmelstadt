@@ -69,6 +69,26 @@ export function gable(b: GeoBuilder, x0: number, z0: number, x1: number, z1: num
   }
 }
 
+/** A roof of four slopes over a rectangle, with its ridge along the longer side. It reaches `over` beyond the walls. */
+export function hip(b: GeoBuilder, x0: number, z0: number, x1: number, z1: number, y: number, rise: number, color: number, over = 0.5): void {
+  const ax0 = x0 - over, az0 = z0 - over, ax1 = x1 + over, az1 = z1 + over, w = ax1 - ax0, d = az1 - az0, run = Math.min(w, d) / 2, len = Math.hypot(run, rise);
+  const n = (nx: number, nz: number): V3 => [(nx * rise) / len, run / len, (nz * rise) / len];
+  const A: V3 = [ax0, y, az0], B: V3 = [ax1, y, az0], C: V3 = [ax1, y, az1], D: V3 = [ax0, y, az1];
+  if (w >= d) {
+    const R0: V3 = [ax0 + run, y + rise, (az0 + az1) / 2], R1: V3 = [ax1 - run, y + rise, (az0 + az1) / 2];
+    b.quad(D, C, R1, R0, n(0, 1), color);
+    b.quad(B, A, R0, R1, n(0, -1), color);
+    face3(b, A, D, R0, n(-1, 0), color);
+    face3(b, C, B, R1, n(1, 0), color);
+  } else {
+    const R0: V3 = [(ax0 + ax1) / 2, y + rise, az0 + run], R1: V3 = [(ax0 + ax1) / 2, y + rise, az1 - run];
+    b.quad(A, D, R1, R0, n(-1, 0), color);
+    b.quad(C, B, R0, R1, n(1, 0), color);
+    face3(b, B, A, R0, n(0, -1), color);
+    face3(b, D, C, R1, n(0, 1), color);
+  }
+}
+
 /**
  * A flat slab between two points in space, which may be at different heights:
  * a ramp, a flight of stairs, a canopy that slopes, one plane of a roof. The

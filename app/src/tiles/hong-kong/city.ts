@@ -203,10 +203,6 @@ export function buildCity(k: Build): TileParts {
     b.box(gx1, 0, L.z1 - 0.4, gx1 + 0.9, gate + 1.2, L.z1 + 0.5, CONCRETE);
     b.box(gx0, gate, L.z1 - 0.4, gx1, gate + 1.2, L.z1 + 0.5, CONCRETE, { faces: 'NESWTB' });
     b.box(gx0, 0, L.z1 - 3.1, gx1, gate, L.z1 - 3, DARK, { faces: 'S' });
-    // the crag on top, as plain rock for now
-    const top = groundAt(96, -103);
-    b.obox(93, top + 1.5, -103, 5, 3, 3, 0.15, ROCK);
-    b.obox(98.5, top + 4.5, -103.4, 2.6, 2.6, 2.4, -0.1, ROCK);
   }
 
   // -------------------------------------------------------------------------
@@ -343,17 +339,17 @@ export function buildCity(k: Build): TileParts {
     for (let i = 0; i < 200 && spots.length < 204; i++) {
       const x = LION.x0 + 1.5 + k.rand() * (LION.x1 - LION.x0 - 3), z = LION.z0 + 1.5 + k.rand() * (LION.z1 - LION.z0 - 3);
       const y = groundAt(x, z);
-      if (y < 1 || y > 20 || spots.some((t) => (t[0] - x) ** 2 + (t[1] - z) ** 2 < 10)) continue;
+      if (y < 1 || y > 20 || inLot(x, z, 0) || spots.some((t) => (t[0] - x) ** 2 + (t[1] - z) ** 2 < 10)) continue;
       spots.push([x, z]);
       k.tree(x, z, 0.5 + k.rand() * 0.35, false, y);
     }
   }
   // along both promenades, round the racecourse, and on the Convention Centre's point
   for (let z = -54; z < 0; z += 9) k.tree(-22.6, z, 0.6);
-  for (let z = 4; z < 60; z += 8) k.tree(25.2, z, 0.6);
+  for (let z = 6; z < 60; z += 8) k.tree(26.9, z, 0.55);
   for (let z = -38; z < -4; z += 8.5) k.tree(29, z, 0.55);
-  for (const [x, z] of [[-17, 30], [-8.5, 20.5], [-8.5, 30.5], [-22.5, 48], [-22.5, 66], [-44, 104], [-30, 111.6], [-36, 111.6], [39, 66], [39, 78], [39, 90], [39, 102]]) k.tree(x, z, 0.6);
-  for (const [x, z] of [[46, -50], [58, -50], [70, -50], [82, -62], [90, -62], [80, -50], [92, -50], [82, 48], [80, 94], [92, 80], [47, 60], [58, 62], [47, 88], [58, 90]]) k.tree(x, z, 0.65);
+  for (const [x, z] of [[-7.2, 31], [-22.5, 44], [-44, 104], [39, 66], [39, 78], [39, 90], [39, 102]]) k.tree(x, z, 0.6);
+  for (const [x, z] of [[82, -62], [90, -62], [82, 46], [80, 90.4], [90, 46], [47, 60], [58, 62], [47, 88], [58, 90]]) k.tree(x, z, 0.65);
 
   // -------------------------------------------------------------------------
   // Light at night: lamps on the streets, and a string of lamps along every road above the ground
@@ -407,7 +403,6 @@ export function buildCity(k: Build): TileParts {
     crowd(12, -8.1, 20, -6.5, 50); // on the Convention Centre's point, by the water
     crowd(8, -84.5, -111.5, -73.5, -102.6); // Sheung Wan
     for (const z of [-14.5, 8.5]) crowd(18, 42, z - 1.1, 96, z + 1.1); // Nathan Road's pavements
-    crowd(12, 40.5, -34, 46.5, -18); // the Peninsula's forecourt
   }
 
   if (import.meta.env.DEV) checkRoads(ROUTES, { tram: flat(TRAM, 0.04), buses: flat(BUSES, 0.02) });
