@@ -91,6 +91,11 @@ export const HILL = {
   foot: -3.2, turn: 8,
   /** Where the road down from the hill is level with the street again, on its way in to the star. */
   down: -9.5,
+  /**
+   * The steps down from Sacré-Cœur: between these two places along the line they are cut this far into the
+   * third level, and their foot is this far up from the line, on the second level beside its road.
+   */
+  stairs: { t0: 18, t1: 23, in: 1.7, foot: 22.3 },
 };
 export const onHill = (t: number, o: number): P2 => [HILL.at[0] + HILL.u[0] * t + HILL.up[0] * o, HILL.at[1] + HILL.u[1] * t + HILL.up[1] * o];
 /** Where a place on the map is in the hill's own measure: how far along its line, and how far up from it. */
@@ -154,12 +159,12 @@ export const THINGS: Thing[] = [
   T(10, 'eiffel', 'EIFFEL TOWER', 'paris', -17, 45, 30, 30, 110, { shaped: true }),
   T(11, 'arc', 'ARC DE TRIOMPHE', 'paris', ARC[0] - 7, ARC[1] - 3.5, 14, 7, 22, { shaped: true }),
   T(12, 'concorde', 'CHAMPS-ELYSEES & OBELISK', 'paris', CONCORDE[0] - 1.5, CONCORDE[1] - 1.5, 3, 3, 20, { shaped: true }),
-  T(13, 'louvre', 'THE LOUVRE', 'paris', 40, -36, 36, 21, 12, { shaped: true }),
-  T(14, 'notre-dame', 'NOTRE-DAME', 'paris', 18, 10, 16, 8, 15),
-  T(15, 'sacre-coeur', 'SACRE-COEUR', 'paris', 87.3, -109, 12.5, 13.6, 20, { y: 12 }),
-  T(16, 'moulin-rouge', 'MOULIN ROUGE', 'paris', 51, -111.5, 11, 10, 10),
-  T(17, 'cafe', 'CAFE & METRO', 'paris', 22, 46, 14, 14, 22),
-  T(18, 'trocadero', 'TROCADERO', 'paris', -23, -19, 13, 8, 5),
+  T(13, 'louvre', 'THE LOUVRE', 'paris', 40, -36, 31, 21, 19.7, { shaped: true }),
+  T(14, 'notre-dame', 'NOTRE-DAME', 'paris', 14.5, 9.2, 17.7, 9.6, 28, { shaped: true }),
+  T(15, 'sacre-coeur', 'SACRE-COEUR', 'paris', 87.3, -109, 12.5, 13.6, 29, { y: 12, shaped: true }),
+  T(16, 'moulin-rouge', 'MOULIN ROUGE', 'paris', 51, -111.5, 11, 9.6, 14, { shaped: true }),
+  T(17, 'cafe', 'CAFE & METRO', 'paris', 22, 46, 12, 10.5, 23, { shaped: true }),
+  T(18, 'trocadero', 'TROCADERO', 'paris', -25.6, -22.2, 15.8, 19.8, 8, { shaped: true }),
   // Italy
   T(19, 'pisa', 'LEANING TOWER OF PISA', 'italy', -27, 96, 26, 13, 9),
   T(20, 'colosseum', 'COLOSSEUM', 'italy', COLOSSEUM.x - 14, COLOSSEUM.z - 11.5, 28, 23, 17, { shaped: true }),

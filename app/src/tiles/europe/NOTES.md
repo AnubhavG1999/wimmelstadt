@@ -1,6 +1,6 @@
 # Europe: notes
 
-What a later reader cannot see in the code. The tile's ground, roads and traffic are built, and so is London. Most of the things in Paris and Italy are still boxes.
+What a later reader cannot see in the code. The tile's ground, roads and traffic are built, and so are London and Paris. Most of the things in Italy are still boxes.
 
 ## The things on the tile
 
@@ -47,7 +47,7 @@ The numbers are the ones on the boards in the blockout, and in `THINGS` in `plan
 28. Concorde, on a round over London and Paris
 29. A Montgolfier balloon, over the left bank
 
-Built so far, in the sense that they can be recognised: all of London (1 to 9), with Westminster Bridge, Parliament Square, a bus stand and its telephone boxes besides; the Eiffel Tower (10) and the Leaning Tower (19), which are the look prototype's models; and Concorde (28) and the balloon (29). The Arc, the obelisk, the Louvre, the Colosseum, the Ponte Vecchio and Lingotto have rough shapes of their own, because their shape decides how a road runs. The rest are boxes.
+Built so far, in the sense that they can be recognised: all of London (1 to 9), with Westminster Bridge, Parliament Square, a bus stand and its telephone boxes besides; all of Paris (10 to 18), with the Arc du Carrousel, the Tuileries and a merry-go-round besides; the Leaning Tower (19), which is the look prototype's model, as the Eiffel Tower is; and Concorde (28) and the balloon (29). The Colosseum, the Ponte Vecchio and Lingotto have rough shapes of their own, because their shape decides how a road runs. The rest of Italy is boxes.
 
 ## Liberties taken with the real places
 
@@ -66,8 +66,13 @@ Built so far, in the sense that they can be recognised: all of London (1 to 9), 
 - **London's moving buses have one deck.** The traffic has no vehicle of a tile's own shape, so the one double-decker is the one that waits at the bus stand by Ace Cafe.
 - **The star has three roads, not twelve avenues**: the Champs-Élysées, avenue Kléber, and the road that comes down into it from Montmartre. It stands close to the north edge, so there is no room for avenues to the north of it. A ring of trees stands in for them.
 - **Avenue Kléber runs from the star straight to the Pont d'Iéna.** The real one ends at the Trocadéro, a little short of the bridge.
-- **The Louvre's court opens to the north**, towards the Champs-Élysées, and the Place de la Concorde is at the end of a street from the quay beside it. In Paris the court opens west, and the Concorde lies between it and the Champs-Élysées.
-- **The Pont Neuf crosses the east tip of the island.** The real one crosses the west tip.
+- **The Louvre's court opens to the north**, towards the Champs-Élysées, and the Place de la Concorde is at the end of a street from the quay beside it. In Paris the court opens west, and the Concorde lies between it and the Champs-Élysées. Its east wing is the shorter of the two, because the Concorde comes close to it. The Arc du Carrousel stands where the court opens, and the Tuileries are two lawns and a basin.
+- **The island is the other way round.** The Pont Neuf crosses its east tip, where the real one crosses the west, and so Notre-Dame's towers look east, to the bridge and the middle of the tile, and its round end is at the west tip.
+- **The Concorde's two fountains stand on the island with the obelisk**, one to either side of it. The square they really stand in is a roundabout here.
+- **Sacré-Cœur looks down the hill to the south-west**, and its steps go down only one level, to the road below. The hill's roads run where the rest of the steps and the funicular would be, so there is no funicular.
+- **The Moulin Rouge stands at the west foot of Montmartre**, with a merry-go-round beside it. The real merry-go-round is at the foot of Sacré-Cœur's steps.
+- **The Trocadéro's wings are straight.** The real ones curve. It stands inside the river's bend, with the Pont d'Iéna beside it instead of in front.
+- **The flag hangs under the Arc de Triomphe every day**, and the lamp at the top of the Eiffel Tower sweeps round every night.
 - **The Champ de Mars runs down to the Field of Miracles.** The Eiffel Tower's lawn and Pisa's are one stretch of grass with the Via Emilia across it. This is where Paris ends and Italy begins.
 - **Florence and Venice share the Arno's east bank**, and the Ponte Vecchio joins them to Rome and Pisa on the west.
 - **Montmartre stands beside the Champs-Élysées**, and the way up it leaves the avenue just short of the star: a turn to the right, a climb along the foot of the hill, a hairpin onto its first level, and down into the star. The hill has a loop of its own as well, which never comes down to the street.
@@ -87,7 +92,9 @@ One so far:
 
 Every other sign so far is generic or invented: THE RED LION, TEA ROOMS, FISH & CHIPS, BOOKS; CAFÉ, BOULANGERIE, TABAC, FLEURS, BRASSERIE; GELATERIA, TRATTORIA, BAR, PIZZERIA, FARMACIA; and the five screens of Piccadilly Circus, TEA TIME, WEST END LIVE, BROLLY DAYS, FIZZ POP! and TOY CARS 1:64.
 
-To be checked before it goes on a sign: Moulin Rouge. Hamleys was thought of and is not used. The two factories are to be named only by their towns' road signs, Maranello and Sant'Agata Bolognese, with no maker's name, script, horse or bull.
+- **MOULIN ROUGE**, over the cabaret's door. Checked on 19 November 2026: the Moulin Rouge is open, with shows listed to the end of the year. It is plain white lettering on a plain red board. The mill is built, as the building's own shape, and nothing of the cabaret's own lettering or posters is drawn.
+
+Paris's other lettering is generic: CAFÉ and BRASSERIE over the corner café, and MÉTRO over the way down. Hamleys was thought of for London and is not used. The two factories are to be named only by their towns' road signs, Maranello and Sant'Agata Bolognese, with no maker's name, script, horse or bull.
 
 ## For the engine
 
@@ -99,6 +106,8 @@ Built in this folder, and of use to any tile:
 - **`air.ts`**: Concorde, which flies a round for ever and leans into its turns, and a balloon that drifts and bobs. Both are made the way the engine's helicopter is. Neither lands, so neither needs a pad.
 - **A shape cut off at the edge of the board**, `onBoard` in `index.ts`, for a hill or a lawn that is laid out at an angle and runs off the tile.
 - **`parts.ts`**: small parts that several landmarks share. `lathe` turns an outline into a dome, a cap or a fountain's basin. `figure` is a person in uniform, for a guardsman or a statue, since the tile's own people are dressed at random. `wheel` is a wheel on a level axle, since `cyl` only stands upright. `unionFlag`, `lantern` and `pinnacle` are what they say.
+- **More in `parts.ts`**, from Paris: `hipped` is a roof with four slopes and a flat top, which stacked twice makes the tall roof of a French pavilion, and once makes a mansard. `archway` cuts a round arch through a wall. `roundel` is a rose window or a clock.
+- **A beam of light**, in `champDeMars`: two long triangles in a material that adds to what is behind it, turned by `k.each` and faded in with the night.
 - **A picture a sign paints for itself**, with `paint` and `size` on a `SignDef`: the screens of Piccadilly Circus, and Ace Cafe's band of black and white squares, which is one sign 30 long instead of a hundred small boxes.
 - **Figures that march**, in `buckinghamPalace`: a mesh of their own, moved by `k.each`.
 - **A picture from straight above.** `wimmel.rig.elev = 1.553` in the console, then `wimmel.shot(..., { az: 0 })` with `?tilt=0` in the address, gives a plan of the tile with north at the top. It was the most useful thing there was for laying out roads. Set `elev` back afterwards.

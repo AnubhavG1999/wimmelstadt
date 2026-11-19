@@ -69,6 +69,57 @@ export function unionFlag(b: GeoBuilder, x: number, z: number, y: number, staff:
 }
 
 /**
+ * A steep roof on a block: four slopes up from its eaves to a flat top, each
+ * leaning in by `inX` or `inZ`. A mansard, or the roof of a pavilion. If it
+ * leans in by half the block's width, the top is a ridge.
+ */
+export function hipped(b: GeoBuilder, x0: number, z0: number, x1: number, z1: number, y0: number, y1: number, inX: number, inZ: number, color: number, top: number = color, o: QuadOpts = {}): void {
+  const a: V3[] = [[x0, y0, z0], [x1, y0, z0], [x1, y0, z1], [x0, y0, z1]];
+  const c: V3[] = [[x0 + inX, y1, z0 + inZ], [x1 - inX, y1, z0 + inZ], [x1 - inX, y1, z1 - inZ], [x0 + inX, y1, z1 - inZ]];
+  const rise = y1 - y0, lx = Math.hypot(rise, inX), lz = Math.hypot(rise, inZ);
+  const ns: V3[] = [[0, inZ / lz, -rise / lz], [rise / lx, inX / lx, 0], [0, inZ / lz, rise / lz], [-rise / lx, inX / lx, 0]];
+  for (let i = 0; i < 4; i++) {
+    const j = (i + 1) % 4;
+    b.quad(a[i], a[j], c[j], c[i], ns[i], color, o);
+  }
+  b.quad(c[3], c[2], c[1], c[0], [0, 1, 0], top);
+}
+
+/**
+ * An arched way through a wall that runs along x: the wall above the arch on
+ * both faces of it, and the vault between them. The way is `w` wide, its
+ * sides are straight up to `spring`, and the arch on top is half a circle.
+ * The wall's faces are at z0 and z1, and it is built up as far as `top`.
+ */
+export function archway(b: GeoBuilder, cx: number, z0: number, z1: number, w: number, spring: number, top: number, color: number, soffit: number, n = 8): void {
+  const r = w / 2;
+  const at = (i: number): [number, number] => {
+    const a = Math.PI * (1 - i / n);
+    return [cx + Math.cos(a) * r, spring + Math.sin(a) * r];
+  };
+  for (let i = 0; i < n; i++) {
+    const [xa, ya] = at(i), [xb, yb] = at(i + 1);
+    for (const [z, nz] of [[z0, -1], [z1, 1]]) b.quad([xa, ya, z], [xb, yb, z], [xb, top, z], [xa, top, z], [0, 0, nz], color);
+    const am = Math.PI * (1 - (i + 0.5) / n);
+    b.quad([xa, ya, z0], [xb, yb, z0], [xb, yb, z1], [xa, ya, z1], [-Math.cos(am), -Math.sin(am), 0], soffit);
+  }
+}
+
+/**
+ * A flat round shape that stands upright on a wall and looks north, east,
+ * south or west: a rose window, a clock, the head of an arched doorway.
+ */
+export function roundel(b: GeoBuilder, c: V3, r: number, facing: 'N' | 'E' | 'S' | 'W', color: number, o: QuadOpts = {}, sides = 10): void {
+  const n: V3 = facing === 'E' ? [1, 0, 0] : facing === 'W' ? [-1, 0, 0] : facing === 'S' ? [0, 0, 1] : [0, 0, -1];
+  const ax = n[0] !== 0 ? 0 : 1, az = n[0] !== 0 ? 1 : 0;
+  const p = (i: number): V3 => {
+    const a = (i / sides) * Math.PI * 2;
+    return [c[0] + ax * Math.cos(a) * r, c[1] + Math.sin(a) * r, c[2] + az * Math.cos(a) * r];
+  };
+  for (let i = 1; i + 1 < sides; i++) tri(b, p(0), p(i), p(i + 1), n, color, o);
+}
+
+/**
  * A wheel on a level axle that runs from north to south: eight sides, with
  * the tyre and the hub drawn on the side that shows. `out` is 1 if that is
  * the south side and -1 if it is the north. Turn it with the builder's `moved`.

@@ -1,14 +1,13 @@
 // Europe: London, Paris and Italy along one river.
 //
 // The ground, the river, the roads and the traffic are as they will be, and
-// London is built. The things that will stand in Paris and Italy are still
+// London and Paris are built. The things that will stand in Italy are still
 // plain boxes with their numbers on, or rough shapes where the shape decides
 // how a road runs: see NOTES.md for which is which.
 
 import * as THREE from 'three';
 import { placed } from '../../engine/build';
 import { ordinaryBuildings, type BuildingRules, type Lot } from '../../engine/buildings';
-import { interior } from '../../engine/geo';
 import { LAWN, area, flat, ground, oval, rect, terrace, walls, water, type P2 } from '../../engine/ground';
 import { buildPath, type Path } from '../../engine/paths';
 import { lampsAlong, roadDeck, street } from '../../engine/roads';
@@ -18,6 +17,7 @@ import { balloon, concorde } from './air';
 import { eiffel, pisa } from './landmarks';
 import { bridgeStreetLamps, londonEye, parliament, towerBridge, westminsterBridge } from './london';
 import { LONDON_GROUND, LONDON_SIGNS, aceCafe, buckinghamPalace, gherkin, londonStreets, piccadillyCircus, stPauls, towerOfLondon } from './london-city';
+import { PARIS_GROUND, PARIS_SIGNS, arcDeTriomphe, cafeMetro, champDeMars, louvre, moulinRouge, notreDame, placeDeLaConcorde, sacreCoeur, trocadero } from './paris';
 import {
   ARC, ARNO_X, BEND_1, BEND_2, CANAL, COLOSSEUM, CONCORDE, HILL, IENA_X, ISLAND, LINGOTTO_ROOF, NEUF_X, PLOTS, RIVER_WIDTH, SEINE_Z,
   THAMES_X, THINGS, WATER_DROP, onHill, type Quarter, type Thing,
@@ -55,6 +55,7 @@ const SIGNS: SignDef[] = [
   ...THINGS.map((t): SignDef => ({ id: `thing-${t.id}`, lines: [String(t.n), t.name], color: BOARD[t.quarter], ink: '#ffffff', aspect: 2.2, size: [264, 120], kind: 'board' })),
   ...Object.values(SHOPS).flat(),
   ...LONDON_SIGNS,
+  ...PARIS_SIGNS,
 ];
 
 /** A plot with the quarter it stands in, which decides its roof and its signs. */
@@ -187,7 +188,12 @@ function build(k: Build): TileParts {
   const FAR = 140, HILLSIDE = { top: LAWN, side: 0x9a8f7c };
   terrace(k, onBoard([onHill(HILL.t0, r1), onHill(FAR, r1), onHill(FAR, FAR), onHill(HILL.t0 - 6, FAR), onHill(HILL.t0 - 6, HILL.way + 3), onHill(HILL.t0, HILL.way + 3)]), 0, h1, HILLSIDE);
   terrace(k, onBoard([onHill(HILL.t0, r2), onHill(HILL.t1, r2), onHill(HILL.t1, FAR), onHill(HILL.t0, FAR)]), h1, h2, HILLSIDE);
-  terrace(k, onBoard([onHill(HILL.t0 + 1, r3), onHill(HILL.t1, r3), onHill(HILL.t1, FAR), onHill(HILL.t0 + 1, FAR)]), h2, h3, { top: PLAZA, side: 0x9a8f7c });
+  // (the third is cut into where the steps come down from Sacré-Cœur)
+  const steps = HILL.stairs;
+  terrace(k, onBoard([
+    onHill(HILL.t0 + 1, r3), onHill(steps.t0, r3), onHill(steps.t0, r3 + steps.in), onHill(steps.t1, r3 + steps.in), onHill(steps.t1, r3),
+    onHill(HILL.t1, r3), onHill(HILL.t1, FAR), onHill(HILL.t0 + 1, FAR),
+  ]), h2, h3, { top: PLAZA, side: 0x9a8f7c });
   // The hill's roads: its own loop, the way up from the Champs-Élysées and the
   // way down to the star. Each lies a hair higher than the last, so that where
   // two of them run together their surfaces are never in one plane.
@@ -199,9 +205,8 @@ function build(k: Build): TileParts {
   // lawns: the Champ de Mars, which runs down to the Field of Miracles
   area(k, rect(-15, 76, 11, 79.5), LAWN);
   area(k, rect(-36, 95, 12, 112.5), LAWN);
-  // Victoria Tower Gardens, beside Parliament, and the Tuileries, between the Louvre and the Champs-Élysées
+  // Victoria Tower Gardens, beside Parliament
   area(k, rect(-60, 15, -47, 21.3), LAWN);
-  area(k, [[47, -49.5], [60, -41.5], [60, -36.5], [47, -36.5]], LAWN);
 
   // -------------------------------------------------------------------------
   // Streets, and the bridges that carry them over the river
@@ -281,52 +286,21 @@ function build(k: Build): TileParts {
   aceCafe(k);
   londonStreets(k);
 
-  // --- The Eiffel Tower ---
+  // --- Paris ---
+  for (const [name, x0, z0, x1, z1] of PARIS_GROUND) clear(name, x0, z0, x1, z1);
   {
-    const t = thing('eiffel');
-    placed(k, t.x + t.w / 2, t.z + t.d / 2, 0, (q) => eiffel(q, 14.6, t.h));
-    b.box(t.x, 0, t.z, t.x + t.w, 0.05, t.z + t.d, PLAZA, { faces: 'T' });
-    board(k, t, t.x + t.w + 3, 34, t.z + t.d + 3);
+    const t = thing('eiffel'), cx = t.x + t.w / 2, cz = t.z + t.d / 2;
+    placed(k, cx, cz, 0, (q) => eiffel(q, 14.6, t.h));
+    champDeMars(k, cx, cz, 14.6, t.h);
   }
-
-  // --- The Arc de Triomphe: two piers and the mass above them, looking down the Champs-Élysées ---
-  {
-    const t = thing('arc');
-    const turn = THREE.MathUtils.radToDeg(Math.atan2(-(CONCORDE[0] - ARC[0]), CONCORDE[1] - ARC[1]));
-    placed(k, ARC[0], ARC[1], turn, (q) => {
-      q.b.cyl(0, 0, 0, 0.2, 9, 9, 28, PLAZA);
-      for (const side of [-1, 1]) q.b.box(side * 7 - (side > 0 ? 4.4 : 0), 0.2, -3.5, side * 7 + (side < 0 ? 4.4 : 0), 14, 3.5, 0xe6dcc3);
-      q.b.box(-7, 14, -3.5, 7, 22, 3.5, 0xe6dcc3, { faces: 'NESWTB' });
-      q.b.box(-7.4, 20.6, -3.9, 7.4, 22.6, 3.9, 0xd9cfb4);
-    });
-    board(k, t, ARC[0], 36, ARC[1]);
-  }
-
-  // --- The obelisk of the Concorde ---
-  {
-    const t = thing('concorde');
-    b.cyl(CONCORDE[0], CONCORDE[1], 0, 0.25, 6, 6, 24, PLAZA);
-    b.box(CONCORDE[0] - 1.6, 0.25, CONCORDE[1] - 1.6, CONCORDE[0] + 1.6, 3, CONCORDE[1] + 1.6, STONE);
-    b.cyl(CONCORDE[0], CONCORDE[1], 3, 19, 1.5, 0.75, 4, 0xd9a98a, { phase: Math.PI / 4, cap: false });
-    b.cyl(CONCORDE[0], CONCORDE[1], 19, 20.6, 0.75, 0.05, 4, 0xe9c94a, { phase: Math.PI / 4, cap: false });
-    board(k, t, CONCORDE[0], 34, CONCORDE[1]);
-  }
-
-  // --- The Louvre: three wings round a court that opens towards the Champs-Élysées, and the pyramid in it ---
-  {
-    const t = thing('louvre');
-    const x0 = t.x, x1 = t.x + t.w, z0 = t.z, z1 = t.z + t.d, wing = 7;
-    const win = { cell: 2.2, storey: 6, lit: 0.4, kind: 0 }, WALL = 0xe6dcc3, ROOF = 0x6f7883;
-    clear(t.name, x0, z1 - wing, x1, z1);
-    b.box(x0, 0, z1 - wing, x1, t.h, z1, WALL, { win, seed: 0.3, top: ROOF });
-    b.box(x0, 0, z0, x0 + wing, t.h, z1 - wing, WALL, { win, seed: 0.5, top: ROOF, faces: 'NEWT' });
-    b.box(x1 - wing, 0, z0 + 6, x1, t.h, z1 - wing, WALL, { win, seed: 0.7, top: ROOF, faces: 'NEWT' });
-    b.box(x0 + wing, 0, z0 + 2, x1 - wing, 0.06, z1 - wing, PLAZA, { faces: 'T' });
-    const px = (x0 + x1) / 2, pz = z0 + 7.5;
-    b.cyl(px, pz, 0.06, 6.2, 6.6, 0.05, 4, 0xa9d3e6, { phase: Math.PI / 4, win: interior(1.3), cap: false });
-    k.lights.push({ x: px, z: pz, r: 13, color: '#fff3dc', k: 0.6 });
-    board(k, t, px, t.h + 12, z1 - 3);
-  }
+  arcDeTriomphe(k);
+  placeDeLaConcorde(k);
+  louvre(k);
+  notreDame(k);
+  sacreCoeur(k);
+  moulinRouge(k);
+  cafeMetro(k);
+  trocadero(k);
 
   // --- The Colosseum: an oval ring, open to the sky ---
   {
@@ -391,7 +365,7 @@ function build(k: Build): TileParts {
     for (let z = 10; z <= 20; z += 5) k.tree(-63, z, 0.9, true);
     for (let x = -72; x <= -38; x += 5) k.tree(x, 109.5, 0.85, true);
     for (let x = 14; x <= 62; x += 6) k.tree(x, 110.5, 0.8, true);
-    for (const [x, z] of [[-16, 77.5], [-9, 77.8], [4, 77.6], [10, 77.9], [-20, 42], [14, 42.5], [16, 50], [15, 58], [-21, -3], [-14, -14], [-25, -8], [66, 4], [74, 2], [82, 6], [-57, 18], [-50, 18.5], [50, -40], [56, -38.5]]) k.tree(x, z, 0.7 + rand() * 0.3);
+    for (const [x, z] of [[-16, 77.5], [-9, 77.8], [4, 77.6], [10, 77.9], [-20, 42], [14, 42.5], [16, 50], [15, 58], [66, 4], [74, 2], [82, 6], [-57, 18], [-50, 18.5], [50, -40], [51.5, -45]]) k.tree(x, z, 0.7 + rand() * 0.3);
     // on Montmartre: the wide end of the first level, and round Sacré-Cœur
     for (const [t, o, y] of [[37, 6, h1], [42, 10, h1], [38, 18, h1], [46, 22, h1], [35.5, 27, h1], [40, 33, h1], [13, 26, h3], [28.5, 26, h3], [12, 31, h3]]) {
       const [x, z] = onHill(t, o);
@@ -407,25 +381,11 @@ function build(k: Build): TileParts {
     const scatter = (n: number, x0: number, z0: number, x1: number, z1: number, y = 0): void => {
       for (let i = 0; i < n; i++) k.person(x0 + rand() * (x1 - x0), z0 + rand() * (z1 - z0), y);
     };
-    const ringOf = (n: number, cx: number, cz: number, r0: number, r1: number): void => {
-      for (let i = 0; i < n; i++) {
-        const a = rand() * Math.PI * 2, r = r0 + rand() * (r1 - r0);
-        k.person(cx + Math.cos(a) * r, cz + Math.sin(a) * r);
-      }
-    };
-    ringOf(14, ARC[0], ARC[1], 4.5, 8.4);
-    ringOf(6, CONCORDE[0], CONCORDE[1], 2.6, 5.4);
-    scatter(26, -15, 47, 11, 73); // under the Eiffel Tower
-    scatter(8, -22, -16, -12, -9); // the Trocadéro
+    scatter(22, -11, 49, 7, 71); // under the Eiffel Tower
     scatter(12, -34, 97, 11, 111); // the Field of Miracles
     scatter(10, -66, 58, -44, 71); // the piazza
     scatter(8, 88, 31, 103, 34); // in front of the Duomo
     scatter(6, 70, 54.5, 86, 57.5); // on the Ponte Vecchio
-    scatter(8, 42, -34, 68, -24); // the Louvre's court
-    for (let i = 0; i < 9; i++) {
-      const [x, z] = onHill(13 + rand() * 15, 24.8 + rand() * 1.6);
-      k.person(x, z, h3); // the terrace below Sacré-Cœur
-    }
   }
 
   // -------------------------------------------------------------------------
@@ -441,7 +401,7 @@ function build(k: Build): TileParts {
 
   const heroSpots: HeroSpot[] = [
     { id: 'ace-cafe', x: -79.5, y: 0.04, z: 18.2, heading: 0 },
-    { id: 'trocadero', x: -16.5, y: 0.02, z: -7, heading: 1.25 },
+    { id: 'trocadero', x: -17.7, y: 0.03, z: -19.7, heading: 0 },
     { id: 'maranello', x: -55, y: 0.02, z: 93.4, heading: 0 },
     { id: 'piazza', x: -50, y: 0.02, z: 66, heading: -0.6 },
     { id: 'lingotto-roof', x: -93.2, y: LINGOTTO_ROOF.y + 0.05, z: 57, heading: -Math.PI / 2 },
