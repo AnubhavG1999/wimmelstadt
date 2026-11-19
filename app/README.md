@@ -1,64 +1,27 @@
 # The app
 
-The real Wimmelstadt. So far the city is one tile, North America. It is the [look prototype](../prototype/look)'s board, kept as it was: the same size, the same streets, the same ring of raised expressway, flyover and car park, on the same base. What stands on it is North American throughout. See [0009](../docs/adr/0009-a-city-of-hand-built-tiles.md) for why the city is made of tiles and why a tile is this size.
+The real Wimmelstadt: a board of tiles, each a district built by hand, with traffic on its roads and the collector's heroes among it. See [0009](../docs/adr/0009-a-city-of-hand-built-tiles.md) for why the city is made of tiles and why a tile is the size it is, and [0010](../docs/adr/0010-the-tiles-stand-together-on-a-table.md) for how the tiles stand together.
 
-![A miniature city on a board with a dark base, seen from above at an angle: a ring of raised road round a tall slim tower, a black skyscraper and two silver towers at the back, a red suspension bridge, and a green ballpark at the front corner](screenshots/tile.jpg)
+![Three miniature cities standing edge to edge on a green table with a wooden rim, each on a dark base of its own](screenshots/board.jpg)
 
-| | |
-| --- | --- |
-| ![The same board at night, its windows lit, a ring of light round the tall tower and the ballpark under floodlights](screenshots/tile-night.jpg) | ![A ballpark at the corner of the board, its stands full, with a red sign that reads Wrigley Field under a green scoreboard, an arch with a Route 66 marker over the street beside it, and a diner and two round towers behind](screenshots/ballpark.jpg) |
-| Half past nine in the evening. | Wrigley Field, the arch for Route 66, the diner and Marina City. |
-| ![Two round towers like corncobs, a white pyramid, a wedge-shaped building and a row of pastel houses, with the ballpark in front](screenshots/east.jpg) | ![A tower with a silver crown, a saucer on three legs with a golden roof, a row of pastel houses with gables and a small white tower on a mound](screenshots/north-east.jpg) |
-| The east side: Marina City, the Transamerica Pyramid and the Flatiron Building. | The north-east: the Chrysler Building, the Space Needle, the Painted Ladies and Coit Tower. |
-| ![A black tower of bundled tubes, a steel arch across a boulevard, a red suspension bridge carrying a raised road, a stone tower that steps back to a mast, and a car park with two spiral ramps](screenshots/west.jpg) | ![The ballpark at night under floodlights, with the diner's name in red neon and the two round towers lit ring by ring](screenshots/ballpark-night.jpg) |
-| The west side, which is the prototype's: the Sears Tower, the Gateway Arch, the Golden Gate Bridge and the Empire State Building. | A night game. |
+The pictures of each tile are in the [README at the top](../README.md).
 
-There is one more in [screenshots](screenshots): the east side under snow.
+## The board and its tiles
 
-## What is on the tile
+Every tile stands on a base of its own, with its name on a brass plate on each side, and the bases stand edge to edge on one table. The tiles are put on it in rows, in the order they were built, so the first ones keep the back of the table.
 
-The board is three blocks by three, with a boulevard between the first row and the second.
+| Tile | Things to find | What it is | Its notes |
+| --- | --- | --- | --- |
+| North America | 20, the L and a helicopter | The look prototype's board, kept as it was and made North American throughout: a ring of raised expressway round Halo Tower, a flyover, a car park with two spirals, and an elevated railway. | [NOTES.md](src/tiles/north-america/NOTES.md) |
+| Japan | 41 | Fuji and a pass of hairpins, Kyoto and Tokyo on the two banks of a river with a Shinkansen between them, and the Wangan with Daikoku and Tatsumi. | [NOTES.md](src/tiles/japan/NOTES.md) |
+| Hong Kong | 39 | Both sides of Victoria Harbour: the Peak and Central on one shore, Tsim Sha Tsui and Kowloon on the other, with trams, ferries and a jumbo jet. | [NOTES.md](src/tiles/hong-kong/NOTES.md) |
 
-| Block | What stands there |
-| --- | --- |
-| North-west | The Sears Tower and the Twin Towers. |
-| North | The Gate Tower, which is invented. The expressway runs through it, a street runs through its base, and it carries the big screen. |
-| North-east | The Chrysler Building, the Space Needle, the Painted Ladies along the street on the east side, Coit Tower on its hill, and the showroom, Big Block Motors. |
-| West | The Empire State Building, and the Statue of Liberty in her pond. The Gateway Arch spans the boulevard beside them, and the Golden Gate Bridge carries the expressway over it. |
-| Middle | The park, with Halo Tower, which is invented. |
-| East | The Transamerica Pyramid with redwoods beside it, the Flatiron Building, a diner with room to park in front, and Marina City. |
-| South-west | The car park with its two spiral ramps, Loop Parking. |
-| South | A street under the expressway, and a square with a fountain. |
-| South-east | Wrigley Field. An arch for Route 66 stands over the street beside it. |
+A tile's notes list what stands on it, the liberties taken with the real place, every real name on a sign and how it was checked, and what its builder learned.
 
-That is 20 things to recognise, where the prototype had 17.
+Two things are true of every tile:
 
-### What changed from the prototype
-
-Everything on the prototype's board that was North American or invented stayed. The rest was replaced.
-
-| On the prototype | On the tile |
-| --- | --- |
-| Big Ben | The Chrysler Building |
-| The Eiffel Tower | The Space Needle |
-| The Leaning Tower of Pisa | Coit Tower |
-| Stucco houses with chimneys | The Painted Ladies, and two stucco houses under clay tiles |
-| A hotel with a helipad | The Transamerica Pyramid. The helipad moved to the tower with the cola's name on it. |
-| A shop on the corner | The Flatiron Building |
-| The pagoda | A diner |
-| Kyoto Tower | Marina City |
-| The torii | The arch for Route 66, which stands over the street on the east side |
-| The Taj Mahal and its garden | Wrigley Field |
-| Signs in Japanese, and the cafés and bakeries of Europe | Signs in English: deep dish pizza and blues in the east, coffee, sourdough and tacos in the north-east |
-| Mochi Motors, Ponpoko Parking, Neko Cola, Kaiju Karaoke, Tofu Turbo, Wanwan Tires | Big Block Motors, Loop Parking, Rocket Cola, Starlite Karaoke, Turbo Tacos, Big Dog Tires |
-| Tomica, Advan, Michelin and Pirelli on a few boards | Goodyear, beside Hot Wheels and Mini GT |
-
-The models that left are still in the look prototype, and wait there for tiles of their own places.
-
-Two things are not as they are in life:
-
-- **The marquee.** Wrigley Field's red marquee hangs under the scoreboard, over the gate to the bleachers. The real one is on the corner behind home plate. On this tile that corner faces the expressway and the Gate Tower, and no view of the city can see it.
-- **Scale.** Each landmark is a toy at a size of its own, as on the prototype. The Statue of Liberty is not to the scale of the tower behind her, and every vehicle is far too large for the buildings.
+- **Scale.** The towers are roughly to one scale across the whole city, about 3.2 metres to a unit: the Sears Tower's roof is 140 units up. Small landmarks are larger than that, so that they can be recognised, and mountains are toys. Every vehicle is far too large for the buildings, as a toy car is beside a toy house.
+- **Nothing leaves its tile.** A tile's roads loop back inside its own edge, and no road joins two tiles. A hero is put on a tile at random each time the page loads.
 
 ## Heroes
 
@@ -68,9 +31,20 @@ A hero is made from a capture's generated model, which is far too heavy to drive
 node scripts/hero.ts countach-lb-works-black rodin-1 --name "Lamborghini Countach LB-WORKS"
 ```
 
-This cuts the model to 12,000 triangles and a 1,024-pixel picture, about 1.5 MB, and writes it as `hero/hero.glb` in its capture's folder with a small `hero.json` beside it. Captures are private and are not in this repository, so neither are heroes.
+This cuts the model to 12,000 triangles and a 1,024-pixel picture, about 1.5 MB, and writes it as `hero/hero.glb` in its capture's folder with a small `hero.json` beside it. Captures are private and are not in this repository, so neither are heroes. A hero is drawn in the city's own hand: flat bands of light, the photographed shine ironed out of its colours, and a dark outline. Each has a party trick of its own, in `src/heroes`.
 
-The tile has five stand-in heroes, drawn by hand, as the prototype had. The development server hands the page every real hero it finds, and each takes the place of a stand-in: first the one on the expressway, then the one on the boulevard, then the one on the street round the park, then the one on the showroom's turntable, then the one on the car park's roof. A real hero is drawn in the city's own hand: flat bands of light, the photographed shine ironed out of its colours, and a dark outline. A built copy of the app has no real heroes yet, only the stand-ins. They will come from the backend.
+Where the heroes come from depends on where the app runs:
+
+- **On the collector's desk,** the development server hands the page every hero it finds among the captures, and there is no lock.
+- **Everywhere else,** the heroes are in the backend, behind a PIN. The options have a row, Heroes, that opens a card for it. A device that has been unlocked keeps the heroes, so from then on the city starts with them even when the backend is asleep or out of reach, and it asks every half hour whether one has been added. Changing the PIN locks every device again. See [0011](../docs/adr/0011-the-heroes-sit-behind-a-pin.md).
+
+A hero goes from the desk to the backend with one command, which sends its model and its record:
+
+```bash
+npm run send-hero -- countach-lb-works-black
+```
+
+Add `--dry` to see what would be sent. The command reads `SUPABASE_ACCESS_TOKEN` and `SUPABASE_PROJECT_REF` from `.env.local` at the top of the repository. With them it asks Supabase for the project's secret key each time it runs, and it neither prints nor saves it.
 
 ## Running it
 
@@ -79,29 +53,57 @@ npm install
 npm run dev
 ```
 
-Then open http://localhost:5187. Drag to move, right-drag or Shift-drag to turn, scroll or pinch to zoom. The bar at the bottom sets the hour, follows a hero, and steps through the weather and the focus. The controls, the keys and the options in the address bar are the look prototype's, and [its README](../prototype/look/README.md) lists them all.
+Then open http://localhost:5187.
+
+| To | Do this |
+| --- | --- |
+| Move the view | Drag, or use the arrow keys. |
+| Turn it | Right-drag, drag with two fingers, or press Q and E. |
+| Zoom | Scroll or pinch. |
+| Go to a tile, or back to the whole board | Double-click the tile, or the table. Escape also goes back to the board. |
+| Set the hour | Drag the sun round the dial. Touch the middle of the dial to follow the clock again. |
+| Set the weather | Touch a token. The same one again gives the weather back to the city. |
+| Ride along with a hero | The key with the car on it, or F. |
+| Watch a day go by in 80 seconds | The key with two arrows, or T. |
+| Change the depth of field, turn the view by itself, see how it performs, unlock the heroes | The key with three dots. |
+
+The view stays wherever it is left. The plate at the top left names the tile under it, or the city when the whole board is in view.
+
+The address bar takes options:
+
+| Option | What it does |
+| --- | --- |
+| `?tiles=japan,hong-kong` | puts only those tiles on the board, in that order. A tile named twice stands there twice, and `sample` is the sample tile, which is hidden otherwise. |
+| `?hour=21.5` | sets the hour. |
+| `?weather=rain` | sets the weather: `clear`, `cloudy`, `rain`, `storm`, `fog` or `snow`. |
+| `?drift=0` | stops the view turning by itself. |
+| `?x=..&z=..&az=..&zoom=..` | starts with a view of its own. |
+| `?place=<id>` | puts the heroes on one route or one place on show, by its id. |
+| `?heroes=collection` | asks for the heroes from the backend, behind the PIN, as a built copy does. `desk` and `none` are the other two. |
+| `?heroes=collection&backend=stand-in` | uses a stand-in for the backend, on the development server only, for trying the lock. Its PIN is 1234 and opens nothing else. See `vite.config.ts`. |
 
 ## Working on it
 
-| File | What it holds |
+| Folder | What it holds |
 | --- | --- |
-| `src/scene-data.ts` | The tile's plan: its streets and blocks, every lot, the roads that vehicles follow, where vehicles are parked, and every sign. Nothing in it draws anything. |
-| `src/landmarks.ts` | The models of famous things, each a few dozen boxes, cylinders and bars. |
-| `src/city.ts` | Builds everything that stands still from the plan. |
-| `src/vehicles.ts` | Traffic and heroes. |
-| `src/hero.ts` | Loads the heroes made from real diecasts and dresses them in the city's look. |
-| `src/signs.ts` | Draws every sign onto one sheet. |
-| `src/materials.ts`, `src/post.ts`, `src/atmosphere.ts`, `src/weather.ts` | The look: flat bands of light, outlines, a shallow focus, glow, the light of each hour, and the weather. |
-| `src/camera.ts`, `src/paths.ts`, `src/geo.ts`, `src/main.ts` | The view, the lines that roads follow, the builder that every shape is made with, and the page itself. |
+| `src/engine` | Everything a tile is built with and everything that runs it: the builder for shapes, ground, roads, rails, buildings, signs, traffic and heroes, the look, the camera, and the board and its table. It knows no tile. |
+| `src/tiles/<id>` | One tile: its plan as data, its landmarks, and its notes. A tile is found by its folder. `sample` uses every piece of the kit once. |
+| `src/heroes` | The party tricks, one for each hero, by the name of its capture. |
+| `src/collection` | Where the heroes come from: the desk, or the backend behind its PIN, and the copy a device keeps. |
+| `src/ui` | The controls: the dial, the weather tokens, the keys, the plates and the card for the PIN. |
+| `src/main.ts` | The page: it puts the tiles on the board, lights them by the hour and the weather, and draws them. |
+| `scripts` | `hero.ts` makes a hero from a generated model, and `send-hero.ts` sends one to the backend. |
 
-From the browser's console, `wimmel.shot('name', { hour: 21.5, weather: 'rain', x: 68, z: 74, az: 42, zoom: 92 })` draws one picture of a view and saves it.
+Whoever builds a tile starts with [the page for tile builders](../docs/building-a-tile.md).
 
-**Pictures and real heroes.** A picture is public unless it shows a real hero. So `wimmel.shot` leaves the real heroes out: the stand-ins drive in their places, and the picture goes in `screenshots/`. Ask for `heroes: true` and the real heroes are in the picture, and it is saved in the first hero's capture instead, under `captures/<capture>/screenshots/`, which is private.
+From the browser's console, `wimmel.shot('name', { hour: 21.5, weather: 'rain', x: 68, z: 74, az: 42, zoom: 92 })` draws one picture of a view and saves it in `screenshots/`.
+
+**Pictures and heroes.** A picture is public unless it shows a hero. So `wimmel.shot` leaves the heroes out. Ask for `heroes: true` and they are in the picture, and it is saved in the first hero's capture instead, under `captures/<capture>/screenshots/`, which is private.
 
 ### What it is not yet
 
-- The city is one tile. How tiles sit together, and how a hero gets from one to the next, is not decided.
-- Vehicles follow fixed loops: round a block, round the expressway, up one spiral and down the other. They do not choose a way or turn at a junction. Real driving comes with the road network.
-- New Orleans, which the research for this district also covers, has nothing on the tile.
-- Nothing has a name on screen. Names that appear as the view zooms were tried on the two-tile blockout and are not here yet.
-- How it runs on the phone has not been measured.
+- No road joins two tiles, and a hero does not travel from one to the next.
+- Vehicles follow fixed loops. They do not choose a way or turn at a junction, and where two loops share a lane they merge. Real driving comes with the road network.
+- There is no roster, no card and no bench. The one hero was carried through by hand.
+- Nothing has a name on screen but the tile in view.
+- How it runs on the phone has not been measured. On the desktop, three tiles take about 7 ms a frame.
