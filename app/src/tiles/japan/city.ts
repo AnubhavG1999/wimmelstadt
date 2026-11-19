@@ -7,17 +7,18 @@ import { ordinaryBuildings, type BuildingRules, type Lot as EngineLot } from '..
 import type { WinSpec } from '../../engine/geo';
 import { LAWN, PLAZA, area, flat, ground, oval, rect, water, type P2 } from '../../engine/ground';
 import { buildPath, type Path } from '../../engine/paths';
-import { train } from '../../engine/rail';
 import { CONCRETE, lampsAlong, roadDeck, street, type DeckOpts } from '../../engine/roads';
 import type { SignDef } from '../../engine/signs';
 import type { Build, TileParts } from '../../engine/tile';
+import { dragon } from './dragon';
 import { sample, toSegs, type Piece } from './lines';
 import {
-  AVENUE, BOARD, DAIKOKU, DAIKOKU_BYPASS, DAIKOKU_RING, FERRIS, FUJI, HERO_SPOTS, KYOTO, KYOTO_HILL, KYOTO_RING, LOOKOUT, LOOKOUT_LOOP, LOOKOUT_YARD,
-  LOTS, NAMES, ORDINARY, PARKED, PASS, PASS_LINE, RAIL, RAIL_LOOP, ROTARY, ROUTES, SHORE, TATSUMI_LOOP, TOKYO, TOKYO_RING, TORII, UENO_HILL, WANGAN,
+  AVENUE, BOARD, DAIKOKU, DAIKOKU_BYPASS, DAIKOKU_RING, DRAGON_ROUND, FERRIS, FUJI, HERO_SPOTS, KYOTO, KYOTO_HILL, KYOTO_RING, LOOKOUT, LOOKOUT_LOOP, LOOKOUT_YARD,
+  LOTS, NAMES, ORDINARY, PARKED, PASS, PASS_LINE, RAIL, ROTARY, ROUTES, SHORE, TATSUMI_LOOP, TOKYO, TOKYO_RING, TORII, UENO_PARK, WANGAN,
   WANGAN_NORTH, WANGAN_WEST, WATER,
   type Lot, type Ordinary, type Style,
 } from './plan';
+import { buildShinkansen } from './shinkansen';
 import { KYOTO_SIGNS, NEON, TOKYO_SIGNS } from './signs';
 import { buildFuji, buildHills, groundHeight } from './terrain';
 
@@ -67,7 +68,6 @@ export function buildJapan(k: Build): TileParts {
 
   buildFuji(k);
   buildHills(k, { x0: BOARD.x0, x1: 8, z0: BOARD.z0, z1: -8 });
-  buildHills(k, { x0: 74, x1: BOARD.x1, z0: -46, z1: -13 });
 
   // gardens, squares and yards
   flat(k.street, rect(-103.6, -10, -72.2, SHORE.kyoto - 3), 0.02, LAWN, { win: PLAIN, holes: [moat, pond] });
@@ -75,6 +75,7 @@ export function buildJapan(k: Build): TileParts {
   area(k, rect(DAIKOKU.x0 + 1, DAIKOKU.z0 + 1, DAIKOKU.x1 - 0.4, DAIKOKU.z1 - 1), 0x5d5f66);
   area(k, rect(SHORE.pier.x0 + 1, SHORE.tokyo + 1, SHORE.pier.x1 - 1, SHORE.pier.z1 - 1), 0x8f8c86);
   area(k, rect(TOKYO.west + 6, TOKYO.south + 8.2, SHORE.arm.x - 1, SHORE.tokyo - 0.6), PLAZA);
+  area(k, rect(UENO_PARK.x0, UENO_PARK.z0, UENO_PARK.x1, UENO_PARK.z1), LAWN);
 
   // -------------------------------------------------------------------------
   // Streets on the ground
@@ -220,35 +221,10 @@ export function buildJapan(k: Build): TileParts {
   // The Shinkansen
   // -------------------------------------------------------------------------
 
-  {
-    const r = RAIL, slab = r.y - 0.14;
-    // the viaduct: a slab with a low wall along each edge, on columns that keep out of the roads below
-    b.box(r.west, slab - 1.4, r.z - r.half, r.east, slab, r.z + r.half, CONCRETE, { faces: 'NSTB' });
-    for (const side of [-1, 1]) {
-      const z = r.z + side * (r.half - 0.25);
-      b.box(r.west, slab, z - 0.25, r.east, slab + 1.3, z + 0.25, 0xd9d5cb);
-      // two rails for each track
-      for (const g of [-0.78, 0.78]) {
-        const rz = r.z + side * r.off + g;
-        b.box(r.west - 1, slab, rz - 0.09, r.east + 1, slab + 0.24, rz + 0.09, 0x9aa0a8, { faces: 'NST' });
-      }
-    }
-    for (const x of [-66, -55, -45, -8, 3, 25, 36, 47, 68]) {
-      b.box(x - 0.9, 0, r.z - 1.6, x + 0.9, slab - 1.4, r.z + 1.6, CONCRETE);
-      b.box(x - 1.1, slab - 2.3, r.z - r.half + 0.6, x + 1.1, slab - 1.4, r.z + r.half - 0.6, CONCRETE, { faces: 'NESWB' });
-    }
-    // the mouth of the tunnel at each end: a wall against the hill, with a dark opening
-    for (const [x, way, hill] of [[r.west, -1, KYOTO_HILL.y], [r.east, 1, UENO_HILL.y]]) {
-      b.box(Math.min(x, x + way * 2.4), 0, r.z - r.half - 4, Math.max(x, x + way * 2.4), hill + 0.6, r.z + r.half + 4, 0xb9b4a8);
-      const face = x - way * 0.06;
-      b.box(Math.min(face, x), slab, r.z - r.half + 0.5, Math.max(face, x), slab + 5.6, r.z + r.half - 0.5, 0x15161a, { faces: way < 0 ? 'E' : 'W' });
-    }
-    const loop = path(RAIL_LOOP, true);
-    const stops = [[-58, -r.off], [36, -r.off], [36, r.off], [-58, r.off]].map(([x, off]) => loop.closest(x, r.z + off));
-    for (const from of [0, loop.length / 2]) {
-      train(k, loop, { cars: 4, speed: 36, stops, from, dwell: 5, body: 0xf4f6f8, stripe: 0x2a56b8 });
-    }
-  }
+  buildShinkansen(k);
+
+  // a dragon in the air, about Fuji's summit and out over Kyoto
+  dragon(k, { round: DRAGON_ROUND, size: 1.3, speed: 15 });
 
   // -------------------------------------------------------------------------
   // Ordinary buildings
@@ -356,11 +332,10 @@ export function buildJapan(k: Build): TileParts {
       k.tree(x, z, 0.75 + k.rand() * 0.5, onFuji, y - 0.2);
       planted++;
     }
-    // Ueno hill: a park on its top
-    for (let i = 0; i < 16; i++) {
-      // (none at its western end, which would stand between the scramble and the view)
-      const x = UENO_HILL.x0 + 11 + k.rand() * (UENO_HILL.x1 - UENO_HILL.x0 - 13), z = UENO_HILL.z0 + 8 + k.rand() * (UENO_HILL.z1 - UENO_HILL.z0 - 16);
-      k.tree(x, z, 0.8 + k.rand() * 0.4, false, groundHeight(x, z) - 0.2);
+    // Ueno Park: cherry trees along its far sides, so that they do not stand between the scramble and the view
+    for (let i = 0; i < 9; i++) {
+      k.tree(UENO_PARK.x1 - 2.5, UENO_PARK.z0 + 2.5 + i * 2.9, 0.7 + k.rand() * 0.3);
+      if (i > 2) k.tree(UENO_PARK.x0 + 3 + i * 2.6, UENO_PARK.z0 + 2.2, 0.7 + k.rand() * 0.3);
     }
     // cherry trees along the river, and trees in the castle's and the pavilion's grounds
     for (let z = SHORE.river.head + 6; z < SHORE.kyoto - 4; z += 9) {

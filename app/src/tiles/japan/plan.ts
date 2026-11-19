@@ -14,7 +14,7 @@
 // is about 7 long. x points east, z points south, y points up.
 
 import { TILE, type HeroSpot, type ParkedSpot, type Rect, type Route, type TrafficType } from '../../engine/tile';
-import { Trace, back, endOf, from, lane, lengthOf, thereAndBack, toSegs, totalLength, type P2, type Piece } from './lines';
+import { Trace, back, endOf, from, lane, lengthOf, toSegs, totalLength, type P2, type Piece } from './lines';
 
 export const BOARD = TILE;
 /** How far a shape that runs to the edge of the board stops short of it. */
@@ -273,15 +273,29 @@ export const ROTARY_LOOP: Piece[] = from(endOf(lane(back(WANGAN_NORTH), LANE_OFF
 // The Shinkansen
 // ---------------------------------------------------------------------------
 
-/** Its line: straight across the tile, with a tunnel into a hill at each end, where it turns round out of sight. */
-export const RAIL = { z: -30, y: 13, off: 2.2, west: -72, east: 77, tunnel: 8, loop: 6.5, half: 5 };
-export const RAIL_LINE: Piece[] = new Trace(RAIL.west - RAIL.tunnel, RAIL.z, 0, RAIL.y).goToX(RAIL.east + RAIL.tunnel).pieces;
-/** There and back: east on the north track, west on the south one, as trains keep left too. */
-export const RAIL_LOOP: Piece[] = thereAndBack(RAIL_LINE, RAIL.off, RAIL.loop, RAIL.loop);
+/**
+ * Its line: straight across the tile on a viaduct. It ends at Tokyo Station
+ * (`east`), and at its other end it runs into a tunnel (`west`) under Kyoto's
+ * hill and ends there out of sight (`hidden`). A train is `train` long, and
+ * stops at Kyoto Station with its middle at `kyoto`.
+ */
+export const RAIL = { z: -30, y: 13, off: 2.2, west: -72, hidden: -102, east: 54, half: 5, train: 26, kyoto: -58 };
 
-/** The two hills the line runs into. Each is high enough to hide a train. */
+/** Kyoto's hill, which the line runs into. It is high enough to hide a train. */
 export const KYOTO_HILL = { x0: BOARD.x0, x1: RAIL.west, z0: -44, z1: -12, y: 19 };
-export const UENO_HILL = { x0: RAIL.east, x1: BOARD.x1, z0: -43, z1: -16, y: 19 };
+
+/** Ueno Park: flat ground at Tokyo's east edge, kept low so that the scramble can be seen over it. */
+export const UENO_PARK: Rect = { x0: 79, z0: -43, x1: BOARD.x1 - 0.4, z1: -17 };
+
+/**
+ * The round the dragon flies: about Fuji's summit, out over Kyoto and the river,
+ * and back over the pass. It keeps clear of the pagoda, Kyoto Tower and the wires.
+ */
+export const DRAGON_ROUND: [number, number, number][] = [
+  [-61, 49, -80], [-70, 54, -104], [-92, 57, -98], [-97, 53, -80], [-88, 47, -64],
+  [-65, 46, -30], [-77, 50, 12], [-70, 46, 48], [-38, 44, 62], [-14, 48, 30],
+  [-6, 56, -14], [-22, 58, -52], [-44, 54, -72],
+];
 
 /** A shelf on Fuji's north-east side, for the farmhouses and the hot spring. */
 export const SHELF = { x0: -36, x1: -11, z0: BOARD.z0, z1: -84, y: 5 };
@@ -400,7 +414,7 @@ export const NAMES: { id: string; name: string; x: number; y: number; z: number 
   { id: 'inari', name: 'FUSHIMI INARI', x: -90, y: KYOTO_HILL.y + 5, z: -18 },
   { id: 'tokyo-tower', name: 'TOKYO TOWER', x: 36, y: 118, z: -80 },
   { id: 'crossing', name: 'SHIBUYA CROSSING', x: TOKYO.mid, y: 7, z: TOKYO.cross },
-  { id: 'ueno', name: 'UENO HILL', x: 92, y: UENO_HILL.y + 5, z: -30 },
+  { id: 'ueno', name: 'UENO PARK', x: 91, y: 9, z: -30 },
   { id: 'shinkansen', name: 'SHINKANSEN', x: 0, y: RAIL.y + 9, z: RAIL.z },
   { id: 'bay-bridge', name: 'BAY BRIDGE', x: 25, y: 52, z: 72 },
   { id: 'wangan', name: 'WANGAN', x: 96, y: 22, z: 40 },

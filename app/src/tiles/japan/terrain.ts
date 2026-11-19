@@ -11,7 +11,7 @@
 import type { GeoBuilder, V3 } from '../../engine/geo';
 import type { Build, Rect } from '../../engine/tile';
 import { sample } from './lines';
-import { BOARD, FUJI, KYOTO_HILL, LOOKOUT, LOOKOUT_LOOP, PASS, PASS_LINE, SHELF, UENO_HILL, fujiHeight } from './plan';
+import { BOARD, FUJI, KYOTO_HILL, LOOKOUT, LOOKOUT_LOOP, PASS, PASS_LINE, SHELF, fujiHeight } from './plan';
 
 const smooth = (a: number, b: number, x: number): number => {
   const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
@@ -71,8 +71,7 @@ export function bench(x: number, z: number): number | null {
   return low === null ? null : low - 0.45;
 }
 
-const KYOTO_SOFT = { w: 0, e: 0, n: 0, s: 11 };
-const UENO_SOFT = { w: 0, e: 0, n: 7, s: 7 };
+const KYOTO_SOFT = { w: 0, e: 0, n: 8, s: 11 };
 const SHELF_SOFT = { w: 0, e: 7, n: 0, s: 9 };
 
 /** How high the ground is at a place, Fuji's own cone left out. */
@@ -81,7 +80,7 @@ export function foothills(x: number, z: number): number {
   let y = Math.max(slope(x, z), look);
   const cut = bench(x, z);
   if (cut !== null) y = Math.min(y, cut);
-  return Math.max(y, mesa(KYOTO_HILL, x, z, KYOTO_SOFT), mesa(UENO_HILL, x, z, UENO_SOFT), mesa(SHELF, x, z, SHELF_SOFT));
+  return Math.max(y, mesa(KYOTO_HILL, x, z, KYOTO_SOFT), mesa(SHELF, x, z, SHELF_SOFT));
 }
 
 /** How high the ground is at a place: whatever is highest there. */
