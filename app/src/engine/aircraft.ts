@@ -1,13 +1,14 @@
-// What flies over Europe: Concorde, which Britain and France built together,
-// on a slow round high above London and Paris, and a Montgolfier balloon that
-// drifts over the left bank, where Paris sent up its first ones.
+// Things that fly over a tile and never land: Concorde, on a slow round high
+// above it, and a Montgolfier balloon that drifts. They were made for Europe,
+// where Britain and France built the one together and Paris sent up the first
+// of the other.
 //
-// They are made the way the engine's helicopter is: a shape of their own, moved
-// on every frame. Neither ever lands, so neither needs a place to stand.
+// They are made the way the helicopter in air.ts is: a shape of their own,
+// moved on every frame. Neither ever lands, so neither needs a place to stand.
 
 import * as THREE from 'three';
-import { GeoBuilder, interior, type V3 } from '../../engine/geo';
-import type { Build } from '../../engine/tile';
+import { GeoBuilder, interior, type V3 } from './geo';
+import type { Build } from './tile';
 
 type P2 = [number, number];
 

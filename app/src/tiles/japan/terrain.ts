@@ -10,7 +10,7 @@
 
 import type { GeoBuilder, V3 } from '../../engine/geo';
 import type { Build, Rect } from '../../engine/tile';
-import { sample } from './lines';
+import { sample } from '../../engine/lines';
 import { BOARD, FUJI, KYOTO_HILL, LOOKOUT, LOOKOUT_LOOP, PASS, PASS_LINE, SHELF, fujiHeight } from './plan';
 
 const smooth = (a: number, b: number, x: number): number => {

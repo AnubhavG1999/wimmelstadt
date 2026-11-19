@@ -12,16 +12,17 @@ import { joined } from '../../engine/paths';
 import { train, track } from '../../engine/rail';
 import { ASPHALT, CONCRETE, lampsAlong, roadDeck, street } from '../../engine/roads';
 import type { Build, TileParts } from '../../engine/tile';
-import { checkRoads } from './check';
-import { fine, flat, lengths, lengths3, pathOf, rounded, stretch, type P2, type P3 } from './geom';
+import { checkRoads } from '../../engine/checks';
+import { fine, flat, lengths, lengths3, pathOf, rounded, stretch, type P2, type P3 } from '../../engine/corners';
 import { ESCALATOR, MODELS, OPEN, extras } from './landmarks';
-import { busCar, dragonBoat, ferryBoat, junkBoat, lighter, minibus, peakTramCar, sampan, tramCar, type Car } from './movers';
+import { busCar, dragonBoat, ferryBoat, junkBoat, lighter, minibus, peakTramCar, sampan, tramCar, type Car } from '../../engine/movers';
 import {
   BOARD, BUILDINGS, BUSES, FUNICULAR, HARBOUR, HERO_SPOTS, HILL, KOWLOON, LION, LION_GROUND, LOTS, PARKED, PEAK, PEAK_GROUND, POINT, ROUTES, RUN, SHELTER, SHORE, TRAM, TRAM_STOPS, TUNNEL,
   groundAt, type Style,
 } from './plan';
 import { NEON, SIGN_POOLS } from './signs';
-import { drawField } from './terrain';
+import { drawField } from '../../engine/terrain';
+import { tunnelMouth } from '../../engine/tunnel';
 
 const SEA = 0x3f8fb0, QUAY = 0xa9a59a, ROCK = 0x9a8f7c, DARK = 0x0c0c10;
 const GRASS = [0x6fa85a, 0x74ad5c, 0x67a052], SCRUB = [0x5c8f52, 0x578a55], CRAG = [0x9a8f7c, 0x8d8376, 0xa3977f];
@@ -34,27 +35,8 @@ const TUBE = 5.1;
 /** A line through corners, each rounded with radius `r`, with a point every unit or two. */
 const fineRound = (corners: P2[], r: number): P2[] => fine(rounded(corners, r));
 
-/**
- * The mouth of the tunnel, as seen from the land: the road runs in towards +x
- * and down, and its roof begins at x = 0. An open cutting with a low wall
- * round it, a hood with a wall between the two tubes, and darkness a little
- * way in, which is where a vehicle goes out of sight.
- */
-function portal(k: Build, open: number, hood: number): void {
-  const b = k.b, W = TUBE;
-  for (const s of [-1, 1]) {
-    const z0 = s < 0 ? -W - 0.5 : W, z1 = s < 0 ? -W : W + 0.5;
-    b.box(-open, -8, z0, hood, 0, z1, CONCRETE, { faces: s < 0 ? 'S' : 'N' });
-    b.box(-open - 0.3, 0, s < 0 ? -W - 0.6 : W, hood + 0.3, 0.9, s < 0 ? -W : W + 0.6, CONCRETE);
-    b.box(0, 0.9, s < 0 ? -W - 1.2 : W, hood + 0.5, 4.3, s < 0 ? -W : W + 1.2, CONCRETE);
-  }
-  b.box(0, 4.3, -W - 1.2, hood + 0.5, 5.7, W + 1.2, CONCRETE, { faces: 'NESWTB' });
-  b.box(0, -6, -0.4, hood + 0.5, 4.3, 0.4, CONCRETE);
-  b.box(hood - 0.1, 0, -W, hood + 0.5, 4.3, W, CONCRETE);
-  b.box(3.4, -5, -W, 3.5, 4.3, W, DARK, { faces: 'W' });
-  k.sign('tunnel', -0.14, 5.0, 0, -1, 0, 1.2, 9.6);
-  k.lights.push({ x: -2, z: 0, r: 9, color: '#ffe2ae', k: 0.5 });
-}
+/** The mouth of the harbour tunnel: the engine's, as wide as this tunnel's two lanes, with the tunnel's name over it. */
+const portal = (k: Build, open: number, hood: number): void => tunnelMouth(k, { open, hood, half: TUBE, sign: 'tunnel', dark: DARK });
 
 export function buildCity(k: Build): TileParts {
   const b = k.b;
@@ -469,7 +451,7 @@ export function buildCity(k: Build): TileParts {
         return { id: o.id, x0: o.x0, z0: o.z0, x1: o.x1, z1: o.z1, y0, y1: y0 + o.h };
       }),
     ];
-    checkRoads(ROUTES, { tram: flat(TRAM, 0.04), buses: flat(BUSES, 0.02) }, solids);
+    checkRoads('Hong Kong', ROUTES, { tram: flat(TRAM, 0.04), buses: flat(BUSES, 0.02) }, solids);
   }
 
   return { routes: ROUTES, parked: PARKED, heroSpots: HERO_SPOTS };

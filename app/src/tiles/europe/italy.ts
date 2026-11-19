@@ -11,7 +11,7 @@ import { roadDeck } from '../../engine/roads';
 import type { SignDef } from '../../engine/signs';
 import type { Build } from '../../engine/tile';
 import { pisa } from './landmarks';
-import { D, GOLD, ITALY, archway, bandedFlag, figure, hipped, lantern, lathe, rad, roundel, tri, twoWheeler } from './parts';
+import { D, GOLD, ITALY, archway, bandedFlag, figure, hipped, lantern, lathe, rad, roundel, tri, twoWheeler } from '../../engine/parts';
 import { ARNO_X, CANAL, COLOSSEUM, LINGOTTO_ROOF, WATER_DROP } from './plan';
 
 const TILE = 0xb5654a, WATER = 0x7fc4e0, BLACK = 0x16171c, DARK = 0x4a4038;

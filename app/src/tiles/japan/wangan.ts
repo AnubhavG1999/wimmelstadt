@@ -8,11 +8,11 @@ import { area, rect, type P2 } from '../../engine/ground';
 import { buildPath } from '../../engine/paths';
 import { CONCRETE, roadDeck, type DeckOpts } from '../../engine/roads';
 import type { Build } from '../../engine/tile';
-import { sample, toSegs, type Piece } from './lines';
+import { sample, toSegs, type Piece } from '../../engine/lines';
 import {
   AVENUE, DAIKOKU, DAIKOKU_BAYS, DAIKOKU_BYPASS, DAIKOKU_RING, ROTARY, SHORE, TATSUMI, TATSUMI_LOOP, TOKYO, WANGAN, WANGAN_NORTH, WANGAN_WEST, WATER,
 } from './plan';
-import { dekotora, mast, standingCar, vending } from './props';
+import { dekotora, mast, standingCar, vending } from '../../engine/props';
 
 const WHITE = 0xf1eee6, PAINT = 0xf2efe6;
 const SODIUM = '#ffb866';

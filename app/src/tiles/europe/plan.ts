@@ -15,7 +15,7 @@
 // Units: 1 unit is 1 cm of toy. A lane is 5 wide, a storey is 5 high and a car
 // is about 7 long. x points east, z points south, y points up.
 
-import type { P2 } from './lanes';
+import type { P2 } from '../../engine/lanes';
 
 // ---------------------------------------------------------------------------
 // The river

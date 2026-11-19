@@ -1,13 +1,16 @@
 // A road's middle line, drawn as with a pen: straight stretches and arcs, each
 // with a height at its ends. From one such line come the deck, and the lane on
-// either side of it, at the same height at every place along it. The engine's
-// own stretches cannot say that: a ramp rises evenly along its own length, so
-// the inside and the outside of a bend would part company.
+// either side of it, at the same height at every place along it. The plain
+// stretches in paths.ts cannot say that: a ramp rises evenly along its own
+// length, so the inside and the outside of a bend would part company.
 //
 // Headings are in degrees: 0 faces east and 90 faces south, as on the map. A
 // turn by a positive angle is to the right.
+//
+// Japan's builder wrote this, for the pass up Fuji and for the Wangan: a road
+// that climbs through hairpins, and one on stilts that goes there and back.
 
-import type { Seg } from '../../engine/paths';
+import type { Seg } from './paths';
 
 export type P2 = [number, number];
 

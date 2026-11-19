@@ -1,7 +1,12 @@
-// Small parts that more than one of Europe's landmarks is made of.
+// Small parts that landmarks are made of: a triangle that always faces the way
+// it is told to, a pinnacle, a dome or a basin turned from an outline, a roof
+// with four slopes, an arch cut through a wall, a rose window or a clock, a
+// wheel on a level axle, flags, a parasol, a scooter and a person in uniform.
+// Europe's builder wrote these, and by its third quarter a landmark took a
+// quarter of the time the first ones had.
 
-import type { GeoBuilder, QuadOpts, V3, WinSpec } from '../../engine/geo';
-import type { Build } from '../../engine/tile';
+import type { GeoBuilder, QuadOpts, V3, WinSpec } from './geo';
+import type { Build } from './tile';
 
 export const Q = Math.PI / 4;
 /** A four-sided "cylinder" is measured to its corners: this turns half a width into that radius. */

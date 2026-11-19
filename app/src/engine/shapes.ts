@@ -1,8 +1,11 @@
-// Shapes that the tile's models share, beyond the boxes, cylinders and bars
-// of the engine's builder.
+// Shapes that a tile's models share, beyond the boxes, cylinders and bars of
+// the builder in geo.ts: a triangle that always faces the way it is told to, a
+// wall round a plan of any number of corners, pitched and hipped roofs, a slab
+// between two heights, a roof that follows a line, a drum, a rail and a lamp
+// for the top of a tower. Hong Kong's builder wrote these.
 
-import type { GeoBuilder, QuadOpts, V3, WinSpec } from '../../engine/geo';
-import type { Build } from '../../engine/tile';
+import type { GeoBuilder, QuadOpts, V3, WinSpec } from './geo';
+import type { Build } from './tile';
 
 /** A point on the ground: [x, z]. */
 export type XZ = [number, number];

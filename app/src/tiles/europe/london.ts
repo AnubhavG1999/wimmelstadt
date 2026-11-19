@@ -11,7 +11,7 @@ import { placed } from '../../engine/build';
 import { GeoBuilder, interior, type V3, type WinSpec } from '../../engine/geo';
 import type { Build } from '../../engine/tile';
 import { bigBen } from './landmarks';
-import { D, Q, lantern, pinnacle, tri, unionFlag } from './parts';
+import { D, Q, lantern, pinnacle, tri, unionFlag } from '../../engine/parts';
 import { EMBANKMENT_X, SOUTH_BANK_X, STRAND_X, THAMES_X, TOWER_Z, WATER_DROP, WESTMINSTER_Z } from './plan';
 
 /** The bed of the river, as far down as anything that stands in it needs to go. */

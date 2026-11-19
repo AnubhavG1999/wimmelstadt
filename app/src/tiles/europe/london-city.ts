@@ -7,7 +7,7 @@ import { GeoBuilder, interior, type V3, type WinSpec } from '../../engine/geo';
 import { LAWN, PLAZA, area, flat, rect, walls, type P2 } from '../../engine/ground';
 import { EN, fit, roundRect, type SignDef } from '../../engine/signs';
 import type { Build } from '../../engine/tile';
-import { D, GOLD, figure, lantern, lathe, rad, tri, unionFlag, wheel } from './parts';
+import { D, GOLD, figure, lantern, lathe, rad, tri, unionFlag, wheel } from '../../engine/parts';
 import { PICCADILLY } from './plan';
 
 const RED = 0xc8202c, BLACK = 0x16171c;

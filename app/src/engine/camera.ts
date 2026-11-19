@@ -13,7 +13,8 @@ const smooth = (a: number, b: number, v: number) => {
 
 export class IsoRig {
   readonly camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 10, 1700);
-  readonly elev = THREE.MathUtils.degToRad(38);
+  /** How steeply the view looks down. It is 38 degrees, and is only ever changed for a picture from straight above. */
+  elev = THREE.MathUtils.degToRad(38);
   readonly dist: number;
   /** The ground the view may roam over. */
   private readonly bounds: Rect;

@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { GeoBuilder, interior } from '../../engine/geo';
 import type { Build } from '../../engine/tile';
-import { tri } from './parts';
+import { tri } from '../../engine/parts';
 import { BEND_1, SEINE_Z, THAMES_X, WATER_DROP } from './plan';
 
 /**

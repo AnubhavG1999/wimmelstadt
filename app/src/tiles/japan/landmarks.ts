@@ -10,7 +10,7 @@ import type { GeoBuilder, V3, WinSpec } from '../../engine/geo';
 import { interior } from '../../engine/geo';
 import type { Build } from '../../engine/tile';
 import { CASTLE, INARI, KINKAKU, KYOTO_HILL, KYOTO_TOWER, MOAT, PAGODA, RAIL, SENSOJI, SHORE, TOKYO_STATION, TOKYO_TOWER, TORII } from './plan';
-import { lantern } from './props';
+import { lantern } from '../../engine/props';
 import { groundHeight } from './terrain';
 
 const Q = Math.PI / 4;

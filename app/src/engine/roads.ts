@@ -114,6 +114,42 @@ const laidOn = (k: Build): Laid[] => {
 
 const PLAIN: WinSpec = { cell: 0, storey: 1, lit: 0, kind: 0 };
 
+/**
+ * Where a box stands in a street or on its sidewalk, among the streets laid
+ * on the tile so far, or null if it stands clear of them all. A round or
+ * slanted thing is better asked about as several small boxes than as one big
+ * one, which gives false alarms.
+ */
+export function inStreet(k: Build, x0: number, z0: number, x1: number, z1: number): { x: number; z: number } | null {
+  const p = new THREE.Vector3(), a = new THREE.Vector3(), c = new THREE.Vector3();
+  for (const s of laidOn(k)) {
+    const reach = s.width / 2 + s.walk;
+    for (let d = 0; d <= s.path.length; d += 1) {
+      s.path.at(d, p);
+      s.path.at(Math.min(s.path.length, d + 0.5), a);
+      s.path.at(Math.max(0, d - 0.5), c);
+      const tx = a.x - c.x, tz = a.z - c.z, l = Math.hypot(tx, tz) || 1;
+      // every place across the street here, from the back of one sidewalk to the back of the other
+      for (let o = -reach; o <= reach; o += 0.75) {
+        const x = p.x - (tz / l) * o, z = p.z + (tx / l) * o;
+        if (x > x0 + 0.2 && x < x1 - 0.2 && z > z0 + 0.2 && z < z1 - 0.2) return { x, z };
+      }
+    }
+  }
+  return null;
+}
+
+/**
+ * Says so in the console, on the development server, if a box stands in a
+ * street. Call it for every lot and every footprint once the streets are laid:
+ * a building in a road shows in no picture until someone looks from the far side.
+ */
+export function clearOfStreets(k: Build, name: string, x0: number, z0: number, x1: number, z1: number): void {
+  if (!import.meta.env.DEV) return;
+  const at = inStreet(k, x0, z0, x1, z1);
+  if (at) console.warn(`${name} stands in a street, near ${Math.round(at.x)}, ${Math.round(at.z)}.`);
+}
+
 interface Across { x: number; y: number; z: number; tx: number; tz: number; rx: number; rz: number }
 
 function acrossAt(path: Path, s: number): Across {

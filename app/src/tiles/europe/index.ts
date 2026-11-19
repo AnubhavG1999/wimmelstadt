@@ -8,12 +8,12 @@
 import * as THREE from 'three';
 import { placed } from '../../engine/build';
 import { ordinaryBuildings, type BuildingRules, type Lot } from '../../engine/buildings';
-import { LAWN, area, ground, rect, terrace, water, type P2 } from '../../engine/ground';
+import { LAWN, area, ground, onBoard, rect, terrace, water, type P2 } from '../../engine/ground';
 import { buildPath, type Path } from '../../engine/paths';
 import { lampsAlong, roadDeck, street } from '../../engine/roads';
 import type { SignDef } from '../../engine/signs';
 import type { Build, HeroSpot, ParkedSpot, TileDef, TileParts } from '../../engine/tile';
-import { balloon, concorde } from './air';
+import { balloon, concorde } from '../../engine/aircraft';
 import { ITALY_GROUND, ITALY_SIGNS, colosseum, duomo, fieldOfMiracles, lingotto, lungarnoLanterns, maranello, piazza, ponteVecchio, santAgata, venice, vineyard } from './italy';
 import { eiffel } from './landmarks';
 import { bridgeStreetLamps, londonEye, parliament, towerBridge, westminsterBridge } from './london';
@@ -118,26 +118,6 @@ function riverShape(): P2[] {
   return [...left, ...right.reverse()];
 }
 
-/** A shape, cut off a hair inside the edge of the board. */
-function onBoard(shape: P2[]): P2[] {
-  const X = 103.8, Z = 112.8;
-  const cutX = (x: number) => (a: P2, b: P2): P2 => [x, a[1] + ((b[1] - a[1]) * (x - a[0])) / (b[0] - a[0])];
-  const cutZ = (z: number) => (a: P2, b: P2): P2 => [a[0] + ((b[0] - a[0]) * (z - a[1])) / (b[1] - a[1]), z];
-  const edges: [(p: P2) => boolean, (a: P2, b: P2) => P2][] = [
-    [(p) => p[0] <= X, cutX(X)], [(p) => p[0] >= -X, cutX(-X)], [(p) => p[1] <= Z, cutZ(Z)], [(p) => p[1] >= -Z, cutZ(-Z)],
-  ];
-  let out = shape;
-  for (const [inside, cut] of edges) {
-    const src = out;
-    out = [];
-    src.forEach((p, i) => {
-      const q = src[(i + 1) % src.length];
-      if (inside(p)) out.push(p);
-      if (inside(p) !== inside(q)) out.push(cut(p, q));
-    });
-  }
-  return out;
-}
 
 /** A flat bridge: a slab from bank to bank under the street, piers in the water and a low wall along each side. */
 function slabBridge(k: Build, x0: number, z0: number, x1: number, z1: number, alongX: boolean, piers: number): void {

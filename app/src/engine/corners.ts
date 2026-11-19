@@ -1,11 +1,13 @@
 // Lines on the board: the middle of a road, the lanes on either side of it, how
 // high each point of it is. A road here is a list of corners, rounded and then
 // given heights, so that it can climb, dive and turn as Hong Kong's roads do.
+// Hong Kong's builder wrote this, for the road up the Peak, the viaduct on
+// stilts, the ramps into the tunnel and the round a jumbo jet flies.
 //
 // A point on the ground is [x, z]. A point in space is [x, y, z]. x points
 // east, z points south and y points up, as everywhere on a tile.
 
-import { buildPath, type Path, type Seg } from '../../engine/paths';
+import { buildPath, type Path, type Seg } from './paths';
 
 export type P2 = [number, number];
 export type P3 = [number, number, number];

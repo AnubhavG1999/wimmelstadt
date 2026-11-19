@@ -23,7 +23,7 @@
 import type { StreetOpts } from '../../engine/roads';
 import type { Seg } from '../../engine/paths';
 import type { Route, TrafficType } from '../../engine/tile';
-import { beside, circle, line, loop, run, shift, type P2, type Step } from './lanes';
+import { beside, circle, line, loop, run, shift, type P2, type Step } from '../../engine/lanes';
 import {
   ACE_TURN, ARC, CIRCUS_R, COLOSSEUM, CONCORDE, CONCORDE_LANES, EMBANKMENT_X, EMILIA_Z, HILL, IENA_X, LINGOTTO_ROOF, LUNGARNO_TOP, NEUF_X,
   NORTH_QUAI_Z, PICCADILLY, ROYALE_X, SOUTH_BANK_X, SOUTH_QUAI_Z, STAR_LANES, STRAND_X, TOWER_HILL, TOWER_Z, TURN_R, VALLEY, WESTMINSTER_Z, offHill, onHill,

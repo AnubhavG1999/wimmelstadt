@@ -1,10 +1,11 @@
-// Ground that slopes. The engine builds a hill in level steps; Hong Kong's
-// hills are too steep and too much looked at for that, so here a hill is a
-// sheet of flat facets over a grid, like a model carved from foam: its height
-// is worked out at every corner of the grid, each square is two triangles, and
-// each triangle is green or rock by how steep it is.
+// Ground that slopes. `terrace` in ground.ts builds a hill in level steps.
+// Where a hill is too steep and too much looked at for that, as the Peak is,
+// it is built here: a sheet of flat facets over a grid, like a model carved
+// from foam. The hill's height is worked out at every corner of the grid, each
+// square is two triangles, and each triangle is green or rock by how steep it
+// is. Hong Kong's builder wrote this.
 
-import type { GeoBuilder, V3 } from '../../engine/geo';
+import type { GeoBuilder, V3 } from './geo';
 import { face3 } from './shapes';
 
 /** A hill: the rectangle it covers, how many squares it is divided into each way, and its height at every corner. */

@@ -9,9 +9,9 @@ import { LAWN, PLAZA, area, flat, ground, oval, rect, water } from '../../engine
 import { buildPath, type Path } from '../../engine/paths';
 import { lampsAlong, roadDeck, street } from '../../engine/roads';
 import type { Build, TileParts } from '../../engine/tile';
-import { dragon } from './dragon';
+import { dragon } from '../../engine/dragon';
 import { buildLandmarks } from './landmarks';
-import { sample, toSegs, type Piece } from './lines';
+import { sample, toSegs, type Piece } from '../../engine/lines';
 import {
   AVENUE, BOARD, DRAGON_ROUND, FUJI, HERO_SPOTS, KEEP_CLEAR, KYOTO, KYOTO_RING, LOOKOUT, LOOKOUT_LOOP, LOOKOUT_YARD, MOAT, ORDINARY, PARKED,
   PASS, PASS_FOOT, PASS_LINE, POND, RIVER_CHERRIES, ROTARY, ROUTES, SHORE, TOKYO, TOKYO_RING, UENO_PARK, WATER,

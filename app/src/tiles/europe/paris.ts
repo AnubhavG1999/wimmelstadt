@@ -9,7 +9,7 @@ import { GeoBuilder, interior, type V3, type WinSpec } from '../../engine/geo';
 import { LAWN, PLAZA, area, rect } from '../../engine/ground';
 import type { SignDef } from '../../engine/signs';
 import type { Build } from '../../engine/tile';
-import { D, GOLD, archway, figure, hipped, lantern, lathe, parasol, pinnacle, rad, roundel, tri } from './parts';
+import { D, GOLD, archway, figure, hipped, lantern, lathe, parasol, pinnacle, rad, roundel, tri } from '../../engine/parts';
 import { ARC, CONCORDE, HILL, SEINE_Z, onHill } from './plan';
 
 const WATER = 0x7fc4e0, IRON_GREEN = 0x2f5d48;

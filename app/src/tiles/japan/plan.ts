@@ -14,7 +14,7 @@
 // is about 7 long. x points east, z points south, y points up.
 
 import { TILE, type HeroSpot, type ParkedSpot, type Rect, type Route, type TrafficType } from '../../engine/tile';
-import { Trace, back, endOf, from, lane, lengthOf, paced, toSegs, totalLength, type P2, type Piece } from './lines';
+import { Trace, back, endOf, from, lane, lengthOf, paced, toSegs, totalLength, type P2, type Piece } from '../../engine/lines';
 
 export const BOARD = TILE;
 /** How far a shape that runs to the edge of the board stops short of it. */

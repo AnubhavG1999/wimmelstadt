@@ -17,8 +17,8 @@
 
 import type { Seg } from '../../engine/paths';
 import { TILE, type HeroSpot, type ParkedSpot, type Route, type TrafficType } from '../../engine/tile';
-import { eased, fine, flat, joined, lane, lengths, raised, rounded, segsOf, through, turned, type P2 } from './geom';
-import { carved, field, heightOn, smooth, type Bench, type Field } from './terrain';
+import { eased, fine, flat, joined, lane, lengths, raised, rounded, segsOf, through, turned, type P2 } from '../../engine/corners';
+import { carved, field, heightOn, smooth, type Bench, type Field } from '../../engine/terrain';
 
 export const BOARD = TILE;
 /** A shape that reaches the edge of the board stops a hair short of it. */

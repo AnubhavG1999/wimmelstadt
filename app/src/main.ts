@@ -488,6 +488,8 @@ interface ShotOptions {
   w?: number; h?: number; hour?: number; x?: number; z?: number; az?: number; zoom?: number; follow?: number; steps?: number; weather?: WeatherName;
   /** Whether the heroes are in the picture. They are not unless this says so. */
   heroes?: boolean;
+  /** A plan: the picture is taken from straight above, with north at the top and nothing blurred. */
+  plan?: boolean;
 }
 
 /**
@@ -510,7 +512,13 @@ async function shot(name: string, o: ShotOptions = {}): Promise<string> {
   const now = performance.now();
   rig.lastInput = now;
   const view = { x: rig.target.x, z: rig.target.z, az: THREE.MathUtils.radToDeg(rig.az), viewH: rig.viewH };
-  rig.set(o.x ?? 0, o.z ?? 4, o.az ?? 42, o.zoom ?? Math.max(268, 372 / (w / h)));
+  const keepElev = rig.elev, keepFocus = focusMode;
+  if (o.plan) {
+    // not quite straight down, so that the view still knows which way is north
+    rig.elev = 1.553;
+    focusMode = FOCUS.findIndex((f) => f.name === 'off');
+  }
+  rig.set(o.x ?? 0, o.z ?? 4, o.plan ? 0 : (o.az ?? 42), o.zoom ?? Math.max(268, 372 / (w / h)));
   const keep = follow;
   follow = -1;
   const keepWeather = weather.choice;
@@ -537,6 +545,8 @@ async function shot(name: string, o: ShotOptions = {}): Promise<string> {
   follow = keep;
   weather.choice = keepWeather;
   board.showHeroes(true);
+  rig.elev = keepElev;
+  focusMode = keepFocus;
   resize();
   rig.set(view.x, view.z, view.az, view.viewH);
   if (!blob) return 'could not encode the picture';
@@ -546,10 +556,34 @@ async function shot(name: string, o: ShotOptions = {}): Promise<string> {
   return `${real ? `captures/${capture}/screenshots/` : 'screenshots/'}${file}: ${res.status}, ${Math.round(blob.size / 1024)} kB, drawn at ${drawnAt}`;
 }
 
+/**
+ * Whether a place can be seen from where the view is now, or what is in the
+ * way: the first thing that is built between it and the camera. For checking
+ * a place for a hero without looking at a hero. People, trees and vehicles are
+ * not counted.
+ */
+function seen(x: number, y: number, z: number): { seen: boolean; after?: number; at?: [number, number, number] } {
+  const toCamera = rig.camera.getWorldDirection(new THREE.Vector3()).negate();
+  const built: THREE.Object3D[] = [];
+  const skip = new Set<THREE.Object3D>(board.tiles.map((t) => t.vehicles.group));
+  const walk = (o: THREE.Object3D): void => {
+    if (skip.has(o)) return;
+    const mesh = o as THREE.Mesh;
+    if (mesh.isMesh && !(o as THREE.InstancedMesh).isInstancedMesh) built.push(o);
+    for (const c of o.children) walk(c);
+  };
+  walk(board.group);
+  board.group.updateMatrixWorld(true);
+  const ray = new THREE.Raycaster(new THREE.Vector3(x, y, z).addScaledVector(toCamera, 0.1), toCamera);
+  const [hit] = ray.intersectObjects(built, false);
+  if (!hit) return { seen: true };
+  return { seen: false, after: Math.round(hit.distance * 10) / 10, at: [Math.round(hit.point.x * 10) / 10, Math.round(hit.point.y * 10) / 10, Math.round(hit.point.z * 10) / 10] };
+}
+
 // A handle for poking at the city from the console.
 Object.assign(window, {
   wimmel: {
-    opts, rig, renderer, atmo, board, weather, collection, bench, frame, shot,
+    opts, rig, renderer, atmo, board, weather, collection, bench, frame, shot, seen,
     setHour(h: number | null) { pinned = h; lapse = false; },
     /** Lets this many seconds pass at once, without drawing them: for looking at what happens later. */
     advance(seconds: number) {

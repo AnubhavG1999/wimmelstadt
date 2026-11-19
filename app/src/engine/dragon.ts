@@ -3,12 +3,13 @@
 // rising and falling along its length as it goes, after a pearl that keeps
 // just ahead of it. By night it glows from within, like a lantern.
 //
-// It is the engine's helicopter in kind: meshes of its own, moved on every
-// frame. Its body is one shape drawn many times, a piece for each joint.
+// It is the helicopter in air.ts in kind: meshes of its own, moved on every
+// frame. Its body is one shape drawn many times, a piece for each joint. It was
+// made for Japan, because the collector asked for a dragon.
 
 import * as THREE from 'three';
-import { GeoBuilder, interior, type V3 } from '../../engine/geo';
-import type { Build } from '../../engine/tile';
+import { GeoBuilder, interior, type V3 } from './geo';
+import type { Build } from './tile';
 
 export interface DragonOpts {
   /** The round it flies: points in the air, passed in turn and joined into a closed curve. Keep them clear of anything tall. */

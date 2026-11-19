@@ -15,7 +15,7 @@ import {
   BOATS, CARRIER, FARMS, FERRIS, GARAGE, HACHIKO, KONBINI, LOOKOUT_YARD, MOAT, MONKEYS, PADDIES, PARTS, PARTS_PARK, PASS, PASS_LINE, PETROL, POND,
   RIVER_CHERRIES, ROCK_GARDEN, ROUND_TOWER, SCRAMBLE, SCREENS, SHELF, SHORE, TOFU, TOKYO, UENO_PARK, USED_CARS,
 } from './plan';
-import { lantern, mast, standingCar, vending } from './props';
+import { lantern, mast, standingCar, vending } from '../../engine/props';
 
 const S2 = Math.SQRT1_2;
 const PAINT = 0xf2efe6, VERMILION = 0xd8432b, WOOD = 0x6b4a3a, PLASTER = 0xf1ede2, STONE = 0x9a968c, ASPHALT = 0x5d5f66, DRIVE = 0x4a4c52;

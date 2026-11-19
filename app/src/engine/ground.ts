@@ -9,7 +9,7 @@ import * as THREE from 'three';
 import type { GeoBuilder, V3, WinSpec } from './geo';
 import { makeWaterMaterial } from './look/materials';
 import type { Path } from './paths';
-import type { Build } from './tile';
+import { TILE, type Build } from './tile';
 
 export type P2 = [number, number];
 
@@ -24,8 +24,12 @@ export function oval(cx: number, cz: number, rx: number, rz = rx, sides = 24): P
   return Array.from({ length: sides }, (_, i): P2 => [cx + Math.cos((i / sides) * Math.PI * 2) * rx, cz + Math.sin((i / sides) * Math.PI * 2) * rz]);
 }
 
-/** A band `half` wide to either side of a path, as a shape: a river, a canal, a strip of park. */
-export function band(path: Path, half: number, step = 4): P2[] {
+/**
+ * A band `half` wide to either side of a path, as a shape: a river, a canal, a
+ * strip of park. `half` may be a number, or say how wide the band is at each
+ * place along the path, for a river that widens and narrows as it goes.
+ */
+export function band(path: Path, half: number | ((s: number) => number), step = 4): P2[] {
   const n = Math.max(1, Math.ceil(path.length / step));
   const p = new THREE.Vector3(), a = new THREE.Vector3(), b = new THREE.Vector3();
   const left: P2[] = [], right: P2[] = [];
@@ -35,10 +39,35 @@ export function band(path: Path, half: number, step = 4): P2[] {
     path.at(Math.min(path.length, s + 0.6), a);
     path.at(Math.max(0, s - 0.6), b);
     const tx = a.x - b.x, tz = a.z - b.z, l = Math.hypot(tx, tz) || 1;
-    left.push([p.x + (tz / l) * half, p.z - (tx / l) * half]);
-    right.push([p.x - (tz / l) * half, p.z + (tx / l) * half]);
+    const h = typeof half === 'number' ? half : half(s);
+    left.push([p.x + (tz / l) * h, p.z - (tx / l) * h]);
+    right.push([p.x - (tz / l) * h, p.z + (tx / l) * h]);
   }
   return [...left, ...right.reverse()];
+}
+
+/**
+ * A shape cut off a hair inside the edge of the board: for a hill, a lawn or a
+ * stretch of water that is laid out at an angle and would run off the tile.
+ */
+export function onBoard(shape: P2[], inset = 0.2): P2[] {
+  const X = TILE.x1 - inset, Z = TILE.z1 - inset;
+  const cutX = (x: number) => (a: P2, b: P2): P2 => [x, a[1] + ((b[1] - a[1]) * (x - a[0])) / (b[0] - a[0])];
+  const cutZ = (z: number) => (a: P2, b: P2): P2 => [a[0] + ((b[0] - a[0]) * (z - a[1])) / (b[1] - a[1]), z];
+  const edges: [(p: P2) => boolean, (a: P2, b: P2) => P2][] = [
+    [(p) => p[0] <= X, cutX(X)], [(p) => p[0] >= -X, cutX(-X)], [(p) => p[1] <= Z, cutZ(Z)], [(p) => p[1] >= -Z, cutZ(-Z)],
+  ];
+  let out = shape;
+  for (const [inside, cut] of edges) {
+    const src = out;
+    out = [];
+    src.forEach((p, i) => {
+      const q = src[(i + 1) % src.length];
+      if (inside(p)) out.push(p);
+      if (inside(p) !== inside(q)) out.push(cut(p, q));
+    });
+  }
+  return out;
 }
 
 /** Twice the area of a shape: positive if its corners run clockwise as seen from above. */

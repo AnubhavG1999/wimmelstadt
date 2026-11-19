@@ -1,7 +1,9 @@
-// The shapes of what moves on Hong Kong besides the traffic: trams and buses
-// with two decks, the Star Ferry, a junk, dragon boats and the Peak Tram. The
-// engine's traffic has no vehicles of a tile's own shape yet, so each of these
-// is a car for the engine's `train`, which runs it along a line of its own.
+// The shapes of things that move besides the traffic: trams and buses with two
+// decks, a ferry, a junk, dragon boats, a funicular's car, a racehorse, a jumbo
+// jet and a few that only lie at anchor. The traffic has no vehicles of a
+// tile's own shape yet, so each of these is a car for `train` in rail.ts, which
+// runs it along a line of its own. They were made for Hong Kong and wear its
+// colours.
 //
 // A shape is built standing on y = 0 with its nose along +x and its middle at
 // the origin, as the engine's own train car is. For a boat, y = 0 is the
@@ -9,7 +11,7 @@
 // Tram) is the same at both ends.
 
 import * as THREE from 'three';
-import { GeoBuilder, interior } from '../../engine/geo';
+import { GeoBuilder, interior } from './geo';
 
 const GLASS = 0xbfd3df, DARK = 0x2a2c31, LAMP = 0xfff4d6, CREAM = 0xf2e6c4;
 type XZ = [number, number];

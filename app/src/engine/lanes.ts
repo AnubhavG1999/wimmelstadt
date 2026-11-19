@@ -1,9 +1,10 @@
 // Lanes: the lines that roads are drawn along and that vehicles follow, made
 // from straights and circles joined by bends.
 //
-// The engine's own stretches of road round every corner with one radius. That
-// is enough for a grid. Europe's roads go round roundabouts, leave them by
-// avenues at any angle and bend along a river, so here a road is a list of
+// The plain stretches in paths.ts round every corner with one radius. That is
+// enough for a grid. Europe's roads go round roundabouts, leave them by avenues
+// at any angle and bend along a river, and Europe's builder wrote this for
+// them. Here a road is a list of
 // guides (a straight, or a circle driven round one way) and the bends between
 // them are worked out. A lane beside the middle of a road is the same list,
 // moved to one side.
@@ -12,7 +13,7 @@
 // with north at the top: east, south, west, north. Angles are measured that
 // way round from east, which is how the engine's helix measures them.
 
-import type { Seg } from '../../engine/paths';
+import type { Seg } from './paths';
 
 export type P2 = [number, number];
 

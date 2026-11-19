@@ -1,8 +1,10 @@
-// Small things that stand all over the tile: vending machines, paper lanterns,
-// lamp masts, and the few vehicles that are part of a scene and never drive.
+// Small things that stand all over a tile: vending machines, paper lanterns,
+// lamp masts, a sign hung out over a street, and the few vehicles that are part
+// of a scene and never drive. Japan's builder wrote most of them, and Hong
+// Kong's the sign.
 
-import { interior } from '../../engine/geo';
-import type { Build } from '../../engine/tile';
+import { interior } from './geo';
+import type { Build } from './tile';
 
 const DARK = 0x2a2c31, GLASSY = 0x1c2733;
 
@@ -15,6 +17,26 @@ const turned = (x: number, z: number, yaw: number) => (along: number, across: nu
  * lit front. `yaw` is the way their fronts face, in radians: 0 is east, a
  * quarter turn is south.
  */
+/**
+ * A sign hung out over a street from a wall, on a frame of steel, to be read
+ * from both ways along the street. `wall` is the z of the wall it hangs from,
+ * and `out` which way the street lies: 1 to the south of the wall, -1 to the
+ * north. `y` is the height of its middle and `h` how high it is. The sign is
+ * one from the tile's own sheet, by its id, and nothing is hung if there is no
+ * such sign.
+ */
+export function hungSign(k: Build, id: string, x: number, wall: number, out: number, y: number, h: number): void {
+  const rect = k.signs.atlas.rects.get(id);
+  if (!rect) return;
+  const b = k.b, w = h * rect.aspect, z0 = wall + out * 0.5, z1 = z0 + out * w, zc = (z0 + z1) / 2;
+  b.box(x - 0.09, y - h / 2 - 0.08, Math.min(z0, z1) - 0.08, x + 0.09, y + h / 2 + 0.08, Math.max(z0, z1) + 0.08, 0x14141c, { faces: 'NESWTB' });
+  k.sign(id, x + 0.11, y, zc, 1, 0, h);
+  k.sign(id, x - 0.11, y, zc, -1, 0, h);
+  b.beam([x, y + h / 2 + 0.14, wall], [x, y + h / 2 + 0.14, z1], 0.06, 0.06, 0x59636d);
+  b.beam([x, y + h / 2 + 1.7, wall], [x, y + h / 2 + 0.14, z1 - out * 0.3], 0.04, 0.04, 0x59636d);
+  k.lights.push({ x, z: zc + out * 1.5, r: 8, color: rect.color, k: 0.45 });
+}
+
 export function vending(k: Build, x: number, z: number, yaw: number, count: number, y = 0): void {
   const at = turned(x, z, yaw), BODY = [0xf2f0ea, 0xd8432b, 0x3f6fb5, 0xf2f0ea, 0x4fa36b];
   for (let i = 0; i < count; i++) {

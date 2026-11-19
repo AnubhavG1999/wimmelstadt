@@ -7,10 +7,11 @@ import { GeoBuilder, interior, type V3, type WinSpec } from '../../engine/geo';
 import { area } from '../../engine/ground';
 import { train } from '../../engine/rail';
 import type { Build } from '../../engine/tile';
-import { eased, flat, lengths, pathOf, raised, rounded, through } from './geom';
-import { horse, jumbo } from './movers';
+import { eased, flat, lengths, pathOf, raised, rounded, through } from '../../engine/corners';
+import { horse, jumbo } from '../../engine/movers';
+import { hungSign } from '../../engine/props';
 import { FUNICULAR, HILL, LION, LOTS, RACECOURSE, groundAt, type Lot } from './plan';
-import { beacon, centre, chamfered, drum, face3, gable, hip, prism, railing, shell, slab, slope3, type XZ } from './shapes';
+import { beacon, centre, chamfered, drum, face3, gable, hip, prism, railing, shell, slab, slope3, type XZ } from '../../engine/shapes';
 
 type Model = (k: Build, l: Lot) => void;
 
@@ -1171,35 +1172,18 @@ function artPark(k: Build): void {
   for (const z of [-104, -92]) k.lights.push({ x: 27.5, z, r: 10, color: '#ffe2ae', k: 0.45 });
 }
 
-/**
- * A sign of neon hung out over a street from a wall, on a frame of steel, to
- * be read from both ways along the street. `wall` is where the wall is, and
- * `out` which way the street lies: 1 to the south of it, -1 to the north.
- */
-function hung(k: Build, id: string, x: number, wall: number, out: number, y: number, h: number): void {
-  const rect = k.signs.atlas.rects.get(id);
-  if (!rect) return;
-  const b = k.b, w = h * rect.aspect, z0 = wall + out * 0.5, z1 = z0 + out * w, zc = (z0 + z1) / 2;
-  b.box(x - 0.09, y - h / 2 - 0.08, Math.min(z0, z1) - 0.08, x + 0.09, y + h / 2 + 0.08, Math.max(z0, z1) + 0.08, 0x14141c, { faces: 'NESWTB' });
-  k.sign(id, x + 0.11, y, zc, 1, 0, h);
-  k.sign(id, x - 0.11, y, zc, -1, 0, h);
-  b.beam([x, y + h / 2 + 0.14, wall], [x, y + h / 2 + 0.14, z1], 0.06, 0.06, 0x59636d);
-  b.beam([x, y + h / 2 + 1.7, wall], [x, y + h / 2 + 0.14, z1 - out * 0.3], 0.04, 0.04, 0x59636d);
-  k.lights.push({ x, z: zc + out * 1.5, r: 8, color: rect.color, k: 0.45 });
-}
-
 /** The signs over Nathan Road and over Mong Kok's street: one above another, each trying to be seen past the last. */
 function streetNeon(k: Build): void {
   const NATHAN: [string, number, number, number][] = [
     ['v-nightclub', 77.2, 14, 9], ['pawn-bat', 78.6, 9.6, 5], ['jewellery', 82.2, 12.5, 3], ['v-seafood', 83.5, 12.9, 9.6],
     ['mahjong', 86.8, 9, 2.6], ['v-sauna', 88.3, 16.4, 8], ['karaoke', 87.5, 12.2, 2.4],
   ];
-  for (const [id, x, y, h] of NATHAN) hung(k, id, x, -17, 1, y, h);
+  for (const [id, x, y, h] of NATHAN) hungSign(k, id, x, -17, 1, y, h);
   const MONG_KOK: [string, number, number, number][] = [
     ['v-restaurant', 44.4, 12, 8], ['pawn-bat', 50.2, 9, 4.6], ['model-cars', 52.8, 8.5, 2.4], ['goldfish', 55.4, 9, 2.4], ['v-gold', 56.6, 15.5, 9],
     ['v-pharmacy', 61.4, 8.6, 5.6], ['exchange', 63.6, 8.2, 2.2], ['v-mahjong', 65.8, 13.5, 8.5], ['foot', 67.2, 8.8, 2.3], ['watches', 71.4, 9.6, 2.4], ['cameras', 73, 12.4, 2.4],
   ];
-  for (const [id, x, y, h] of MONG_KOK) hung(k, id, x, -55, 1, y, h);
+  for (const [id, x, y, h] of MONG_KOK) hungSign(k, id, x, -55, 1, y, h);
   // and a few over the tram, in Wan Chai: from walls that face east
   const b = k.b;
   for (const [id, z, y, h] of [['v-teahouse', -13.2, 12, 8], ['v-pawn', -9.6, 9.5, 5.5], ['dim-sum', -21, 9, 2.4], ['v-tailor', 43.6, 9.4, 5.6]] as [string, number, number, number][]) {
