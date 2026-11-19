@@ -18,7 +18,8 @@
 import type { Seg } from '../../engine/paths';
 import type { SignDef } from '../../engine/signs';
 import { TILE, type HeroSpot, type ParkedSpot, type Route, type TrafficType } from '../../engine/tile';
-import { eased, fine, flat, joined, lane, lengths, lengths3, raised, rounded, segsOf, through, turned, type P2 } from './geom';
+import { eased, fine, flat, joined, lane, lengths, raised, rounded, segsOf, through, turned, type P2 } from './geom';
+import { carved, field, heightOn, smooth, type Bench, type Field } from './terrain';
 
 export const BOARD = TILE;
 /** A shape that reaches the edge of the board stops a hair short of it. */
@@ -79,8 +80,11 @@ export const SHORE = { nb: -32.5, sb: -27.5, tramN: -40, tramS: -37, lots0: -58.
 // The Peak
 // ---------------------------------------------------------------------------
 
-/** The hill: how far east it reaches, how high its top is, and the cut the Peak Tram climbs in on its north face. */
-export const HILL = { x0: BOARD.x0, x1: -59.5, top: 39, cut: { x0: -71.8, x1: -68.2, x: -70 } };
+/**
+ * The Peak: the ground it covers, how high its top is, where its north face
+ * begins to rise, and where the level ground of its summit lies.
+ */
+export const HILL = { x0: BOARD.x0, x1: -59.5, z0: BOARD.z0, z1: 56.6, top: 39, north: -102, summit: { z0: -40, z1: -15 }, tram: -70 };
 
 /**
  * The Peak road. It starts at the car ferry's pier, climbs northwards on
@@ -113,45 +117,59 @@ export const PEAK = (() => {
 })();
 
 /**
- * The hill is built up in levels, like a model made from a map's contour
- * lines. On the south face each level begins just south of one leg of the
- * road, so that every leg rides on a wall above the level below it, and a
- * level is as high as the lowest road that passes over it. On the north face
- * the same levels step down towards Central: that is Mid-Levels.
- */
-export const LEVELS: { north: number; south: number; top: number; base: number }[] = (() => {
-  const south = [56.7, 41.7, 26.7, 11.7, -3.3], north = [-101, -89, -77, -65, -52.5];
-  const along = lengths3(PEAK.road);
-  const tops = south.map((front) => {
-    let low = Infinity;
-    PEAK.road.forEach((p, i) => {
-      if (along[i] >= PEAK.sHill - 0.5 && p[2] <= front + PEAK.half + 0.3) low = Math.min(low, p[1]);
-    });
-    return Math.round((low - 0.35) * 10) / 10;
-  });
-  const out = south.map((s, i) => ({ north: north[i], south: s, top: tops[i], base: i === 0 ? 0 : tops[i - 1] }));
-  out.push({ north: -40, south: -15, top: HILL.top, base: tops[tops.length - 1] });
-  return out;
-})();
-
-/** How high the ground is at a place on the hill. */
-export function hillHeight(x: number, z: number): number {
-  if (x > HILL.x1) return 0;
-  let y = 0;
-  for (const lv of LEVELS) if (z >= lv.north && z <= lv.south) y = lv.top;
-  return y;
-}
-
-/**
  * The Peak Tram: a straight incline up the north face, from Sheung Wan at the
- * foot to the Peak Tower on the summit, in a cut of its own between the flats
- * of Mid-Levels.
+ * foot to the Peak Tower on the summit, between the flats of Mid-Levels.
  */
 export const FUNICULAR = (() => {
   const z0 = -110, z1 = -38, y0 = 0.5, y1 = HILL.top + 0.3;
   const y = (z: number): number => y0 + ((y1 - y0) * (z - z0)) / (z1 - z0);
-  return { x: HILL.cut.x, z0, z1, y };
+  return { x: HILL.tram, z0, z1, y };
 })();
+
+/** The Peak as it would be with nothing cut into it: two faces and a level summit, a wall's height at its east edge, and a little unevenness. */
+function peakNatural(x: number, z: number): number {
+  const H = HILL.top, S = HILL.summit;
+  let h = 0, rough = 1;
+  if (z <= HILL.north) return 0;
+  if (z < S.z0) h = (H * (z - HILL.north)) / (S.z0 - HILL.north); // the north face: Mid-Levels
+  else if (z <= S.z1) { h = H; rough = 0; } // the summit
+  else h = Math.min(H, 9.9 + ((52 - z) * (H - 9.9)) / (52 - S.z1)); // the south face, which the road climbs
+  const east = 0.6 + 0.4 * smooth(HILL.x1, -64, x);
+  const bumps = 1.4 * Math.sin(x * 0.23 + 1.7) * Math.cos(z * 0.19 - 0.6) + 0.7 * Math.sin((x - z) * 0.37);
+  return h * east + bumps * rough * smooth(0, 8, h) * (1 - smooth(H - 6, H, h));
+}
+
+/** What is cut into the Peak: its road, as far as the summit, and the Peak Tram's line. */
+const PEAK_CUTS: Bench[] = [
+  ...PEAK.road.filter((q) => q[0] < HILL.x1 + 6 && q[1] < HILL.top - 0.1).map((q): Bench => ({ x: q[0], z: q[2], y: q[1], half: PEAK.half + 0.25 })),
+  ...Array.from({ length: 49 }, (_, i): Bench => {
+    const z = FUNICULAR.z0 + ((FUNICULAR.z1 - FUNICULAR.z0) * i) / 48;
+    return { x: FUNICULAR.x, z, y: FUNICULAR.y(z) - 0.1, half: 1.9 };
+  }),
+];
+
+/** The Peak's ground: sloping, with the road and the tram's line cut into it. */
+export const PEAK_GROUND: Field = field(HILL.x0, HILL.z0, HILL.x1, HILL.z1, 2, (x, z) => carved(x, z, peakNatural(x, z), PEAK_CUTS));
+
+/** Lion Rock: the ground it covers in Kowloon's north-east corner, and the mouths of the tunnel through it. */
+export const LION = { x0: 76, z0: BOARD.z0, x1: BOARD.x1, z1: -84, gate: 5.4, half: 3.2, lane: 99.5, street: -103.5 };
+const LION_TUNNEL: P2[] = line([[LION.lane, LION.z1], [LION.lane, LION.street], [LION.x0, LION.street]], [0, 4, 0]);
+
+/** Lion Rock's ground: a ridge that rises towards the east, and at least a tunnel's height wherever the road runs under it. */
+export const LION_GROUND: Field = field(LION.x0, LION.z0, LION.x1, LION.z1, 2, (x, z) => {
+  const u = x - LION.x0, v = LION.z1 - z;
+  let h = 19 * smooth(0, 12, u) * smooth(0, 12, v) + 8 * Math.exp(-((z + 103) ** 2) / 60) * smooth(4, 17, u);
+  h += 1.1 * Math.sin(x * 0.5 + 0.4) * Math.cos(z * 0.43) * smooth(0, 6, h);
+  if (LION_TUNNEL.some((q) => Math.hypot(q[0] - x, q[1] - z) < LION.half + 0.8)) h = Math.max(h, LION.gate + 1.3);
+  return h;
+});
+
+/** How high the ground is at a place: on one of the two hills, or level everywhere else. */
+export function groundAt(x: number, z: number): number {
+  if (x <= HILL.x1 && z <= HILL.z1) return heightOn(PEAK_GROUND, x, z);
+  if (x >= LION.x0 && z <= LION.z1) return heightOn(LION_GROUND, x, z);
+  return 0;
+}
 
 // ---------------------------------------------------------------------------
 // The harbour run
@@ -270,7 +288,7 @@ export const BUSES: P2[] = line([[46, KOWLOON.lanes.busEast], [86, KOWLOON.lanes
 // What stands where: for now, a plain box for each thing, with its name on it
 // ---------------------------------------------------------------------------
 
-/** `y0` of -1 means: on whatever level of the hill it stands on. */
+/** `y0` of -1 means: on the hill, wherever it stands, with its foot in the slope. */
 export interface Lot { id: string; name: string; x0: number; z0: number; x1: number; z1: number; h: number; y0?: number; color: number; round?: boolean }
 
 const lot = (id: string, name: string, x0: number, z0: number, x1: number, z1: number, h: number, color: number, more: Partial<Lot> = {}): Lot =>
@@ -358,7 +376,7 @@ export const SIGNS: SignDef[] = [
 // ---------------------------------------------------------------------------
 
 export const HERO_SPOTS: HeroSpot[] = [
-  { id: 'peak-lookout', x: -68, y: HILL.top + 0.04, z: -19.5, heading: 0 },
+  { id: 'peak-lookout', x: -68, y: HILL.top + 0.04, z: -21, heading: 0 },
   { id: 'peninsula', x: 45, y: 0.04, z: -25.75, heading: Math.PI / 2 },
   { id: 'car-ferry', x: 3, y: 3.05, z: 105.5, heading: 0 },
   { id: 'choi-hung', x: 81.5, y: 9.05, z: 84, heading: -Math.PI / 2 },

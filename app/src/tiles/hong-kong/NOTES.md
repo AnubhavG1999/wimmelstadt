@@ -88,6 +88,7 @@ None yet. The boards on the boxes are labels for the blockout and will go.
 Built in this folder, and worth having in the engine:
 
 - **A road of any shape.** `geom.ts` makes a road from corners: it rounds them, gives every point a height, runs lanes beside it, and hands it to the engine as short `ramp` stretches. The Peak road, the viaduct and the tunnel's ramps are made this way.
+- **Ground that slopes.** The engine builds a hill in level steps (`terrace`), and the Peak and Lion Rock looked like stairs that way. `terrain.ts` makes a hill as a sheet of flat facets over a grid: its height is worked out at every corner, each facet is green or rock by how steep it is, and an edge that is cut off gets an upright face. `carved` in the same file cuts a road into such a hill: the hill is level with the road where the road runs, and slopes from one leg of it to the next. `groundAt` in `plan.ts` gives the height anywhere, so that trees, figures and buildings stand on the slope.
 - **A check that no two roads cross on the level** (`check.ts`).
 - **A tunnel's mouth** (`portal` in `city.ts`): a cutting, a hood, and darkness a little way in, where a vehicle goes out of sight. The ground needs a hole for the cutting, and the road must be about 4 units down before the hole ends.
 

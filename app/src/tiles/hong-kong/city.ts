@@ -5,7 +5,7 @@
 
 import * as THREE from 'three';
 import { placed } from '../../engine/build';
-import { LAWN, PLAZA, area, flat as fill, ground, rect, terrace, water } from '../../engine/ground';
+import { PLAZA, area, flat as fill, ground, rect, water } from '../../engine/ground';
 import { joined } from '../../engine/paths';
 import { train, track } from '../../engine/rail';
 import { ASPHALT, CONCRETE, lampsAlong, roadDeck, street } from '../../engine/roads';
@@ -14,11 +14,13 @@ import { checkRoads } from './check';
 import { fine, flat, lengths3, pathOf, rounded, stretch, type P2, type P3 } from './geom';
 import { busCar, dragonBoat, ferryBoat, junkBoat, lighter, peakTramCar, sampan, tramCar, type Car } from './movers';
 import {
-  BOARD, BUSES, FILL, FUNICULAR, HARBOUR, HERO_SPOTS, HILL, KOWLOON, LEVELS, LOTS, PARKED, PEAK, POINT, RACECOURSE, ROUTES, RUN, SHELTER, SHORE, TRAM, TUNNEL,
-  hillHeight, type Lot,
+  BOARD, BUSES, FILL, FUNICULAR, HARBOUR, HERO_SPOTS, HILL, KOWLOON, LION, LION_GROUND, LOTS, PARKED, PEAK, PEAK_GROUND, POINT, RACECOURSE, ROUTES, RUN, SHELTER, SHORE, TRAM, TUNNEL,
+  groundAt, type Lot,
 } from './plan';
+import { drawField } from './terrain';
 
 const SEA = 0x3f8fb0, QUAY = 0xa9a59a, ROCK = 0x9a8f7c, DARK = 0x0c0c10, TURF = 0x5fa04e;
+const GRASS = [0x6fa85a, 0x74ad5c, 0x67a052], SCRUB = [0x5c8f52, 0x578a55], CRAG = [0x9a8f7c, 0x8d8376, 0xa3977f];
 const N = BOARD.z0;
 /** Half the width of the tunnel's two lanes and their kerbs. */
 const TUBE = 5.1;
@@ -77,29 +79,28 @@ export function buildCity(k: Build): TileParts {
   area(k, rect(22.4, -2, 28, 62), PLAZA);
   area(k, rect(10.4, -42, 28, -2), PLAZA);
   area(k, rect(34.4, 62, 43, BOARD.z1 - 0.4), PLAZA);
-  area(k, rect(BOARD.x0, N, HILL.x1, LEVELS[0].north), 0x86b96a); // Sheung Wan, at the foot of the north face
+  area(k, rect(BOARD.x0, N, HILL.x1, HILL.north + 2.2), 0x86b96a); // Sheung Wan, at the foot of the north face
   area(k, rect(RACECOURSE.x0, RACECOURSE.z0, RACECOURSE.x1, RACECOURSE.z1), TURF, 0.03);
 
   // -------------------------------------------------------------------------
-  // The Peak: levels like a contour model, with a cut for the tram on the north face
+  // The Peak: sloping ground, with the road and the tram's line cut into it
   // -------------------------------------------------------------------------
 
-  const slot = FUNICULAR.z1 + 0.5;
-  LEVELS.forEach((lv, i) => {
-    const c = HILL.cut, last = i === LEVELS.length - 1;
-    terrace(k, [[HILL.x0, lv.north], [c.x0, lv.north], [c.x0, slot], [c.x1, slot], [c.x1, lv.north], [HILL.x1, lv.north], [HILL.x1, lv.south], [HILL.x0, lv.south]],
-      lv.base, lv.top, { top: last ? PLAZA : i % 2 ? 0x74ad5c : LAWN, side: ROCK });
-  });
+  /** A hill's colours: green where it is gentle, scrub where it is steeper, bare rock where it is steep, and paving on a level top. */
+  const slopes = (paved: number) => (y: number, level: number, x: number, z: number): number => {
+    const pick = Math.abs(Math.floor(x * 0.37 + z * 0.61));
+    if (level > 0.997 && y > paved - 0.3) return PLAZA;
+    if (level > 0.8) return GRASS[pick % GRASS.length];
+    if (level > 0.6) return SCRUB[pick % SCRUB.length];
+    return CRAG[pick % CRAG.length];
+  };
+  // its east side ends in a wall behind the buildings of the shore, and its south side in the wall that the first leg of the road rides on
+  drawField(b, PEAK_GROUND, { color: slopes(HILL.top), cut: ROCK, edges: 'ESW' });
   {
-    // the tram's bed in its cut: a ramp of earth from Sheung Wan to the summit, and the rails on it
-    const F = FUNICULAR, c = HILL.cut, x0 = c.x0 + 0.02, x1 = c.x1 - 0.02;
-    const y0 = F.y(F.z0), y1 = F.y(F.z1);
-    b.quad([x0, y0, F.z0], [x1, y0, F.z0], [x1, y1, F.z1], [x0, y1, F.z1], [0, 1, 0], 0x8d8a83);
-    b.quad([x0, 0, F.z0], [x0, 0, F.z1], [x0, y1, F.z1], [x0, y0, F.z0], [-1, 0, 0], ROCK);
-    b.quad([x1, 0, F.z1], [x1, 0, F.z0], [x1, y0, F.z0], [x1, y1, F.z1], [1, 0, 0], ROCK);
-    b.box(x0, 0, F.z0 - 0.02, x1, y0, F.z0, ROCK, { faces: 'N' });
-    // where it runs in under the Peak Tower
-    b.box(x0, y1 - 0.5, slot - 0.1, x1, HILL.top - 0.02, slot - 0.02, DARK, { faces: 'N' });
+    // the line of the Peak Tram: ballast on the slope, and the rails on it
+    const F = FUNICULAR, y0 = F.y(F.z0), y1 = F.y(F.z1);
+    b.quad([F.x - 1.5, y0 - 0.06, F.z0], [F.x + 1.5, y0 - 0.06, F.z0], [F.x + 1.5, y1 - 0.06, F.z1], [F.x - 1.5, y1 - 0.06, F.z1], [0, 1, 0], 0x8d8a83);
+    for (const s of [-1, 1]) b.quad([F.x + s * 1.5, y0 - 0.6, F.z0], [F.x + s * 1.5, y1 - 0.6, F.z1], [F.x + s * 1.5, y1 - 0.06, F.z1], [F.x + s * 1.5, y0 - 0.06, F.z0], [s, 0, 0], 0x7b7a7e);
     track(k, pathOf([[F.x, y0 + 0.02, F.z0], [F.x, y1 + 0.02, F.z1]]));
   }
 
@@ -186,33 +187,25 @@ export function buildCity(k: Build): TileParts {
   // -------------------------------------------------------------------------
 
   {
-    const x0 = 76, z1 = -84, h = 8.5, gate = 5.4;
-    fill(b, rect(x0, N, BOARD.x1, z1), h, LAWN);
-    // its west and south faces, each with a mouth for the road
-    const gz0 = -103.5 - 3.2, gz1 = -103.5 + 3.2, gx0 = K.east - 3.2, gx1 = K.east + 3.2;
-    b.box(x0, 0, N, x0 + 0.02, h, gz0, ROCK, { faces: 'W' });
-    b.box(x0, 0, gz1, x0 + 0.02, h, z1, ROCK, { faces: 'W' });
-    b.box(x0, gate, gz0, x0 + 0.02, h, gz1, ROCK, { faces: 'W' });
-    b.box(x0, 0, z1 - 0.02, gx0, h, z1, ROCK, { faces: 'S' });
-    b.box(gx1, 0, z1 - 0.02, BOARD.x1, h, z1, ROCK, { faces: 'S' });
-    b.box(gx0, gate, z1 - 0.02, gx1, h, z1, ROCK, { faces: 'S' });
-    // and the two faces at the edge of the board
-    b.box(BOARD.x1 - 0.02, 0, N, BOARD.x1, h, z1, ROCK, { faces: 'E' });
-    b.box(x0, 0, N, BOARD.x1, h, N + 0.02, ROCK, { faces: 'N' });
+    const L = LION, gate = L.gate, gz0 = L.street - L.half, gz1 = L.street + L.half, gx0 = L.lane - L.half, gx1 = L.lane + L.half;
+    // rock and scrub, with a mouth for the road in its west face and another in its south face
+    drawField(b, LION_GROUND, {
+      color: slopes(Infinity), cut: ROCK, edges: 'NESW',
+      gap: (edge, at) => ((edge === 'W' && at > gz0 && at < gz1) || (edge === 'S' && at > gx0 && at < gx1) ? gate : 0),
+    });
     // concrete round each mouth, and darkness a little way in
-    b.box(x0 - 0.5, 0, gz0 - 0.8, x0 + 0.3, gate + 0.9, gz0, CONCRETE);
-    b.box(x0 - 0.5, 0, gz1, x0 + 0.3, gate + 0.9, gz1 + 0.8, CONCRETE);
-    b.box(x0 - 0.5, gate, gz0, x0 + 0.3, gate + 0.9, gz1, CONCRETE, { faces: 'NESWTB' });
-    b.box(x0 + 3, 0, gz0, x0 + 3.1, gate, gz1, DARK, { faces: 'W' });
-    b.box(gx0 - 0.8, 0, z1 - 0.3, gx0, gate + 0.9, z1 + 0.5, CONCRETE);
-    b.box(gx1, 0, z1 - 0.3, gx1 + 0.8, gate + 0.9, z1 + 0.5, CONCRETE);
-    b.box(gx0, gate, z1 - 0.3, gx1, gate + 0.9, z1 + 0.5, CONCRETE, { faces: 'NESWTB' });
-    b.box(gx0, 0, z1 - 3.1, gx1, gate, z1 - 3, DARK, { faces: 'S' });
-    // the upper levels, and the crag on top
-    terrace(k, rect(81, N, BOARD.x1, -89), h, 17, { side: ROCK });
-    terrace(k, rect(87, N, BOARD.x1, -95), 17, 25, { side: ROCK });
-    b.box(90, 25, -108, 101, 31, -99, ROCK);
-    b.box(96, 31, -106, 101, 35, -101, ROCK);
+    b.box(L.x0 - 0.5, 0, gz0 - 0.9, L.x0 + 0.4, gate + 1.2, gz0, CONCRETE);
+    b.box(L.x0 - 0.5, 0, gz1, L.x0 + 0.4, gate + 1.2, gz1 + 0.9, CONCRETE);
+    b.box(L.x0 - 0.5, gate, gz0, L.x0 + 0.4, gate + 1.2, gz1, CONCRETE, { faces: 'NESWTB' });
+    b.box(L.x0 + 3, 0, gz0, L.x0 + 3.1, gate, gz1, DARK, { faces: 'W' });
+    b.box(gx0 - 0.9, 0, L.z1 - 0.4, gx0, gate + 1.2, L.z1 + 0.5, CONCRETE);
+    b.box(gx1, 0, L.z1 - 0.4, gx1 + 0.9, gate + 1.2, L.z1 + 0.5, CONCRETE);
+    b.box(gx0, gate, L.z1 - 0.4, gx1, gate + 1.2, L.z1 + 0.5, CONCRETE, { faces: 'NESWTB' });
+    b.box(gx0, 0, L.z1 - 3.1, gx1, gate, L.z1 - 3, DARK, { faces: 'S' });
+    // the crag on top, as plain rock for now
+    const top = groundAt(96, -103);
+    b.obox(93, top + 1.5, -103, 5, 3, 3, 0.15, ROCK);
+    b.obox(98.5, top + 4.5, -103.4, 2.6, 2.6, 2.4, -0.1, ROCK);
   }
 
   // -------------------------------------------------------------------------
@@ -236,7 +229,9 @@ export function buildCity(k: Build): TileParts {
 
   const stand = (l: Lot, i: number): void => {
     const cx = (l.x0 + l.x1) / 2, cz = (l.z0 + l.z1) / 2;
-    const y0 = l.y0 === -1 ? hillHeight(cx, cz) : l.y0 ?? 0, y1 = y0 + l.h;
+    const onHill = l.y0 === -1;
+    const y0 = onHill ? Math.min(groundAt(l.x0, l.z0), groundAt(l.x1, l.z0), groundAt(l.x0, l.z1), groundAt(l.x1, l.z1)) - 0.4 : l.y0 ?? 0;
+    const y1 = (onHill ? groundAt(cx, cz) : y0) + l.h;
     const win = l.h > 9 ? { cell: 2.6, storey: 5, lit: 0.4, kind: 0 } : undefined;
     if (l.round) b.cyl(cx, cz, y0, y1, (l.x1 - l.x0) / 2, (l.x1 - l.x0) / 2 - 2.4, 12, l.color);
     else b.box(l.x0, y0, l.z0, l.x1, y1, l.z1, l.color, { win, seed: (i * 0.618) % 1, top: 0x9d988f });
@@ -328,16 +323,23 @@ export function buildCity(k: Build): TileParts {
     const road = PEAK.road, clear = (PEAK.half + 1.7) ** 2;
     const nearRoad = (x: number, z: number): boolean => road.some((p) => (p[0] - x) ** 2 + (p[2] - z) ** 2 < clear);
     const spots: P2[] = [];
-    for (let i = 0; i < 2600 && spots.length < 170; i++) {
-      const x = HILL.x0 + 1.6 + k.rand() * (HILL.x1 - HILL.x0 - 3.2), z = N + 2 + k.rand() * (LEVELS[0].south - N - 3);
-      const y = hillHeight(x, z);
-      if (y === HILL.top) continue; // the summit is paved
-      if ([[-1.7, 0], [1.7, 0], [0, -1.7], [0, 1.7]].some(([dx, dz]) => hillHeight(x + dx, z + dz) !== y)) continue;
+    for (let i = 0; i < 2600 && spots.length < 190; i++) {
+      const x = HILL.x0 + 1.6 + k.rand() * (HILL.x1 - HILL.x0 - 3.2), z = N + 2 + k.rand() * (HILL.z1 - N - 3);
+      const y = groundAt(x, z);
+      if (y > HILL.top - 0.4 && x < -63.5) continue; // the summit is paved
       if (nearRoad(x, z) || inLot(x, z, 1.5)) continue;
-      if (x > HILL.cut.x0 - 1.9 && x < HILL.cut.x1 + 1.9 && z < FUNICULAR.z1 + 4) continue;
+      if (Math.abs(x - FUNICULAR.x) < 2.6 && z < FUNICULAR.z1 + 4) continue;
       if (spots.some((t) => (t[0] - x) ** 2 + (t[1] - z) ** 2 < 8)) continue;
       spots.push([x, z]);
       k.tree(x, z, 0.55 + k.rand() * 0.5, false, y);
+    }
+    // and a few cling to Lion Rock
+    for (let i = 0; i < 200 && spots.length < 204; i++) {
+      const x = LION.x0 + 1.5 + k.rand() * (LION.x1 - LION.x0 - 3), z = LION.z0 + 1.5 + k.rand() * (LION.z1 - LION.z0 - 3);
+      const y = groundAt(x, z);
+      if (y < 1 || y > 20 || spots.some((t) => (t[0] - x) ** 2 + (t[1] - z) ** 2 < 10)) continue;
+      spots.push([x, z]);
+      k.tree(x, z, 0.5 + k.rand() * 0.35, false, y);
     }
   }
   // along both promenades, round the racecourse, and on the Convention Centre's point
@@ -378,10 +380,10 @@ export function buildCity(k: Build): TileParts {
   // -------------------------------------------------------------------------
 
   {
-    const crowd = (n: number, x0: number, z0: number, x1: number, z1: number, y = 0): void => {
+    const crowd = (n: number, x0: number, z0: number, x1: number, z1: number): void => {
       for (let i = 0; i < n; i++) {
         const x = x0 + k.rand() * (x1 - x0), z = z0 + k.rand() * (z1 - z0);
-        if (!inLot(x, z, 0.5)) k.person(x, z, y);
+        if (!inLot(x, z, 0.5)) k.person(x, z, groundAt(x, z));
       }
     };
     crowd(34, -24.6, -56, -20.6, 0); // Central's promenade
@@ -390,8 +392,8 @@ export function buildCity(k: Build): TileParts {
     crowd(16, 11.5, -40, 27, -3); // round the Clock Tower
     crowd(22, 35, 64, 42, 110); // watching the dragon boats
     crowd(26, 60.5, 96.8, 101, 100.2); // at the night market
-    crowd(16, -66, -23, -60.5, -16, HILL.top); // at the lookout on the Peak
-    crowd(8, -100, -30, -89, -24, HILL.top);
+    crowd(18, -82, -22.5, -64.5, -17); // at the lookout on the Peak
+    crowd(8, -84, -36, -79.5, -25);
     crowd(20, RACECOURSE.x1 - 5, RACECOURSE.z0 + 3, RACECOURSE.x1 - 3.2, RACECOURSE.z1 - 3); // along the rail at the races
     crowd(10, -44.8, 75, -42.7, 101); // on the quay of the typhoon shelter
     crowd(12, -19, 20, -7, 33); // on the Convention Centre's point
