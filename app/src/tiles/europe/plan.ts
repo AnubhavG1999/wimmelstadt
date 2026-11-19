@@ -65,21 +65,39 @@ export const ARC: P2 = [25, -83], CONCORDE: P2 = [85, -42];
 /** The middles of the star's three lanes, from the island outwards, and of the Concorde's two. */
 export const STAR_LANES = [11.5, 16.5, 21.5], CONCORDE_LANES = [8.5, 13.5];
 
+/** The way the Champs-Élysées runs, from the Arc to the Concorde. */
+const AVENUE: P2 = (() => {
+  const dx = CONCORDE[0] - ARC[0], dz = CONCORDE[1] - ARC[1], l = Math.hypot(dx, dz);
+  return [dx / l, dz / l];
+})();
+
 /**
  * Montmartre. Its levels step up from a line through `at` that runs along `u`,
- * beside the Champs-Élysées: `up` points up the hill. A place on the hill is
- * given as how far along that line it is and how far up from it.
+ * the same way as the Champs-Élysées beside it: `up` points up the hill. A
+ * place on the hill is given as how far along that line it is and how far up
+ * from it.
  */
 export const HILL = {
-  at: [58, -86] as P2, u: [0.829, 0.559] as P2, up: [0.559, -0.829] as P2,
+  at: [58, -86] as P2, u: AVENUE, up: [AVENUE[1], -AVENUE[0]] as P2,
   /** How far up from the line each level begins, and how high it is. */
-  rims: [0, 9, 19], heights: [4, 8, 12],
-  /** The second level, and the road's two hairpins, lie between these places along the line. */
-  t0: 4, t1: 30,
-  /** The road keeps this far up from the line: on the first level going east, on the second coming back. */
-  lanes: [4.5, 14],
+  rims: [0, 14, 24], heights: [4, 8, 12],
+  /** The second level, and the two hairpins of the hill's own loop, lie between these places along the line. */
+  t0: 10, t1: 30,
+  /** The hill's loop keeps this far up from the line: on the first level going west, on the second coming back. */
+  lanes: [10, 19],
+  /** The road from the Champs-Élysées has a lane of its own on the first level, below the loop's, this far up from the line. */
+  way: 3.6,
+  /** The road up from the Champs-Élysées runs along the foot of the hill, this far below the line, and leaves the avenue here. */
+  foot: -3.2, turn: 8,
+  /** Where the road down from the hill is level with the street again, on its way in to the star. */
+  down: -9.5,
 };
 export const onHill = (t: number, o: number): P2 => [HILL.at[0] + HILL.u[0] * t + HILL.up[0] * o, HILL.at[1] + HILL.u[1] * t + HILL.up[1] * o];
+/** Where a place on the map is in the hill's own measure: how far along its line, and how far up from it. */
+export const offHill = (p: P2): P2 => {
+  const dx = p[0] - HILL.at[0], dz = p[1] - HILL.at[1];
+  return [dx * HILL.u[0] + dz * HILL.u[1], dx * HILL.up[0] + dz * HILL.up[1]];
+};
 
 // ---------------------------------------------------------------------------
 // Italy: the road round the Colosseum, the Via Emilia and Motor Valley
@@ -138,7 +156,7 @@ export const THINGS: Thing[] = [
   T(12, 'concorde', 'CHAMPS-ELYSEES & OBELISK', 'paris', CONCORDE[0] - 1.5, CONCORDE[1] - 1.5, 3, 3, 20, { shaped: true }),
   T(13, 'louvre', 'THE LOUVRE', 'paris', 40, -36, 36, 21, 12, { shaped: true }),
   T(14, 'notre-dame', 'NOTRE-DAME', 'paris', 18, 10, 16, 8, 15),
-  T(15, 'sacre-coeur', 'SACRE-COEUR', 'paris', 86, -110, 13, 14, 20, { y: 12 }),
+  T(15, 'sacre-coeur', 'SACRE-COEUR', 'paris', 87.3, -109, 12.5, 13.6, 20, { y: 12 }),
   T(16, 'moulin-rouge', 'MOULIN ROUGE', 'paris', 51, -111.5, 11, 10, 10),
   T(17, 'cafe', 'CAFE & METRO', 'paris', 22, 46, 14, 14, 22),
   T(18, 'trocadero', 'TROCADERO', 'paris', -23, -19, 13, 8, 5),

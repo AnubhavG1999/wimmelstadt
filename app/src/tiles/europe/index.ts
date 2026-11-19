@@ -14,12 +14,13 @@ import { buildPath, type Path } from '../../engine/paths';
 import { lampsAlong, roadDeck, street } from '../../engine/roads';
 import type { SignDef } from '../../engine/signs';
 import type { Build, HeroSpot, ParkedSpot, TileDef, TileParts } from '../../engine/tile';
+import { balloon, concorde } from './air';
 import { bigBen, eiffel, pisa } from './landmarks';
 import {
   ARC, ARNO_X, BEND_1, BEND_2, CANAL, COLOSSEUM, CONCORDE, HILL, IENA_X, ISLAND, LINGOTTO_ROOF, NEUF_X, PLOTS, RIVER_WIDTH, SEINE_Z,
   THAMES_X, THINGS, TOWER_Z, WATER_DROP, WESTMINSTER_Z, onHill, type Quarter, type Thing,
 } from './plan';
-import { HILL_ROAD, ROUTES, STREETS } from './roads';
+import { HILL_DOWN_ROAD, HILL_ROAD, HILL_UP_ROAD, ROUTES, STREETS } from './roads';
 
 const PAVING = 0xb9b1a2, QUAY = 0xa49f93, STONE = 0xcfc6b2, WATER = 0x5f9fc4, PLAZA = 0xd8d2c4;
 /** What a quarter's boxes are painted until its things are built. */
@@ -114,6 +115,27 @@ function riverShape(): P2[] {
   return [...left, ...right.reverse()];
 }
 
+/** A shape, cut off a hair inside the edge of the board. */
+function onBoard(shape: P2[]): P2[] {
+  const X = 103.8, Z = 112.8;
+  const cutX = (x: number) => (a: P2, b: P2): P2 => [x, a[1] + ((b[1] - a[1]) * (x - a[0])) / (b[0] - a[0])];
+  const cutZ = (z: number) => (a: P2, b: P2): P2 => [a[0] + ((b[0] - a[0]) * (z - a[1])) / (b[1] - a[1]), z];
+  const edges: [(p: P2) => boolean, (a: P2, b: P2) => P2][] = [
+    [(p) => p[0] <= X, cutX(X)], [(p) => p[0] >= -X, cutX(-X)], [(p) => p[1] <= Z, cutZ(Z)], [(p) => p[1] >= -Z, cutZ(-Z)],
+  ];
+  let out = shape;
+  for (const [inside, cut] of edges) {
+    const src = out;
+    out = [];
+    src.forEach((p, i) => {
+      const q = src[(i + 1) % src.length];
+      if (inside(p)) out.push(p);
+      if (inside(p) !== inside(q)) out.push(cut(p, q));
+    });
+  }
+  return out;
+}
+
 /** A flat bridge: a slab from bank to bank under the street, piers in the water and a low wall along each side. */
 function slabBridge(k: Build, x0: number, z0: number, x1: number, z1: number, alongX: boolean, piers: number): void {
   const deep = -(WATER_DROP + 0.6);
@@ -153,14 +175,23 @@ function build(k: Build): TileParts {
   const { x0: ix0, x1: ix1, half: ih } = ISLAND;
   terrace(k, [[ix0, SEINE_Z], [ix0 + 6, SEINE_Z - ih], [ix1 - 3, SEINE_Z - ih], [ix1, SEINE_Z - ih + 2.5], [ix1, SEINE_Z + ih - 2.5], [ix1 - 3, SEINE_Z + ih], [ix0 + 6, SEINE_Z + ih]], -(WATER_DROP + 0.6), 0, { top: PLAZA, side: QUAY });
 
-  // Montmartre, in three levels, in the north-east corner. The second level is
-  // only as long as the road on it: beyond its hairpins the first level is wide.
+  // Montmartre, in three levels, in the north-east corner. Each level is a strip
+  // of the hill that runs the same way as the Champs-Élysées. The second and
+  // third are only as long as the loop on them: beyond its hairpins the first
+  // level is wide. The first is cut back at its west end, where the road comes
+  // down off it, and carries two lanes: the loop's above, the way to the star below.
   const [r1, r2, r3] = HILL.rims, [h1, h2, h3] = HILL.heights;
-  const E = 103.8, N = -112.8;
-  terrace(k, [[63, N], [E, N], [E, -55.1], onHill(-2, r1), [55, -94], [63, -100]], 0, h1, { top: LAWN, side: 0x9a8f7c });
-  terrace(k, [onHill(HILL.t0, r2), onHill(HILL.t1, r2), [E, -100.2], [E, N], [80.9, N]], h1, h2, { top: LAWN, side: 0x9a8f7c });
-  terrace(k, [onHill(HILL.t0 + 4, r3), onHill(HILL.t1, r3), [E, -100.2], [E, N], [85.7, N]], h2, h3, { top: PLAZA, side: 0x9a8f7c });
-  roadDeck(k, buildPath(HILL_ROAD, true), 2.8, { thick: 0.5, wall: 0.5, lanes: 1, lift: 0.04, skirt: 20, step: 1.5 });
+  const FAR = 140, HILLSIDE = { top: LAWN, side: 0x9a8f7c };
+  terrace(k, onBoard([onHill(HILL.t0, r1), onHill(FAR, r1), onHill(FAR, FAR), onHill(HILL.t0 - 6, FAR), onHill(HILL.t0 - 6, HILL.way + 3), onHill(HILL.t0, HILL.way + 3)]), 0, h1, HILLSIDE);
+  terrace(k, onBoard([onHill(HILL.t0, r2), onHill(HILL.t1, r2), onHill(HILL.t1, FAR), onHill(HILL.t0, FAR)]), h1, h2, HILLSIDE);
+  terrace(k, onBoard([onHill(HILL.t0 + 1, r3), onHill(HILL.t1, r3), onHill(HILL.t1, FAR), onHill(HILL.t0 + 1, FAR)]), h2, h3, { top: PLAZA, side: 0x9a8f7c });
+  // The hill's roads: its own loop, the way up from the Champs-Élysées and the
+  // way down to the star. Each lies a hair higher than the last, so that where
+  // two of them run together their surfaces are never in one plane.
+  const hillDeck = { thick: 0.5, wall: 0.5, lanes: 1, skirt: 20, step: 1.5 };
+  roadDeck(k, buildPath(HILL_ROAD, true), 2.8, { ...hillDeck, lift: 0.04 });
+  roadDeck(k, buildPath(HILL_DOWN_ROAD, false), 2.8, { ...hillDeck, lift: 0.05 });
+  roadDeck(k, buildPath(HILL_UP_ROAD, false), 2.8, { ...hillDeck, lift: 0.06 });
 
   // lawns: the Champ de Mars, which runs down to the Field of Miracles
   area(k, rect(-15, 76, 11, 79.5), LAWN);
@@ -360,16 +391,18 @@ function build(k: Build): TileParts {
     const [ax, az] = ARC, ux = CONCORDE[0] - ax, uz = CONCORDE[1] - az, ul = Math.hypot(ux, uz);
     const dx = ux / ul, dz = uz / ul;
     // a ring of plane trees round the star, broken where its avenues leave it
-    const champs = Math.atan2(dz, dx), kleber = Math.atan2(-6.5 - az, IENA_X - ax);
+    const champs = Math.atan2(dz, dx), kleber = Math.atan2(-6.5 - az, IENA_X - ax), hill = Math.atan2(HILL.up[1], HILL.up[0]);
     const near = (a: number, c: number, w: number): boolean => Math.abs(Math.atan2(Math.sin(a - c), Math.cos(a - c))) < w;
     for (let i = 0; i < 30; i++) {
       const a = (i / 30) * Math.PI * 2;
-      if (near(a, champs, 0.62) || near(a, kleber, 0.36)) continue;
+      // (the road down from the hill comes in on a slant, so its gap is wider on the side it comes from)
+      if (near(a, champs, 0.62) || near(a, kleber, 0.36) || near(a, hill + 0.5, 0.64)) continue;
       k.tree(ax + Math.cos(a) * 28, az + Math.sin(a) * 28, 0.6);
     }
     // two rows down each side of the Champs-Élysées
     for (let d = 31; d <= ul - 22; d += 5.2) {
-      for (const off of [-12, 12]) k.tree(ax + dx * d - dz * off, az + dz * d + dx * off, 0.62);
+      // (the row on the hill's side starts beyond the turning for Montmartre)
+      for (const off of [-12, 12]) if (off > 0 || d > 44) k.tree(ax + dx * d - dz * off, az + dz * d + dx * off, 0.62);
     }
     // the wall of trees behind the South Bank, where London ends
     for (let z = -72; z <= -38; z += 6.5) k.tree(0.2 + (z + 72) * 0.07, z, 0.75);
@@ -379,7 +412,7 @@ function build(k: Build): TileParts {
     for (let x = 14; x <= 62; x += 6) k.tree(x, 110.5, 0.8, true);
     for (const [x, z] of [[-16, 77.5], [-9, 77.8], [4, 77.6], [10, 77.9], [-20, 42], [14, 42.5], [16, 50], [15, 58], [-21, -3], [-14, -14], [-25, -8], [66, 4], [74, 2], [82, 6], [-56, 11], [-50, 17], [50, -40], [56, -38.5]]) k.tree(x, z, 0.7 + rand() * 0.3);
     // on Montmartre: the wide end of the first level, and round Sacré-Cœur
-    for (const [t, o, y] of [[36, 6, h1], [42, 10, h1], [38, 16, h1], [46, 20, h1], [34, 24, h1], [40, 30, h1], [10, 32, h3], [26, 23, h3], [12, 24, h3]]) {
+    for (const [t, o, y] of [[37, 6, h1], [42, 10, h1], [38, 18, h1], [46, 22, h1], [35.5, 27, h1], [40, 33, h1], [13, 26, h3], [28.5, 26, h3], [12, 31, h3]]) {
       const [x, z] = onHill(t, o);
       if (x < 102 && z > -111) k.tree(x, z, 0.75, false, y);
     }
@@ -412,10 +445,17 @@ function build(k: Build): TileParts {
     scatter(6, -95.5, -76, -94, -48); // at the palace railings
     scatter(8, 42, -34, 68, -24); // the Louvre's court
     for (let i = 0; i < 9; i++) {
-      const [x, z] = onHill(9 + rand() * 20, 20 + rand() * 2.5);
+      const [x, z] = onHill(13 + rand() * 15, 24.8 + rand() * 1.6);
       k.person(x, z, h3); // the terrace below Sacré-Cœur
     }
   }
+
+  // -------------------------------------------------------------------------
+  // In the air: Concorde on a round over London and Paris, and a balloon over the left bank
+  // -------------------------------------------------------------------------
+
+  concorde(k, { x: 0, z: -4, rx: 80, rz: 90, y: 132, length: 24 });
+  balloon(k, { x: -46, z: 52, r: 11, y: 56 });
 
   // -------------------------------------------------------------------------
   // Places for heroes, and a few parked cars

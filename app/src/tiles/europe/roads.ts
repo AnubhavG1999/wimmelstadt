@@ -12,6 +12,12 @@
 // roundabout the two take different parts of the circle. London's loops turn
 // the other way from Paris's and Italy's, which is all it takes to keep left.
 // The two never meet: London's roads end at the wall behind the South Bank.
+//
+// No lane is shared either. The engine lets two loops take turns on one lane,
+// and Montmartre's two roads did so along the hill's first level, until a
+// quarter of an hour's traffic showed a car of the hill's loop waiting at the
+// merge for all of it: a steady stream leaves a stopped car no gap. So the
+// first level has two lanes, one for each road.
 
 import type { StreetOpts } from '../../engine/roads';
 import type { Seg } from '../../engine/paths';
@@ -19,7 +25,7 @@ import type { Route, TrafficType } from '../../engine/tile';
 import { beside, circle, line, loop, run, shift, type P2, type Step } from './lanes';
 import {
   ACE_TURN, ARC, CIRCUS_R, COLOSSEUM, CONCORDE, CONCORDE_LANES, EMBANKMENT_X, EMILIA_Z, HILL, IENA_X, LINGOTTO_ROOF, LUNGARNO_TOP, NEUF_X,
-  NORTH_QUAI_Z, PICCADILLY, ROYALE_X, SOUTH_BANK_X, SOUTH_QUAI_Z, STAR_LANES, STRAND_X, TOWER_HILL, TOWER_Z, TURN_R, VALLEY, WESTMINSTER_Z, onHill,
+  NORTH_QUAI_Z, PICCADILLY, ROYALE_X, SOUTH_BANK_X, SOUTH_QUAI_Z, STAR_LANES, STRAND_X, TOWER_HILL, TOWER_Z, TURN_R, VALLEY, WESTMINSTER_Z, offHill, onHill,
 } from './plan';
 
 /** From the middle of a two-lane street to the middle of either lane. */
@@ -139,20 +145,45 @@ const LONDON: Route[] = [
 const NQ = NORTH_QUAI_Z, SQ = SOUTH_QUAI_Z, I = IENA_X, N = NEUF_X, R = ROYALE_X;
 const [STAR_IN, STAR_MID, STAR_OUT] = STAR_LANES;
 
-/**
- * The road on Montmartre: one lane east along the hill's first level, a hairpin
- * that climbs to the second, back west below Sacré-Cœur, and a hairpin down.
- */
-export const HILL_ROAD: Seg[] = (() => {
-  const [low, high] = HILL.lanes, mid = (low + high) / 2, hair = (high - low) / 2;
-  const [y1, y2] = HILL.heights;
-  return loop([
-    { g: line(onHill(HILL.t0, low), onHill(HILL.t1, low)), y: [y1, y1] },
-    { g: circle(onHill(HILL.t1, mid), hair, false), y: [y1, y2] },
-    { g: line(onHill(HILL.t1, high), onHill(HILL.t0, high)), y: [y2, y2] },
-    { g: circle(onHill(HILL.t0, mid), hair, false), y: [y2, y1] },
-  ], { name: 'montmartre' });
-})();
+// Two roads climb Montmartre. The hill's own loop keeps to it: west along the
+// first level, a hairpin up to the second, back east below Sacré-Cœur and a
+// hairpin down. The road from the Champs-Élysées turns off the avenue, climbs
+// along the foot of the hill, comes onto the first level by a hairpin of its
+// own, runs west below the loop's lane, and goes on down into the star.
+
+const [LOW, HIGH] = HILL.lanes, [Y1, Y2] = HILL.heights;
+/** Where the Arc is in the hill's own measure. */
+const [ARC_T, ARC_O] = offHill(ARC);
+/** The Champs-Élysées' kerb lane towards the Arc, and the line that touches the star's outer lane on the hill's side. */
+const KERB_O = ARC_O + 7.5, IN_O = ARC_O + STAR_OUT;
+const HILL_SPEED = 10;
+
+/** The first level's lower lane, driven west: the way from the Champs-Élysées to the star. */
+const FIRST_LEVEL: Step = { g: line(onHill(HILL.t1, HILL.way), onHill(HILL.t0, HILL.way)), y: [Y1, Y1], speed: HILL_SPEED };
+
+/** The hill's own loop. */
+export const HILL_ROAD: Seg[] = loop([
+  { g: line(onHill(HILL.t1, LOW), onHill(HILL.t0, LOW)), y: [Y1, Y1], speed: HILL_SPEED },
+  { g: circle(onHill(HILL.t0, (LOW + HIGH) / 2), (HIGH - LOW) / 2, true), y: [Y1, Y2], speed: HILL_SPEED },
+  { g: line(onHill(HILL.t0, HIGH), onHill(HILL.t1, HIGH)), y: [Y2, Y2], speed: HILL_SPEED },
+  { g: circle(onHill(HILL.t1, (LOW + HIGH) / 2), (HIGH - LOW) / 2, true), y: [Y2, Y1], speed: HILL_SPEED },
+], { name: 'montmartre' });
+
+/** Off the Champs-Élysées by a turn to the right, up along the foot of the hill, and round a hairpin onto its first level. */
+const HILL_UP: Step[] = [
+  { g: circle(onHill(HILL.turn, (HILL.foot + KERB_O) / 2), (HILL.foot - KERB_O) / 2, true), speed: HILL_SPEED },
+  { g: line(onHill(HILL.turn, HILL.foot), onHill(HILL.t1, HILL.foot)), y: [0, Y1], speed: HILL_SPEED },
+  { g: circle(onHill(HILL.t1, (HILL.foot + HILL.way) / 2), (HILL.way - HILL.foot) / 2, false), y: [Y1, Y1], speed: HILL_SPEED },
+];
+/** Off the first level, down past the hill's west end, and along the line that runs into the star's outer lane. */
+const HILL_DOWN: Step[] = [
+  { g: line(onHill(HILL.t0, HILL.way), onHill(HILL.down, IN_O)), y: [Y1, 0], r: 12, speed: HILL_SPEED },
+  { g: line(onHill(HILL.down, IN_O), onHill(ARC_T, IN_O)) },
+];
+
+/** The same two roads as they are laid: from the avenue to the first level, and from the first level to the star's kerb. */
+export const HILL_UP_ROAD: Seg[] = run(onHill(HILL.turn, KERB_O), HILL_UP, onHill(HILL.t1, HILL.way), { name: 'montmartre, the way up' });
+export const HILL_DOWN_ROAD: Seg[] = run(onHill(HILL.t1, HILL.way), [{ ...FIRST_LEVEL, r: 12 }, ...HILL_DOWN], onHill(ARC_T + Math.sqrt(24 ** 2 - STAR_OUT ** 2), IN_O), { name: 'montmartre, the way down' });
 
 /** Round the Seine between its two bridges, as it is driven on the inside: east along the north quay and west along the south. */
 const PARIS_RING: Step[] = [line([I, NQ], [N, NQ]), line([N, NQ], [N, SQ]), line([N, SQ], [I, SQ]), line([I, SQ], [I, NQ])].map((g) => ({ g, r: 6 }));
@@ -160,7 +191,7 @@ const PARIS_RING: Step[] = [line([I, NQ], [N, NQ]), line([N, NQ], [N, SQ]), line
 const PARIS: Route[] = [
   lane('paris-river', beside(PARIS_RING, HALF), { speed: 14, count: 6, types: MIX.town }),
   // the grand tour: over the Pont d'Iéna past the Eiffel Tower, back over the Pont Neuf, along the quay past the Louvre,
-  // round the obelisk, up the Champs-Élysées, round the Arc de Triomphe and down avenue Kléber
+  // round the obelisk, up the Champs-Élysées, up Montmartre and down into the star, round the Arc de Triomphe and down avenue Kléber
   lane('paris-circuit', [
     { g: shift(line([I, NQ], [I, SQ]), HALF), r: 8.5 },
     { g: shift(line([I, SQ], [N, SQ]), HALF), r: 8.5 },
@@ -168,10 +199,13 @@ const PARIS: Route[] = [
     { g: shift(line([N, NQ], [R, NQ]), HALF), r: 8.5 },
     { g: shift(line([R, NQ], CONCORDE), HALF), r: 4 },
     { g: circle(CONCORDE, CONCORDE_LANES[1], false), r: 4 },
-    { g: shift(line(CONCORDE, ARC), 7.5), r: 5 },
+    { g: shift(line(CONCORDE, ARC), 7.5) },
+    ...HILL_UP,
+    { ...FIRST_LEVEL, r: 12 },
+    ...HILL_DOWN,
     { g: circle(ARC, STAR_OUT, false), r: 5 },
     { g: shift(line(ARC, [I, NQ]), HALF), r: 30 },
-  ], { speed: 16, count: 12, types: MIX.avenue }),
+  ], { speed: 16, count: 14, types: MIX.town }),
   // round the block between the Champs-Élysées and the river, by the kerb
   lane('paris-right-bank', [
     { g: shift(line([R, NQ], [I, NQ]), HALF), r: 4 },
@@ -190,7 +224,7 @@ const PARIS: Route[] = [
   ], { speed: 19, count: 7, types: MIX.avenue }),
   // and those who never leave the star
   lane('etoile', [{ g: circle(ARC, STAR_IN, false) }], { speed: 13, count: 4, types: MIX.town }),
-  { id: 'montmartre', segs: HILL_ROAD, speed: 9, count: 4, types: MIX.town },
+  { id: 'montmartre', segs: HILL_ROAD, speed: 9, count: 3, types: MIX.town },
 ];
 
 // --- Italy ---

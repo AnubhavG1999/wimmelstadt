@@ -30,6 +30,8 @@ export interface Step {
   side?: 1 | -1;
   /** The height at the start of this guide and at its end. Level ground, if left unsaid. */
   y?: [number, number];
+  /** How fast this guide and the bend after it are driven, in place of the road's own speed. */
+  speed?: number;
 }
 
 const TAU = Math.PI * 2;
@@ -133,6 +135,8 @@ function piece(g: Guide, from: P2, to: P2, y: [number, number], what: string): S
 }
 
 const heightsOf = (s: Step, y: number): [number, number] => s.y ?? [y, y];
+/** A stretch, driven at its step's own speed if it has one. */
+const paced = (seg: Seg, s: Step): Seg => (s.speed ? { ...seg, speed: s.speed } : seg);
 
 /** A closed lane: round every guide in turn and back to the first. */
 export function loop(steps: Step[], o: { r?: number; y?: number; name?: string } = {}): Seg[] {
@@ -146,9 +150,9 @@ export function loop(steps: Step[], o: { r?: number; y?: number; name?: string }
   steps.forEach((s, i) => {
     const before = bends[(i + n - 1) % n], after = bends[i], h = heightsOf(s, y);
     const p = piece(s.g, before.to, after.from, h, `${what}, guide ${i + 1}`);
-    if (p) out.push(p);
+    if (p) out.push(paced(p, s));
     // a bend climbs, if the guide it leads into starts higher or lower than this one ends
-    if (after.r > 0) out.push(arc(after.c, after.r, after.from, after.to, after.side > 0, h[1], heightsOf(steps[(i + 1) % n], y)[0]));
+    if (after.r > 0) out.push(paced(arc(after.c, after.r, after.from, after.to, after.side > 0, h[1], heightsOf(steps[(i + 1) % n], y)[0]), s));
   });
   return out;
 }
@@ -161,9 +165,9 @@ export function run(from: P2, steps: Step[], to: P2, o: { r?: number; y?: number
   steps.forEach((s, i) => {
     const a = i === 0 ? foot(s.g, from) : bends[i - 1].to, b = i === n - 1 ? foot(s.g, to) : bends[i].from, h = heightsOf(s, y);
     const p = piece(s.g, a, b, h, `${what}, guide ${i + 1}`);
-    if (p) out.push(p);
+    if (p) out.push(paced(p, s));
     const after = bends[i];
-    if (after && after.r > 0) out.push(arc(after.c, after.r, after.from, after.to, after.side > 0, h[1], h[1]));
+    if (after && after.r > 0) out.push(paced(arc(after.c, after.r, after.from, after.to, after.side > 0, h[1], heightsOf(steps[i + 1], y)[0]), s));
   });
   return out;
 }
