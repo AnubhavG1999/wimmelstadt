@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "hero": "node scripts/hero.ts",
+    "send-hero": "node --env-file=../.env.local scripts/send-hero.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

@@ -35,56 +35,253 @@
       }
       #c:active { cursor: grabbing; }
 
+      /* The controls: things of brass lying beside the tiles. They are built by
+         src/ui/controls.ts, and are out of sight until the screen is touched. */
       #ui {
         position: fixed;
-        left: 50%;
-        bottom: calc(14px + env(safe-area-inset-bottom));
-        transform: translateX(-50%);
-        display: flex;
-        align-items: center;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 8px 12px;
-        padding: 8px 14px;
-        border-radius: 22px;
-        background: rgba(14, 14, 22, 0.62);
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        -webkit-backdrop-filter: blur(10px);
-        backdrop-filter: blur(10px);
+        inset: 0;
+        pointer-events: none;
         transition: opacity 0.6s ease;
-        max-width: calc(100vw - 24px);
-        box-sizing: border-box;
+        --brass: radial-gradient(circle at 35% 28%, #f3dc9a, #c9a352 58%, #8c6a2a);
+        --ink: #3a2a10;
+        --edge: #6e531f;
       }
-      body.idle #ui, body.idle #hint { opacity: 0; pointer-events: none; }
-      #time {
-        font-variant-numeric: tabular-nums;
-        font-weight: 650;
-        font-size: 15px;
-        min-width: 44px;
-        text-align: center;
+      body.idle #ui { opacity: 0; }
+      #ui button, #ui .dial, #ui .options, #ui .pin { pointer-events: auto; }
+      body.idle #ui button, body.idle #ui .dial, body.idle #ui .options, body.idle #ui .pin { pointer-events: none; }
+
+      /* The plates at the top left, like the plates on the tiles: one says where the
+         view is, and a second one names the hero it is following. */
+      .plates {
+        position: absolute;
+        top: calc(14px + env(safe-area-inset-top));
+        left: calc(16px + env(safe-area-inset-left));
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
       }
-      #dial {
-        width: min(38vw, 360px);
-        accent-color: #ff3d9a;
-        margin: 0;
-      }
-      button {
-        font: inherit;
-        color: inherit;
-        background: rgba(255, 255, 255, 0.08);
-        border: 1px solid rgba(255, 255, 255, 0.14);
-        border-radius: 999px;
-        padding: 4px 11px;
-        cursor: pointer;
+      .plate {
+        padding: 7px 16px 6px 18px;
+        border-radius: 3px;
+        background: linear-gradient(#e6cb80, #c9a352 52%, #a8833c);
+        border: 1px solid rgba(60, 42, 14, 0.65);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 244, 205, 0.6);
+        color: var(--ink);
+        font: 700 14px/1.2 Georgia, "Times New Roman", serif;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        text-shadow: 0 1px 0 rgba(255, 236, 176, 0.65);
         white-space: nowrap;
       }
-      button.on { background: #ff3d9a; border-color: #ff3d9a; color: #14141c; font-weight: 650; }
-      .glyph { opacity: 0.75; font-size: 14px; }
+      .plate-hero {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 5px 13px 5px 10px;
+        font-size: 11.5px;
+        letter-spacing: 0.14em;
+      }
+      .plate-hero[hidden] { display: none; }
+      .plate-hero svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linejoin: round; flex: none; }
+
+      /* the dial, with the weather tokens fanned round its upper left and the keys beside it */
+      .cluster {
+        position: absolute;
+        right: calc(18px + env(safe-area-inset-right));
+        bottom: calc(18px + env(safe-area-inset-bottom));
+        width: 132px;
+        height: 132px;
+        transform-origin: bottom right;
+      }
+      .dial {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        cursor: pointer;
+        touch-action: none;
+        outline: none;
+        filter: drop-shadow(0 3px 7px rgba(0, 0, 0, 0.5));
+      }
+      .dial text { font-family: Georgia, "Times New Roman", serif; text-anchor: middle; pointer-events: none; }
+      .dial .time { font-size: 13.5px; font-weight: 700; fill: var(--ink); }
+      .dial .state { font: 700 4.8px system-ui, sans-serif; letter-spacing: 0.16em; fill: #7a5a22; }
+      .dial.is-live .state { fill: #b3261e; }
+      .dial .num { font-size: 7px; font-weight: 700; }
+      .num-day { fill: #5b4a1c; }
+      .num-night { fill: #c9d0f5; }
+      .tick-day { stroke: #5b4a1c; stroke-width: 0.8; opacity: 0.7; }
+      .tick-night { stroke: #c9d0f5; stroke-width: 0.8; opacity: 0.6; }
+      .mark .sun circle { fill: #ffd34d; stroke: #a86f00; stroke-width: 0.9; }
+      .mark .sun path { stroke: #c98a00; stroke-width: 1.1; stroke-linecap: round; fill: none; }
+      .mark .moon circle { fill: #eef1ff; stroke: #7c86b8; stroke-width: 0.8; }
+      .mark .moon .bite { fill: #1c2152; stroke: none; }
+      .mark .moon { display: none; }
+      .dial.is-night .mark .sun { display: none; }
+      .dial.is-night .mark .moon { display: block; }
+
+      .token, .key {
+        position: absolute;
+        border-radius: 50%;
+        border: 1px solid var(--edge);
+        background: var(--brass);
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 244, 205, 0.55);
+        color: var(--ink);
+        padding: 0;
+        cursor: pointer;
+        display: grid;
+        place-items: center;
+      }
+      .token svg, .key svg {
+        width: 19px;
+        height: 19px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.7;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      /* six tokens on a quarter circle, from the dial's left round to its top */
+      .token {
+        left: 50%;
+        top: 50%;
+        width: 30px;
+        height: 30px;
+        margin: -15px;
+        --a: calc(183deg + var(--i) * 17.4deg);
+        transform: translate(calc(cos(var(--a)) * 92px), calc(sin(var(--a)) * 92px));
+      }
+      .token.on, .key.on {
+        background: radial-gradient(circle at 35% 28%, #fffdf5, #f3e7c4 60%, #d9c58f);
+        box-shadow: 0 0 0 2px #b3261e, 0 2px 6px rgba(0, 0, 0, 0.5);
+      }
+      /* a dot under the weather the city has chosen for itself */
+      .token.now::after {
+        content: '';
+        position: absolute;
+        left: 50%;
+        bottom: -7px;
+        width: 5px;
+        height: 5px;
+        margin-left: -2.5px;
+        border-radius: 50%;
+        background: #f3dc9a;
+        box-shadow: 0 0 0 1px var(--edge);
+      }
+      .keys { position: absolute; right: calc(100% + 30px); bottom: 0; display: flex; gap: 8px; }
+      .key { position: static; width: 28px; height: 28px; }
+      .key svg { width: 17px; height: 17px; }
+      .key[data-k="lapse"] svg, .key[data-k="more"] svg { fill: currentColor; stroke: none; }
+      .key[hidden] { display: none; }
+      /* the options: a card with a brass edge, a row for each setting */
+      .options {
+        position: absolute;
+        right: calc(100% + 54px);
+        bottom: 40px;
+        width: 214px;
+        display: none;
+        padding: 4px 0 5px;
+        border-radius: 9px;
+        background: linear-gradient(#fbf4de, #f1e5c2);
+        border: 1px solid var(--edge);
+        box-shadow: 0 0 0 2px #c9a352, 0 0 0 3px var(--edge), 0 6px 16px rgba(0, 0, 0, 0.45);
+        color: var(--ink);
+      }
+      .cluster.open .options { display: block; }
+      .options-title {
+        padding: 6px 14px 5px;
+        font: 700 10.5px/1.2 Georgia, "Times New Roman", serif;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: #7a5a22;
+      }
+      .options button {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        width: 100%;
+        padding: 7px 12px 7px 14px;
+        border: 0;
+        border-top: 1px solid rgba(110, 83, 31, 0.22);
+        background: none;
+        color: inherit;
+        font: 13px/1.2 system-ui, -apple-system, "Segoe UI", sans-serif;
+        text-align: left;
+        cursor: pointer;
+      }
+      .options button:hover { background: rgba(201, 163, 82, 0.2); }
+      .options button[hidden] { display: none; }
+      .options b {
+        min-width: 34px;
+        padding: 2px 9px;
+        border-radius: 999px;
+        border: 1px solid rgba(110, 83, 31, 0.45);
+        background: rgba(255, 255, 255, 0.55);
+        font-weight: 600;
+        font-size: 12px;
+        text-align: center;
+      }
+      .options b.on { background: var(--brass); border-color: var(--edge); }
+
+      /* The card that asks for the PIN, where the heroes are behind one. It lies near
+         the top of the screen, clear of the keys a phone brings up to type on. */
+      .pin {
+        position: absolute;
+        left: 50%;
+        top: max(74px, 16%);
+        transform: translateX(-50%);
+        box-sizing: border-box;
+        width: min(284px, calc(100vw - 32px));
+        margin: 0;
+        padding: 4px 14px 13px;
+        border-radius: 9px;
+        background: linear-gradient(#fbf4de, #f1e5c2);
+        border: 1px solid var(--edge);
+        box-shadow: 0 0 0 2px #c9a352, 0 0 0 3px var(--edge), 0 8px 22px rgba(0, 0, 0, 0.5);
+        color: var(--ink);
+      }
+      .pin[hidden], .pin [hidden] { display: none; }
+      .pin .options-title { padding: 8px 0 7px; }
+      .pin p { margin: 0 0 10px; font: 13px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+      .pin-input {
+        box-sizing: border-box;
+        width: 100%;
+        padding: 7px 10px;
+        border-radius: 6px;
+        border: 1px solid rgba(110, 83, 31, 0.6);
+        background: rgba(255, 255, 255, 0.78);
+        color: var(--ink);
+        /* sixteen pixels, or a phone zooms the page in to the field */
+        font: 600 16px/1.3 system-ui, -apple-system, "Segoe UI", sans-serif;
+        letter-spacing: 0.24em;
+        text-align: center;
+        outline: none;
+        -webkit-user-select: text;
+        user-select: text;
+      }
+      .pin-input::placeholder { color: rgba(58, 42, 16, 0.42); letter-spacing: 0.24em; }
+      .pin-input:focus { border-color: var(--edge); box-shadow: 0 0 0 2px #c9a352; }
+      .pin .pin-note { min-height: 1.45em; margin: 8px 0 9px; font-size: 12px; color: #8a2a1c; }
+      .pin-keys { display: flex; justify-content: flex-end; gap: 8px; }
+      .pin-keys button {
+        min-width: 72px;
+        padding: 6px 14px;
+        border-radius: 999px;
+        border: 1px solid var(--edge);
+        background: rgba(255, 255, 255, 0.55);
+        color: var(--ink);
+        font: 600 12.5px/1.2 system-ui, -apple-system, "Segoe UI", sans-serif;
+        cursor: pointer;
+      }
+      .pin-keys .pin-main { background: var(--brass); box-shadow: inset 0 1px 0 rgba(255, 244, 205, 0.55); }
+      .pin-keys button:disabled { opacity: 0.55; cursor: default; }
 
       #hud {
         position: fixed;
-        top: calc(10px + env(safe-area-inset-top));
-        left: calc(10px + env(safe-area-inset-left));
+        top: calc(64px + env(safe-area-inset-top));
+        left: calc(16px + env(safe-area-inset-left));
         margin: 0;
         padding: 8px 10px;
         border-radius: 8px;
@@ -97,43 +294,21 @@
       }
       #hud.on { display: block; }
 
-      #hint {
-        position: fixed;
-        top: calc(12px + env(safe-area-inset-top));
-        left: 50%;
-        transform: translateX(-50%);
-        padding: 5px 12px;
-        border-radius: 999px;
-        background: rgba(14, 14, 22, 0.5);
-        font-size: 12px;
-        opacity: 0.85;
-        transition: opacity 0.6s ease;
-        pointer-events: none;
-        white-space: nowrap;
+      @media (max-width: 900px), (max-height: 520px) {
+        .cluster { transform: scale(0.82); }
+        .plate { padding: 5px 12px 4px 14px; font-size: 12px; }
+        .plate-hero { padding: 4px 11px 4px 8px; font-size: 10.5px; }
       }
-      @media (max-width: 720px) {
-        #hint { display: none; }
-        #ui { gap: 8px; padding: 7px 10px; }
-        .wide { display: none; }
+      /* a phone on its side has little height, and its keys take most of it */
+      @media (max-height: 520px) {
+        .pin { top: calc(10px + env(safe-area-inset-top)); }
       }
     </style>
   </head>
   <body>
     <canvas id="c"></canvas>
-    <div id="hint">drag to move · right-drag or two fingers to turn · wheel or pinch to zoom</div>
     <pre id="hud"></pre>
-    <div id="ui">
-      <span class="glyph">☀</span>
-      <span id="time">12:00</span>
-      <input id="dial" type="range" min="0" max="24" step="0.01" value="12" aria-label="Time of day" />
-      <span class="glyph">☾</span>
-      <button id="live" title="Follow the clock (L)">live</button>
-      <button id="follow" title="Ride along with a hero (F)">follow</button>
-      <button id="weather" title="The weather: the city's own, or one of six kinds (W)">weather</button>
-      <button id="focus" class="wide" title="How shallow the focus is (B)">focus</button>
-      <button id="lapse" class="wide" title="Run a whole day in 80 seconds (T)">time-lapse</button>
-      <button id="stats" class="wide" title="Frame time and draw calls (S)">stats</button>
-    </div>
+    <div id="ui"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
