@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#86b6d3" />
+    <title>Wimmelstadt</title>
+    <style>
+      html, body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+        background: #86b6d3;
+        color: #20232a;
+        font: 13px/1.35 "Segoe UI", system-ui, -apple-system, sans-serif;
+        -webkit-user-select: none;
+        user-select: none;
+        overscroll-behavior: none;
+      }
+      #c {
+        position: fixed;
+        inset: 0;
+        width: 100vw;
+        height: 100vh;
+        height: 100dvh;
+        display: block;
+        touch-action: none;
+        cursor: grab;
+      }
+      #c:active { cursor: grabbing; }
+      #hud {
+        position: fixed;
+        left: calc(14px + env(safe-area-inset-left));
+        top: calc(12px + env(safe-area-inset-top));
+        padding: 8px 12px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.72);
+        -webkit-backdrop-filter: blur(8px);
+        backdrop-filter: blur(8px);
+        pointer-events: none;
+        max-width: min(430px, calc(100vw - 28px));
+      }
+      #hud b { font-size: 15px; letter-spacing: 0.3px; }
+      #hud span { display: block; opacity: 0.78; }
+      #ui {
+        position: fixed;
+        left: 50%;
+        bottom: calc(14px + env(safe-area-inset-bottom));
+        transform: translateX(-50%);
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 8px 12px;
+        padding: 8px 14px;
+        border-radius: 22px;
+        background: rgba(14, 14, 22, 0.62);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
+        color: #f2efe6;
+        max-width: calc(100vw - 24px);
+        box-sizing: border-box;
+      }
+      #time { font-variant-numeric: tabular-nums; font-weight: 650; font-size: 15px; min-width: 44px; text-align: center; }
+      #dial { width: min(34vw, 320px); accent-color: #ff3d9a; margin: 0; }
+      #ui button {
+        font: inherit;
+        color: inherit;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 999px;
+        padding: 4px 11px;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      #ui button.on { background: #ff3d9a; border-color: #ff3d9a; color: #14141c; font-weight: 650; }
+      .glyph { opacity: 0.75; font-size: 14px; }
+      @media (max-width: 720px) { .wide { display: none; } }
+    </style>
+  </head>
+  <body>
+    <canvas id="c"></canvas>
+    <div id="hud">
+      <b>Wimmelstadt: two tiles, blocked out</b>
+      <span>Drag to move, right-drag or Shift-drag to turn, scroll or pinch to zoom.</span>
+      <span id="note"></span>
+    </div>
+    <div id="ui">
+      <span class="glyph">☀</span>
+      <span id="time">12:00</span>
+      <input id="dial" type="range" min="0" max="24" step="0.01" value="12" aria-label="Time of day" />
+      <span class="glyph">☾</span>
+      <button id="live" title="Follow the clock (L)">live</button>
+      <button id="find" title="Ride along with a hero" hidden></button>
+      <button id="weather" title="The weather: the city's own, or one of six kinds (W)">weather</button>
+      <button id="focus" class="wide" title="How shallow the focus is (B)">focus</button>
+      <button id="names" class="wide" title="Names of tiles and landmarks (M)">names</button>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
