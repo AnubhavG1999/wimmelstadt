@@ -249,6 +249,7 @@ export const SCENE_SIGNS: SignDef[] = [
   { id: 'tofu', lines: ['角の豆腐店'], color: '#f2e6c8', ink: '#2a1a14', aspect: 4.6, kind: 'board', font: JAPANESE },
   blade('tofu-v', 'とうふ', '#ffe2ae'),
   { id: 'chevron', lines: ['>>'], color: '#ffd23f', aspect: 1, size: [96, 96], paint: paintChevron },
+  { id: 'p', lines: ['P'], color: '#ffffff', aspect: 1, kind: 'p' },
 ];
 
 export const TOKYO_SIGNS: SignPool = {

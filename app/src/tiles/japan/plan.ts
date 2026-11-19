@@ -289,10 +289,10 @@ export const WANGAN_ROUTE: Piece[] = (() => {
   return [
     ...paced(out1.slice(0, 2), 20), ...out1.slice(2),
     // down to Daikoku, past the meet at a walk, and up again
-    ...paced(ring.slice(0, flat), 19), ...paced(ring.slice(flat, flat + 1), 8), ...paced(ring.slice(flat + 1), 19),
-    ...out2.slice(0, -2), ...paced(out2.slice(-2), 18), ...paced(tatsumi, 10),
+    ...paced(ring.slice(0, flat), 19), ...paced(ring.slice(flat, flat + 1), 11), ...paced(ring.slice(flat + 1), 19),
+    ...out2.slice(0, -2), ...paced(out2.slice(-2), 18), ...paced(tatsumi, 12),
     ...home2, ...paced(DAIKOKU_BYPASS, 26),
-    ...home1.slice(0, -2), ...paced(home1.slice(-2), 20), ...paced(rotary, 9),
+    ...home1.slice(0, -2), ...paced(home1.slice(-2), 20), ...paced(rotary, 11),
   ];
 })();
 
@@ -335,6 +335,12 @@ export const SHELF = { x0: -36, x1: -11, z0: BOARD.z0, z1: -84, y: 5 };
 // Routes
 // ---------------------------------------------------------------------------
 
+// How many vehicles a route can carry is set by its slowest stretch: a bend of
+// radius 3.5 is driven at about 7.7, and at that speed a lane passes one
+// vehicle every two seconds. A route is given no more than about three
+// quarters of that. With more, a queue forms that never clears, it backs up
+// into a fast stretch, and vehicles arriving there cannot stop in time.
+
 const MIX: Record<string, TrafficType[]> = {
   street: ['sedan', 'sedan', 'hatch', 'hatch', 'van', 'pickup'],
   // kei cars and kei trucks, and a bus now and then
@@ -361,18 +367,18 @@ function block(id: string, x0: number, z0: number, x1: number, z1: number, count
 export const ROUTES: Route[] = [
   // Kyoto: the two blocks inside its ring of streets
   block('kyoto-tower', KYOTO.west + LANE_OFF, KYOTO.north + LANE_OFF, KYOTO.east - LANE_OFF, KYOTO.mid - LANE_OFF, 3, MIX.kyoto),
-  block('gion', KYOTO.west + LANE_OFF, KYOTO.mid + LANE_OFF, KYOTO.east - LANE_OFF, KYOTO.south - LANE_OFF, 4, MIX.kyoto),
+  block('gion', KYOTO.west + LANE_OFF, KYOTO.mid + LANE_OFF, KYOTO.east - LANE_OFF, KYOTO.south - LANE_OFF, 5, MIX.kyoto),
   // Tokyo: the four blocks inside its L of streets
   block('tokyo-tower', TOKYO.west + LANE_OFF, TOKYO.north + LANE_OFF, TOKYO.mid - LANE_OFF, TOKYO.cross - LANE_OFF, 6, MIX.street, TAXI_PAINT),
-  block('shibuya', TOKYO.mid + LANE_OFF, TOKYO.north + LANE_OFF, TOKYO.east - LANE_OFF, TOKYO.cross - LANE_OFF, 5, MIX.street, TAXI_PAINT),
+  block('shibuya', TOKYO.mid + LANE_OFF, TOKYO.north + LANE_OFF, TOKYO.east - LANE_OFF, TOKYO.cross - LANE_OFF, 6, MIX.street, TAXI_PAINT),
   block('station', TOKYO.west + LANE_OFF, TOKYO.cross + LANE_OFF, TOKYO.mid - LANE_OFF, AVENUE.z - AVENUE.kerbLane, 5, MIX.street, TAXI_PAINT),
   block('ginza', TOKYO.west + LANE_OFF, AVENUE.z + AVENUE.kerbLane, TOKYO.mid - LANE_OFF, TOKYO.south - LANE_OFF, 4, MIX.street),
   // the lanes left over round Tokyo: one long clockwise loop
   { id: 'tokyo-outer', types: MIX.street, segs: toSegs(lane(TOKYO_RING, LANE_OFF)), speed: 16, count: 13 },
   // the pass and the way round Kyoto
-  { id: 'touge', types: MIX.touge, segs: toSegs(TOUGE), speed: 17, count: 13 },
+  { id: 'touge', types: MIX.touge, segs: toSegs(TOUGE), speed: 17, count: 15 },
   // the Wangan
-  { id: 'wangan', types: MIX.wangan, segs: toSegs(WANGAN_ROUTE), speed: 38, count: 16 },
+  { id: 'wangan', types: MIX.wangan, segs: toSegs(WANGAN_ROUTE), speed: 38, count: 15 },
 ];
 
 // ---------------------------------------------------------------------------
@@ -432,6 +438,8 @@ export const PETROL = { x0: -18, z0: 37.5, x1: -3.5, z1: 47.5 };
 export const TOFU = { x0: -27.6, z0: -23, x1: -21.4, z1: -14 };
 /** The parts shop and the used-car lot, under the Wangan. */
 export const PARTS = { x0: TOKYO.mid + FRONT.tokyo + 0.5, z0: -15.6, x1: TOKYO.mid + FRONT.tokyo + 10.5, z1: -8.2 };
+/** The parts shop's car park, beside it: bay i is at `first` + i * `pitch`. */
+export const PARTS_PARK = { x0: TOKYO.mid + FRONT.tokyo + 11.5, z0: -15.6, x1: TOKYO.mid + FRONT.tokyo + 23.5, z1: -7.6, bays: 3, first: TOKYO.mid + FRONT.tokyo + 13.9, pitch: 3.6 };
 export const USED_CARS = { x0: TOKYO.mid + FRONT.tokyo + 0.5, z0: 3.6, x1: 90, z1: 21.4, rows: [7.5, 17.5], first: 69.4, pitch: 3.6 };
 /** The scramble: where its two streets cross. */
 export const SCRAMBLE = { x: TOKYO.mid, z: TOKYO.cross };
@@ -493,6 +501,7 @@ export const KEEP_CLEAR: Rect[] = [
   { x0: GARAGE.x0, z0: GARAGE.z0, x1: GARAGE.x1, z1: GARAGE.z1 + 1 },
   { x0: KONBINI.x0 - 1, z0: KONBINI.z0, x1: KONBINI.x1 + 3, z1: PETROL.z1 + 1 },
   { x0: HACHIKO.x0, z0: HACHIKO.z0, x1: PARTS.x1, z1: PARTS.z1 + 3 },
+  { x0: PARTS_PARK.x0, z0: PARTS_PARK.z0, x1: PARTS_PARK.x1, z1: PARTS_PARK.z1 },
   { x0: ROUND_TOWER.x0, z0: ROUND_TOWER.z0, x1: ROUND_TOWER.x1 + 0.4, z1: ROUND_TOWER.z1 },
   { x0: SCREENS.x0, z0: SCREENS.z0, x1: SCREENS.x1, z1: SCREENS.z1 },
   { x0: USED_CARS.x0, z0: USED_CARS.z0, x1: USED_CARS.x1, z1: USED_CARS.z1 },
@@ -543,6 +552,8 @@ export const HERO_SPOTS: HeroSpot[] = [];
   PARKED.push({ x: (PETROL.x0 + PETROL.x1) / 2 - 1, y: 0.02, z: (PETROL.z0 + PETROL.z1) / 2 - 0.4, heading: 0 });
   PARKED.push({ x: TOFU.x0 + 3.1, y: 0.02, z: TOFU.z1 + 2.2, heading: 0 });
   for (const x of CARRIER.waiting.xs) PARKED.push({ x, y: 0.02, z: CARRIER.waiting.z, heading: south });
+  // the parts shop's car park
+  for (let i = 0; i < PARTS_PARK.bays; i++) PARKED.push({ x: PARTS_PARK.first + i * PARTS_PARK.pitch, y: 0.02, z: (PARTS_PARK.z0 + PARTS_PARK.z1) / 2, heading: south });
   // the used-car lot under the Wangan: two rows, nose out
   for (let i = 0; i < 6; i++) {
     for (const [n, z] of USED_CARS.rows.entries()) if (n > 0 || i > 0) PARKED.push({ x: USED_CARS.first + i * USED_CARS.pitch, y: 0.02, z, heading: south });

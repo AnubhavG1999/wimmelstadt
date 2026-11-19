@@ -12,8 +12,8 @@ import { train } from '../../engine/rail';
 import type { Build } from '../../engine/tile';
 import { slopes, stoneLantern, tiledRoof } from './landmarks';
 import {
-  BOATS, CARRIER, FARMS, FERRIS, GARAGE, HACHIKO, KONBINI, LOOKOUT_YARD, MONKEYS, PADDIES, PARTS, PASS, PASS_LINE, PETROL, ROCK_GARDEN, ROUND_TOWER,
-  SCRAMBLE, SCREENS, SHELF, SHORE, TOFU, TOKYO, UENO_PARK, USED_CARS,
+  BOATS, CARRIER, FARMS, FERRIS, GARAGE, HACHIKO, KONBINI, LOOKOUT_YARD, MOAT, MONKEYS, PADDIES, PARTS, PARTS_PARK, PASS, PASS_LINE, PETROL, POND,
+  ROCK_GARDEN, ROUND_TOWER, SCRAMBLE, SCREENS, SHELF, SHORE, TOFU, TOKYO, UENO_PARK, USED_CARS,
 } from './plan';
 import { lantern, mast, standingCar, vending } from './props';
 
@@ -250,6 +250,18 @@ function carLots(k: Build): void {
     for (const x of [fx0, fx1]) b.box(x - 0.1, 0, fz - 0.1, x + 0.1, 5.5, fz + 0.1, 0x6b7076);
     for (let x = fx0 + 0.9; x < fx1 - 0.5; x += 1.3) b.box(x - 0.2, 4.85, fz - 0.02, x + 0.2, 5.38, fz + 0.02, HUES[Math.round(x * 3) % 4], { faces: 'NS' });
   }
+  // the parts shop's own car park, beside it: three bays, and a P on a pole
+  {
+    const c = PARTS_PARK;
+    area(k, rect(c.x0, c.z0, c.x1, c.z1), ASPHALT);
+    for (let i = 0; i <= c.bays; i++) area(k, rect(c.first + (i - 0.5) * c.pitch - 0.09, c.z0 + 0.5, c.first + (i - 0.5) * c.pitch + 0.09, c.z1 - 0.6), PAINT, 0.045);
+    b.box(c.x1 - 0.5, 0, c.z1 - 0.5, c.x1 - 0.24, 4.4, c.z1 - 0.24, 0x6b7076);
+    b.box(c.x1 - 1.25, 4.4, c.z1 - 0.45, c.x1 + 0.51, 6.16, c.z1 - 0.29, 0x1c4fa8, { faces: 'NESWTB' });
+    k.sign('p', c.x1 - 0.37, 5.28, c.z1 - 0.27, 0, 1, 1.6);
+    k.sign('p', c.x1 - 0.37, 5.28, c.z1 - 0.47, 0, -1, 1.6);
+    for (const [x, z] of [[c.first + 1.8, c.z1 - 1.4], [c.first + c.pitch + 1.7, c.z0 + 2.2], [c.first + c.pitch + 2.3, c.z0 + 3]]) k.person(x, z);
+    k.lights.push({ x: (c.x0 + c.x1) / 2, z: (c.z0 + c.z1) / 2, r: 12, color: '#fff0d6', k: 0.5 });
+  }
   k.person(u.x0 + 5.6, u.z0 + 2.4);
   k.person(u.first + 2 * u.pitch + 1.8, u.rows[1] - 4.4);
   k.person(u.first + 2 * u.pitch + 2.7, u.rows[1] - 4.6);
@@ -457,6 +469,22 @@ function passDetails(k: Build): void {
     b.box(x - 0.07, py - 1.2, z - 0.07, x + 0.07, py + 2.7, z + 0.07, 0xe8662f);
     b.obox(x, py + 3.2, z, 0.08, 0.5, 0.5, a, 0xe8662f, { faces: 'B' });
     b.obox(x - Math.cos(a) * 0.1, py + 3.2, z - Math.sin(a) * 0.1, 0.02, 0.4, 0.4, a, 0xcfe0ea, { win: interior(0.6), faces: 'B' });
+    // what a car leaves behind when it goes round sideways: two dark lines that swing wide through the bend
+    {
+      const steps = 14, from = mid - 1.15 * Math.sign(p.a1 - p.a0), sweep = 2.1 * Math.sign(p.a1 - p.a0);
+      for (const track of [0, 1.7]) {
+        for (let i = 0; i < steps; i++) {
+          const corners: V3[] = [];
+          for (const [u, side] of [[i / steps, -1], [(i + 1) / steps, -1], [(i + 1) / steps, 1], [i / steps, 1]]) {
+            const a = from + sweep * u, rr = p.r - 2.6 + track + 2.5 * u * u + side * 0.16;
+            // (a hair above the road, which is laid in flat pieces and so is not quite where the bend's own height says)
+            const y = p.y0 + ((p.y1 - p.y0) * (a - p.a0)) / (p.a1 - p.a0) + 0.15;
+            corners.push([p.c[0] + Math.cos(a) * rr, y, p.c[1] + Math.sin(a) * rr]);
+          }
+          b.quad(corners[0], corners[1], corners[2], corners[3], [0, 1, 0], 0x2b2c31);
+        }
+      }
+    }
     // People who have come up to watch stand on a ledge of concrete outside the
     // wall, beyond the boards: the bank itself is too steep to stand them on.
     if (n < 4) {
@@ -527,6 +555,40 @@ function lanterns(k: Build): void {
   // the red bridge, from Gion over the river to Tokyo's bank
   archBridge(k, SHORE.river.west - 1.6, SHORE.river.east + 1.6, 30, 1.7, 1.5);
   k.lights.push({ x: (SHORE.river.west + SHORE.river.east) / 2, z: 30, r: 9, color: '#ffd9a0', k: 0.45 });
+}
+
+/** People in the castle's and the pavilion's grounds, looking over the water, and a stone lantern or two beside them. */
+function gardens(k: Build): void {
+  const bank = MOAT.x1 + 0.6;
+  // on the bank by the street, by the castle's bridge and across the pond from the pavilion: where the view is
+  for (const z of [3.4, 8.6, 10.3, 14.8]) k.person(bank, z);
+  for (const z of [36.5, 39.2, 42.4, 55, 58.4, 61]) k.person(POND.x1 + 1.3, z);
+  for (const [x, z] of [[-84, 28.4], [-88, 29], [-91.6, 28.3], [-84, 68.2], [-86.6, 68.8], [-90, 68.3], [-93.2, 68.9]]) k.person(x, z);
+  stoneLantern(k, POND.x1 + 1.3, 34);
+  stoneLantern(k, -80.5, 68.6);
+  stoneLantern(k, -95.5, 28.8);
+}
+
+/** A festival stall: a counter under a striped awning, with lanterns along its front. It looks south. */
+function stall(k: Build, x: number, z: number, color: number): void {
+  const b = k.b, w = 1.25, d = 0.8, RED = 0xd8432b, WHITE = 0xf2f0ea;
+  b.box(x - w, 0, z - d, x + w, 1.1, z + d, color, { win: interior(0.5) });
+  b.box(x - w - 0.08, 1.1, z - d - 0.08, x + w + 0.08, 1.2, z + d + 0.08, 0xf2e6c8, { faces: 'NESWTB' });
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) b.box(x + sx * w - 0.06, 1.2, z + sz * d - 0.06, x + sx * w + 0.06, 2.3, z + sz * d + 0.06, 0x3a2a24);
+  // the awning, in stripes
+  const slat = (2 * w + 0.5) / 6;
+  for (let i = 0; i < 6; i++) b.box(x - w - 0.25 + i * slat, 2.3, z - d - 0.3, x - w - 0.25 + (i + 1) * slat, 2.42, z + d + 0.5, i % 2 ? WHITE : RED, { faces: 'NESWTB' });
+  for (const dx of [-0.8, 0, 0.8]) lantern(k, x + dx, 1.92, z + d + 0.42, 0.42);
+  k.lights.push({ x, z: z + 1.6, r: 6, color: '#ffd9a0', k: 0.5 });
+}
+
+/** Stalls along the waterfront, to either side of the Ferris wheel, and the people who have stopped at them. */
+function stalls(k: Build): void {
+  const z = TOKYO.south + 9.3, HUES = [0x3f6fb5, 0xf2c14e, 0x4fa36b, 0xff8ac8, 0xe8662f];
+  [21.5, 25, 51.5, 55, 58.5].forEach((x, i) => {
+    stall(k, x, z, HUES[i]);
+    for (let n = 0; n < 3; n++) k.person(x - 0.9 + n * 0.9 + (i % 2) * 0.2, z + 1.9 + ((n + i) % 2) * 0.7);
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -614,7 +676,7 @@ function ferrisWheel(k: Build): void {
   k.each((dt, _time, night) => {
     turn += dt * 0.11;
     place();
-    (face.material as THREE.MeshBasicMaterial).color.setRGB(1, 0.95, 0.8).multiplyScalar(0.75 + 1.9 * night);
+    (face.material as THREE.MeshBasicMaterial).color.setRGB(1, 0.93, 0.76).multiplyScalar(0.78 + 0.5 * night);
   });
   k.lights.push({ x: f.x, z: f.z + 4, r: 20, color: '#ffd9f0', k: 0.55 });
   // a ticket hut and a queue
@@ -700,7 +762,9 @@ export function buildScenes(k: Build): void {
   shelf(k);
   passDetails(k);
   rockGarden(k);
+  gardens(k);
   lanterns(k);
+  stalls(k);
   uenoPark(k);
   ferrisWheel(k);
   carCarrier(k);
