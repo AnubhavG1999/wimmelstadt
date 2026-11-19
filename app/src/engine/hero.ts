@@ -95,6 +95,8 @@ function settle(root: THREE.Object3D, info: HeroInfo): LoadedHero {
  * none yet, and that is not an error: the city simply has traffic and no heroes.
  */
 export async function loadHeroes(): Promise<LoadedHero[]> {
+  // a built copy does not go looking for them: there is nowhere for it to find any
+  if (!import.meta.env.DEV) return [];
   let list: HeroInfo[];
   try {
     const res = await fetch('captures/heroes.json');

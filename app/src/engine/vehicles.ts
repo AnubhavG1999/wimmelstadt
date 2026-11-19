@@ -202,8 +202,12 @@ function radialTexture(w: number, h: number, draw: (ctx: CanvasRenderingContext2
 // ---------------------------------------------------------------------------
 
 interface Veh {
+  /** Tells vehicles apart where two of them would otherwise have equal claim to go first. */
+  id: number;
   path: Path | null;
   s: number; v: number; vmax: number;
+  /** How fast it likes to drive, as a share of the speed of whatever road it is on. */
+  pace: number;
   len: number; wid: number; wb: number;
   type: number; inst: number; // traffic: which batch and which slot in it
   hero: Hero | null;
@@ -229,6 +233,110 @@ export interface Vehicles {
   adopt(body: THREE.Object3D, info: HeroInfo, place: HeroPlace, trick: PartyTrick | null): Hero | null;
   /** Shows the heroes or hides them, with their shadows and their lights. */
   showHeroes(on: boolean): void;
+  /** The lanes that routes were found to share, for checking a tile's roads: which two routes, where along each, and for how long. */
+  shared(): { route: string; other: string; from: number; otherFrom: number; length: number }[];
+  /** Where every moving vehicle is, for checking a tile's roads: its route, how far along it, its speed and its place. */
+  positions(): { route: string; s: number; v: number; x: number; y: number; z: number; hero: boolean }[];
+}
+
+/** A stretch of lane that two routes both run along: from `a0` on one of them, from `b0` on the other, for `len`. */
+interface Share { other: Loop; a0: number; b0: number; len: number }
+/** One route, the line it follows, the vehicles on it in the order they drive, and the lanes it shares. */
+interface Loop { def: Route; path: Path; list: Veh[]; shares: Share[] }
+
+/** How far before a lane it shares a vehicle starts to look at the other route's traffic: two seconds of a fast road. */
+const MERGE_LOOK = 60;
+/** How far short of the shared lane a vehicle waits for another to go first: where the two lanes are still a car's width apart. */
+const MERGE_HOLD = 7;
+
+/** How far past the end of a shared lane a vehicle is still in the way of the one behind it, though their ways have parted. */
+const PART_CLEAR = 9;
+
+/** How far a vehicle is past the place a shared stretch starts, going round its own route: from 0 up to the route's length. */
+const pastStart = (s: number, from: number, L: number): number => (((s - from) % L) + L) % L;
+
+/**
+ * Finds where routes run along the same lane, the same way. There their
+ * vehicles take turns: each keeps its distance from whoever is ahead of it on
+ * that lane, whichever route that one is on, and where two routes come
+ * together the vehicle that is nearer goes first. Routes that merely cross are
+ * not found, and their vehicles still pass through each other.
+ */
+function findShares(loops: Loop[]): void {
+  const STEP = 1, CELL = 3;
+  interface Dot { loop: number; s: number; x: number; y: number; z: number; tx: number; tz: number }
+  const grid = new Map<number, Dot[]>();
+  const key = (cx: number, cz: number): number => (cx + 512) * 4096 + (cz + 512);
+  const p = new THREE.Vector3(), q = new THREE.Vector3();
+  // every route as points a unit apart, sorted into squares on the ground
+  const lines = loops.map((l, li) => {
+    const n = Math.max(1, Math.floor(l.path.length / STEP));
+    return Array.from({ length: n }, (_, i): Dot => {
+      const s = (i / n) * l.path.length;
+      l.path.at(s, p);
+      l.path.at(s + 0.5, q);
+      const tx = q.x - p.x, tz = q.z - p.z, tl = Math.hypot(tx, tz) || 1;
+      return { loop: li, s, x: p.x, y: p.y, z: p.z, tx: tx / tl, tz: tz / tl };
+    });
+  });
+  for (const line of lines) {
+    for (const d of line) {
+      const at = key(Math.floor(d.x / CELL), Math.floor(d.z / CELL));
+      let cell = grid.get(at);
+      if (!cell) grid.set(at, (cell = []));
+      cell.push(d);
+    }
+  }
+  lines.forEach((line, a) => {
+    const A = loops[a], n = line.length, step = A.path.length / n;
+    // for each of this route's points, the place on every other route that lies on it and heads the same way
+    const match = new Map<number, Float64Array>();
+    line.forEach((d, i) => {
+      const cx = Math.floor(d.x / CELL), cz = Math.floor(d.z / CELL);
+      const best = new Map<number, [number, number]>();
+      for (let ix = -1; ix <= 1; ix++) {
+        for (let iz = -1; iz <= 1; iz++) {
+          for (const e of grid.get(key(cx + ix, cz + iz)) ?? []) {
+            if (e.loop === a || Math.abs(e.y - d.y) > 0.6 || e.tx * d.tx + e.tz * d.tz < 0.92) continue;
+            const fore = (d.x - e.x) * e.tx + (d.z - e.z) * e.tz;
+            const off = Math.abs((d.x - e.x) * e.tz - (d.z - e.z) * e.tx);
+            if (off > 0.45 || Math.abs(fore) > 0.75) continue;
+            const had = best.get(e.loop);
+            if (!had || Math.abs(fore) < had[0]) best.set(e.loop, [Math.abs(fore), e.s + fore]);
+          }
+        }
+      }
+      for (const [b, [, s]] of best) {
+        let m = match.get(b);
+        if (!m) match.set(b, (m = new Float64Array(n).fill(NaN)));
+        m[i] = s;
+      }
+    });
+    for (const [b, m] of match) {
+      const B = loops[b], LB = B.path.length;
+      // two points in a row belong to one stretch if the other route moves along in step with this one
+      const follows = (i: number, j: number): boolean => {
+        if (Number.isNaN(m[i]) || Number.isNaN(m[j])) return false;
+        const d = (((m[j] - m[i]) % LB) + LB) % LB;
+        return d < step * 2.2;
+      };
+      let start = -1;
+      for (let i = 0; i < n; i++) {
+        if (!follows((i + n - 1) % n, i)) { start = i; break; }
+      }
+      // the two routes are the same lane all the way round
+      if (start < 0) { A.shares.push({ other: B, a0: 0, b0: m[0], len: A.path.length }); continue; }
+      let i = 0;
+      while (i < n) {
+        const at = (start + i) % n;
+        if (Number.isNaN(m[at])) { i++; continue; }
+        let run = 0;
+        while (i + run + 1 < n && follows((start + i + run) % n, (start + i + run + 1) % n)) run++;
+        if (run * step >= 4) A.shares.push({ other: B, a0: line[at].s, b0: ((m[at] % LB) + LB) % LB, len: run * step });
+        i += run + 1;
+      }
+    }
+  });
 }
 
 const TYPE_NAMES: TrafficType[] = ['sedan', 'hatch', 'van', 'pickup', 'bus'];
@@ -244,14 +352,14 @@ export function buildVehicles(k: Build, routes: Route[], parked: ParkedSpot[], h
 
   // --- who drives where ---
   const vehs: Veh[] = [];
-  const loops = new Map<string, { def: Route; path: Path; list: Veh[] }>();
+  const loops = new Map<string, Loop>();
   const heroes: Hero[] = [];
-  let movingCount = 0;
+  let movingCount = 0, serial = 0;
   /** The vehicles whose road says what colours they are. */
   const paints = new Map<Veh, number[]>();
 
   const blank = (): Veh => ({
-    path: null, s: 0, v: 0, vmax: 0, len: 7, wid: 3, wb: 4.4, type: -1, inst: -1, hero: null,
+    id: serial++, path: null, s: 0, v: 0, vmax: 0, pace: 1, len: 7, wid: 3, wb: 4.4, type: -1, inst: -1, hero: null,
     heading: 0, turn: 0, lit: false, fx: -1, shadow: -1, phase: rand() * 10, pos: new THREE.Vector3(),
   });
 
@@ -263,7 +371,8 @@ export function buildVehicles(k: Build, routes: Route[], parked: ParkedSpot[], h
       const v = blank();
       v.path = path;
       v.s = ((i + 0.15 + rand() * 0.5) / def.count) * path.length;
-      v.vmax = def.speed * (0.86 + rand() * 0.3);
+      v.pace = 0.86 + rand() * 0.3;
+      v.vmax = def.speed * v.pace;
       v.v = v.vmax * 0.8;
       v.type = pool[Math.floor(rand() * pool.length)];
       const t = types[v.type];
@@ -273,8 +382,9 @@ export function buildVehicles(k: Build, routes: Route[], parked: ParkedSpot[], h
       list.push(v);
       vehs.push(v);
     }
-    loops.set(def.id, { def, path, list });
+    loops.set(def.id, { def, path, list, shares: [] });
   }
+  findShares([...loops.values()]);
 
   for (const spot of parked) {
     const v = blank();
@@ -487,28 +597,82 @@ export function buildVehicles(k: Build, routes: Route[], parked: ParkedSpot[], h
   for (const v of vehs) if (!v.path) placeParked(v, 0);
 
   const update = (dt: number, time: number, night: number, wet: number): void => {
-    for (const { path, list } of loops.values()) {
+    for (const { path, list, shares } of loops.values()) {
       const n = list.length, L = path.length;
       for (let i = 0; i < n; i++) {
-        const v = list[i], lead = list[(i + 1) % n];
-        let gap = lead.s - v.s;
-        if (gap <= 0) gap += L;
-        gap -= (lead.len + v.len) / 2;
-        // slow for bends, and for whoever is ahead
+        const v = list[i];
+        // Whoever is ahead of it on its own route: how far, and how fast that one is going.
+        let ahead = n > 1, aheadV = 0, gap = L;
+        if (ahead) {
+          const lead = list[(i + 1) % n];
+          gap = lead.s - v.s;
+          if (gap <= 0) gap += L;
+          gap -= (lead.len + v.len) / 2;
+          aheadV = lead.v;
+        }
+        // And whoever it meets on a lane that it shares with another route.
+        for (const sh of shares) {
+          // Where it is: on the shared lane, or coming up to where that starts. It can
+          // be both at once, on a ring that the other route leaves and soon joins again.
+          const mr = pastStart(v.s, sh.a0, L);
+          const myOn = mr < sh.len ? mr : null, myBefore = mr - L > -MERGE_LOOK ? mr - L : null;
+          if (myOn === null && myBefore === null) continue;
+          const LB = sh.other.path.length;
+          for (const w of sh.other.list) {
+            const wr = pastStart(w.s, sh.b0, LB);
+            // one that has just left the lane by another way still counts as on it, until it is clear
+            const theirOn = wr < sh.len + PART_CLEAR ? wr : null, theirBefore = wr - LB > -MERGE_LOOK ? wr - LB : null;
+            let g = Infinity, speed = 0;
+            // It follows whoever is ahead of it on the lane, as it would on its own route.
+            if (theirOn !== null) {
+              for (const mine of [myOn, myBefore]) {
+                if (mine === null || theirOn < mine || (theirOn === mine && w.id < v.id)) continue;
+                const d = theirOn - mine - (w.len + v.len) / 2;
+                if (d < g) {
+                  g = d;
+                  speed = w.v;
+                }
+              }
+            }
+            // Where both are still coming up to the place the lanes meet, one of them
+            // goes first. The other waits, far enough back that the first one's lane
+            // is clear of it: `myRoom` is how far it still has to that place.
+            if (myBefore !== null && theirBefore !== null) {
+              const myRoom = -myBefore - v.len / 2 - MERGE_HOLD, theirRoom = -theirBefore - w.len / 2 - MERGE_HOLD;
+              // how much sooner it would get there than the other, in seconds
+              const sooner = -theirBefore / Math.max(w.v, 3) - -myBefore / Math.max(v.v, 3);
+              let first: boolean;
+              if (myRoom < 0 !== theirRoom < 0) first = myRoom < 0; // one of them is already too near to wait
+              else if (Math.abs(sooner) > 1) first = sooner > 0; // one of them is clearly there first
+              else first = v.v !== w.v ? v.v > w.v : v.id > w.id; // it is close: the faster one keeps going
+              if (!first && myRoom < g) {
+                g = myRoom;
+                speed = 0;
+              }
+            }
+            if (g < gap) {
+              gap = g;
+              aheadV = speed;
+              ahead = true;
+            }
+          }
+        }
+        // slow for bends, for a stretch with a speed of its own, and for whoever is ahead
         const r = Math.min(path.radiusAt(v.s + v.len * 0.5), path.radiusAt(v.s + v.len * 0.5 + v.v * 0.5));
         const bend = Math.max(5.5, r * 2.2);
-        let target = Math.min(v.vmax, bend);
+        const limit = path.limitAt(v.s + v.len * 0.5);
+        let target = Math.min(limit > 0 ? limit * v.pace : v.vmax, bend);
         let pull = 9;
         const run = v.hero?.run;
         if (run?.drive && v.hero) {
           // a party trick has a say in how fast its hero goes, within what the bend allows
-          const want = run.drive({ dt, time, night, speed: v.v, cruise: target, gap: n > 1 ? gap : L, bend: r }, v.hero.fx);
+          const want = run.drive({ dt, time, night, speed: v.v, cruise: target, gap: ahead ? gap : L, bend: r }, v.hero.fx);
           target = Math.min(want.speed, bend * 1.3);
           pull = want.accel ?? 9;
         }
         const safe = 2.4 + v.v * 0.55;
-        if (n > 1 && gap < safe) target = Math.min(target, Math.max(0, lead.v * (gap / safe) - 0.4));
-        if (n > 1 && gap < 0.9) target = 0;
+        if (ahead && gap < safe) target = Math.min(target, Math.max(0, aheadV * (gap / safe) - 0.4));
+        if (ahead && gap < 0.9) target = 0;
         if (target > v.v) v.v = Math.min(target, v.v + pull * dt);
         else v.v = Math.max(target, v.v - 24 * dt);
         v.s = (v.s + v.v * dt) % L;
@@ -592,7 +756,8 @@ export function buildVehicles(k: Build, routes: Route[], parked: ParkedSpot[], h
 
     if (loop) {
       v.path = loop.path;
-      v.vmax = loop.def.speed * 1.08;
+      v.pace = 1.08;
+      v.vmax = loop.def.speed * v.pace;
       v.v = v.vmax * 0.8;
       // it joins the traffic half way between two vehicles, somewhere at random
       const list = loop.list;
@@ -628,9 +793,14 @@ export function buildVehicles(k: Build, routes: Route[], parked: ParkedSpot[], h
     for (const h of heroes) h.group.visible = on;
   };
 
+  const shared = (): ReturnType<Vehicles['shared']> =>
+    [...loops.values()].flatMap((l) => l.shares.map((sh) => ({ route: l.def.id, other: sh.other.def.id, from: sh.a0, otherFrom: sh.b0, length: sh.len })));
+  const positions = (): ReturnType<Vehicles['positions']> =>
+    [...loops.values()].flatMap((l) => l.list.map((v) => ({ route: l.def.id, s: v.s, v: v.v, x: v.pos.x, y: v.pos.y, z: v.pos.z, hero: v.hero !== null })));
+
   update(0, 0, 0, 0);
   return {
-    group, heroes, update, places, adopt, showHeroes,
+    group, heroes, update, places, adopt, showHeroes, shared, positions,
     get moving() { return movingCount; },
     get parked() { return parkedCount; },
   };

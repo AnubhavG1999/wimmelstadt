@@ -523,6 +523,11 @@ Object.assign(window, {
   wimmel: {
     opts, rig, renderer, atmo, board, weather, bench, frame, shot,
     setHour(h: number | null) { pinned = h; lapse = false; },
+    /** Lets this many seconds pass at once, without drawing them: for looking at what happens later. */
+    advance(seconds: number) {
+      const now = performance.now();
+      for (let i = 0; i < seconds * 60; i++) step(1 / 60, now);
+    },
     setFollow(i: number) { follow = i; },
     info() { return { calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, fps, avgMs, cpuMs, hour, city: board.stats() }; },
   },
