@@ -16,7 +16,6 @@
 // to the left.
 
 import type { Seg } from '../../engine/paths';
-import type { SignDef } from '../../engine/signs';
 import { TILE, type HeroSpot, type ParkedSpot, type Route, type TrafficType } from '../../engine/tile';
 import { eased, fine, flat, joined, lane, lengths, raised, rounded, segsOf, through, turned, type P2 } from './geom';
 import { carved, field, heightOn, smooth, type Bench, type Field } from './terrain';
@@ -306,8 +305,8 @@ export const LOTS: Lot[] = [
   lot('hsbc', 'HSBC', -58.5, -80, -44.5, -66, 55, STEEL),
   lot('bank-of-china', 'BANK OF CHINA', -58.5, -62, -45.5, -49, 110, 0x7aa3c2),
   lot('central-plaza', 'CENTRAL PLAZA', -58.5, -46, -45, -33, 112, 0xd8c98a),
-  lot('jardine', 'JARDINE HOUSE', -22.5, -72, -11, -60.5, 60, STEEL),
-  lot('wheel', 'OBSERVATION WHEEL', -16.2, -81.5, -14.2, -77, 28, 0xf1ede2),
+  lot('jardine', 'JARDINE HOUSE', -26.8, -98, -18.8, -90, 60, STEEL),
+  lot('wheel', 'OBSERVATION WHEEL', -17.4, -83.6, -13, -60.4, 24, 0xf1ede2),
   lot('piers', 'FERRY PIERS', -9.5, -108, 0, -91, 5, 0xe9e6df),
   // Wan Chai and Causeway Bay
   lot('hkcec-old', 'CONVENTION CENTRE', -58.5, 4, -45, 16, 10, 0xe9e6df),
@@ -347,9 +346,9 @@ export const FILL: Lot[] = [
   // the south face: on each step, backed by the wall of the next leg, and clear of the hairpins
   ...houses('south-a', [-76, -70, -64.5], 42.6), ...houses('south-b', [-101.5, -95.5, -89.5], 27.6),
   ...houses('south-c', [-76, -70, -64.5], 12.6), ...houses('south-d', [-101.5, -95.5, -89.5], -2.4),
-  // Mid-Levels, on the north face: a row on every step, either side of the tram's cut
-  ...flats('mid-1', [-102, -95, -88, -81, -66.5], -97, 34), ...flats('mid-2', [-100, -93, -86, -79, -66.5], -85, 38),
-  ...flats('mid-3', [-102, -95, -88, -81, -66.5], -73, 34), ...flats('mid-4', [-100, -93, -86, -79, -66.5], -61, 30),
+  // Mid-Levels, on the north face: row above row, west of the tram's cut. East of it the escalator climbs.
+  ...flats('mid-1', [-102, -95, -88, -81], -97, 34), ...flats('mid-2', [-100, -93, -86, -79], -85, 38),
+  ...flats('mid-3', [-102, -95, -88, -81], -73, 34), ...flats('mid-4', [-100, -93, -86, -79], -61, 30),
   ...flats('mid-5', [-102, -95, -88, -81], -49, 24),
   // Wan Chai, low in front of the Peak
   lot('wan-chai-1', '', -58.5, -17, -46, -6, 22, WARM), lot('wan-chai-2', '', -58.5, -3, -46, 2, 16, 0xe6c7b8),
@@ -359,16 +358,6 @@ export const FILL: Lot[] = [
   lot('tst-east', '', 43, 28, 56, 42, 28, 0xcfe0e8),
   // West Kowloon
   lot('west-kowloon', '', 61, -99, 73, -88, 48, 0xcfe0e8), lot('yau-ma-tei', '', 61, -82, 74, -70, 30, 0xe9dcc3),
-];
-
-/** For now each thing carries its name on a plain board, so that the blockout can be read. */
-export const SIGNS: SignDef[] = [
-  ...LOTS.filter((l) => l.name).map((l): SignDef => {
-    const aspect = Math.min(7, Math.max(2.4, l.name.length * 0.62));
-    return { id: l.id, lines: [l.name], color: '#f4f1e8', ink: '#1c1c22', aspect, size: [Math.round(72 * aspect), 72], kind: 'board' };
-  }),
-  { id: 'happy-valley', lines: ['HAPPY VALLEY RACECOURSE'], color: '#f4f1e8', ink: '#1c1c22', aspect: 7, size: [504, 72], kind: 'board' },
-  { id: 'tunnel', lines: ['HARBOUR TUNNEL'], color: '#f4f1e8', ink: '#1c1c22', aspect: 6, size: [432, 72], kind: 'board' },
 ];
 
 // ---------------------------------------------------------------------------

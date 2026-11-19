@@ -2,7 +2,7 @@
 
 import type { TileDef } from '../../engine/tile';
 import { buildCity } from './city';
-import { SIGNS } from './plan';
+import { SIGNS } from './signs';
 
 export const hongKong: TileDef = {
   id: 'hong-kong',

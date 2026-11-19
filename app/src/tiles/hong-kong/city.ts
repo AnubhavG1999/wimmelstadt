@@ -12,6 +12,7 @@ import { ASPHALT, CONCRETE, lampsAlong, roadDeck, street } from '../../engine/ro
 import type { Build, TileParts } from '../../engine/tile';
 import { checkRoads } from './check';
 import { fine, flat, lengths3, pathOf, rounded, stretch, type P2, type P3 } from './geom';
+import { ESCALATOR, MODELS, OPEN, extras } from './landmarks';
 import { busCar, dragonBoat, ferryBoat, junkBoat, lighter, peakTramCar, sampan, tramCar, type Car } from './movers';
 import {
   BOARD, BUSES, FILL, FUNICULAR, HARBOUR, HERO_SPOTS, HILL, KOWLOON, LION, LION_GROUND, LOTS, PARKED, PEAK, PEAK_GROUND, POINT, RACECOURSE, ROUTES, RUN, SHELTER, SHORE, TRAM, TUNNEL,
@@ -228,6 +229,8 @@ export function buildCity(k: Build): TileParts {
   // -------------------------------------------------------------------------
 
   const stand = (l: Lot, i: number): void => {
+    const model = MODELS[l.id];
+    if (model) return model(k, l);
     const cx = (l.x0 + l.x1) / 2, cz = (l.z0 + l.z1) / 2;
     const onHill = l.y0 === -1;
     const y0 = onHill ? Math.min(groundAt(l.x0, l.z0), groundAt(l.x1, l.z0), groundAt(l.x0, l.z1), groundAt(l.x1, l.z1)) - 0.4 : l.y0 ?? 0;
@@ -245,6 +248,7 @@ export function buildCity(k: Build): TileParts {
   };
   LOTS.forEach(stand);
   FILL.forEach((l, i) => stand(l, i + 40));
+  extras(k);
 
   // the Convention Centre's link, over the shore road and the tram
   b.box(-45, 6.6, 8, -19, 10.2, 14, 0xdfe6ea, { faces: 'NESWTB', win: { cell: 2.6, storey: 3.6, lit: 0.6, kind: 1 } });
@@ -316,7 +320,8 @@ export function buildCity(k: Build): TileParts {
   // Trees
   // -------------------------------------------------------------------------
 
-  const built = [...LOTS, ...FILL];
+  // where nothing is planted and nobody stands: every lot, and the open ground in front of the temple and round the Peak Tram's lower stop
+  const built = [...LOTS, ...FILL, ...OPEN.map(([x0, z0, x1, z1]) => ({ x0, z0, x1, z1 }))];
   const inLot = (x: number, z: number, pad: number): boolean => built.some((l) => x > l.x0 - pad && x < l.x1 + pad && z > l.z0 - pad && z < l.z1 + pad);
   {
     // the Peak is green wherever nothing is built: on every level, clear of the road, the tram's cut and the houses
@@ -329,6 +334,7 @@ export function buildCity(k: Build): TileParts {
       if (y > HILL.top - 0.4 && x < -63.5) continue; // the summit is paved
       if (nearRoad(x, z) || inLot(x, z, 1.5)) continue;
       if (Math.abs(x - FUNICULAR.x) < 2.6 && z < FUNICULAR.z1 + 4) continue;
+      if (Math.abs(x - ESCALATOR.x) < 2.8 && z < ESCALATOR.z[ESCALATOR.z.length - 1] + 5) continue;
       if (spots.some((t) => (t[0] - x) ** 2 + (t[1] - z) ** 2 < 8)) continue;
       spots.push([x, z]);
       k.tree(x, z, 0.55 + k.rand() * 0.5, false, y);
@@ -380,25 +386,27 @@ export function buildCity(k: Build): TileParts {
   // -------------------------------------------------------------------------
 
   {
+    // nobody stands in a building, or where a hero is put on show
+    const onShow = (x: number, z: number): boolean => HERO_SPOTS.some((h) => Math.hypot(h.x - x, h.z - z) < 4.6);
     const crowd = (n: number, x0: number, z0: number, x1: number, z1: number): void => {
       for (let i = 0; i < n; i++) {
         const x = x0 + k.rand() * (x1 - x0), z = z0 + k.rand() * (z1 - z0);
-        if (!inLot(x, z, 0.5)) k.person(x, z, groundAt(x, z));
+        if (!inLot(x, z, 0.5) && !onShow(x, z)) k.person(x, z, groundAt(x, z));
       }
     };
     crowd(34, -24.6, -56, -20.6, 0); // Central's promenade
-    crowd(16, -24, -110, -11.5, -60); // by the ferry piers and the wheel
+    crowd(18, -24, -83.6, -11.5, -60); // round the wheel
+    crowd(7, -24, -111.5, -11, -104.2); // by the ferry piers
     crowd(40, 23, 2, 27.4, 58); // the Avenue of Stars
     crowd(16, 11.5, -40, 27, -3); // round the Clock Tower
     crowd(22, 35, 64, 42, 110); // watching the dragon boats
-    crowd(26, 60.5, 96.8, 101, 100.2); // at the night market
     crowd(18, -82, -22.5, -64.5, -17); // at the lookout on the Peak
     crowd(8, -84, -36, -79.5, -25);
     crowd(20, RACECOURSE.x1 - 5, RACECOURSE.z0 + 3, RACECOURSE.x1 - 3.2, RACECOURSE.z1 - 3); // along the rail at the races
     crowd(10, -44.8, 75, -42.7, 101); // on the quay of the typhoon shelter
-    crowd(12, -19, 20, -7, 33); // on the Convention Centre's point
-    crowd(10, -102, -112, -60, -102); // Sheung Wan
-    for (const z of [-12.5, 6.5]) crowd(18, 42, z - 1.2, 96, z + 1.2); // Nathan Road's pavements
+    crowd(12, -8.1, 20, -6.5, 50); // on the Convention Centre's point, by the water
+    crowd(8, -84.5, -111.5, -73.5, -102.6); // Sheung Wan
+    for (const z of [-14.5, 8.5]) crowd(18, 42, z - 1.1, 96, z + 1.1); // Nathan Road's pavements
     crowd(12, 40.5, -34, 46.5, -18); // the Peninsula's forecourt
   }
 
