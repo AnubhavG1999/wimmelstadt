@@ -79,4 +79,12 @@ Missed:
 - `street` paints the lanes of a four-lane street evenly. The avenue's kerb lanes run wider apart than that, to leave room for the ramp.
 - Traffic cannot be made to wait. A scramble crossing wants the vehicles to stop while the crowd crosses.
 
-Noticed, and not this tile's to mend: on loading North America the console warns "The sign sheet is full: 2258 rows of 2048 are needed, so some signs are cut off."
+The engine has since gained three things this tile does not use yet (merged from `main` on 19 November 2026):
+
+- A stretch of a route can have a speed of its own. The Wangan wants this: fast over the bridges, slow through Daikoku's parking area.
+- Routes may share a lane, so a slip road can join the Wangan.
+- A train can run to the end of a line and back (`ends`). With that the Shinkansen needs no hill to turn round in.
+
+## Checks
+
+- Traffic, on 19 November 2026, after merging `main`: over fifteen simulated minutes in half-second steps, and over eight in steps of a tenth of a second, no two of the 68 moving vehicles came within three units of each other and none stood still for twenty seconds. The nearest any two came was 4.4 units, where the Wangan's lanes turn round in the rotary beside the avenue's kerb lane. No lanes were found shared, which is as meant.
