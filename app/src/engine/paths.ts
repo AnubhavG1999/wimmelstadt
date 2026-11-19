@@ -3,12 +3,17 @@
 
 import * as THREE from 'three';
 
-/** A stretch of road. A road is one stretch or several, end to end. */
-export type Seg =
+/**
+ * A stretch of road. A road is one stretch or several, end to end. Any stretch
+ * may say how fast it is driven, in place of the road's own speed: a spiral
+ * ramp is slower than the expressway it leads to.
+ */
+export type Seg = (
   | { t: 'ring'; pts: [number, number][]; y: number; r: number } // closed, every corner rounded with radius r
   | { t: 'poly'; pts: [number, number][]; y: number; r: number } // open, its inner corners rounded
   | { t: 'ramp'; pts: [number, number][]; y0: number; y1: number; r: number } // open, and rising evenly from y0 to y1
-  | { t: 'helix'; cx: number; cz: number; R: number; phi0: number; phi1: number; y0: number; y1: number };
+  | { t: 'helix'; cx: number; cz: number; R: number; phi0: number; phi1: number; y0: number; y1: number }
+) & { speed?: number };
 
 /** A rise in a road that runs east to west: up between x0 and x1, level to x2, down to x3. */
 export interface Hump { x0: number; x1: number; x2: number; x3: number; y: number }
@@ -30,8 +35,11 @@ export class Path {
   readonly radius: Float32Array;
   private readonly ds: number;
   readonly closed: boolean;
+  /** How fast each sample is driven, where a stretch says so. Null if none does. */
+  private readonly limit: Float32Array | null;
 
-  constructor(raw: THREE.Vector3[], closed: boolean) {
+  /** `speeds` gives each point the speed of the stretch it belongs to, or 0 for the road's own. */
+  constructor(raw: THREE.Vector3[], closed: boolean, speeds?: number[]) {
     this.closed = closed;
     const src = closed ? [...raw, raw[0]] : raw;
     const cum: number[] = [0];
@@ -41,6 +49,7 @@ export class Path {
     this.length = total;
     this.ds = closed ? total / n : total / (n - 1);
 
+    this.limit = speeds && speeds.some((v) => v > 0) ? new Float32Array(n) : null;
     let j = 0;
     for (let i = 0; i < n; i++) {
       const s = Math.min(i * this.ds, total);
@@ -48,6 +57,8 @@ export class Path {
       const span = cum[j + 1] - cum[j];
       const t = span > 1e-9 ? (s - cum[j]) / span : 0;
       this.pts.push(new THREE.Vector3().lerpVectors(src[j], src[j + 1], t));
+      // the line between two points belongs to the stretch of the later one
+      if (this.limit && speeds) this.limit[i] = speeds[(j + 1) % speeds.length] ?? 0;
     }
 
     // Turning radius from the change of heading over a couple of units of travel.
@@ -82,6 +93,16 @@ export class Path {
 
   radiusAt(s: number): number {
     return this.radius[this.index(Math.round(this.wrap(s) / this.ds))];
+  }
+
+  /** How fast this place is driven, if its stretch says so, and 0 if it does not. */
+  limitAt(s: number): number {
+    return this.limit ? this.limit[this.index(Math.round(this.wrap(s) / this.ds))] : 0;
+  }
+
+  /** The speed of every sample, for making another path from this one's points. */
+  limits(): number[] | undefined {
+    return this.limit ? Array.from(this.limit) : undefined;
   }
 
   /** How far along the path the point nearest to (x, z) is. */
@@ -157,16 +178,56 @@ export function segPoints(seg: Seg): THREE.Vector3[] {
 }
 
 export function buildPath(segs: Seg[], closed: boolean, hump?: Hump): Path {
-  const all: THREE.Vector3[] = [];
+  const all: THREE.Vector3[] = [], speeds: number[] = [];
   for (const seg of segs) {
     for (const p of segPoints(seg)) {
       const last = all[all.length - 1];
-      if (!last || last.distanceToSquared(p) > 1e-6) all.push(p);
+      if (!last || last.distanceToSquared(p) > 1e-6) {
+        all.push(p);
+        speeds.push(seg.speed ?? 0);
+      }
     }
   }
-  if (closed && all.length > 1 && all[0].distanceToSquared(all[all.length - 1]) < 1e-6) all.pop();
-  const flat = new Path(all, closed);
+  if (closed && all.length > 1 && all[0].distanceToSquared(all[all.length - 1]) < 1e-6) {
+    all.pop();
+    speeds.pop();
+  }
+  const flat = new Path(all, closed, speeds);
   if (!hump) return flat;
   // lift the road over the hump, then space the samples evenly again along the slope
-  return new Path(flat.pts.map((p) => new THREE.Vector3(p.x, p.y + humpHeight(hump, p.x), p.z)), closed);
+  return new Path(flat.pts.map((p) => new THREE.Vector3(p.x, p.y + humpHeight(hump, p.x), p.z)), closed, flat.limits());
+}
+
+/**
+ * The points of a path from one place along it to another, half a unit apart,
+ * going forwards: on a closed path, round past its start if `to` is behind
+ * `from`.
+ */
+export function stretch(path: Path, from: number, to: number): THREE.Vector3[] {
+  let span = to - from;
+  if (path.closed) span = ((span % path.length) + path.length) % path.length;
+  const n = Math.max(1, Math.ceil(span / STEP));
+  return Array.from({ length: n + 1 }, (_, i) => path.at(from + (i / n) * span, new THREE.Vector3()));
+}
+
+/**
+ * One path through several lines of points laid end to end, and how far along
+ * it each of them begins. For a route that runs over more than one piece of
+ * track or of road. A route may turn back on itself where a line ends, as a
+ * train does at a terminus.
+ */
+export function joined(parts: THREE.Vector3[][], closed: boolean): { path: Path; starts: number[] } {
+  const all: THREE.Vector3[] = [], starts: number[] = [];
+  let run = 0;
+  for (const part of parts) {
+    part.forEach((p, i) => {
+      const last = all[all.length - 1];
+      const d = last ? last.distanceTo(p) : 1;
+      if (i === 0) starts.push(run + (last && d >= 1e-3 ? d : 0));
+      if (last && d < 1e-3) return;
+      if (last) run += d;
+      all.push(p.clone());
+    });
+  }
+  return { path: new Path(all, closed), starts };
 }

@@ -43,6 +43,16 @@ export class IsoRig {
   onInput: () => void = () => {};
   /** Called when the view is moved by hand, so the page can stop following a hero. */
   onPan: () => void = () => {};
+  /** Called once the hand has let go of the view, so the page can settle it on the board or on a tile. */
+  onRest: () => void = () => {};
+  /** Called with the place on the ground that was clicked or tapped twice. */
+  onDouble: (x: number, z: number) => void = () => {};
+
+  /** How quickly the view closes on where it is heading: fast under the hand, slow when it travels by itself. */
+  private pace = 10;
+  /** When to call `onRest`, or 0. */
+  private restAt = 0;
+  private lastTap = { at: 0, x: 0, y: 0 };
 
   private pointers = new Map<number, { x: number; y: number; button: number; shift: boolean }>();
   private look = new THREE.Vector3();
@@ -74,7 +84,38 @@ export class IsoRig {
 
   private touch(): void {
     this.lastInput = performance.now();
+    this.pace = 10;
     this.onInput();
+  }
+
+  /** How many units high the view is when one tile fills it, and when the whole board does. */
+  get fitTile(): number {
+    return Math.max(268, 372 / this.aspect);
+  }
+  get fitBoard(): number {
+    return this.fitTile * this.span;
+  }
+
+  /** Where the view is heading. */
+  get goal(): { x: number; z: number; viewH: number } {
+    return { x: this.gTarget.x, z: this.gTarget.z, viewH: this.gViewH };
+  }
+
+  /** Travels to a view, unhurried: for going from the board to a tile and back. */
+  fly(x: number, z: number, viewH: number): void {
+    this.gTarget.set(x, 0, z);
+    this.gViewH = clamp(viewH, MIN_VIEW, MAX_VIEW * this.span);
+    this.pace = 3.4;
+  }
+
+  /** The place on the ground under a point of the screen. */
+  private groundAt(px: number, py: number, el: HTMLElement): THREE.Vector3 {
+    const r = el.getBoundingClientRect();
+    const nx = ((px - r.left) / r.width) * 2 - 1, ny = 1 - ((py - r.top) / r.height) * 2;
+    const cam = this.camera;
+    const from = new THREE.Vector3(nx, ny, -1).unproject(cam);
+    const dir = cam.getWorldDirection(new THREE.Vector3());
+    return from.addScaledVector(dir, -from.y / dir.y);
   }
 
   private get worldPerPx(): number {
@@ -107,6 +148,15 @@ export class IsoRig {
       el.setPointerCapture(e.pointerId);
       this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY, button: e.button, shift: e.shiftKey || e.ctrlKey });
       this.touch();
+      // twice in the same place, quickly: with a mouse or with a finger
+      const now = performance.now(), tap = this.lastTap;
+      if (this.pointers.size === 1 && e.button === 0 && now - tap.at < 340 && Math.hypot(e.clientX - tap.x, e.clientY - tap.y) < 26) {
+        tap.at = 0;
+        const p = this.groundAt(e.clientX, e.clientY, el);
+        this.onDouble(p.x, p.z);
+      } else {
+        this.lastTap = { at: now, x: e.clientX, y: e.clientY };
+      }
     });
     el.addEventListener('pointermove', (e) => {
       const p = this.pointers.get(e.pointerId);
@@ -135,6 +185,7 @@ export class IsoRig {
     });
     const release = (e: PointerEvent) => {
       this.pointers.delete(e.pointerId);
+      if (this.pointers.size === 0) this.restAt = performance.now() + 80;
     };
     el.addEventListener('pointerup', release);
     el.addEventListener('pointercancel', release);
@@ -143,6 +194,7 @@ export class IsoRig {
       e.preventDefault();
       this.zoomAt(Math.exp(e.deltaY * 0.0012), e.clientX, e.clientY, el);
       this.touch();
+      this.restAt = performance.now() + 320;
     }, { passive: false });
     window.addEventListener('keydown', (e) => {
       const step = 40;
@@ -156,6 +208,7 @@ export class IsoRig {
       else if (e.key === '-') this.gViewH = clamp(this.gViewH / 0.85, MIN_VIEW, MAX_VIEW * this.span);
       else return;
       this.touch();
+      this.restAt = performance.now() + 420;
     });
   }
 
@@ -189,7 +242,11 @@ export class IsoRig {
 
   update(dt: number, now: number): void {
     if (this.drift && now - this.lastInput > 12000) this.gAz += dt * 0.03;
-    const k = 1 - Math.exp(-dt * 10);
+    if (this.restAt > 0 && performance.now() >= this.restAt && this.pointers.size === 0) {
+      this.restAt = 0;
+      this.onRest();
+    }
+    const k = 1 - Math.exp(-dt * this.pace);
     this.target.lerp(this.gTarget, k);
     this.az += (this.gAz - this.az) * k;
     this.viewH += (this.gViewH - this.viewH) * k;
