@@ -1,36 +1,35 @@
 // Europe: London, Paris and Italy along one river.
 //
-// The ground, the river, the roads and the traffic are as they will be, and
-// London and Paris are built. The things that will stand in Italy are still
-// plain boxes with their numbers on, or rough shapes where the shape decides
-// how a road runs: see NOTES.md for which is which.
+// The ground, the river, the roads and the traffic, and every one of the
+// things that stand on the tile. Each quarter's things are built in a file of
+// its own: see NOTES.md for what is where, and what was done differently from
+// the real places.
 
 import * as THREE from 'three';
 import { placed } from '../../engine/build';
 import { ordinaryBuildings, type BuildingRules, type Lot } from '../../engine/buildings';
-import { LAWN, area, flat, ground, oval, rect, terrace, walls, water, type P2 } from '../../engine/ground';
+import { LAWN, area, ground, rect, terrace, water, type P2 } from '../../engine/ground';
 import { buildPath, type Path } from '../../engine/paths';
 import { lampsAlong, roadDeck, street } from '../../engine/roads';
 import type { SignDef } from '../../engine/signs';
 import type { Build, HeroSpot, ParkedSpot, TileDef, TileParts } from '../../engine/tile';
 import { balloon, concorde } from './air';
-import { eiffel, pisa } from './landmarks';
+import { ITALY_GROUND, ITALY_SIGNS, colosseum, duomo, fieldOfMiracles, lingotto, lungarnoLanterns, maranello, piazza, ponteVecchio, santAgata, venice, vineyard } from './italy';
+import { eiffel } from './landmarks';
 import { bridgeStreetLamps, londonEye, parliament, towerBridge, westminsterBridge } from './london';
 import { LONDON_GROUND, LONDON_SIGNS, aceCafe, buckinghamPalace, gherkin, londonStreets, piccadillyCircus, stPauls, towerOfLondon } from './london-city';
-import { PARIS_GROUND, PARIS_SIGNS, arcDeTriomphe, cafeMetro, champDeMars, louvre, moulinRouge, notreDame, placeDeLaConcorde, sacreCoeur, trocadero } from './paris';
+import { PARIS_GROUND, PARIS_SIGNS, arcDeTriomphe, cafeMetro, champDeMars, louvre, moulinRouge, notreDame, parisCorners, placeDeLaConcorde, sacreCoeur, trocadero } from './paris';
 import {
-  ARC, ARNO_X, BEND_1, BEND_2, CANAL, COLOSSEUM, CONCORDE, HILL, IENA_X, ISLAND, LINGOTTO_ROOF, NEUF_X, PLOTS, RIVER_WIDTH, SEINE_Z,
+  ARC, ARNO_X, BEND_1, BEND_2, CANAL, CONCORDE, HILL, IENA_X, ISLAND, LINGOTTO_ROOF, NEUF_X, PLOTS, RIVER_WIDTH, SEINE_Z,
   THAMES_X, THINGS, WATER_DROP, onHill, type Quarter, type Thing,
 } from './plan';
 import { HILL_DOWN_ROAD, HILL_ROAD, HILL_UP_ROAD, ROUTES, STREETS } from './roads';
+import { boats } from './water';
 
 const PAVING = 0xb9b1a2, QUAY = 0xa49f93, STONE = 0xcfc6b2, WATER = 0x5f9fc4, PLAZA = 0xd8d2c4;
-/** What a quarter's boxes are painted until its things are built. */
-const BOX: Record<Quarter, number> = { london: 0xb98f72, paris: 0xe4d9bd, italy: 0xe6b98a };
-const BOARD: Record<Quarter, string> = { london: '#c8202c', paris: '#1f4fa3', italy: '#2f8f4f' };
 
 // ---------------------------------------------------------------------------
-// Signs: a numbered board for each thing, and what the shops of each quarter say
+// Signs: what the shops of each quarter say, and each quarter's own signs
 // ---------------------------------------------------------------------------
 
 const shop = (id: string, text: string, color: string, ink: string): SignDef => ({ id, lines: [text], color, ink, aspect: Math.max(2.4, text.length * 0.62), kind: 'board' });
@@ -52,10 +51,10 @@ const SHOPS: Record<Quarter, SignDef[]> = {
 };
 
 const SIGNS: SignDef[] = [
-  ...THINGS.map((t): SignDef => ({ id: `thing-${t.id}`, lines: [String(t.n), t.name], color: BOARD[t.quarter], ink: '#ffffff', aspect: 2.2, size: [264, 120], kind: 'board' })),
   ...Object.values(SHOPS).flat(),
   ...LONDON_SIGNS,
   ...PARIS_SIGNS,
+  ...ITALY_SIGNS,
 ];
 
 /** A plot with the quarter it stands in, which decides its roof and its signs. */
@@ -158,14 +157,8 @@ function slabBridge(k: Build, x0: number, z0: number, x1: number, z1: number, al
   else for (const x of [x0, x1 - 0.5]) k.b.box(x, 0, z0, x + 0.5, 1.0, z1, STONE);
 }
 
-/** A number and a name on a board above a thing, turned to the south-east, where the tile is usually looked at from. */
-function board(k: Build, t: Thing, x: number, y: number, z: number): void {
-  k.sign(`thing-${t.id}`, x, y, z, Math.SQRT1_2, Math.SQRT1_2, 9);
-  k.b.box(x - 0.2, y - 12, z - 0.2, x + 0.2, y - 4.5, z + 0.2, 0x4b4f57);
-}
-
 function build(k: Build): TileParts {
-  const b = k.b, rand = k.rand;
+  const rand = k.rand;
   const thing = (id: string): Thing => THINGS.find((t) => t.id === id)!;
 
   // -------------------------------------------------------------------------
@@ -202,9 +195,8 @@ function build(k: Build): TileParts {
   roadDeck(k, buildPath(HILL_DOWN_ROAD, false), 2.8, { ...hillDeck, lift: 0.05 });
   roadDeck(k, buildPath(HILL_UP_ROAD, false), 2.8, { ...hillDeck, lift: 0.06 });
 
-  // lawns: the Champ de Mars, which runs down to the Field of Miracles
+  // the Champ de Mars, which runs down towards the Field of Miracles
   area(k, rect(-15, 76, 11, 79.5), LAWN);
-  area(k, rect(-36, 95, 12, 112.5), LAWN);
   // Victoria Tower Gardens, beside Parliament
   area(k, rect(-60, 15, -47, 21.3), LAWN);
 
@@ -257,17 +249,8 @@ function build(k: Build): TileParts {
   })), RULES);
 
   // -------------------------------------------------------------------------
-  // The things, as boxes with their numbers on
+  // The things that stand on the tile, quarter by quarter
   // -------------------------------------------------------------------------
-
-  for (const t of THINGS) {
-    const y0 = t.y ?? 0, cx = t.x + t.w / 2, cz = t.z + t.d / 2;
-    if (!t.shaped) {
-      if (y0 === 0) clear(t.name, t.x, t.z, t.x + t.w, t.z + t.d);
-      b.box(t.x, y0, t.z, t.x + t.w, y0 + t.h, t.z + t.d, BOX[t.quarter], { win: { cell: 2.6, storey: 5, lit: 0.3, kind: 0 }, seed: t.n * 0.137, top: 0x8d8a83 });
-      board(k, t, cx, y0 + t.h + 12, cz);
-    }
-  }
 
   // --- London's river: Parliament and Big Ben, Westminster Bridge, Tower Bridge and the Eye ---
   parliament(k);
@@ -301,42 +284,26 @@ function build(k: Build): TileParts {
   moulinRouge(k);
   cafeMetro(k);
   trocadero(k);
+  parisCorners(k);
 
-  // --- The Colosseum: an oval ring, open to the sky ---
+  // --- Italy ---
+  for (const [name, x0, z0, x1, z1] of ITALY_GROUND) clear(name, x0, z0, x1, z1);
+  colosseum(k);
+  fieldOfMiracles(k);
+  duomo(k);
   {
-    const t = thing('colosseum');
-    const outer = oval(COLOSSEUM.x, COLOSSEUM.z, t.w / 2, t.d / 2, 32), inner = oval(COLOSSEUM.x, COLOSSEUM.z, t.w / 2 - 4.5, t.d / 2 - 4.5, 32);
-    walls(b, outer, 0, t.h, 0xdcc9a6, { win: { cell: 1.7, storey: t.h / 4, lit: 0.5, kind: 6 }, seed: 0.3 });
-    walls(b, inner, 3, t.h, 0xcbb894, { inward: true });
-    flat(b, outer, t.h, 0xcbb894, { holes: [inner] });
-    flat(b, inner, 3, 0xd9c7a0);
-    board(k, t, COLOSSEUM.x, t.h + 14, COLOSSEUM.z);
-  }
-
-  // --- The Ponte Vecchio: for people only, with houses along both its sides ---
-  {
+    // (the Ponte Vecchio's slab and piers, as for the tile's other bridges, and then what stands on it)
     const t = thing('ponte-vecchio');
     slabBridge(k, t.x - 0.4, t.z, t.x + t.w + 0.4, t.z + t.d, true, 2);
-    for (let i = 0; i < 5; i++) {
-      const x = t.x + 1.2 + i * 3.1;
-      for (const z of [t.z - 1.6, t.z + t.d - 0.4]) b.box(x, -0.6, z, x + 2.7, 4.2 + (i % 2) * 0.9, z + 2.0, [0xe8c27a, 0xd9a25f, 0xf0d9a0][i % 3], { top: 0xb5654a });
-    }
-    board(k, t, t.x + t.w / 2, 19, t.z + t.d / 2);
+    ponteVecchio(k);
   }
-
-  // --- Lingotto: the long factory, with the test track on its roof ---
-  {
-    const t = thing('lingotto'), r = LINGOTTO_ROOF;
-    clear(t.name, t.x, t.z, t.x + t.w, t.z + t.d);
-    b.box(t.x, 0, t.z, t.x + t.w, r.y, t.z + t.d, 0xf1ede2, { win: { cell: 2.4, storey: 5, lit: 0.35, kind: 0 }, seed: 0.21, top: 0xb9b6ae });
-    const track = buildPath([{ t: 'ring', pts: [[r.x0, r.z0], [r.x1, r.z0], [r.x1, r.z1], [r.x0, r.z1]], y: r.y, r: 5.25 }], true);
-    roadDeck(k, track, 2.9, { thick: 0, wall: 0, lanes: 1, lift: 0.05, structure: false });
-    board(k, t, t.x + t.w / 2, r.y + 16, t.z + 8);
-  }
-
-  // --- Pisa: the tower leans at the east end of the lawn; the cathedral is the box, and the baptistery is round ---
-  placed(k, 5.5, 102, 0, (q) => pisa(q, 24));
-  b.cyl(-32, 102.5, 0, 9, 4.2, 4.2, 12, BOX.italy, { cap: 0xb5654a });
+  venice(k);
+  piazza(k);
+  lingotto(k);
+  maranello(k);
+  const turntable = santAgata(k);
+  vineyard(k);
+  lungarnoLanterns(k);
 
   // -------------------------------------------------------------------------
   // Trees
@@ -363,9 +330,9 @@ function build(k: Build): TileParts {
     for (let z = -72; z <= -38; z += 6.5) k.tree(0.2 + (z + 72) * 0.07, z, 0.75);
     // poplars between London and Italy, and cypresses behind the factory and along the Via Emilia
     for (let z = 10; z <= 20; z += 5) k.tree(-63, z, 0.9, true);
-    for (let x = -72; x <= -38; x += 5) k.tree(x, 109.5, 0.85, true);
+    for (let x = -57; x <= -38; x += 5) k.tree(x, 110.2, 0.85, true);
     for (let x = 14; x <= 62; x += 6) k.tree(x, 110.5, 0.8, true);
-    for (const [x, z] of [[-16, 77.5], [-9, 77.8], [4, 77.6], [10, 77.9], [-20, 42], [14, 42.5], [16, 50], [15, 58], [66, 4], [74, 2], [82, 6], [-57, 18], [-50, 18.5], [50, -40], [51.5, -45]]) k.tree(x, z, 0.7 + rand() * 0.3);
+    for (const [x, z] of [[-16, 77.5], [-9, 77.8], [4, 77.6], [10, 77.9], [-20, 42], [14, 42.5], [16, 50], [15, 58], [66, 4], [74, 2], [82, 6], [-57, 18], [-50, 18.5], [50, -40], [51.5, -45], [92, 51.6], [97.5, 50.8], [101.6, 52.6], [52.6, 45.4], [53.4, 58]]) k.tree(x, z, 0.7 + rand() * 0.3);
     // on Montmartre: the wide end of the first level, and round Sacré-Cœur
     for (const [t, o, y] of [[37, 6, h1], [42, 10, h1], [38, 18, h1], [46, 22, h1], [35.5, 27, h1], [40, 33, h1], [13, 26, h3], [28.5, 26, h3], [12, 31, h3]]) {
       const [x, z] = onHill(t, o);
@@ -382,16 +349,14 @@ function build(k: Build): TileParts {
       for (let i = 0; i < n; i++) k.person(x0 + rand() * (x1 - x0), z0 + rand() * (z1 - z0), y);
     };
     scatter(22, -11, 49, 7, 71); // under the Eiffel Tower
-    scatter(12, -34, 97, 11, 111); // the Field of Miracles
-    scatter(10, -66, 58, -44, 71); // the piazza
-    scatter(8, 88, 31, 103, 34); // in front of the Duomo
-    scatter(6, 70, 54.5, 86, 57.5); // on the Ponte Vecchio
   }
 
   // -------------------------------------------------------------------------
-  // In the air: Concorde on a round over London and Paris, and a balloon over the left bank
+  // On the water, and in the air: boats on the river, Concorde on a round over
+  // London and Paris, and a balloon over the left bank
   // -------------------------------------------------------------------------
 
+  boats(k);
   concorde(k, { x: 0, z: -4, rx: 80, rz: 90, y: 132, length: 24 });
   balloon(k, { x: -46, z: 52, r: 11, y: 56 });
 
@@ -401,12 +366,13 @@ function build(k: Build): TileParts {
 
   const heroSpots: HeroSpot[] = [
     { id: 'ace-cafe', x: -79.5, y: 0.04, z: 18.2, heading: 0 },
-    { id: 'trocadero', x: -17.7, y: 0.03, z: -19.7, heading: 0 },
-    { id: 'maranello', x: -55, y: 0.02, z: 93.4, heading: 0 },
-    { id: 'piazza', x: -50, y: 0.02, z: 66, heading: -0.6 },
+    { id: 'trocadero', x: -16, y: 0.03, z: -3.2, heading: 0 },
+    { id: 'maranello', x: -47, y: 0.03, z: 101.5, heading: 0.5 },
+    { id: 'sant-agata', ...turntable, heading: 0.6, turn: 0.35 },
+    { id: 'piazza', x: -50, y: 0.03, z: 66, heading: -0.6 },
     { id: 'lingotto-roof', x: -93.2, y: LINGOTTO_ROOF.y + 0.05, z: 57, heading: -Math.PI / 2 },
   ];
-  const parked: ParkedSpot[] = [{ x: -62, y: 0.02, z: 62, heading: 1.1 }, { x: -46, y: 0.02, z: 60, heading: -2.2 }];
+  const parked: ParkedSpot[] = [{ x: -64.6, y: 0.03, z: 61.5, heading: Math.PI / 2 }, { x: -45.5, y: 0.03, z: 64.5, heading: -1.9 }];
   // Ace Cafe's forecourt: a line of cars beyond the motorbikes, with one bay of it kept for a hero
   for (const x of [-96.5, -88, -71]) parked.push({ x, y: 0.04, z: 18.2, heading: x < -90 ? Math.PI : 0 });
 

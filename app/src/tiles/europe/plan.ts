@@ -126,7 +126,11 @@ export const LINGOTTO_ROOF = { y: 25, x0: -98.5, x1: -88, z0: 30, z1: 84 };
 
 export type Quarter = 'london' | 'paris' | 'italy';
 
-/** One of the tile's recognisable things, as a box until it is built: where it stands, how large and how high. */
+/**
+ * One of the tile's recognisable things: where it stands, how large and how
+ * high. This is the list of what is on the tile. Each thing is built in its
+ * quarter's own file, which has its exact measures.
+ */
 export interface Thing {
   n: number;
   id: string;
@@ -137,8 +141,6 @@ export interface Thing {
   h: number;
   /** The ground it stands on, if not the street. */
   y?: number;
-  /** Stood by the tile in a shape of its own, so no box is stood for it. */
-  shaped?: boolean;
 }
 
 const T = (n: number, id: string, name: string, quarter: Quarter, x: number, z: number, w: number, d: number, h: number, more: Partial<Thing> = {}): Thing =>
@@ -146,35 +148,35 @@ const T = (n: number, id: string, name: string, quarter: Quarter, x: number, z: 
 
 export const THINGS: Thing[] = [
   // London
-  T(1, 'parliament', 'PARLIAMENT & BIG BEN', 'london', -58.6, -22, 12.4, 36, 56, { shaped: true }),
-  T(2, 'tower-bridge', 'TOWER BRIDGE', 'london', -46, -98, 20, 12, 34, { shaped: true }),
-  T(3, 'tower', 'TOWER OF LONDON', 'london', -77.4, -82.9, 14.8, 19.1, 18, { shaped: true }),
-  T(4, 'eye', 'LONDON EYE', 'london', -26, -82, 6, 42, 46, { shaped: true }),
-  T(5, 'st-pauls', "ST PAUL'S", 'london', -77, -61.4, 14, 22.4, 36.5, { shaped: true }),
-  T(6, 'palace', 'BUCKINGHAM PALACE', 'london', -103.8, -79, 9.4, 34, 15.8, { shaped: true }),
-  T(7, 'piccadilly', 'PICCADILLY CIRCUS', 'london', -103.8, -40.3, 7, 20.6, 18, { shaped: true }),
-  T(8, 'gherkin', 'THE GHERKIN', 'london', -74.7, -112.2, 12.4, 12.4, 50, { shaped: true }),
-  T(9, 'ace-cafe', 'ACE CAFE', 'london', -100, 9.2, 30, 4.4, 7.7, { shaped: true }),
+  T(1, 'parliament', 'PARLIAMENT & BIG BEN', 'london', -58.6, -22, 12.4, 36, 56),
+  T(2, 'tower-bridge', 'TOWER BRIDGE', 'london', -46, -98, 20, 12, 34),
+  T(3, 'tower', 'TOWER OF LONDON', 'london', -77.4, -82.9, 14.8, 19.1, 18),
+  T(4, 'eye', 'LONDON EYE', 'london', -26, -82, 6, 42, 46),
+  T(5, 'st-pauls', "ST PAUL'S", 'london', -77, -61.4, 14, 22.4, 36.5),
+  T(6, 'palace', 'BUCKINGHAM PALACE', 'london', -103.8, -79, 9.4, 34, 15.8),
+  T(7, 'piccadilly', 'PICCADILLY CIRCUS', 'london', -103.8, -40.3, 7, 20.6, 18),
+  T(8, 'gherkin', 'THE GHERKIN', 'london', -74.7, -112.2, 12.4, 12.4, 50),
+  T(9, 'ace-cafe', 'ACE CAFE', 'london', -100, 9.2, 30, 4.4, 7.7),
   // Paris
-  T(10, 'eiffel', 'EIFFEL TOWER', 'paris', -17, 45, 30, 30, 110, { shaped: true }),
-  T(11, 'arc', 'ARC DE TRIOMPHE', 'paris', ARC[0] - 7, ARC[1] - 3.5, 14, 7, 22, { shaped: true }),
-  T(12, 'concorde', 'CHAMPS-ELYSEES & OBELISK', 'paris', CONCORDE[0] - 1.5, CONCORDE[1] - 1.5, 3, 3, 20, { shaped: true }),
-  T(13, 'louvre', 'THE LOUVRE', 'paris', 40, -36, 31, 21, 19.7, { shaped: true }),
-  T(14, 'notre-dame', 'NOTRE-DAME', 'paris', 14.5, 9.2, 17.7, 9.6, 28, { shaped: true }),
-  T(15, 'sacre-coeur', 'SACRE-COEUR', 'paris', 87.3, -109, 12.5, 13.6, 29, { y: 12, shaped: true }),
-  T(16, 'moulin-rouge', 'MOULIN ROUGE', 'paris', 51, -111.5, 11, 9.6, 14, { shaped: true }),
-  T(17, 'cafe', 'CAFE & METRO', 'paris', 22, 46, 12, 10.5, 23, { shaped: true }),
-  T(18, 'trocadero', 'TROCADERO', 'paris', -25.6, -22.2, 15.8, 19.8, 8, { shaped: true }),
+  T(10, 'eiffel', 'EIFFEL TOWER', 'paris', -17, 45, 30, 30, 110),
+  T(11, 'arc', 'ARC DE TRIOMPHE', 'paris', ARC[0] - 7, ARC[1] - 3.5, 14, 7, 22),
+  T(12, 'concorde', 'CHAMPS-ELYSEES & OBELISK', 'paris', CONCORDE[0] - 1.5, CONCORDE[1] - 1.5, 3, 3, 20),
+  T(13, 'louvre', 'THE LOUVRE', 'paris', 40, -36, 31, 21, 19.7),
+  T(14, 'notre-dame', 'NOTRE-DAME', 'paris', 14.5, 9.2, 17.7, 9.6, 28),
+  T(15, 'sacre-coeur', 'SACRE-COEUR', 'paris', 87.3, -109, 12.5, 13.6, 29, { y: 12 }),
+  T(16, 'moulin-rouge', 'MOULIN ROUGE', 'paris', 51, -111.5, 11, 9.6, 14),
+  T(17, 'cafe', 'CAFE & METRO', 'paris', 22, 46, 12, 10.5, 23),
+  T(18, 'trocadero', 'TROCADERO', 'paris', -25.6, -22.2, 15.8, 19.8, 8),
   // Italy
-  T(19, 'pisa', 'LEANING TOWER OF PISA', 'italy', -27, 96, 26, 13, 9),
-  T(20, 'colosseum', 'COLOSSEUM', 'italy', COLOSSEUM.x - 14, COLOSSEUM.z - 11.5, 28, 23, 17, { shaped: true }),
-  T(21, 'duomo', 'DUOMO OF FLORENCE', 'italy', 89.5, 2, 13.5, 28, 20),
-  T(22, 'ponte-vecchio', 'PONTE VECCHIO', 'italy', 69.5, 53, 17, 6, 6, { shaped: true }),
-  T(23, 'venice', 'VENICE & RIALTO', 'italy', 89, 93, 13, 18, 12),
-  T(24, 'piazza', 'PIAZZA & FOUNTAIN', 'italy', -68, 48, 26, 9, 14),
-  T(25, 'lingotto', 'LINGOTTO', 'italy', -103, 22, 19.5, 70, 25, { shaped: true }),
-  T(26, 'maranello', 'MARANELLO', 'italy', -70, 95, 30, 10, 9),
-  T(27, 'sant-agata', "SANT'AGATA", 'italy', -64, 22, 24, 10.5, 8),
+  T(19, 'pisa', 'LEANING TOWER OF PISA', 'italy', -34.8, 96.9, 43.6, 13.4, 24),
+  T(20, 'colosseum', 'COLOSSEUM', 'italy', COLOSSEUM.x - 14, COLOSSEUM.z - 11.5, 28, 23, 17),
+  T(21, 'duomo', 'DUOMO OF FLORENCE', 'italy', 90, 1.7, 13.2, 34, 28),
+  T(22, 'ponte-vecchio', 'PONTE VECCHIO', 'italy', 69.5, 53, 17, 6, 6),
+  T(23, 'venice', 'VENICE & RIALTO', 'italy', 87.3, 76.5, 16.5, 36, 32),
+  T(24, 'piazza', 'PIAZZA & FOUNTAIN', 'italy', -68, 49, 26, 23, 25),
+  T(25, 'lingotto', 'LINGOTTO', 'italy', -103, 22, 19.5, 70, 25),
+  T(26, 'maranello', 'MARANELLO', 'italy', -70, 95.5, 31.4, 13.5, 9.2),
+  T(27, 'sant-agata', "SANT'AGATA", 'italy', -83, 22, 43, 10.4, 8.4),
 ];
 
 // ---------------------------------------------------------------------------
@@ -205,11 +207,8 @@ export const PLOTS: Plot[] = [
   // Paris: the left bank, beside the Eiffel Tower
   lot('paris', 'haussmann', -26, 44, 7, 28, 22, 'E'),
   lot('paris', 'haussmann', 38, 46, 12, 14, 25, 'NS'),
-  // Italy: the south side of the piazza, the houses of Venice, a quayside house and the factory's sheds
-  lot('italy', 'ochre', -68, 72, 26, 7, 14, 'N'),
-  lot('italy', 'ochre', 89, 36, 13, 13, 13, 'W'),
+  // Italy: the south side of the piazza, a house by the Ponte Vecchio and a quayside house
+  lot('italy', 'ochre', -68, 72, 11.5, 7, 14, 'NE'),
   lot('italy', 'ochre', 89, 62, 13, 9, 15, 'W'),
-  lot('italy', 'ochre', 89, 73, 13, 9, 11, 'W'),
   lot('italy', 'ochre', 50, 29, 8, 11, 15, 'N'),
-  lot('italy', 'shed', -104, 96, 30, 16, 8),
 ];

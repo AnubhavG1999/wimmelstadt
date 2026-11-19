@@ -142,6 +142,38 @@ export function wheel(b: GeoBuilder, x: number, y: number, z: number, r: number,
   }
 }
 
+/**
+ * A flag of upright bands on a staff `staff` high that stands at height `y`:
+ * Italy's green, white and red, or France's. It flies towards the east.
+ */
+export function bandedFlag(b: GeoBuilder, x: number, z: number, y: number, staff: number, bands: number[], fl = 2.7, fh = 1.7): void {
+  b.cyl(x, z, y, y + staff, 0.12, 0.06, 6, 0xdadada, { cap: false });
+  const fy = y + staff - fh - 0.15, w = fl / bands.length;
+  bands.forEach((color, i) => {
+    for (const side of [-1, 1]) b.quad([x + 0.1 + i * w, fy, z + side * 0.02], [x + 0.1 + (i + 1) * w, fy, z + side * 0.02], [x + 0.1 + (i + 1) * w, fy + fh, z + side * 0.02], [x + 0.1 + i * w, fy + fh, z + side * 0.02], [0, 0, side], color);
+  });
+}
+export const ITALY = [0x2f8f4f, 0xf4f1e8, 0xc8202c];
+
+/**
+ * A motorbike or a scooter on its stand: two wheels, the body between them,
+ * and the handlebars. A scooter has a shield in front of the rider's legs.
+ */
+export function twoWheeler(b: GeoBuilder, x: number, z: number, yaw: number, color: number, shield = false): void {
+  const c = Math.cos(yaw), s = Math.sin(yaw);
+  for (const l of [-0.68, 0.68]) b.obox(x + c * l, 0.33, z + s * l, 0.33, 0.33, 0.09, yaw, 0x16171c);
+  b.obox(x - (shield ? c * 0.15 : 0), 0.6, z - (shield ? s * 0.15 : 0), shield ? 0.55 : 0.62, 0.2, shield ? 0.2 : 0.15, yaw, color);
+  if (shield) b.obox(x + c * 0.5, 0.75, z + s * 0.5, 0.07, 0.42, 0.24, yaw, color);
+  b.obox(x + c * 0.5, shield ? 1.22 : 0.92, z + s * 0.5, 0.05, 0.1, 0.36, yaw, 0xc9ced3);
+}
+
+/** A parasol on its pole, with a small round table under it. */
+export function parasol(b: GeoBuilder, x: number, z: number, shade: number, y = 0): void {
+  b.cyl(x, z, y, y + 2.3, 0.06, 0.06, 4, 0x8d8a83, { cap: false });
+  b.cyl(x, z, y + 0.72, y + 0.8, 0.5, 0.5, 6, 0xf2efe6);
+  b.cyl(x, z, y + 2.1, y + 2.75, 1.35, 0.06, 8, shade, { cap: false });
+}
+
 /** What a figure wears: `hatH` is how tall its hat is, and `hatR` half how wide. */
 export interface Dress { coat: number; legs: number; hat: number; hatH: number; hatR?: number; skin?: number }
 

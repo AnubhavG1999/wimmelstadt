@@ -703,6 +703,13 @@ export function londonStreets(k: Build): void {
     b.cyl(x, z, 0, 0.16, 0.37, 0.37, 6, BLACK, { cap: false });
   }
 
+  // --- the gardens behind the South Bank: a lawn under the wall of trees where London ends ---
+  area(k, [[-3.4, -80], [-1.6, -80], [1.4, -70.5], [8.2, -60.5], [1.0, -38.6], [-3.4, -38.6]], LAWN);
+  for (let i = 0; i < 9; i++) {
+    const z = -78 + k.rand() * 38;
+    k.person(-2.8 + k.rand() * (z < -62 ? 2.2 : 3.2), z);
+  }
+
   // --- the park beside the palace ---
   for (const [x, z] of [[-102.4, -101], [-102.6, -94.5], [-102.4, -88], [-102.2, -82.2], [-101.6, -42.7]]) k.tree(x, z, 0.62);
 }

@@ -9,7 +9,7 @@ import { GeoBuilder, interior, type V3, type WinSpec } from '../../engine/geo';
 import { LAWN, PLAZA, area, rect } from '../../engine/ground';
 import type { SignDef } from '../../engine/signs';
 import type { Build } from '../../engine/tile';
-import { D, GOLD, archway, figure, hipped, lantern, lathe, pinnacle, rad, roundel, tri } from './parts';
+import { D, GOLD, archway, figure, hipped, lantern, lathe, parasol, pinnacle, rad, roundel, tri } from './parts';
 import { ARC, CONCORDE, HILL, SEINE_Z, onHill } from './plan';
 
 const WATER = 0x7fc4e0, IRON_GREEN = 0x2f5d48;
@@ -29,6 +29,7 @@ export const PARIS_GROUND: [string, number, number, number, number][] = [
   ['The Moulin Rouge', 51, -111.5, 62, -101.9],
   ['The carousel', 43.2, -107.8, 47.8, -103.2],
   ['The café', 22, 46, 34, 59.2],
+  ['The bandstand', 95.9, -9.1, 100.5, -4.5],
   ['The Trocadéro, west', -25.6, -22.2, -22, -7.6],
   ['The Trocadéro, east', -13.4, -22.2, -9.8, -7.6],
 ];
@@ -589,20 +590,65 @@ export function trocadero(k: Build): void {
   const fx0 = xc - 2.5, fx1 = xc + 2.5;
   b.box(fx0 - 0.3, 0, -15.6, fx1 + 0.3, 0.7, -10.4, SHADE);
   b.box(fx0, 0.7, -15.3, fx1, 0.72, -10.7, WATER, { faces: 'T', win: interior(0.4) });
-  b.box(fx0 - 0.3, 0, -10.4, fx1 + 0.3, 0.35, -2.4, SHADE);
-  b.box(fx0, 0.35, -10.1, fx1, 0.37, -2.7, WATER, { faces: 'T', win: interior(0.4) });
+  b.box(fx0 - 0.3, 0, -10.4, fx1 + 0.3, 0.35, -5.6, SHADE);
+  b.box(fx0, 0.35, -10.1, fx1, 0.37, -5.9, WATER, { faces: 'T', win: interior(0.4) });
   for (let i = 0; i < 6; i++) {
     const x = fx0 + 0.5 + i * 0.8;
     b.beam([x, 0.75, -15.0], [x, 2.7, -12.4], 0.07, 0.1, JET, { win: interior(0.8) });
     b.beam([x, 2.7, -12.4], [x, 0.75, -10.9], 0.1, 0.14, JET, { win: interior(0.8) });
   }
-  for (let i = 0; i < 5; i++) b.box(xc - 0.09, 0.37, -9.2 + i * 1.45 - 0.09, xc + 0.09, 1.9 + (i % 2) * 0.5, -9.2 + i * 1.45 + 0.09, JET, { win: interior(0.8), faces: 'NESW' });
-  area(k, [[-23.2, -15.6], [-20.6, -15.6], [-20.6, -3.4], [-21.7, -3.4], [-23.2, -6.6]], LAWN);
-  area(k, rect(-14.8, -15.6, -12.2, -3.4), LAWN);
+  for (let i = 0; i < 3; i++) b.box(xc - 0.09, 0.37, -9.2 + i * 1.3 - 0.09, xc + 0.09, 1.9 + (i % 2) * 0.5, -9.2 + i * 1.3 + 0.09, JET, { win: interior(0.8), faces: 'NESW' });
+  area(k, [[-23.2, -15.6], [-20.6, -15.6], [-20.6, -5.8], [-23.2, -6.6]], LAWN);
+  area(k, rect(-14.8, -15.6, -12.2, -5.8), LAWN);
+  // the terrace at the water's edge below the fountain, where a hero stands with the tower across the river
+  area(k, [[-21.2, -5.5], [-11.4, -5.5], [-11.4, 0.2], [-14, 0.6], [-18.5, -0.3], [-21.2, -1.7]], PLAZA);
 
   for (let i = 0; i < 7; i++) k.person(xc - 4 + k.rand() * 8, -17.75 + k.rand() * 0.35);
-  for (let i = 0; i < 5; i++) k.person(xc + (i % 2 ? 3.3 : -3.3) + k.rand() * 0.5, -14 + k.rand() * 10);
+  for (let i = 0; i < 5; i++) k.person(xc + (i % 2 ? 3.3 : -3.3) + k.rand() * 0.5, -14 + k.rand() * 7.6);
   k.lights.push({ x: xc, z: -13, r: 10, color: '#cfe8ff', k: 0.6 }, { x: xc, z: -6, r: 10, color: '#cfe8ff', k: 0.5 }, { x: xc, z: -19.5, r: 11, color: '#ffe2ae', k: 0.6 });
+}
+
+// ---------------------------------------------------------------------------
+// A garden with a bandstand, and the painters' square
+// ---------------------------------------------------------------------------
+
+/**
+ * Two small places that fill corners of Paris: a garden with a bandstand at
+ * the east end of the quay, and at the foot of Montmartre a square where
+ * painters sit at their easels under parasols.
+ */
+export function parisCorners(k: Build): void {
+  const b = k.b;
+  const STONE = 0xcfc6b2, ZINC = 0x6f8f86;
+
+  // --- the garden: a lawn, a path across it, trees, and the bandstand in the middle ---
+  area(k, rect(93, -14.2, 103.4, 0.8), LAWN);
+  area(k, rect(93, -7.6, 103.4, -6.0), PLAZA, 0.03);
+  const bx = 98.2, bz = -6.8;
+  b.cyl(bx, bz, 0, 0.6, 2.3, 2.3, 8, STONE, { cap: 0xb9916a });
+  for (let i = 0; i < 8; i++) {
+    const a = ((i + 0.5) / 8) * Math.PI * 2, x = bx + Math.cos(a) * 2.0, z = bz + Math.sin(a) * 2.0;
+    b.box(x - 0.07, 0.6, z - 0.07, x + 0.07, 3.3, z + 0.07, IRON_GREEN, { faces: 'NESW' });
+  }
+  lathe(b, bx, bz, [[2.7, 3.3], [2.6, 3.5], [1.3, 4.3], [0.2, 4.9], [0.03, 5.6]], 8, ZINC);
+  for (const [x, z] of [[94.6, -12.4], [101.8, -12.2], [94.8, -1.2], [101.6, -1]]) k.tree(x, z, 0.62);
+  for (let i = 0; i < 4; i++) k.person(bx - 0.9 + k.rand() * 1.8, bz - 0.9 + k.rand() * 1.8, 0.6);
+  for (let i = 0; i < 6; i++) k.person(93.6 + k.rand() * 9.2, i % 2 ? -9.6 - k.rand() * 2 : -4.8 + k.rand() * 2.6);
+  k.lights.push({ x: bx, z: bz, r: 9, color: '#ffe2ae', k: 0.6 });
+
+  // --- the painters' square: each at an easel under a parasol, with a canvas that faces the hill's foot ---
+  const shades = [0xf2ead8, 0xc8523f, 0x3f6fb5, 0xf2c14e, 0xf2ead8];
+  shades.forEach((shade, i) => {
+    const x = 65.2 + (i % 3) * 3.3 + (i > 2 ? 2.2 : 0), z = i > 2 ? -100.6 : -105.8;
+    parasol(b, x, z, shade);
+    // the easel, and what is on it
+    b.box(x + 0.85, 0, z + 0.55, x + 0.93, 1.7, z + 0.63, 0x8d6b4a, { faces: 'NESW' });
+    b.quad([x + 0.5, 0.85, z + 0.68], [x + 1.28, 0.85, z + 0.68], [x + 1.28, 1.75, z + 0.68], [x + 0.5, 1.75, z + 0.68], [0, 0, 1], [0xf4f1e8, 0x8fc0d8, 0xf2c14e, 0xe8a0a0, 0xa9d3a0][i]);
+    k.person(x + 0.35, z - 0.45);
+  });
+  for (const [x, z] of [[63.6, -110], [72.6, -109.6], [68.4, -97.4]]) k.tree(x, z, 0.6);
+  for (let i = 0; i < 6; i++) k.person(64 + k.rand() * 8, -108.6 + k.rand() * 9.4);
+  k.lights.push({ x: 68, z: -103.5, r: 10, color: '#ffd9a0', k: 0.55 });
 }
 
 // ---------------------------------------------------------------------------

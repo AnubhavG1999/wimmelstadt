@@ -6,6 +6,7 @@
 // from the look prototype by way of the island.
 
 import { interior, type V3, type WinSpec } from '../../engine/geo';
+import { D, lathe } from './parts';
 import type { Build, Glow } from '../../engine/tile';
 
 /** What a model builds with: the tile's own build, or the part of it inside `placed`. */
@@ -70,7 +71,9 @@ export function eiffel(ctx: Ctx, s: number, H: number): void {
   }
   b.box(-s * 0.7, y1, -s * 0.7, s * 0.7, y1 + 1.2, s * 0.7, IRON, { ...o, faces: 'NESWTB' });
   b.box(-s * 0.42, y2, -s * 0.42, s * 0.42, y2 + 1.0, s * 0.42, IRON, { ...o, faces: 'NESWTB' });
-  b.beam([0, y2 + 1.0, 0], [0, y3, 0], s * 0.34, 1.05, IRON, o);
+  // above the second platform it narrows quickly at first and then slowly, which is the curve it is known by
+  const narrow = (u: number): [number, number] => [s * 0.34 * Math.pow(1.05 / (s * 0.34), u) * D, y2 + 1.0 + (y3 - y2 - 1.0) * u];
+  lathe(b, 0, 0, [0, 0.2, 0.4, 0.6, 0.8, 1].map(narrow), 4, IRON, o);
   b.box(-1.6, y3, -1.6, 1.6, y3 + 1.5, 1.6, IRON, o);
   b.cyl(0, 0, y3 + 1.5, y3 + 3.6, 1.0, 0.5, 6, IRON, { ...o, cap: false });
   b.cyl(0, 0, y3 + 3.6, H, 0.26, 0.06, 5, 0xbdbdbd, { cap: false });
