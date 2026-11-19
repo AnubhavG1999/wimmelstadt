@@ -74,6 +74,10 @@ On the water:
 39. The car carrier at Tatsumi's pier, with its ramp down and cars waiting.
 40. Four lantern boats: two in the cove, two in the bay.
 
+Along the river:
+
+41. The line of cherry trees in blossom: eleven along Kyoto's bank and five along Tokyo's, with paper lanterns between them, petals on the sidewalk and adrift on the water, and people on the red bridge. Ueno Park's sixteen trees are cherry trees in blossom too.
+
 ## Roads
 
 Traffic keeps left. A loop round one block runs anticlockwise in the lanes next to the block and turns left only. The lanes left over on the far side of the streets make one long clockwise loop round each group of blocks. No route crosses another on the level, and none shares a lane.
@@ -127,6 +131,7 @@ Missed:
 - Traffic cannot be made to wait. A scramble crossing wants the vehicles to stop while the crowd crosses. Here the crowd stands in the middle, where no vehicle's way comes.
 - A vehicle slows for the one ahead and for the bend it is in, but not for a slow stretch or a queue that is still ahead of it. That is what limits how many vehicles a route can carry: see "Roads".
 - The engine finishes a junction only where two streets' middle lines cross. Where a ring of streets turns a corner at the place two other streets end, as at the scramble, it paints crossings on two of the four arms. The other two are painted in `scenes.ts`.
+- `tree` cannot be asked for a kind of tree: nine in ten come out green. The cherry trees are the tile's own, in `scenes.ts` (`cherryTrees`), drawn the way the engine draws its trees.
 - `GeoBuilder.tri` shows from one side only and does not turn itself to face its normal, as `quad` does. A gable drawn with it on a north face must give its corners the other way round.
 - The hills are drawn as flat facets three units across, so the ground a figure stands on is not quite where `groundHeight` says on a steep bank. The spectators on the pass stand on ledges of concrete for that reason.
 
@@ -137,5 +142,5 @@ All on 19 November 2026.
 - Traffic: over twenty simulated minutes in steps of a twentieth of a second, no two of the 72 moving vehicles came within 4.3 units of each other, and none stood still. The nearest were in neighbouring lanes, where the Wangan's lanes turn round in the rotary beside the avenue's kerb lane. Along each route, one vehicle never came nearer than 11 units to the next. No lanes were found shared, which is as meant. With 18 vehicles on the Wangan and 16 on Tokyo's outer loop, tried first, vehicles drove through each other at the foot of Daikoku's ramp: hence the counts.
 - Heroes: with `?place=`, each of the seven places on show (`daikoku-1` to `daikoku-3`, `tatsumi`, `lookout`, `garage`, `konbini`) and each of the nine routes took a hero.
 - Weather and hours: looked at by day and by night from all four sides, and in rain and in snow.
-- What it costs to draw, on one machine at the same size: `wimmel.bench()` gave 2.8 ms for Japan and 2.7 ms for North America. Japan draws 222,000 triangles in 101 calls, North America 265,000 in 90. Japan has 31,000 triangles that stand still, 373 people, 72 moving vehicles and 34 parked.
+- What it costs to draw, measured with `wimmel.bench()` on one machine, each tile alone at the same size and the same hour, after the cherry trees were planted: by day 5.2 ms for Japan and 4.6 ms for North America, and at night 5.3 ms and 5.0 ms. Japan draws 238,000 triangles in about 107 calls at any hour. North America draws 132,000 in 52 by day and 265,000 in 90 at night. The difference by day is the water: the engine draws a tile that has water a second time, as its mirror image, whatever the weather (`board.mirrors`). North America, which has no water of the engine's kind, was drawn twice at night and once by day. Japan has 32,000 triangles that stand still, 368 people, 72 moving vehicles and 34 parked.
 - `npm run typecheck` and `npm run build` pass, and the console shows no warnings and no errors.

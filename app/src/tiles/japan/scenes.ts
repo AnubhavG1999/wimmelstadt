@@ -13,7 +13,7 @@ import type { Build } from '../../engine/tile';
 import { slopes, stoneLantern, tiledRoof } from './landmarks';
 import {
   BOATS, CARRIER, FARMS, FERRIS, GARAGE, HACHIKO, KONBINI, LOOKOUT_YARD, MOAT, MONKEYS, PADDIES, PARTS, PARTS_PARK, PASS, PASS_LINE, PETROL, POND,
-  ROCK_GARDEN, ROUND_TOWER, SCRAMBLE, SCREENS, SHELF, SHORE, TOFU, TOKYO, UENO_PARK, USED_CARS,
+  RIVER_CHERRIES, ROCK_GARDEN, ROUND_TOWER, SCRAMBLE, SCREENS, SHELF, SHORE, TOFU, TOKYO, UENO_PARK, USED_CARS,
 } from './plan';
 import { lantern, mast, standingCar, vending } from './props';
 
@@ -557,6 +557,104 @@ function lanterns(k: Build): void {
   k.lights.push({ x: (SHORE.river.west + SHORE.river.east) / 2, z: 30, r: 9, color: '#ffd9a0', k: 0.45 });
 }
 
+// ---------------------------------------------------------------------------
+// Cherry trees
+// ---------------------------------------------------------------------------
+
+/** A pile of rounded lumps as one shape: each is [x, y, z, radius, how far it is squashed]. */
+function lumps(parts: [number, number, number, number, number][]): THREE.BufferGeometry {
+  const pos: number[] = [], nor: number[] = [], uv: number[] = [];
+  for (const [x, y, z, r, squash] of parts) {
+    const g = new THREE.IcosahedronGeometry(r, 0).scale(1, squash, 1).translate(x, y, z);
+    pos.push(...g.getAttribute('position').array);
+    nor.push(...g.getAttribute('normal').array);
+    uv.push(...g.getAttribute('uv').array);
+    g.dispose();
+  }
+  const out = new THREE.BufferGeometry();
+  out.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  out.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+  out.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  return out;
+}
+
+/** A number between 0 and 1 that is always the same for the same number given: for scattering things without the tile's own dice. */
+const scatter = (n: number): number => {
+  const v = Math.sin(n * 12.9898) * 43758.5453;
+  return v - Math.floor(v);
+};
+
+/**
+ * Cherry trees in blossom: a dark trunk under a low, wide cloud of pink. The
+ * engine's own trees come out green nine times in ten, so these are the
+ * tile's. Each spot is [x, z, size].
+ */
+function cherryTrees(k: Build, spots: [number, number, number][]): void {
+  const trunkGeo = new THREE.CylinderGeometry(0.3, 0.46, 2.7, 6).translate(0, 1.35, 0);
+  const crownGeo = lumps([[0, 4.2, 0, 2.6, 0.72], [1.5, 4.9, 0.5, 1.6, 0.8], [-1.3, 4.7, -0.9, 1.5, 0.8], [0.2, 4.6, 1.5, 1.3, 0.8]]);
+  const trunks = new THREE.InstancedMesh(trunkGeo, k.mat.prop({ vertexColors: false, color: 0x5a4034 }), spots.length);
+  const crowns = new THREE.InstancedMesh(crownGeo, k.mat.prop({ vertexColors: false, color: 0xffffff }), spots.length);
+  const PINKS = [0xf7b6cd, 0xf2a7c3, 0xf9c6d8, 0xf4b0c8];
+  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), col = new THREE.Color();
+  spots.forEach(([x, z, s], i) => {
+    q.setFromAxisAngle(up, scatter(i * 3 + 1) * Math.PI * 2);
+    m4.compose(new THREE.Vector3(x, 0, z), q, new THREE.Vector3(s, s * (0.92 + scatter(i * 3 + 2) * 0.2), s));
+    trunks.setMatrixAt(i, m4);
+    crowns.setMatrixAt(i, m4);
+    crowns.setColorAt(i, col.set(PINKS[i % PINKS.length]));
+  });
+  crowns.castShadow = true;
+  crowns.receiveShadow = true;
+  trunks.frustumCulled = crowns.frustumCulled = false;
+  k.group.add(trunks, crowns);
+}
+
+/**
+ * The cherry trees: a line along the river, with paper lanterns between them,
+ * petals fallen on the sidewalk and adrift on the water, and people on the red
+ * bridge to look at it all. And the trees of Ueno Park, which people sit under.
+ */
+function cherries(k: Build): void {
+  const b = k.b, PETALS = [0xf9d3e0, 0xf4bcd0, 0xfbe3ea];
+  const west = SHORE.river.west, east = SHORE.river.east;
+  // (on Kyoto's bank they are large enough for their crowns to meet; on Tokyo's there is less room)
+  const river = RIVER_CHERRIES.map(([x, z], i): [number, number, number] => [x, z, x < west ? 0.8 + scatter(i + 40) * 0.08 : 0.62]);
+  // Ueno Park: along its far sides, so that they do not stand between the scramble and the view
+  const ueno: [number, number, number][] = [];
+  for (let i = 0; i < 9; i++) {
+    if (i < 8) ueno.push([UENO_PARK.x1 - 2.5, UENO_PARK.z0 + 2.5 + i * 2.9, 0.66 + scatter(i + 70) * 0.2]);
+    if (i > 0) ueno.push([UENO_PARK.x0 + 0.6 + i * 2.6, UENO_PARK.z0 + 2.2, 0.66 + scatter(i + 90) * 0.2]);
+  }
+  cherryTrees(k, [...river, ...ueno]);
+
+  // petals: a few on the ground under each tree by the river, and many more on the water beside it
+  const fleck = (x: number, y: number, z: number, w: number, d: number, n: number): void =>
+    b.quad([x - w, y, z - d], [x + w, y, z - d], [x + w, y, z + d], [x - w, y, z + d], [0, 1, 0], PETALS[n % PETALS.length]);
+  const water = -0.86;
+  RIVER_CHERRIES.forEach(([x, z], i) => {
+    const kyoto = x < west;
+    for (let n = 0; n < 5; n++) fleck(x - 0.75 + scatter(i * 31 + n) * 1.5, 0.04, z - 2 + scatter(i * 37 + n) * 4, 0.13, 0.09, n + i);
+    for (let n = 0; n < 7; n++) {
+      const out = 0.25 + scatter(i * 41 + n) ** 2 * 2.6;
+      fleck(kyoto ? west + out : east - out, water, z - 2.6 + scatter(i * 43 + n) * 5.2, n % 2 ? 0.2 : 0.11, n % 2 ? 0.11 : 0.2, n + i);
+    }
+  });
+  // and rafts of them, drifting down the middle
+  for (let n = 0; n < 9; n++) {
+    const z = 2 + n * 6.6 + scatter(n + 5) * 3, x = (west + east) / 2 - 1.2 + scatter(n + 11) * 2.4;
+    for (let m = 0; m < 6; m++) fleck(x + (scatter(n * 13 + m) - 0.5) * 1.1, water, z + (scatter(n * 17 + m) - 0.5) * 2.6, 0.12, 0.2, n + m);
+  }
+  // paper lanterns on posts along Kyoto's bank, between the trees, and a soft pink light under the blossom
+  for (const z of [1, 6.5, 12, 23, 34, 45, 50.5, 56]) {
+    b.box(west - 0.36, 0, z - 0.06, west - 0.24, 1.75, z + 0.06, 0x3a2a24);
+    lantern(k, west - 0.3, 2.1, z, 0.55, 0xf9c9d9);
+  }
+  for (const z of [3.75, 14.75, 25.75, 36.75, 47.75, 58.75]) k.lights.push({ x: west - 0.6, z, r: 9, color: '#ffc4dd', k: 0.75 });
+  for (const z of [10.5, 21.5]) k.lights.push({ x: east + 1, z, r: 8, color: '#ffc4dd', k: 0.6 });
+  // people on the red bridge, where the view along the river is best
+  for (const [x, y, z] of [[-26.4, 1.64, 29.5], [-25, 1.75, 30.5], [-23.6, 1.64, 29.7]]) k.person(x, z, y);
+}
+
 /** People in the castle's and the pavilion's grounds, looking over the water, and a stone lantern or two beside them. */
 function gardens(k: Build): void {
   const bank = MOAT.x1 + 0.6;
@@ -763,6 +861,7 @@ export function buildScenes(k: Build): void {
   passDetails(k);
   rockGarden(k);
   gardens(k);
+  cherries(k);
   lanterns(k);
   stalls(k);
   uenoPark(k);

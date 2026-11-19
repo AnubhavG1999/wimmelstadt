@@ -14,7 +14,7 @@ import { buildLandmarks } from './landmarks';
 import { sample, toSegs, type Piece } from './lines';
 import {
   AVENUE, BOARD, DRAGON_ROUND, FUJI, HERO_SPOTS, KEEP_CLEAR, KYOTO, KYOTO_RING, LOOKOUT, LOOKOUT_LOOP, LOOKOUT_YARD, MOAT, ORDINARY, PARKED,
-  PASS, PASS_FOOT, PASS_LINE, POND, ROTARY, ROUTES, SHORE, TOKYO, TOKYO_RING, UENO_PARK, WATER,
+  PASS, PASS_FOOT, PASS_LINE, POND, RIVER_CHERRIES, ROTARY, ROUTES, SHORE, TOKYO, TOKYO_RING, UENO_PARK, WATER,
   type Ordinary, type Style,
 } from './plan';
 import { buildScenes } from './scenes';
@@ -163,13 +163,8 @@ export function buildJapan(k: Build): TileParts {
       k.tree(x, z, 0.75 + k.rand() * 0.5, onFuji, y - 0.2);
       planted++;
     }
-    // Ueno Park: cherry trees along its far sides, so that they do not stand between the scramble and the view
-    for (let i = 0; i < 9; i++) {
-      if (i < 8) k.tree(UENO_PARK.x1 - 2.5, UENO_PARK.z0 + 2.5 + i * 2.9, 0.7 + k.rand() * 0.3);
-      if (i > 0) k.tree(UENO_PARK.x0 + 0.6 + i * 2.6, UENO_PARK.z0 + 2.2, 0.7 + k.rand() * 0.3);
-    }
-    // cherry trees along the river's east bank, and trees in the castle's and the pavilion's grounds
-    for (let z = SHORE.river.head + 10; z < SHORE.tokyo - 4; z += 9) k.tree(SHORE.river.east + 1.6, z + 4.5, 0.6);
+    // (the cherry trees, along the river and in Ueno Park, are in scenes.ts: the engine's own trees are mostly green)
+    // trees in the castle's and the pavilion's grounds
     for (const [x, z] of [[-78, 29], [-99, 29], [-100, 70], [-88, 70.5], [-76, 70], [-73.3, 48]]) k.tree(x, z, 0.8);
   }
 
@@ -188,6 +183,8 @@ export function buildJapan(k: Build): TileParts {
         const off = side * (s.half + 0.5 + k.rand() * (s.walk - 1));
         const x = at.x - (tz / l) * off, z = at.z + (tx / l) * off;
         if (taken(x, z, 0.3) || groundHeight(x, z) > 0.3 || inside(WATER, x, z)) continue;
+        // not where a cherry tree's trunk is
+        if (RIVER_CHERRIES.some((c) => Math.hypot(c[0] - x, c[1] - z) < 0.9)) continue;
         if (x < BOARD.x0 + 0.6 || x > BOARD.x1 - 0.6 || z < BOARD.z0 + 0.6 || z > BOARD.z1 - 0.6) continue;
         // not in another street's carriageway
         if (streets.some((q) => {

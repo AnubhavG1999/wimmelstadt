@@ -465,6 +465,16 @@ export const BOATS = {
   bay: { pts: [[18, 58], [44, 58], [44, 106], [18, 106]] as P2[], r: 8 },
 };
 
+/**
+ * The cherry trees along the river, each as [x, z]: a line on Kyoto's bank,
+ * four between each street lamp and the next and none where the red bridge
+ * lands, and a shorter line on Tokyo's bank, where there is room for one.
+ */
+export const RIVER_CHERRIES: P2[] = [
+  ...[-1.75, 3.75, 9.25, 14.75, 20.25, 25.75, 36.75, 42.25, 47.75, 53.25, 58.75].map((z): P2 => [KYOTO.east + 5 + KYOTO.walk / 2, z]),
+  ...[8, 13.5, 19, 24.5, 35.6].map((z): P2 => [SHORE.river.east + 1.1, z]),
+];
+
 /** The great torii, standing in the water of Kyoto's cove. */
 export const TORII = { x: -66, z: 103 };
 
