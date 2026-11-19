@@ -53,7 +53,7 @@ _Avoid_: Sold, removed, deleted
 ### Making a hero
 
 **Capture**:
-The set of guided photographs of a diecast from which its hero is made.
+The pictures of a diecast from which its hero is made: guided photographs taken by the collector or, for a Mini GT, the maker's own product pictures.
 _Avoid_: Scan, shoot, upload
 
 **Finishing**:
@@ -65,29 +65,41 @@ The place where finishing is done and where the collector approves a hero before
 _Avoid_: Testbench, workshop, editor
 
 **Arrival**:
-The moment an approved hero first enters the world, brought in by car transporter at the harbour.
+The moment an approved hero first enters the world, brought in by car transporter.
 _Avoid_: Spawn, import, unlock
 
 ### The world
 
 **World**:
-The single continuous city in which the heroes and the traffic live. It is permanent: nothing already built ever changes. It does not grow with the collection; only the number of heroes in it does.
+The city in which the heroes and the traffic live, made of tiles. It is permanent: nothing already built ever changes. It grows by whole tiles, when a new place or idea is added, and never as a reward for collecting.
 _Avoid_: Map, level, scene
+
+**Tile**:
+The piece of ground a district is built on: the size of the look prototype's board, made by hand, filled to its edges, and standing on a base of its own like a model on a table. It needs to know nothing about any other tile.
+_Avoid_: Board, chunk, cell, island
+
+**Plan**:
+The record of one tile's layout: its ground, its roads, and where each building and landmark stands. The tile is built from it.
+_Avoid_: Layout file, level data, blueprint
 
 **Founding**:
 The single act that fixes the world's layout and its name. After it the world is permanent.
 _Avoid_: Setup, generation, onboarding
 
 **District**:
-A part of the world built around one theme.
-_Avoid_: Zone, chunk, tileset, expansion
+A part of the world built around one real or imagined place, with ground, streets and landmarks of its own. It has a tile to itself, or shares one with a neighbour when it is small. No district is another one in different clothes.
+_Avoid_: Zone, area, block, chunk, tileset, expansion
 
 **Theme**:
-The character a district is built around, which decides its landmarks, its architecture and the language of its signs. America, Europe, Asia and an amusement park are themes.
+The place a district is built around, which decides its landmarks, its ground, its architecture and the language of its signs. Hong Kong, Delhi, Merseyside, the Alps and Westeros are themes.
 _Avoid_: Biome, style, skin
 
+**Quarter**:
+A named part of a district that holds more than one place, such as Paris within Europe, Old Delhi within Delhi or the Loop within North America.
+_Avoid_: Sub-district, neighbourhood, zone
+
 **Landmark**:
-A building or monument whose silhouette is distinctive enough to navigate by. Some are invented, and some are toy versions of famous real ones such as the Sears Tower or the Taj Mahal. A real one stands in a district of its theme.
+A building or monument whose silhouette is distinctive enough to navigate by. Some are invented, and some are toy versions of famous real ones such as the Sears Tower or the Taj Mahal. A real one stands in the district of its place.
 _Avoid_: Monument, icon, wonder
 
 **Cutaway**:

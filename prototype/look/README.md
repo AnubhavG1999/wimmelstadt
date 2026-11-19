@@ -2,6 +2,8 @@
 
 A throwaway. One small hand-built scene to judge the look by day and by night before anything real is built. Nothing here is meant to survive into the real app except what it teaches. The design it tests is in [docs/brief.md](../../docs/brief.md).
 
+Its board did survive, as it turned out. It is the first tile of the city, North America, in [the app](../../app), where its European and Asian landmarks have given way to North American ones. This folder keeps the board as it was.
+
 **Live:** https://anubhavg1999.github.io/wimmelstadt/
 
 ## What it looks like
