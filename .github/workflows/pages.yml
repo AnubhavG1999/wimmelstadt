@@ -1,12 +1,18 @@
-name: Publish the look prototype
+name: Publish the app
 
-# Builds prototype/look and serves it with GitHub Pages, so that it can be opened
-# on a phone over HTTPS.
+# Builds the app and serves it with GitHub Pages, so that it can be opened on a
+# phone over HTTPS. The look prototype, which the app grew out of, is served
+# beside it under /look/.
+#
+# Heroes are not part of what is published. They are made from the collector's
+# own captures, which are never checked in, so the published city has traffic
+# and no heroes.
 
 on:
   push:
     branches: [main]
     paths:
+      - 'app/**'
       - 'prototype/look/**'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
@@ -23,22 +29,35 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: prototype/look
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
-          cache-dependency-path: prototype/look/package-lock.json
-      - run: npm ci
-      - run: npm run typecheck
-      - run: npm run build
+          cache-dependency-path: |
+            app/package-lock.json
+            prototype/look/package-lock.json
+      - name: Build the app
+        working-directory: app
+        run: |
+          npm ci
+          npm run typecheck
+          npm run build
+      - name: Build the look prototype
+        working-directory: prototype/look
+        run: |
+          npm ci
+          npm run typecheck
+          npm run build
+      - name: Put the app at the top and the look prototype under /look/
+        run: |
+          mkdir -p site/look
+          cp -r app/dist/. site/
+          cp -r prototype/look/dist/. site/look/
       - uses: actions/upload-pages-artifact@v5
         with:
-          path: prototype/look/dist
+          path: site
 
   deploy:
     needs: build

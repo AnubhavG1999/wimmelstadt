@@ -218,23 +218,38 @@ function drawScreen(ctx: CanvasRenderingContext2D, s: SignDef, w: number, h: num
 }
 
 export function buildSignAtlas(signs: SignDef[]): SignAtlas {
+  // Where each sign goes: the tallest first, in rows across the sheet.
+  const items = signs.map((s) => ({ s, size: pixelSize(s), x: 0, y: 0 })).sort((a, b) => b.size[1] - a.size[1]);
+  {
+    let x = PAD, y = PAD, shelf = 0;
+    for (const it of items) {
+      const [w, h] = it.size;
+      if (x + w + PAD > SIZE) {
+        x = PAD;
+        y += shelf + PAD;
+        shelf = 0;
+      }
+      shelf = Math.max(shelf, h);
+      it.x = x;
+      it.y = y;
+      x += w + PAD;
+    }
+  }
+  // The sheet is as tall as its signs need: one square, or two for a tile with a great many.
+  const need = items.reduce((m, it) => Math.max(m, it.y + it.size[1] + PAD), PAD);
+  const HEIGHT = need <= SIZE ? SIZE : SIZE * 2;
+  if (need > HEIGHT) console.warn(`This tile has more signs than fit on its sheet: ${need} rows are needed and ${HEIGHT} is the most there is, so the last of them are cut off. Use fewer signs, or smaller ones.`);
+
   const cv = document.createElement('canvas');
-  cv.width = cv.height = SIZE;
+  cv.width = SIZE;
+  cv.height = HEIGHT;
   const ctx = cv.getContext('2d')!;
   ctx.fillStyle = '#000';
-  ctx.fillRect(0, 0, SIZE, SIZE);
+  ctx.fillRect(0, 0, SIZE, HEIGHT);
 
   const rects = new Map<string, SignRect>();
-  const items = signs.map((s) => ({ s, size: pixelSize(s) })).sort((a, b) => b.size[1] - a.size[1]);
-  let x = PAD, y = PAD, shelf = 0;
-  for (const { s, size } of items) {
+  for (const { s, size, x, y } of items) {
     const [w, h] = size;
-    if (x + w + PAD > SIZE) {
-      x = PAD;
-      y += shelf + PAD;
-      shelf = 0;
-    }
-    shelf = Math.max(shelf, h);
     ctx.save();
     ctx.translate(x, y);
     ctx.beginPath();
@@ -246,10 +261,8 @@ export function buildSignAtlas(signs: SignDef[]): SignAtlas {
     else if (s.kind === 'box' || s.kind === 'board') drawBox(ctx, s, w, h);
     else drawNeon(ctx, s, w, h);
     ctx.restore();
-    rects.set(s.id, { u0: x / SIZE, u1: (x + w) / SIZE, vTop: y / SIZE, vBottom: (y + h) / SIZE, aspect: w / h, color: s.color });
-    x += w + PAD;
+    rects.set(s.id, { u0: x / SIZE, u1: (x + w) / SIZE, vTop: y / HEIGHT, vBottom: (y + h) / HEIGHT, aspect: w / h, color: s.color });
   }
-  if (y + shelf > SIZE) console.warn(`The sign sheet is full: ${y + shelf} rows of ${SIZE} are needed, so some signs are cut off.`);
 
   const texture = new THREE.CanvasTexture(cv);
   texture.colorSpace = THREE.SRGBColorSpace;

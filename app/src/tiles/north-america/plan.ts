@@ -241,12 +241,25 @@ export const ROUTE66 = { x: 96, z: 55.5, half: 6.6, height: 12 };
  * the middle of the street beside Wrigley Field, its east side above the
  * middle of the street on the east, its north side above the boulevard's
  * sidewalk, and its west side above one lane of the street under the expressway.
+ *
+ * Two branches leave it at its western corners and run west. The one from the
+ * north corner follows the boulevard's sidewalk to the park and ends there,
+ * at `parkEnd`. The one from the south corner runs on above the middle of the
+ * same street as far as the car park, and ends at `midwayEnd`.
  */
 export const L_LINE = (() => {
-  const west = 34.5, east = 96, north = -17, south = 41, y = 9;
-  const ring: Seg = { t: 'ring', pts: [[west, north], [east, north], [east, south], [west, south]], y, r: 7 };
-  return { west, east, north, south, y, ring };
+  const west = 34.5, east = 96, north = -17, south = 41, y = 9, r = 7;
+  const ring: Seg = { t: 'ring', pts: [[west, north], [east, north], [east, south], [west, south]], y, r };
+  return { west, east, north, south, y, r, ring, parkEnd: -19, midwayEnd: -72.5 };
 })();
+/** Where no lamp stands and no tree grows, because the L's track or one of its platforms is overhead. */
+export const UNDER_L: Rect[] = [
+  { x0: L_LINE.parkEnd - 2, x1: L_LINE.east, z0: L_LINE.north - 1.6, z1: L_LINE.north + 1.6 }, // the track along the boulevard
+  { x0: L_LINE.parkEnd - 1, x1: 12, z0: L_LINE.north, z1: L_LINE.north + 9 }, // Forest Park, and its stairs
+  { x0: -10, x1: 22, z0: L_LINE.south - 8, z1: L_LINE.south }, // Roosevelt
+  { x0: L_LINE.midwayEnd - 1, x1: -42, z0: L_LINE.south, z1: L_LINE.south + 8 }, // Midway
+  { x0: 43, x1: 74, z0: L_LINE.south, z1: L_LINE.south + 8 }, // Addison, and its stairs
+];
 /** A plain pond in the park. */
 export const POND = { x: 15.5, z: -6.5, r: 6.8 };
 /** A small square with a fountain, in the gap in block B3's south row. */
@@ -287,6 +300,10 @@ export const CARPARK = (() => {
     helixA: { cx: o.x0 + 11, cz: o.z0 + 34, R: 6.5 },
     helixB: { cx: o.x0 + 37, cz: o.z0 + 34, R: 6.5 },
     ox: o.x0, oz: o.z0,
+    /** The two lanes across the roof: the northern one is driven west, the southern one east. */
+    rowN: o.z0 + 8.5, rowS: o.z0 + 17,
+    /** Where its two driveways cross the sidewalk to the street on the south side. */
+    driveOut: o.x0 + 17.5, driveIn: o.x0 + 30.5,
   };
 })();
 
@@ -307,6 +324,23 @@ const MIX: Record<LoopKind, TrafficType[]> = {
 
 export const EXPRESS_Y = 24;
 export const EXPRESS_HALF = 6;
+/** Where the expressway's outer lane runs south past the car park, and the corner it turns east at. */
+const OUTER_LANE = { x: -34.75, corner: { cx: -18, cz: 59, R: 16.75 } };
+
+/**
+ * The car park's roof is a storey above the expressway and four units from it,
+ * and two short bridges join them. Traffic leaves the expressway's outer lane
+ * by the northern one, a quarter turn to the right onto the roof's northern
+ * lane. It comes back by the southern one, which swings off the roof's
+ * southern lane and meets the outer lane half way round the corner.
+ *
+ * Each is an arc: `from` and `to` are bearings round its middle, and `edge` is
+ * the bearing at which it crosses the edge of the expressway's deck.
+ */
+export const GARAGE_BRIDGES = {
+  off: { cx: OUTER_LANE.x - 7, cz: CARPARK.rowN - 7, R: 7, from: 0, edge: 1.005, to: Math.PI / 2 },
+  on: { cx: CARPARK.x1 + 0.5, cz: CARPARK.rowS + 16.5, R: 16.5, from: -Math.PI / 2, edge: -Math.PI / 2 + 0.349, to: -Math.PI / 4 },
+};
 /** The centreline of the elevated expressway: a rounded rectangle around the park. */
 export const EXPRESS_RING: Seg = { t: 'ring', pts: [[-32, -73], [32, -73], [32, 73], [-32, 73]], y: EXPRESS_Y, r: 14 };
 
@@ -406,29 +440,73 @@ LOOPS.push({
   speed: 30,
   count: 6,
 });
+// The outer lane is shared with the traffic that comes up from the car park, so it has fewer of its own.
 LOOPS.push({
   id: 'express-outer',
   types: MIX.express,
-  segs: [{ t: 'ring', pts: [[-34.75, -75.75], [-34.75, 75.75], [34.75, 75.75], [34.75, -75.75]], y: EXPRESS_Y, r: 16.75 }],
+  segs: [{ t: 'ring', pts: [[OUTER_LANE.x, -75.75], [OUTER_LANE.x, 75.75], [-OUTER_LANE.x, 75.75], [-OUTER_LANE.x, -75.75]], y: EXPRESS_Y, r: OUTER_LANE.corner.R }],
   speed: 28,
-  count: 6,
+  count: 4,
 });
 
-// The car park: up one spiral, around the roof, down the other, and back along the ground.
-{
+/**
+ * The car park's own roads: up the eastern spiral, round the roof, down the
+ * western one, and back between the two along the ground.
+ */
+export const CARPARK_ROADS = (() => {
   const c = CARPARK;
   const L = (lx: number, lz: number): [number, number] => [c.ox + lx, c.oz + lz];
+  const up: Seg = { t: 'helix', cx: c.helixB.cx, cz: c.helixB.cz, R: c.helixB.R, phi0: -3 * Math.PI, phi1: Math.PI, y0: 0, y1: c.roofY };
+  const down: Seg = { t: 'helix', cx: c.helixA.cx, cz: c.helixA.cz, R: c.helixA.R, phi0: -4 * Math.PI, phi1: 0, y0: c.roofY, y1: 0 };
+  const roof: Seg = { t: 'poly', pts: [L(30.5, 34), L(30.5, 17), L(41, 17), L(41, 8.5), L(7, 8.5), L(7, 17), L(17.5, 17), L(17.5, 34)], y: c.roofY, r: 3 };
+  const ground: Seg = { t: 'poly', pts: [L(17.5, 34), L(17.5, 45), L(30.5, 45), L(30.5, 34)], y: 0, r: 3.5 };
+  return { up, down, roof, ground, L };
+})();
+
+// The car park: round and round its spirals and its roof, without leaving it.
+LOOPS.push({
+  id: 'carpark',
+  types: MIX.carpark,
+  segs: [CARPARK_ROADS.up, CARPARK_ROADS.roof, CARPARK_ROADS.down, CARPARK_ROADS.ground],
+  speed: 8.5,
+  count: 7,
+});
+
+// The run that joins the expressway to the streets. Up the spiral from the
+// street, across the roof and over a bridge onto the expressway's outer lane,
+// once round the expressway, off again over the other bridge, down the other
+// spiral, out of the driveway, round the block, and back in at the first
+// driveway. It shares lanes with the car park's own traffic, with the
+// expressway's and with the block's, and takes its turn on each.
+{
+  const c = CARPARK, b = GARAGE_BRIDGES, lane = OUTER_LANE, slow = 8.5;
+  const { up, down, L } = CARPARK_ROADS;
+  // the block's kerb lane, as the loop round block A3 drives it
+  const r = blockRect('A3');
+  const xw = r.x0 - 5.5, xe = r.x1 + 5.5, zn = r.z0 - 5.5, zs = r.z1 + 5.5;
   LOOPS.push({
-    id: 'carpark',
+    id: 'garage-run',
     types: MIX.carpark,
     segs: [
-      { t: 'poly', pts: [L(30.5, 34), L(30.5, 45), L(17.5, 45), L(17.5, 34)], y: 0, r: 3.5 },
-      { t: 'helix', cx: c.helixA.cx, cz: c.helixA.cz, R: c.helixA.R, phi0: 0, phi1: -4 * Math.PI, y0: 0, y1: c.roofY },
-      { t: 'poly', pts: [L(17.5, 34), L(17.5, 17), L(7, 17), L(7, 8.5), L(41, 8.5), L(41, 17), L(30.5, 17), L(30.5, 34)], y: c.roofY, r: 3 },
-      { t: 'helix', cx: c.helixB.cx, cz: c.helixB.cz, R: c.helixB.R, phi0: Math.PI, phi1: -3 * Math.PI, y0: c.roofY, y1: 0 },
+      { ...up, speed: slow },
+      { t: 'poly', pts: [L(30.5, 34), [c.driveIn, c.rowS], [b.on.cx, c.rowS]], y: c.roofY, r: 3, speed: slow },
+      // over the bridge, down a storey, and onto the outer lane half way round its corner
+      { t: 'helix', cx: b.on.cx, cz: b.on.cz, R: b.on.R, phi0: b.on.from, phi1: b.on.edge, y0: c.roofY, y1: EXPRESS_Y, speed: slow },
+      { t: 'helix', cx: b.on.cx, cz: b.on.cz, R: b.on.R, phi0: b.on.edge, phi1: b.on.to, y0: EXPRESS_Y, y1: EXPRESS_Y, speed: 16 },
+      { t: 'helix', cx: lane.corner.cx, cz: lane.corner.cz, R: lane.corner.R, phi0: (3 * Math.PI) / 4, phi1: Math.PI / 2, y0: EXPRESS_Y, y1: EXPRESS_Y, speed: 28 },
+      { t: 'poly', pts: [[lane.corner.cx, 75.75], [-lane.x, 75.75], [-lane.x, -75.75], [lane.x, -75.75], [lane.x, b.off.cz]], y: EXPRESS_Y, r: lane.corner.R, speed: 28 },
+      // off the outer lane, over the other bridge and up a storey to the roof
+      { t: 'helix', cx: b.off.cx, cz: b.off.cz, R: b.off.R, phi0: b.off.from, phi1: b.off.edge, y0: EXPRESS_Y, y1: EXPRESS_Y, speed: slow },
+      { t: 'helix', cx: b.off.cx, cz: b.off.cz, R: b.off.R, phi0: b.off.edge, phi1: b.off.to, y0: EXPRESS_Y, y1: c.roofY, speed: slow },
+      { t: 'poly', pts: [[b.off.cx, c.rowN], L(7, 8.5), L(7, 17), L(17.5, 17), L(17.5, 34)], y: c.roofY, r: 3, speed: slow },
+      { ...down, speed: slow },
+      // out of one driveway, round the block in its kerb lane, and in at the other
+      { t: 'poly', pts: [L(17.5, 34), L(17.5, 47)], y: 0, r: 0, speed: slow },
+      { t: 'poly', pts: [L(17.5, 47), [c.driveOut, zs], [xw, zs], [xw, zn], [xe, zn], [xe, zs], [c.driveIn, zs], L(30.5, 47)], y: 0, r: 4 },
+      { t: 'poly', pts: [L(30.5, 47), L(30.5, 34)], y: 0, r: 0, speed: slow },
     ],
-    speed: 8.5,
-    count: 7,
+    speed: 15,
+    count: 8,
   });
 }
 
@@ -545,9 +623,12 @@ export const SIGNS: SignDef[] = [
   { id: 'shield66', lines: ['ROUTE', '66'], color: '#f4f1e8', aspect: 0.94, size: [241, 256], paint: paintShield },
   neon('historic', ['HISTORIC'], '#ffb02e', 4.6),
 
-  // the L: the names of its two stations
+  // the L: the names of its stations, which are all names of stations on the real one
   { id: 'addison', lines: ['ADDISON'], color: '#1c2f5e', ink: '#ffffff', aspect: 4.6, kind: 'board' },
   { id: 'state-lake', lines: ['STATE / LAKE'], color: '#1c2f5e', ink: '#ffffff', aspect: 6.2, kind: 'board' },
+  { id: 'forest-park', lines: ['FOREST PARK'], color: '#1c2f5e', ink: '#ffffff', aspect: 6.2, kind: 'board' },
+  { id: 'roosevelt', lines: ['ROOSEVELT'], color: '#1c2f5e', ink: '#ffffff', aspect: 5.4, kind: 'board' },
+  { id: 'midway', lines: ['MIDWAY'], color: '#1c2f5e', ink: '#ffffff', aspect: 4.2, kind: 'board' },
 
   // Wrigley Field: the red marquee, and the face of the scoreboard
   { id: 'marquee', lines: ['WRIGLEY FIELD', 'GAME TODAY 1:20'], color: '#c8202c', ink: '#ffffff', aspect: 3.3, kind: 'board' },

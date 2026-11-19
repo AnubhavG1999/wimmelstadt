@@ -4,7 +4,7 @@ A throwaway. One small hand-built scene to judge the look by day and by night be
 
 Its board did survive, as it turned out. It is the first tile of the city, North America, in [the app](../../app), where its European and Asian landmarks have given way to North American ones. This folder keeps the board as it was.
 
-**Live:** https://anubhavg1999.github.io/wimmelstadt/
+**Live:** https://anubhavg1999.github.io/wimmelstadt/look/
 
 ## What it looks like
 

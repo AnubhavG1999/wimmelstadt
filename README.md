@@ -6,7 +6,7 @@ A living miniature city for a diecast collection.
 
 Every Hot Wheels or Mini GT its collector adds drives around the city as a recognisable character, among plain traffic. The city sits on a screen beside the desk and simply goes about its day. It is made in the spirit of a *Wimmelbilderbuch*, the picture books where every page is crowded with small things going on: there is no score and no goal, only a place that rewards looking.
 
-**Try the look prototype:** https://anubhavg1999.github.io/wimmelstadt/
+**Try it:** https://anubhavg1999.github.io/wimmelstadt/ is the app as it stands on `main`. The published city has traffic and no heroes, because heroes are made from the collector's own pictures, which stay private. The look prototype it grew out of is at https://anubhavg1999.github.io/wimmelstadt/look/.
 
 Drag to move, right-drag to turn, scroll to zoom, and drag the dial at the bottom from day to night.
 

@@ -231,7 +231,28 @@ export interface TrainOpts {
    * nose along +x and its middle at the origin, and is `length` long.
    */
   car?: { geometry: THREE.BufferGeometry; length: number };
+  /**
+   * Where the track ends and the train goes back the way it came, as distances
+   * along the path: the path runs up to the end of the line and back again
+   * from there. The train needs a stop just short of each, and changes ends
+   * while it stands there.
+   */
+  ends?: number[];
+  /** How many seconds it waits where it changes ends. */
+  turnDwell?: number;
+  /**
+   * For trains that share track. The path is cut into stretches, each with the
+   * name of the piece of track it runs on, and a train enters a piece only
+   * when no other train is on it: it waits at the end of the piece before.
+   * Trains on different paths name the track they share alike. Where two
+   * tracks join, end the pieces before the join far enough back that a train
+   * waiting there is clear of the other track.
+   */
+  blocks?: { name: string; from: number; to: number }[];
 }
+
+/** Which train is on each piece of shared track, for every tile. */
+const HELD = new WeakMap<object, Map<string, object>>();
 
 /** A train that runs round a closed path for ever, stopping where it is told to. */
 export function train(k: Build, path: Path, o: TrainOpts): void {
@@ -240,6 +261,7 @@ export function train(k: Build, path: Path, o: TrainOpts): void {
   const mat = k.mat.city();
   const cars = Array.from({ length: o.cars }, () => {
     const m = new THREE.Mesh(geo, mat);
+    m.name = 'train';
     m.matrixAutoUpdate = false;
     m.receiveShadow = true;
     k.group.add(m);
@@ -249,7 +271,44 @@ export function train(k: Build, path: Path, o: TrainOpts): void {
   const len = path.length, pitch = carLen + 0.3, bogie = carLen * 0.32;
   const wrap = (d: number): number => ((d % len) + len) % len;
   const stops = (o.stops ?? []).map(wrap);
+  const ends = (o.ends ?? []).map(wrap);
   let s = wrap(o.from ?? 0), v = 0, wait = 0, left = -1; // `left` is the stop it has just pulled out of
+
+  // --- the pieces of track it shares with other trains ---
+  let held = HELD.get(k.group);
+  if (!held) HELD.set(k.group, (held = new Map()));
+  const signals = held, me = {};
+  const blocks = (o.blocks ?? []).map((b) => ({ name: b.name, from: wrap(b.from), len: wrap(b.to - b.from) || len }));
+  const within = (b: { from: number; len: number }, d: number): boolean => wrap(d - b.from) < b.len;
+  /** The piece it has asked for and not yet reached. */
+  let asked = '';
+  /** Takes the pieces it stands on, gives up the ones it has left, and says how far it may go before it must wait. */
+  const signal = (): number => {
+    if (blocks.length === 0) return Infinity;
+    const front = s + carLen / 2, back = s - (o.cars - 1) * pitch - carLen / 2;
+    const on = new Set<string>();
+    for (const b of blocks) if (within(b, back) || wrap(b.from - back) < front - back) on.add(b.name);
+    for (const name of on) signals.set(name, me);
+    for (const [name, who] of signals) if (who === me && !on.has(name) && name !== asked) signals.delete(name);
+    if (on.has(asked)) asked = '';
+    const here = blocks.find((b) => within(b, front));
+    if (!here) return Infinity;
+    const toEnd = here.len - wrap(front - here.from);
+    const next = blocks.find((b) => within(b, front + toEnd + 0.05));
+    if (!next || on.has(next.name)) return Infinity;
+    const who = signals.get(next.name);
+    if (who === me) return Infinity;
+    if (!who) {
+      // the way is clear: it asks for the piece a little before it gets there, so that two trains never both take it
+      if (toEnd < 18) {
+        signals.set(next.name, me);
+        asked = next.name;
+      }
+      return Infinity;
+    }
+    return toEnd - 1.2;
+  };
+  signal();
   const a = new THREE.Vector3(), c = new THREE.Vector3(), fwd = new THREE.Vector3(), right = new THREE.Vector3(), up = new THREE.Vector3(), pos = new THREE.Vector3();
   const UP = new THREE.Vector3(0, 1, 0);
 
@@ -291,9 +350,21 @@ export function train(k: Build, path: Path, o: TrainOpts): void {
         wait = o.dwell ?? 4;
         left = which;
         v = 0;
+        // At the end of the line it changes ends. Its cars are alike from both
+        // ends, so the last one becomes the first where it stands, and the path
+        // ahead of it is the way back.
+        const end = ends.find((c) => wrap(c - s) < carLen);
+        if (end !== undefined) {
+          s = wrap(2 * end - s + (o.cars - 1) * pitch);
+          wait = o.turnDwell ?? 8;
+          place();
+        }
         return;
       }
     }
+    // and wait for the piece of track ahead, if another train is on it
+    const room = signal();
+    if (room < 40) target = Math.min(target, room > 0.08 ? Math.sqrt(11 * room) : 0);
     v += Math.max(-9 * dt, Math.min(4.5 * dt, target - v));
     s = wrap(s + v * dt);
     place();
