@@ -291,7 +291,7 @@ export const TRAM_STOPS: P2[] = [[SHORE.tramN, -68], [SHORE.tramS, -24], [SHORE.
 export const BUSES: P2[] = line([[46, KOWLOON.lanes.busEast], [86, KOWLOON.lanes.busEast], [86, KOWLOON.lanes.busWest], [46, KOWLOON.lanes.busWest]], 2.5, true);
 
 // ---------------------------------------------------------------------------
-// What stands where: for now, a plain box for each thing, with its name on it
+// What stands where: the things that have names, each on a lot of its own
 // ---------------------------------------------------------------------------
 
 /** `y0` of -1 means: on the hill, wherever it stands, with its foot in the slope. */
@@ -300,8 +300,7 @@ export interface Lot { id: string; name: string; x0: number; z0: number; x1: num
 const lot = (id: string, name: string, x0: number, z0: number, x1: number, z1: number, h: number, color: number, more: Partial<Lot> = {}): Lot =>
   ({ id, name, x0, z0, x1, z1, h, color, ...more });
 
-const GLASS = 0x8fb4cf, STEEL = 0xaab4bd, WARM = 0xe6c9a4, PINK = 0xe0b9b0;
-const FLATS = [0xe9dcc3, 0xdfe6d4, 0xe6c7b8, 0xcfe0e8];
+const GLASS = 0x8fb4cf, STEEL = 0xaab4bd, PINK = 0xe0b9b0;
 
 export const LOTS: Lot[] = [
   // the Peak
@@ -330,9 +329,11 @@ export const LOTS: Lot[] = [
   lot('peninsula', 'THE PENINSULA', 43, -35, 61, -16.3, 44, 0xf0e3c4),
   // Kowloon
   lot('icc', 'ICC', 43, -99, 57, -85, 145, 0x6f95b5),
-  lot('mong-kok', 'MONG KOK SHOPS', 43, -66, 74, -55, 16, WARM),
+  lot('m-plus', 'M+', 23, -79, 32.4, -62, 30, 0x2f3a36),
+  lot('xiqu', 'XIQU CENTRE', 23, -57, 32.4, -47, 15, 0xb9c0c4),
+  lot('whampoa', 'THE WHAMPOA', 43.5, 99.5, 58.5, 107, 10, 0xf2efe6),
   lot('wong-tai-sin', 'TEMPLE', 78, -80, 90, -67, 8, 0xc8523f),
-  lot('bamboo', 'BAMBOO SCAFFOLDING', 77, 11, 94, 23, 27.2, 0x8aa07a),
+  lot('bamboo', 'BAMBOO SCAFFOLDING', 86, 11, 94, 23, 27.2, 0x8aa07a),
   lot('coliseum', 'COLISEUM', 44, 66, 62, 84, 24, 0xcfc8b8),
   lot('choi-hung-a', 'CHOI HUNG ESTATE', 77, 34, 94, 42, 26, 0xf2c14e),
   lot('choi-hung-b', 'CHOI HUNG ESTATE', 77, 50, 84, 86, 22, 0xe9836b),
@@ -340,31 +341,95 @@ export const LOTS: Lot[] = [
   lot('night-market', 'TEMPLE STREET NIGHT MARKET', 60, 100.5, 102, 110.5, 4, 0xc8402a),
 ];
 
-/** Slim blocks of flats on a step of the hill: `xs` are their west sides, `z` their north side. */
-const flats = (id: string, xs: number[], z: number, h: number): Lot[] =>
-  xs.map((x, i) => lot(`${id}-${i}`, '', x, z, x + 5, z + 4.6, h + ((i * 7 + Math.round(-z)) % 4) * 5, FLATS[(i + Math.round(-z / 3)) % 4], { y0: -1 }));
+// ---------------------------------------------------------------------------
+// Ordinary buildings: what stands between the things that have names
+// ---------------------------------------------------------------------------
 
-/** Low houses on a step of the south face, where anything taller would hide the road behind it. */
-const houses = (id: string, xs: number[], z: number): Lot[] =>
-  xs.map((x, i) => lot(`${id}-${i}`, '', x, z, x + 5, z + 4.6, 7 + ((i * 5 + Math.round(Math.abs(z))) % 3) * 2, FLATS[(i + 1) % 4], { y0: -1 }));
+/**
+ * What an ordinary building is like. A tong lau is an old tenement over
+ * shops; a neon block is dark, trimmed with light and hung with signs; a
+ * pencil is one of the slim towers of flats that Hong Kong is full of; an
+ * estate is a slab of public housing.
+ */
+export type Style = 'tonglau' | 'neon' | 'pencil' | 'estate' | 'glass' | 'office' | 'house';
+export type RoofKind = 'bare' | 'units' | 'tank' | 'helipad' | 'garden' | 'hip' | 'none';
 
-/** Ordinary buildings: the flats on the steps of the Peak, and what stands between the things that have names. */
-export const FILL: Lot[] = [
-  // the south face: on each step, backed by the wall of the next leg, and clear of the hairpins
+/** An ordinary building. `y0` of -1 means: on the hill, with its foot in the slope. `faces` are the sides that have shops. */
+export interface Ordinary {
+  id: string; x0: number; z0: number; x1: number; z1: number; h: number; style: Style;
+  roof?: RoofKind; faces?: string; y0?: number; crown?: { inset: number; h: number };
+  /** A name near its top, on all four sides: the id of a sign. */
+  sign?: string;
+}
+
+const ord = (id: string, x0: number, z0: number, x1: number, z1: number, h: number, style: Style, more: Partial<Ordinary> = {}): Ordinary =>
+  ({ id, x0, z0, x1, z1, h, style, ...more });
+
+/** Slim towers of flats on the north face of the Peak: `xs` are their west sides, `z` their north side. */
+const flats = (id: string, xs: number[], z: number, h: number): Ordinary[] =>
+  xs.map((x, i) => ord(`${id}-${i}`, x, z, x + 5, z + 4.6, h + ((i * 7 + Math.round(-z)) % 4) * 5, 'pencil', { y0: -1, roof: (i + Math.round(-z)) % 2 ? 'tank' : 'units' }));
+
+/** Low houses on the south face, where anything taller would hide the road behind it. */
+const houses = (id: string, xs: number[], z: number): Ordinary[] =>
+  xs.map((x, i) => ord(`${id}-${i}`, x, z, x + 5, z + 4.6, 7 + ((i * 5 + Math.round(Math.abs(z))) % 3) * 2, 'house', { y0: -1, roof: 'hip' }));
+
+/**
+ * Every ordinary building. Their heights are chosen for the view the tile
+ * opens with, from the south-south-east: what stands on the south side of a
+ * street or in front of a landmark is low, so that the street or the landmark
+ * shows over it.
+ */
+export const BUILDINGS: Ordinary[] = [
+  // the south face of the Peak: on each step, backed by the wall of the next leg of the road, and clear of the hairpins
   ...houses('south-a', [-76, -70, -64.5], 42.6), ...houses('south-b', [-101.5, -95.5, -89.5], 27.6),
   ...houses('south-c', [-76, -70, -64.5], 12.6), ...houses('south-d', [-101.5, -95.5, -89.5], -2.4),
   // Mid-Levels, on the north face: row above row, west of the tram's cut. East of it the escalator climbs.
   ...flats('mid-1', [-102, -95, -88, -81], -97, 34), ...flats('mid-2', [-100, -93, -86, -79], -85, 38),
   ...flats('mid-3', [-102, -95, -88, -81], -73, 34), ...flats('mid-4', [-100, -93, -86, -79], -61, 30),
   ...flats('mid-5', [-102, -95, -88, -81], -49, 24),
-  // Wan Chai, low in front of the Peak
-  lot('wan-chai-1', '', -58.5, -17, -46, -6, 22, WARM), lot('wan-chai-2', '', -58.5, -3, -46, 2, 16, 0xe6c7b8),
-  lot('wan-chai-3', '', -58.5, 33, -46, 45, 18, 0xdfe6d4),
-  // Nathan Road's blocks
-  lot('nathan-n1', '', 76, -34, 91, -17, 26, WARM), lot('nathan-s1', '', 43, 11, 56, 24, 22, 0xe6c7b8),
-  lot('tst-east', '', 43, 28, 56, 42, 18, 0xcfe0e8),
-  // West Kowloon
-  lot('west-kowloon', '', 61, -99, 73, -88, 48, 0xcfe0e8), lot('yau-ma-tei', '', 61, -82, 74, -70, 30, 0xe9dcc3),
+  // on the summit, and in Sheung Wan at the foot of the north face
+  ord('galleria', -84.6, -39.4, -79.6, -31.4, 6.5, 'office', { y0: HILL.top, roof: 'garden', faces: '' }),
+  ord('sheung-wan-1', -103.5, -112, -97.6, -104.2, 13, 'tonglau', { faces: 'ES', roof: 'tank' }),
+  ord('sheung-wan-2', -78.2, -112.4, -74, -106.4, 10, 'tonglau', { faces: 'E' }),
+  // Admiralty and Wan Chai, behind the tram: low in front of the Peak
+  ord('admiralty', -58.5, -31.5, -45, -25, 26, 'glass', { roof: 'units', sign: 'tarmac' }),
+  ord('wan-chai-0', -58.5, -24.4, -45.5, -18.6, 17, 'tonglau', { faces: 'E', roof: 'tank' }),
+  ord('wan-chai-1', -58.5, -17, -46, -11.9, 22, 'neon', { faces: 'E' }),
+  ord('wan-chai-1b', -58.5, -11.3, -46, -6, 17, 'tonglau', { faces: 'E', roof: 'units' }),
+  ord('wan-chai-2', -58.5, -3, -46, 2, 16, 'tonglau', { faces: 'E', roof: 'tank' }),
+  ord('wan-chai-3', -58.5, 33, -52.4, 45, 20, 'estate', { roof: 'tank' }),
+  ord('wan-chai-3b', -51.8, 33, -46, 38.8, 13, 'tonglau', { faces: 'E' }),
+  ord('wan-chai-3c', -51.8, 39.3, -46, 45, 15, 'neon', { faces: 'E' }),
+  // West Kowloon: a mall, with towers of flats standing on it round the foot of ICC
+  ord('elements', 43, -84, 60, -67.5, 6, 'glass', { roof: 'garden', faces: 'SE' }),
+  ord('union-1', 44, -83, 51, -76.5, 58, 'pencil', { y0: 6, roof: 'units', crown: { inset: 1, h: 4 } }),
+  ord('union-2', 52.5, -83, 59.5, -76.5, 50, 'pencil', { y0: 6, roof: 'tank' }),
+  ord('union-3', 44, -75, 51, -68.5, 44, 'glass', { y0: 6, roof: 'helipad' }),
+  ord('west-kowloon', 61, -99, 73, -88, 48, 'pencil', { roof: 'units', crown: { inset: 1.2, h: 5 } }),
+  ord('yau-ma-tei', 61, -82, 74, -70, 30, 'office', { faces: 'SE', roof: 'tank', sign: 'tiny' }),
+  // Mong Kok: a row of shops under signs, which faces south on to the street
+  ord('mk-1', 43, -66, 48.4, -55, 18, 'neon', { faces: 'SW' }),
+  ord('mk-2', 48.8, -66, 54, -55, 13, 'tonglau', { faces: 'S', roof: 'tank' }),
+  ord('mk-3', 54.4, -66, 59.6, -55, 22, 'neon', { faces: 'S' }),
+  ord('mk-4', 60, -66, 64.6, -55, 12, 'tonglau', { faces: 'S' }),
+  ord('mk-5', 65, -66, 69.4, -55, 20, 'neon', { faces: 'S' }),
+  ord('mk-6', 69.8, -66, 74, -55, 15, 'tonglau', { faces: 'SE', roof: 'tank' }),
+  ord('wts-arcade', 76.5, -63.5, 94, -58, 5.5, 'tonglau', { faces: 'S', roof: 'bare' }),
+  // Nathan Road: the north side is tall and bright, and the south side is low, so that the road can be seen
+  ord('nathan-n1', 76, -34, 80.7, -17, 24, 'neon', { faces: 'SW' }),
+  ord('nathan-n2', 81.1, -34, 85.6, -17, 18, 'neon', { faces: 'S' }),
+  ord('nathan-n3', 86, -34, 91, -17, 26, 'neon', { faces: 'SE' }),
+  ord('jordan-1', 76, -44.6, 84, -36.4, 14, 'tonglau', { faces: 'N', roof: 'tank' }),
+  ord('jordan-2', 85.6, -44.6, 94, -36.4, 16, 'estate', { roof: 'units' }),
+  ord('nathan-s1', 77, 11, 80.8, 23, 11, 'neon', { faces: 'N' }),
+  ord('nathan-s2', 81.2, 11, 85.4, 23, 9, 'tonglau', { faces: 'N', roof: 'tank' }),
+  ord('tst-1', 43, 11, 47.6, 24, 12, 'neon', { faces: 'NW' }),
+  ord('tst-2', 48, 11, 52, 24, 9, 'tonglau', { faces: 'N', roof: 'tank' }),
+  ord('tst-3', 52.4, 11, 56, 24, 12, 'neon', { faces: 'NE' }),
+  // Tsim Sha Tsui East is low, as it had to be under the old flight path, and here so that the waterfront shows past it
+  ord('tst-east-1', 43, 28, 49.2, 42, 16, 'office', { roof: 'garden', faces: 'W' }),
+  ord('tst-east-2', 49.8, 28, 56, 42, 18, 'glass', { roof: 'units', sign: 'minigt' }),
+  ord('harbour-mall', 21.6, -41.4, 27.6, -32, 8, 'office', { faces: 'SE', roof: 'units' }),
 ];
 
 // ---------------------------------------------------------------------------
@@ -378,4 +443,13 @@ export const HERO_SPOTS: HeroSpot[] = [
   { id: 'choi-hung', x: 89.75, y: 9.06, z: 84.6, heading: -Math.PI / 2 },
 ];
 
-export const PARKED: ParkedSpot[] = [];
+/** Plain vehicles that stand parked: on the summit, in the queue for the car ferry, and here and there in Kowloon. */
+export const PARKED: ParkedSpot[] = [
+  { x: -83.3, y: HILL.top + 0.04, z: -26.4, heading: Math.PI / 2 }, { x: -80.2, y: HILL.top + 0.04, z: -26.4, heading: -Math.PI / 2 },
+  { x: -15.4, y: 0.04, z: 105.3, heading: 0 },
+  { x: -76.4, y: 0.04, z: -103.9, heading: 0 },
+  { x: 13, y: 0.04, z: -36.2, heading: Math.PI / 2 },
+  { x: 88.6, y: 0.04, z: 46.6, heading: 0 }, { x: 88.6, y: 0.04, z: 51.2, heading: Math.PI },
+  { x: 48.4, y: 0.04, z: 93.2, heading: 0 }, { x: 56.6, y: 0.04, z: 93.2, heading: Math.PI },
+  { x: 59, y: 0.04, z: -92, heading: Math.PI / 2 },
+];

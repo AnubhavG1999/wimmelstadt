@@ -235,6 +235,17 @@ export function sampan(b: GeoBuilder, x: number, z: number, yaw: number, awning 
   });
 }
 
+/** A public light bus: cream, with a roof of red or of green, and sixteen seats. This one is waiting for the last of them to fill. */
+export function minibus(b: GeoBuilder, x: number, z: number, yaw: number, roof = 0xc8322b): void {
+  b.moved(x, 0, z, yaw, () => {
+    b.box(-2.7, 0.4, -1.05, 2.7, 1.5, 1.05, 0xf2e6c4);
+    b.box(-2.7, 1.5, -1.05, 2.7, 2.35, 1.05, 0x1c2733, { win: interior(0.8), faces: 'NESW' });
+    for (let i = 0; i <= 4; i++) b.box(-2.7 + i * 1.33 - 0.09, 1.5, -1.07, -2.7 + i * 1.33 + 0.09, 2.35, 1.07, 0xf2e6c4, { faces: 'NS' });
+    b.box(-2.72, 2.35, -1.07, 2.72, 2.75, 1.07, roof);
+    for (const wx of [-1.7, 1.7]) for (const s of [-1, 1]) b.box(wx - 0.45, 0, s * 0.85 - 0.22, wx + 0.45, 0.85, s * 0.85 + 0.22, 0x17171a);
+  });
+}
+
 /** A lighter with a derrick, loaded with containers: how goods are still worked in mid-stream. */
 export function lighter(b: GeoBuilder, x: number, z: number, yaw: number): void {
   b.moved(x, -0.9, z, yaw, () => {

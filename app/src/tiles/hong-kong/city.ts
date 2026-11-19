@@ -5,6 +5,8 @@
 
 import * as THREE from 'three';
 import { placed } from '../../engine/build';
+import { ordinaryBuildings, type BuildingRules, type Lot as Plot } from '../../engine/buildings';
+import type { WinSpec } from '../../engine/geo';
 import { PLAZA, area, flat as fill, ground, rect, water } from '../../engine/ground';
 import { joined } from '../../engine/paths';
 import { train, track } from '../../engine/rail';
@@ -13,11 +15,12 @@ import type { Build, TileParts } from '../../engine/tile';
 import { checkRoads } from './check';
 import { fine, flat, lengths, lengths3, pathOf, rounded, stretch, type P2, type P3 } from './geom';
 import { ESCALATOR, MODELS, OPEN, extras } from './landmarks';
-import { busCar, dragonBoat, ferryBoat, junkBoat, lighter, peakTramCar, sampan, tramCar, type Car } from './movers';
+import { busCar, dragonBoat, ferryBoat, junkBoat, lighter, minibus, peakTramCar, sampan, tramCar, type Car } from './movers';
 import {
-  BOARD, BUSES, FILL, FUNICULAR, HARBOUR, HERO_SPOTS, HILL, KOWLOON, LION, LION_GROUND, LOTS, PARKED, PEAK, PEAK_GROUND, POINT, ROUTES, RUN, SHELTER, SHORE, TRAM, TRAM_STOPS, TUNNEL,
-  groundAt, type Lot,
+  BOARD, BUILDINGS, BUSES, FUNICULAR, HARBOUR, HERO_SPOTS, HILL, KOWLOON, LION, LION_GROUND, LOTS, PARKED, PEAK, PEAK_GROUND, POINT, ROUTES, RUN, SHELTER, SHORE, TRAM, TRAM_STOPS, TUNNEL,
+  groundAt, type Style,
 } from './plan';
+import { NEON, SIGN_POOLS } from './signs';
 import { drawField } from './terrain';
 
 const SEA = 0x3f8fb0, QUAY = 0xa9a59a, ROCK = 0x9a8f7c, DARK = 0x0c0c10;
@@ -80,7 +83,7 @@ export function buildCity(k: Build): TileParts {
   area(k, rect(22.4, -2, 28, 62), PLAZA);
   area(k, rect(10.4, -42, 28, -2), PLAZA);
   area(k, rect(34.4, 62, 43, BOARD.z1 - 0.4), PLAZA);
-  area(k, rect(BOARD.x0, N, HILL.x1, HILL.north + 2.2), 0x86b96a); // Sheung Wan, at the foot of the north face
+  area(k, rect(BOARD.x0, N, HILL.x1, HILL.north + 2.2), PLAZA); // Sheung Wan, at the foot of the north face
 
   // -------------------------------------------------------------------------
   // The Peak: sloping ground, with the road and the tram's line cut into it
@@ -234,29 +237,53 @@ export function buildCity(k: Build): TileParts {
   }
 
   // -------------------------------------------------------------------------
-  // What stands on the tile: for now a plain box for each thing, with its name on it
+  // What stands on the tile: the things that have names, and the ordinary buildings between them
   // -------------------------------------------------------------------------
 
-  const stand = (l: Lot, i: number): void => {
+  for (const l of LOTS) {
     const model = MODELS[l.id];
-    if (model) return model(k, l);
-    const cx = (l.x0 + l.x1) / 2, cz = (l.z0 + l.z1) / 2;
-    const onHill = l.y0 === -1;
-    const y0 = onHill ? Math.min(groundAt(l.x0, l.z0), groundAt(l.x1, l.z0), groundAt(l.x0, l.z1), groundAt(l.x1, l.z1)) - 0.4 : l.y0 ?? 0;
-    const y1 = (onHill ? groundAt(cx, cz) : y0) + l.h;
-    const win = l.h > 9 ? { cell: 2.6, storey: 5, lit: 0.4, kind: 0 } : undefined;
-    if (l.round) b.cyl(cx, cz, y0, y1, (l.x1 - l.x0) / 2, (l.x1 - l.x0) / 2 - 2.4, 12, l.color);
-    else b.box(l.x0, y0, l.z0, l.x1, y1, l.z1, l.color, { win, seed: (i * 0.618) % 1, top: 0x9d988f });
-    if (!l.name) return;
-    // its name, towards the south and towards the east, where the view first looks from
-    const hgt = Math.min(3.4, Math.max(1.6, (l.x1 - l.x0) / 5));
-    const y = l.h > 9 ? y1 - hgt : y1 + hgt * 0.75;
-    k.signs.add(l.id, cx, y, l.z1 + 0.14, 'S', hgt, Math.max(l.x1 - l.x0, 9) - 0.6);
-    k.signs.add(l.id, l.x1 + 0.14, y, cz, 'E', hgt, Math.max(l.z1 - l.z0, 9) - 0.6);
-    k.lights.push({ x: cx, z: l.z1 + 3, r: 10, color: '#ffe2ae', k: 0.4 });
-  };
-  LOTS.forEach(stand);
-  FILL.forEach((l, i) => stand(l, i + 40));
+    if (!model) throw new Error(`Hong Kong: nothing is built on the lot called "${l.id}".`);
+    model(k, l);
+  }
+  {
+    const PALETTE: Record<Style, number[]> = {
+      tonglau: [0xd9c7a8, 0xc9d4c0, 0xe0b9a8, 0xbfd0d9, 0xe6d9a8, 0xcbb8a0, 0xd6c0cf],
+      neon: [0x3d3856, 0x2f3b55, 0x4a3b58, 0x38324e],
+      pencil: [0xe9dcc3, 0xdfe6d4, 0xe6c7b8, 0xcfe0e8, 0xf0d9c4, 0xd9cfe0],
+      estate: [0xe9e3d6, 0xd9e6dc, 0xf0dcc0],
+      glass: [0x8fb4cf, 0x7aa3c2, 0x9cc3d3, 0x6f95b5],
+      office: [0xe9dcc3, 0xdfe6d4, 0xcfe0e8, 0xe6c7b8],
+      house: [0xf2efe6, 0xf0e3c4, 0xe6d3c8, 0xd9dcc8],
+    };
+    // a storey here is lower than the engine's, as Hong Kong's are: more of them fit under the same roof
+    const WIN: Record<Style, WinSpec> = {
+      tonglau: { cell: 2.0, storey: 3.4, lit: 0.45, kind: 2 },
+      neon: { cell: 2.2, storey: 3.4, lit: 0.25, kind: 3 },
+      pencil: { cell: 1.5, storey: 2.6, lit: 0.5, kind: 4 },
+      estate: { cell: 1.5, storey: 2.8, lit: 0.5, kind: 0 },
+      glass: { cell: 1.8, storey: 3.4, lit: 0.44, kind: 1 },
+      office: { cell: 2.2, storey: 3.4, lit: 0.38, kind: 2 },
+      house: { cell: 2.4, storey: 3.5, lit: 0.45, kind: 0 },
+    };
+    type Sited = Plot & { island: boolean };
+    const plots = BUILDINGS.map((o, i): Sited => {
+      const cx = (o.x0 + o.x1) / 2, cz = (o.z0 + o.z1) / 2, onHill = o.y0 === -1;
+      // a building on the hill has its foot in the slope, and is as tall as it is from the ground at its middle
+      const y0 = onHill ? Math.min(groundAt(o.x0, o.z0), groundAt(o.x1, o.z0), groundAt(o.x0, o.z1), groundAt(o.x1, o.z1)) - 0.4 : o.y0 ?? 0;
+      return {
+        x: o.x0, z: o.z0, w: o.x1 - o.x0, d: o.z1 - o.z0, y0, y1: (onHill ? groundAt(cx, cz) : y0) + o.h,
+        style: o.style, tint: i * 7 + 3, roof: o.roof ?? 'bare', crown: o.crown, signs: o.faces ?? '', sign: o.sign, island: cx < 0,
+      };
+    });
+    const rules: BuildingRules<Sited> = {
+      styles: Object.fromEntries((Object.keys(PALETTE) as Style[]).map((s) => [s, { palette: PALETTE[s], win: WIN[s], shops: s === 'tonglau' || s === 'office', neon: s === 'neon' }])),
+      roofs: [0x8d8a83, 0x7b7a7e, 0x9d988f, 0x6f7378],
+      hip: () => ({ colors: [0xb5654a, 0x3f7a5a, 0xa85a44, 0x4f6f8a] }),
+      pool: (p) => SIGN_POOLS[p.island ? 'island' : 'kowloon'],
+      neon: NEON,
+    };
+    ordinaryBuildings(k, plots, rules);
+  }
   extras(k);
 
   // the Convention Centre's link, over the shore road and the tram
@@ -323,7 +350,7 @@ export function buildCity(k: Build): TileParts {
   // -------------------------------------------------------------------------
 
   // where nothing is planted and nobody stands: every lot, and the open ground in front of the temple and round the Peak Tram's lower stop
-  const built = [...LOTS, ...FILL, ...OPEN.map(([x0, z0, x1, z1]) => ({ x0, z0, x1, z1 }))];
+  const built = [...LOTS, ...BUILDINGS, ...OPEN.map(([x0, z0, x1, z1]) => ({ x0, z0, x1, z1 }))];
   const inLot = (x: number, z: number, pad: number): boolean => built.some((l) => x > l.x0 - pad && x < l.x1 + pad && z > l.z0 - pad && z < l.z1 + pad);
   {
     // the Peak is green wherever nothing is built: on every level, clear of the road, the tram's cut and the houses
@@ -355,7 +382,7 @@ export function buildCity(k: Build): TileParts {
   for (let z = 6; z < 60; z += 8) k.tree(26.9, z, 0.55);
   for (let z = -38; z < -4; z += 8.5) k.tree(29, z, 0.55);
   for (const [x, z] of [[-7.2, 31], [-22.5, 44], [-44, 104], [39, 66], [39, 78], [39, 90], [39, 102]]) k.tree(x, z, 0.6);
-  for (const [x, z] of [[82, -62], [90, -62], [82, 46], [80, 90.4], [90, 46], [47, 60], [58, 62], [47, 88], [58, 90]]) k.tree(x, z, 0.65);
+  for (const [x, z] of [[82, -55.6], [90, -55.6], [82, 46], [80, 90.4], [47, 60], [58, 62], [47, 88], [58, 90]]) k.tree(x, z, 0.65);
 
   // -------------------------------------------------------------------------
   // Light at night: lamps on the streets, and a string of lamps along every road above the ground
@@ -388,8 +415,8 @@ export function buildCity(k: Build): TileParts {
   // -------------------------------------------------------------------------
 
   {
-    // nobody stands in a building, or where a hero is put on show
-    const onShow = (x: number, z: number): boolean => HERO_SPOTS.some((h) => Math.hypot(h.x - x, h.z - z) < 4.6);
+    // nobody stands in a building, where a hero is put on show, or where something is parked
+    const onShow = (x: number, z: number): boolean => [...HERO_SPOTS, ...PARKED, { x: 98.7, z: -3 }, { x: 13.6, z: -27.2 }].some((h) => Math.hypot(h.x - x, h.z - z) < 4.6);
     const crowd = (n: number, x0: number, z0: number, x1: number, z1: number): void => {
       for (let i = 0; i < n; i++) {
         const x = x0 + k.rand() * (x1 - x0), z = z0 + k.rand() * (z1 - z0);
@@ -403,12 +430,15 @@ export function buildCity(k: Build): TileParts {
     crowd(16, 11.5, -40, 27, -3); // round the Clock Tower
     crowd(22, 35, 64, 42, 110); // watching the dragon boats
     crowd(18, -82, -22.5, -64.5, -17); // at the lookout on the Peak
-    crowd(8, -84, -36, -79.5, -25);
     crowd(10, -44.8, 75, -42.7, 101); // on the quay of the typhoon shelter
     crowd(12, -8.1, 20, -6.5, 50); // on the Convention Centre's point, by the water
     crowd(8, -84.5, -111.5, -73.5, -102.6); // Sheung Wan
     for (const z of [-14.5, 8.5]) crowd(18, 42, z - 1.1, 96, z + 1.1); // Nathan Road's pavements
   }
+
+  // public light buses, waiting: a green one where Nathan Road's traffic turns back, and a red one by the Star Ferry
+  minibus(b, 98.7, -3, Math.PI / 2, 0x2f8f5f);
+  minibus(b, 13.6, -27.2, 0, 0xc8322b);
 
   if (import.meta.env.DEV) checkRoads(ROUTES, { tram: flat(TRAM, 0.04), buses: flat(BUSES, 0.02) });
 

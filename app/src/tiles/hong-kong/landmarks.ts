@@ -1098,6 +1098,122 @@ function kaiTak(k: Build): void {
   train(k, pathOf(way, true), { cars: 1, speed: 15, car: jumbo(), from: total * 0.3 });
 }
 
+// ---------------------------------------------------------------------------
+// West Kowloon's waterfront, and Hung Hom
+// ---------------------------------------------------------------------------
+
+/**
+ * M+: a wide low block of galleries with a terrace on it, and standing on that
+ * a slab as thin as a book on its edge, tiled in dark green, with a screen the
+ * size of the whole of it.
+ */
+const mPlus: Model = (k, l) => {
+  const b = k.b, DARK = 0x2f3a36, CONC = 0xbfbcb4, zc = (l.z0 + l.z1) / 2;
+  b.box(l.x0, 0, l.z0, l.x1, 5, l.z1, CONC, { win: { cell: 2.6, storey: 5, lit: 0.8, kind: 2 }, seed: 0.4, top: 0xa9a59a });
+  railing(b, l.x0 + 0.1, l.z0 + 0.1, l.x1 - 0.1, l.z1 - 0.1, 5, 0xd9dde0);
+  const x0 = l.x0 + 3.8, x1 = x0 + 1.8, z0 = l.z0 + 1.6, z1 = l.z1 - 1.6;
+  b.box(x0, 5, z0, x1, l.h, z1, DARK, { win: { cell: 1.2, storey: 2.5, lit: 0.3, kind: 6 }, seed: 0.2, top: 0x23292a });
+  for (const [x, n] of [[x0 - 0.06, -1], [x1 + 0.06, 1]]) k.sign('m-plus-screen', x, 5.6 + (l.h - 6.4) / 2, zc, n, 0, l.h - 6.4, z1 - z0 - 0.6);
+  for (let i = 0; i < 8; i++) k.person(l.x0 + 0.8 + k.rand() * (i % 2 ? 2.4 : 0) + (i % 2 ? 0 : 6.2 + k.rand() * 2), l.z0 + 1 + k.rand() * (l.z1 - l.z0 - 2), 5);
+  k.lights.push({ x: l.x0 - 2, z: zc, r: 13, color: '#bfe8ff', k: 0.7 });
+  k.lights.push({ x: l.x1 + 2, z: zc, r: 11, color: '#bfe8ff', k: 0.6 });
+};
+
+/**
+ * The Xiqu Centre, where Cantonese opera is sung: a box wrapped in fins of
+ * pale metal, which part at its corners like a curtain drawn back, with light
+ * behind.
+ */
+const xiqu: Model = (k, l) => {
+  const b = k.b, SKIN = 0xc4cbd0, GLOW = 0xffd9a0, H = l.h;
+  b.box(l.x0, 0, l.z0, l.x1, H, l.z1, SKIN, { win: { cell: 0.7, storey: H, lit: 0.1, kind: 6 }, seed: 0.3, top: 0x9aa3ab });
+  b.box(l.x0 + 1.2, H, l.z0 + 1.2, l.x1 - 1.2, H + 1.4, l.z1 - 1.2, 0xaab2b8, { top: 0x9aa3ab });
+  const lit = { win: interior(1.3) }, w = 4.4, rise = H * 0.62, e = 0.05;
+  // the curtain drawn back, at each corner that the view can see
+  face3(b, [l.x1 - w, 0, l.z1 + e], [l.x1, 0, l.z1 + e], [l.x1, rise, l.z1 + e], [0, 0, 1], GLOW, lit);
+  face3(b, [l.x1 + e, 0, l.z1 - w], [l.x1 + e, 0, l.z1], [l.x1 + e, rise, l.z1], [1, 0, 0], GLOW, lit);
+  face3(b, [l.x0, 0, l.z1 + e], [l.x0 + w, 0, l.z1 + e], [l.x0, rise, l.z1 + e], [0, 0, 1], GLOW, lit);
+  face3(b, [l.x1 + e, 0, l.z0], [l.x1 + e, 0, l.z0 + w], [l.x1 + e, rise, l.z0], [1, 0, 0], GLOW, lit);
+  face3(b, [l.x0 - e, 0, l.z1 - w], [l.x0 - e, 0, l.z1], [l.x0 - e, rise, l.z1], [-1, 0, 0], GLOW, lit);
+  for (let i = 0; i < 6; i++) k.person(l.x1 + 0.6 + k.rand() * 1.2, l.z0 + 0.5 + k.rand() * (l.z1 - l.z0 - 1));
+  k.lights.push({ x: l.x1 + 2.5, z: l.z1 - 1, r: 10, color: '#ffd9a0', k: 0.9 });
+  k.lights.push({ x: (l.x0 + l.x1) / 2, z: l.z1 + 2.5, r: 10, color: '#ffd9a0', k: 0.8 });
+};
+
+/**
+ * The Whampoa: a shopping mall built as a ship, aground among the flats of
+ * Hung Hom where the dockyard used to be. Its bows point at the harbour.
+ */
+const whampoa: Model = (k, l) => {
+  const b = k.b, WHITE = 0xf2efe6, HULL = 0x2f4f7a, zc = (l.z0 + l.z1) / 2, W = (l.z1 - l.z0) / 2 - 0.3;
+  const plan: XZ[] = [[l.x0, zc], [l.x0 + 3.4, zc - W], [l.x1 - 1.2, zc - W], [l.x1, zc - W + 1.2], [l.x1, zc + W - 1.2], [l.x1 - 1.2, zc + W], [l.x0 + 3.4, zc + W]];
+  prism(b, plan, 0, 0.5, 0xb3261e, { top: false });
+  prism(b, plan, 0.5, 2.8, HULL, { win: { cell: 1.7, storey: 2.6, lit: 0.9, kind: 2 }, seed: 0.3, top: false });
+  prism(b, plan, 2.8, 3.5, WHITE, { top: 0xd9d4c7 });
+  const deck = (x0: number, x1: number, inset: number, y0: number, y1: number): void =>
+    b.box(x0, y0, zc - W + inset, x1, y1, zc + W - inset, WHITE, { win: { cell: 1.2, storey: y1 - y0, lit: 0.8, kind: 0 }, seed: x0 * 0.1, top: 0xd9d4c7 });
+  deck(l.x0 + 4.2, l.x1 - 1.6, 0.7, 3.5, 5.6);
+  deck(l.x0 + 5.6, l.x1 - 3.2, 1.3, 5.6, 7.5);
+  b.box(l.x0 + 5.6, 7.5, zc - 1.9, l.x0 + 8.2, 9.1, zc + 1.9, WHITE, { win: interior(1.0), top: HULL });
+  b.cyl(l.x1 - 5.2, zc, 7.5, 10.6, 0.95, 0.8, 8, 0xc8322b, { cap: 0x2a2c31 });
+  b.cyl(l.x1 - 5.2, zc, 10.1, 10.6, 0.98, 0.84, 8, 0x2a2c31, { cap: false });
+  b.cyl(l.x0 + 6.9, zc, 9.1, 12.4, 0.08, 0.05, 4, 0x59636d, { cap: false });
+  for (let i = 0; i < 9; i++) k.person(l.x0 + 3 + k.rand() * (l.x1 - l.x0 - 4), i % 2 ? l.z1 + 0.5 + k.rand() : l.z0 - 0.5 - k.rand());
+  for (const x of [l.x0 + 4, l.x1 - 3]) k.lights.push({ x, z: l.z1 + 2, r: 9, color: '#fff0d6', k: 0.8 });
+};
+
+/** Lawn by the water in West Kowloon, with trees and people on it. */
+function artPark(k: Build): void {
+  area(k, [[22.5, -110.5], [32.6, -110.5], [32.6, -80.2], [22.5, -80.2]], 0x86b96a, 0.03);
+  area(k, [[22.5, -61], [32.6, -61], [32.6, -58], [22.5, -58]], 0x86b96a, 0.03);
+  for (const [x, z, s] of [[24.6, -108, 0.6], [30.4, -104.5, 0.7], [25.4, -99, 0.55], [30.8, -95, 0.6], [24.8, -90.5, 0.7], [30, -86, 0.6], [26.4, -82.6, 0.5], [27.5, -59.5, 0.5]]) k.tree(x, z, s);
+  for (let i = 0; i < 16; i++) k.person(23.4 + k.rand() * 8.4, -109.5 + k.rand() * 28);
+  for (const z of [-104, -92]) k.lights.push({ x: 27.5, z, r: 10, color: '#ffe2ae', k: 0.45 });
+}
+
+/**
+ * A sign of neon hung out over a street from a wall, on a frame of steel, to
+ * be read from both ways along the street. `wall` is where the wall is, and
+ * `out` which way the street lies: 1 to the south of it, -1 to the north.
+ */
+function hung(k: Build, id: string, x: number, wall: number, out: number, y: number, h: number): void {
+  const rect = k.signs.atlas.rects.get(id);
+  if (!rect) return;
+  const b = k.b, w = h * rect.aspect, z0 = wall + out * 0.5, z1 = z0 + out * w, zc = (z0 + z1) / 2;
+  b.box(x - 0.09, y - h / 2 - 0.08, Math.min(z0, z1) - 0.08, x + 0.09, y + h / 2 + 0.08, Math.max(z0, z1) + 0.08, 0x14141c, { faces: 'NESWTB' });
+  k.sign(id, x + 0.11, y, zc, 1, 0, h);
+  k.sign(id, x - 0.11, y, zc, -1, 0, h);
+  b.beam([x, y + h / 2 + 0.14, wall], [x, y + h / 2 + 0.14, z1], 0.06, 0.06, 0x59636d);
+  b.beam([x, y + h / 2 + 1.7, wall], [x, y + h / 2 + 0.14, z1 - out * 0.3], 0.04, 0.04, 0x59636d);
+  k.lights.push({ x, z: zc + out * 1.5, r: 8, color: rect.color, k: 0.45 });
+}
+
+/** The signs over Nathan Road and over Mong Kok's street: one above another, each trying to be seen past the last. */
+function streetNeon(k: Build): void {
+  const NATHAN: [string, number, number, number][] = [
+    ['v-nightclub', 77.2, 14, 9], ['pawn-bat', 78.6, 9.6, 5], ['jewellery', 82.2, 12.5, 3], ['v-seafood', 83.5, 12.9, 9.6],
+    ['mahjong', 86.8, 9, 2.6], ['v-sauna', 88.3, 16.4, 8], ['karaoke', 87.5, 12.2, 2.4],
+  ];
+  for (const [id, x, y, h] of NATHAN) hung(k, id, x, -17, 1, y, h);
+  const MONG_KOK: [string, number, number, number][] = [
+    ['v-restaurant', 44.4, 12, 8], ['pawn-bat', 50.2, 9, 4.6], ['model-cars', 52.8, 8.5, 2.4], ['goldfish', 55.4, 9, 2.4], ['v-gold', 56.6, 15.5, 9],
+    ['v-pharmacy', 61.4, 8.6, 5.6], ['exchange', 63.6, 8.2, 2.2], ['v-mahjong', 65.8, 13.5, 8.5], ['foot', 67.2, 8.8, 2.3], ['watches', 71.4, 9.6, 2.4], ['cameras', 73, 12.4, 2.4],
+  ];
+  for (const [id, x, y, h] of MONG_KOK) hung(k, id, x, -55, 1, y, h);
+  // and a few over the tram, in Wan Chai: from walls that face east
+  const b = k.b;
+  for (const [id, z, y, h] of [['v-teahouse', -13.2, 12, 8], ['v-pawn', -9.6, 9.5, 5.5], ['dim-sum', -21, 9, 2.4], ['v-tailor', 43.6, 9.4, 5.6]] as [string, number, number, number][]) {
+    const rect = k.signs.atlas.rects.get(id);
+    if (!rect) continue;
+    const wall = z > 30 ? -46 : z < -18 ? -45.5 : -46, w = h * rect.aspect, x0 = wall + 0.5, x1 = x0 + w, xc = (x0 + x1) / 2;
+    b.box(x0 - 0.08, y - h / 2 - 0.08, z - 0.09, x1 + 0.08, y + h / 2 + 0.08, z + 0.09, 0x14141c, { faces: 'NESWTB' });
+    k.sign(id, xc, y, z + 0.11, 0, 1, h);
+    k.sign(id, xc, y, z - 0.11, 0, -1, h);
+    b.beam([wall, y + h / 2 + 0.14, z], [x1, y + h / 2 + 0.14, z], 0.06, 0.06, 0x59636d);
+    k.lights.push({ x: xc + 1.5, z, r: 8, color: rect.color, k: 0.45 });
+  }
+}
+
 /** A small pavilion to look out from, as Chinese gardens have: red posts, and a roof of green tile that comes to a point. */
 function pavilion(k: Build, x: number, z: number, y: number): void {
   const b = k.b, R = 2.1;
@@ -1246,6 +1362,8 @@ export function extras(k: Build): void {
   racecourse(k);
   symphony(k);
   kaiTak(k);
+  artPark(k);
+  streetNeon(k);
   // on the summit: a pavilion at the lookout, and a rail along its edge
   pavilion(k, -81, -18.6, HILL.top);
   k.b.box(-87.5, HILL.top + 0.85, -15.5, -64.4, HILL.top + 1.05, -15.36, 0xf2efe6, { faces: 'NESWTB' });
@@ -1253,7 +1371,7 @@ export function extras(k: Build): void {
 }
 
 
-/** The model for each thing that has one, by the id of its lot. A lot without one is a plain box with its name on it. */
+/** The model for each thing, by the id of its lot. */
 export const MODELS: Record<string, Model> = {
   'bank-of-china': bankOfChina,
   hsbc,
@@ -1283,4 +1401,7 @@ export const MODELS: Record<string, Model> = {
   monster,
   'noonday-gun': noondayGun,
   'car-ferry': carFerry,
+  'm-plus': mPlus,
+  xiqu,
+  whampoa,
 };
