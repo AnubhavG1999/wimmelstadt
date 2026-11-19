@@ -1,0 +1,22 @@
+{
+  "name": "wimmelstadt-hero-prototype",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "pictures": "node prepare.mjs",
+    "trial": "node --env-file-if-exists=../../.env.local run.mjs",
+    "dev": "vite --port 5185 --strictPort",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fal-ai/client": "^1.11.0",
+    "sharp": "^0.35.5",
+    "three": "^0.187.0"
+  },
+  "devDependencies": {
+    "@types/three": "^0.187.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8"
+  }
+}
