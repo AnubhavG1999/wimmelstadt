@@ -14,8 +14,8 @@ import { dragon } from './dragon';
 import { buildLandmarks } from './landmarks';
 import { sample, toSegs, type Piece } from './lines';
 import {
-  AVENUE, BOARD, DRAGON_ROUND, FUJI, HERO_SPOTS, KYOTO, KYOTO_RING, LOOKOUT, LOOKOUT_LOOP, LOOKOUT_YARD, LOTS, NAMES, ORDINARY, PARKED, PASS,
-  PASS_LINE, ROTARY, ROUTES, SHORE, TOKYO, TOKYO_RING, UENO_PARK, WATER,
+  AVENUE, BOARD, DRAGON_ROUND, FUJI, HERO_SPOTS, KEEP_CLEAR, KYOTO, KYOTO_RING, LOOKOUT, LOOKOUT_LOOP, LOOKOUT_YARD, LOTS, MOAT, NAMES, ORDINARY, PARKED,
+  PASS, PASS_LINE, POND, ROTARY, ROUTES, SHORE, TOKYO, TOKYO_RING, UENO_PARK, WATER,
   type Lot, type Ordinary, type Style,
 } from './plan';
 import { buildShinkansen } from './shinkansen';
@@ -51,7 +51,7 @@ export function buildJapan(k: Build): TileParts {
   // The ground, the water and the high ground
   // -------------------------------------------------------------------------
 
-  const moat = rect(-102, -8, -73.5, 26), pond = rect(-102, 32, -75, 66);
+  const moat = rect(MOAT.x0, MOAT.z0, MOAT.x1, MOAT.z1), pond = rect(POND.x0, POND.z0, POND.x1, POND.z1);
   ground(k, { holes: [WATER, moat, pond] });
   water(k, WATER);
   water(k, moat, { color: 0x4f8f9f });
@@ -166,6 +166,7 @@ export function buildJapan(k: Build): TileParts {
   const road = sample(PASS_LINE, 2);
   const nearPass = (x: number, z: number, pad: number): boolean => road.some((p) => Math.hypot(p[0] - x, p[2] - z) < PASS.width + pad);
   const taken = (x: number, z: number, pad = 2): boolean =>
+    KEEP_CLEAR.some((r) => x > r.x0 - pad && x < r.x1 + pad && z > r.z0 - pad && z < r.z1 + pad) ||
     LOTS.some((l) => x > l.x - pad && x < l.x + l.w + pad && z > l.z - pad && z < l.z + l.d + pad) ||
     ORDINARY.some((l) => x > l.x - pad && x < l.x + l.w + pad && z > l.z - pad && z < l.z + l.d + pad);
   {
@@ -225,7 +226,7 @@ export function buildJapan(k: Build): TileParts {
     const y = LOOKOUT_YARD;
     for (let i = 0; i < 6; i++) k.person(y.x + S2 * 5 + (k.rand() - 0.5) * 9 * S2 * 1.2, y.z + S2 * 5 - (k.rand() - 0.5) * 9 * S2 * 1.2, PASS.y1);
     for (let i = 0; i < 22; i++) k.person(61 + k.rand() * 32, 84.5 + k.rand() * 3.4);
-    for (let i = 0; i < 22; i++) k.person(-4.6 + k.rand() * 4.4, -104 + k.rand() * 40);
+    for (let i = 0; i < 26; i++) k.person(-3.9 + k.rand() * 3.8, -91 + k.rand() * 26);
     for (const [cx, cz] of [[51.5, -56.5], [64.5, -56.5], [51.5, -43.5], [64.5, -43.5]]) {
       for (let i = 0; i < 9; i++) k.person(cx + (k.rand() - 0.5) * 3.4, cz + (k.rand() - 0.5) * 3.4);
     }

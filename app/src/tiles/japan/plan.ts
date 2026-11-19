@@ -363,8 +363,36 @@ export const ROUTES: Route[] = [
 // how full it is.
 // ---------------------------------------------------------------------------
 
+/** Tokyo Tower: where it stands and how high it is. */
+export const TOKYO_TOWER = { x: 36, z: -80, h: 112 };
+/** Kyoto Tower's block, and how high the tower on it reaches. */
+export const KYOTO_TOWER = { x: -58.5, z: -11, w: 16, d: 16, h: 58 };
+/** The pagoda, on the top of Kyoto's hill. */
+export const PAGODA = { x: -82, z: -30, h: 30 };
+/** The castle, in the middle of its moat. */
+export const CASTLE = { x: -88, z: 10 };
+export const MOAT: Rect = { x0: -102, z0: -5.5, x1: -73.5, z1: 26 };
+/** The Golden Pavilion, on a spit of land in its pond. */
+export const KINKAKU = { x: -88, z: 46 };
+export const POND: Rect = { x0: -102, z0: 32, x1: -75, z1: 66 };
+/** Fushimi Inari: the way its gates climb, from the street to the top of the hill. */
+export const INARI = { way: [[-74.5, -10.6], [-81, -13.5], [-87, -17], [-92, -21.5], [-96.5, -26]] as P2[] };
+/** Sensō-ji: the line it stands along, its gate, the two ends of its lane of stalls, and the back and front of its hall. */
+export const SENSOJI = { x: -2, gate: -66, lane: [-84, -70] as P2, hall: [-106, -94] as P2 };
+
+/** Ground that is kept clear of trees and of people, because something stands there. */
+export const KEEP_CLEAR: Rect[] = [
+  { x0: PAGODA.x - 7, z0: PAGODA.z - 7, x1: PAGODA.x + 7, z1: PAGODA.z + 7 },
+  { x0: -101, z0: -30, x1: -70, z1: -6 },
+  { x0: SENSOJI.x - 9, z0: -108, x1: SENSOJI.x + 9, z1: -62 },
+  { x0: KYOTO_TOWER.x, z0: KYOTO_TOWER.z, x1: KYOTO_TOWER.x + KYOTO_TOWER.w, z1: KYOTO_TOWER.z + KYOTO_TOWER.d },
+  { x0: 19, z0: -40, x1: 54, z1: -15 },
+  { x0: -71, z0: -41, x1: -45, z1: -20 },
+  { x0: TOKYO_TOWER.x - 16, z0: TOKYO_TOWER.z - 16, x1: TOKYO_TOWER.x + 16, z1: TOKYO_TOWER.z + 16 },
+];
+
 /** The great torii, standing in the water of Kyoto's cove. */
-export const TORII = { x: -66, z: 97 };
+export const TORII = { x: -66, z: 103 };
 
 /** The Ferris wheel on Tokyo's waterfront. */
 export const FERRIS = { x: 36, y: 16.6, z: 47.3, r: 13.4 };
@@ -395,7 +423,6 @@ const PLASTER = 0xe9e3d6, VERMILION = 0xd8432b, BRICK = 0xa8553f, GLASS = 0x8fb4
 
 export const LOTS: Lot[] = [
   // the mountain
-  lot('pagoda', 'PAGODA', -87, -42, 9, 9, 30, VERMILION, KYOTO_HILL.y),
   lot('monkeys', 'SNOW MONKEYS', -34, -109, 9, 7, 1.6, 0x9fd3e8, SHELF.y),
   lot('farm-1', 'THATCHED FARMS', -28, -98, 7, 9, 8, THATCH, SHELF.y),
   lot('farm-2', '', -19, -106, 6, 8, 7, THATCH, SHELF.y, false),
@@ -403,22 +430,12 @@ export const LOTS: Lot[] = [
   lot('tofu', 'TOFU SHOP', -27.5, -23, 6, 9, 6, PLASTER),
 
   // Kyoto
-  lot('kyoto-station-n', '', -70, -40, 24, 4.4, 18, GLASS, 0, false),
-  lot('kyoto-station-s', 'KYOTO STATION', -70, -24.6, 24, 3.4, 18, GLASS),
-  lot('kyoto-tower', 'KYOTO TOWER', -58.5, -11, 16, 16, 16, PLASTER),
-  lot('castle', 'CASTLE', -94, 3, 12, 12, 30, 0x2f3238, 7),
-  lot('kinkakuji', 'GOLDEN PAVILION', -93, 41, 9, 9, 14, 0xd9b24a),
   lot('rock-garden', 'ROCK GARDEN', -58, 42, 16, 10, 0.5, 0xf0ede4),
 
   // Tokyo
-  lot('tokyo-station', 'TOKYO STATION', 19, -24.6, 34, 8.6, 13, BRICK),
   lot('screens', 'SHIBUYA', 44, -64, 9, 9, 42, GLASS),
   lot('tower-109', '', 63.5, -64, 10, 10, 38, 0xd9dde4, 0, false),
   lot('hachiko', 'HACHIKO', 63.5, -44.5, 11, 27, 0.5, 0xd8d2c4),
-  lot('kaminarimon', 'KAMINARIMON', -7, -67, 10, 4, 9, VERMILION),
-  lot('nakamise-w', '', -7, -86, 3.4, 17, 4, VERMILION, 0, false),
-  lot('nakamise-e', '', -0.4, -86, 3.4, 17, 4, VERMILION, 0, false),
-  lot('sensoji', 'SENSO-JI', -9.5, -107, 15, 14, 14, VERMILION),
   lot('arcade', 'ARCADE', 19.5, -64, 11, 9, 24, DARK),
   lot('arches', 'UNDER THE ARCHES', -13, -34, 22, 8, 6.5, BRICK),
 
@@ -432,11 +449,8 @@ export const LOTS: Lot[] = [
 
 /** Things that are named on a board but are not a box: the mountain, the roads, the bridges. */
 export const NAMES: { id: string; name: string; x: number; y: number; z: number }[] = [
-  { id: 'inari', name: 'FUSHIMI INARI', x: -90, y: KYOTO_HILL.y + 5, z: -18 },
-  { id: 'tokyo-tower', name: 'TOKYO TOWER', x: 36, y: 118, z: -80 },
   { id: 'crossing', name: 'SHIBUYA CROSSING', x: TOKYO.mid, y: 7, z: TOKYO.cross },
   { id: 'ueno', name: 'UENO PARK', x: 91, y: 9, z: -30 },
-  { id: 'torii', name: 'GREAT TORII', x: TORII.x, y: 16, z: TORII.z },
   { id: 'river', name: 'RED BRIDGE', x: -25, y: 7, z: 30 },
   { id: 'gion', name: 'GION', x: -50, y: 13, z: 30 },
   { id: 'used', name: 'USED CARS', x: 84, y: 5, z: 16 },

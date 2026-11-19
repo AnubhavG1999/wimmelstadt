@@ -61,6 +61,16 @@ export const ROAD_SIGNS: SignDef[] = [
   { id: 'ippan', lines: ['一般'], color: '#12784a', ink: '#ffffff', aspect: 2.6, kind: 'board', font: JAPANESE },
 ];
 
+/**
+ * The names of places, on the places themselves: the gate called Kaminarimon,
+ * whose name is written on its lantern, and the two stations.
+ */
+export const PLACE_SIGNS: SignDef[] = [
+  { id: 'kaminarimon', lines: ['雷', '門'], color: '#c8322a', ink: '#1d1a1a', aspect: 0.62, kind: 'board', font: JAPANESE },
+  { id: 'tokyo-eki', lines: ['東京駅'], color: '#f2efe6', ink: '#1d1a1a', aspect: 3.2, kind: 'board', font: JAPANESE },
+  { id: 'kyoto-eki', lines: ['京都駅'], color: '#f2efe6', ink: '#1d1a1a', aspect: 3.2, kind: 'board', font: JAPANESE },
+];
+
 export const TOKYO_SIGNS: SignPool = {
   fascia: ['ramen', 'karaoke', 'pachinko', 'konbini', 'sushi', 'izakaya', 'yakitori', 'kusuri'],
   blade: ['kaiju-v', 'ramen-v', 'yume-v', 'sushi-v', 'donut-v', 'neko-v', 'game-v'],
