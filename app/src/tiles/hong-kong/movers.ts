@@ -1,17 +1,15 @@
-// What moves on Hong Kong besides the traffic: trams and buses with two decks,
-// the Star Ferry, a junk, dragon boats and the Peak Tram. The engine's traffic
-// has no vehicles of a tile's own shape yet, so each of these is a mesh of its
-// own, moved on every frame.
+// The shapes of what moves on Hong Kong besides the traffic: trams and buses
+// with two decks, the Star Ferry, a junk, dragon boats and the Peak Tram. The
+// engine's traffic has no vehicles of a tile's own shape yet, so each of these
+// is a car for the engine's `train`, which runs it along a line of its own.
 //
 // A shape is built standing on y = 0 with its nose along +x and its middle at
 // the origin, as the engine's own train car is. For a boat, y = 0 is the
-// waterline.
+// waterline. What goes to and fro and never turns round (a ferry, the Peak
+// Tram) is the same at both ends.
 
 import * as THREE from 'three';
-import { GeoBuilder, interior, type V3 } from '../../engine/geo';
-import type { Path } from '../../engine/paths';
-import type { Build } from '../../engine/tile';
-import type { P3 } from './geom';
+import { GeoBuilder, interior } from '../../engine/geo';
 
 const GLASS = 0xbfd3df, DARK = 0x2a2c31, LAMP = 0xfff4d6, CREAM = 0xf2e6c4;
 type XZ = [number, number];
@@ -141,87 +139,15 @@ export function dragonBoat(team: number): Car {
   return { geometry: b.build(), length: 9.6 };
 }
 
-/**
- * The Peak Tram's car, for a track that climbs `slope` units for every unit
- * along. Its floor follows the track and its ends stand upright, so it is
- * built already leaning and is never tipped.
- */
-export function peakTramCar(slope: number): Car {
-  const b = new GeoBuilder(), L = 3.3, W = 1.2, H = 2.9, GREEN = 0x1d5a3c;
-  const at = (x: number, y: number, z: number): V3 => [x, y + x * slope, z];
-  const slab = (y0: number, y1: number, color: number, w = W, lit = 0): void => {
-    const o = lit ? { win: interior(lit) } : {};
-    for (const s of [-1, 1]) b.quad(at(-L, y0, s * w), at(L, y0, s * w), at(L, y1, s * w), at(-L, y1, s * w), [0, 0, s], color, o);
-    b.quad(at(L, y0, -w), at(L, y0, w), at(L, y1, w), at(L, y1, -w), [1, 0, 0], color, o);
-    b.quad(at(-L, y0, w), at(-L, y0, -w), at(-L, y1, -w), at(-L, y1, w), [-1, 0, 0], color, o);
-  };
-  slab(0.35, 1.2, GREEN);
-  slab(1.2, 2.3, GLASS, W - 0.03, 1.25);
-  slab(2.3, H, GREEN);
-  b.quad(at(-L, H, W), at(L, H, W), at(L, H, -W), at(-L, H, -W), [0, 1, 0], 0xdad6ca);
-  for (let i = 0; i <= 5; i++) {
-    const x = -L + 0.12 + (i / 5) * (2 * L - 0.24);
-    for (const s of [-1, 1]) b.quad(at(x - 0.11, 1.2, s * (W + 0.01)), at(x + 0.11, 1.2, s * (W + 0.01)), at(x + 0.11, 2.3, s * (W + 0.01)), at(x - 0.11, 2.3, s * (W + 0.01)), [0, 0, s], GREEN);
-  }
+/** The Peak Tram's car: dark green, with a pale roof. It follows its track up the incline, as the real one does. */
+export function peakTramCar(): Car {
+  const b = new GeoBuilder(), L = 3.3, W = 1.2, GREEN = 0x1d5a3c;
+  b.box(-L, 0.35, -W, L, 1.2, W, GREEN);
+  glazed(b, L, W, 1.2, 2.3, GREEN, 5);
+  b.box(-L, 2.3, -W, L, 2.9, W, GREEN, { top: 0xdad6ca });
+  for (const x of [-2.1, 2.1]) b.box(x - 0.6, 0.05, -W + 0.12, x + 0.6, 0.4, W - 0.12, DARK);
+  lamps(b, L, 0.6, 0.7);
   return { geometry: b.build(), length: L * 2 };
-}
-
-// ---------------------------------------------------------------------------
-// Movement
-// ---------------------------------------------------------------------------
-
-function mesh(k: Build, geometry: THREE.BufferGeometry): THREE.Mesh {
-  const m = new THREE.Mesh(geometry, k.mat.city());
-  m.receiveShadow = true;
-  k.group.add(m);
-  return m;
-}
-
-export interface ShuttleOpts {
-  /** Its speed in units per second, and how many seconds it waits at each end. */
-  speed: number; dwell?: number;
-  /** Where in its round it starts: 0 is waiting at the first end, a half is waiting at the other. */
-  start?: number;
-  /** How much it bobs, for a boat. */
-  bob?: number;
-}
-
-/**
- * Carries a shape to and fro between two points, waiting at each end. It
- * always faces the second point and never turns round, as a ferry with two
- * bows or a car on an incline does not.
- */
-export function shuttle(k: Build, car: Car, a: P3, c: P3, o: ShuttleOpts): void {
-  const m = mesh(k, car.geometry);
-  const dx = c[0] - a[0], dy = c[1] - a[1], dz = c[2] - a[2];
-  const run = Math.hypot(dx, dz) / o.speed, dwell = o.dwell ?? 5, round = 2 * (run + dwell);
-  m.rotation.y = Math.atan2(-dz, dx);
-  const ease = (t: number): number => t * t * (3 - 2 * t);
-  const phase = (o.start ?? 0) * round, wobble = (o.start ?? 0) * 17;
-  k.each((_dt, time) => {
-    const t = (time + phase) % round;
-    // waiting at the first end, crossing, waiting at the other, crossing back
-    const f = t < dwell ? 0 : t < dwell + run ? ease((t - dwell) / run) : t < 2 * dwell + run ? 1 : 1 - ease((t - 2 * dwell - run) / run);
-    const bob = o.bob ? Math.sin(time * 1.3 + wobble) * o.bob : 0;
-    m.position.set(a[0] + dx * f, a[1] + dy * f + bob, a[2] + dz * f);
-    if (o.bob) m.rotation.z = Math.sin(time * 0.9 + wobble) * o.bob * 0.35;
-  });
-}
-
-/** Sails a shape round a closed path for ever at a steady pace, nose first, bobbing a little. */
-export function sail(k: Build, car: Car, path: Path, o: { speed: number; from?: number; bob?: number }): void {
-  const m = mesh(k, car.geometry);
-  const p = new THREE.Vector3(), q = new THREE.Vector3();
-  let s = (o.from ?? 0) * path.length;
-  const wobble = (o.from ?? 0) * 23;
-  k.each((dt, time) => {
-    s = (s + o.speed * dt) % path.length;
-    path.at(s, p);
-    path.at(s + 1.2, q);
-    const bob = o.bob ?? 0;
-    m.position.set(p.x, p.y + Math.sin(time * 1.3 + wobble) * bob, p.z);
-    m.rotation.set(0, Math.atan2(-(q.z - p.z), q.x - p.x), Math.sin(time * 0.9 + wobble) * bob * 0.35, 'YXZ');
-  });
 }
 
 // ---------------------------------------------------------------------------

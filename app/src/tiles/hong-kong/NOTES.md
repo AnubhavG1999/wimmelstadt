@@ -61,7 +61,7 @@ Kowloon
 
 ## Roads
 
-Traffic keeps left. No road crosses another on the level: `check.ts` looks for that on the development server and says so in the console.
+Traffic keeps left. No road crosses another on the level: `check.ts` looks for that on the development server and says so in the console. Checked as the page for tile builders asks, over fifteen minutes of traffic let pass with `wimmel.advance`: no two vehicles came within three units of each other (the nearest were 4.2 apart, passing on the Peak road), and none stood still. No two routes share a lane.
 
 - **The harbour run** is one loop about 990 units long. On the Island it runs the length of the shore: north to the ferry piers, back by the water, into the tunnel on the Convention Centre's point, and south from there on a viaduct on stilts across the typhoon shelter. On Kowloon it comes up beside the Coliseum, goes along Nathan Road and round the Peninsula.
 - **The Peak road** starts at the car ferry's pier, climbs on stilts along the breakwater, crosses the shore road and the tram as a flyover, and climbs the south face in five legs to a turning place on the summit.
@@ -95,6 +95,6 @@ Missed, or found wanting:
 
 - **The mirror image shows what is under the ground.** Water and wet streets mirror the city from a camera below the ground, and that camera draws every vehicle, including those in a tunnel under the water. At night their lamps show faintly in the harbour above the tunnel.
 - **Vehicles of a tile's own shape in the traffic.** The trams and the double-decker buses are `train`s with a car of their own shape (`movers.ts`). A train does not see traffic, so they have lanes that no route uses: the trams their own tracks, the buses the two middle lanes of Nathan Road. A bus that could drive a route among the cars would be better.
-- **Things that go to and fro, and things that sail.** `shuttle` in `movers.ts` carries a shape between two points without turning it round, for the Star Ferry and the Peak Tram. `sail` takes a boat round a closed path. `train` covers neither: it always runs a loop, nose first.
+- **Boats.** The ferries, the junk and the dragon boats are `train`s too, on lines across the water. A train does not bob.
 - **A place for a hero that moves.** The car ferry is moored, because a hero's place on show cannot move. A ferry that carried a hero across the harbour would need the engine's help.
 - **Cost.** With water on a tile the whole city is drawn twice, once for the mirror image. The blockout takes about 3.1 ms a frame where North America takes 2.6, with half North America's triangles.

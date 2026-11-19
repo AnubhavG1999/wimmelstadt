@@ -3,14 +3,16 @@
 // come from plan.ts; this file turns them into meshes with what the engine
 // provides.
 
+import * as THREE from 'three';
 import { placed } from '../../engine/build';
 import { LAWN, PLAZA, area, flat as fill, ground, rect, terrace, water } from '../../engine/ground';
+import { joined } from '../../engine/paths';
 import { train, track } from '../../engine/rail';
 import { ASPHALT, CONCRETE, lampsAlong, roadDeck, street } from '../../engine/roads';
 import type { Build, TileParts } from '../../engine/tile';
 import { checkRoads } from './check';
 import { fine, flat, lengths3, pathOf, rounded, stretch, type P2, type P3 } from './geom';
-import { busCar, dragonBoat, ferryBoat, junkBoat, lighter, peakTramCar, sail, sampan, shuttle, tramCar } from './movers';
+import { busCar, dragonBoat, ferryBoat, junkBoat, lighter, peakTramCar, sampan, tramCar, type Car } from './movers';
 import {
   BOARD, BUSES, FILL, FUNICULAR, HARBOUR, HERO_SPOTS, HILL, KOWLOON, LEVELS, LOTS, PARKED, PEAK, POINT, RACECOURSE, ROUTES, RUN, SHELTER, SHORE, TRAM, TUNNEL,
   hillHeight, type Lot,
@@ -263,21 +265,33 @@ export function buildCity(k: Build): TileParts {
   // On the water, and up the hill
   // -------------------------------------------------------------------------
 
-  const SEA_Y = -0.9;
+  // A boat's shape has its waterline at y = 0, and a train rides a little above the line it follows.
+  const AFLOAT = -0.9 - 0.12;
+  /** Runs a car to and fro along a line that ends at both ends: out, a wait, back, a wait. It is the same at both ends, and never turns round. */
+  const shuttle = (car: Car, line: P3[], speed: number, wait: number, from: 0 | 1): void => {
+    const pts = line.map((p) => new THREE.Vector3(p[0], p[1], p[2]));
+    const { path, starts } = joined([pts, [...pts].reverse()], true);
+    const far = starts[1], stand = car.length / 2 + 0.3;
+    train(k, path, { cars: 1, speed, car, ends: [far, 0], stops: [far - stand, path.length - stand], turnDwell: wait, from: from ? far + stand : stand });
+  };
+  /** Sails a boat round a closed course for ever. */
+  const sail = (car: Car, course: P2[], speed: number, from = 0): void => {
+    const path = pathOf(flat(course, AFLOAT), true);
+    train(k, path, { cars: 1, speed, car, from: from * path.length });
+  };
   {
     // the Star Ferry: two boats that pass each other, between Central's piers and Tsim Sha Tsui
-    const a: P2 = [-3.3, -84.6], c: P2 = [5.5, -44.8], l = Math.hypot(c[0] - a[0], c[1] - a[1]);
+    const a: P2 = [-4.6, -90.5], c: P2 = [6.8, -38.9], l = Math.hypot(c[0] - a[0], c[1] - a[1]);
     const ox = ((c[1] - a[1]) / l) * 2.3, oz = (-(c[0] - a[0]) / l) * 2.3;
     const boat = ferryBoat();
-    shuttle(k, boat, [a[0] + ox, SEA_Y, a[1] + oz], [c[0] + ox, SEA_Y, c[1] + oz], { speed: 4.2, dwell: 7, bob: 0.05 });
-    shuttle(k, boat, [a[0] - ox, SEA_Y, a[1] - oz], [c[0] - ox, SEA_Y, c[1] - oz], { speed: 4.2, dwell: 7, start: 0.5, bob: 0.05 });
+    shuttle(boat, flat(fine([[a[0] + ox, a[1] + oz], [c[0] + ox, c[1] + oz]], 1), AFLOAT), 4.2, 9, 0);
+    shuttle(boat, flat(fine([[a[0] - ox, a[1] - oz], [c[0] - ox, c[1] - oz]], 1), AFLOAT), 4.2, 9, 1);
     // a junk under red sails, round the south of the harbour
-    sail(k, junkBoat(), pathOf(flat(fine(rounded([[-11, 60], [17, 60], [17, 93], [-11, 93]], 10, true)), SEA_Y), true), { speed: 3.2, bob: 0.07 });
+    sail(junkBoat(), fine(rounded([[-11, 60], [17, 60], [17, 93], [-11, 93]], 10, true)), 3.2);
     // dragon boats in Hung Hom's bay: three crews, down the course and back
     [0xc8322b, 0xe8c24a, 0x3f6fb5].forEach((team, i) => {
       const x = 24.4 + i * 3;
-      const course = pathOf(flat(fine(rounded([[x, 68], [x, 108], [x + 1.5, 108], [x + 1.5, 68]], 0.75, true)), SEA_Y), true);
-      sail(k, dragonBoat(team), course, { speed: 6.4 + i * 0.5, from: 0.02 + i * 0.03, bob: 0.03 });
+      sail(dragonBoat(team), fine(rounded([[x, 68], [x, 108], [x + 1.5, 108], [x + 1.5, 68]], 0.75, true)), 6.4 + i * 0.5, 0.02 + i * 0.03);
     });
     // what lies at anchor: a lighter working cargo off the Convention Centre, another off Central, sampans off Tsim Sha Tsui
     lighter(b, 7.5, 16, Math.PI / 2 - 0.2);
@@ -286,9 +300,8 @@ export function buildCity(k: Build): TileParts {
     sampan(b, 3, 2, -0.5);
     sampan(b, 18, 30, 1.2, 0x3f6fa3);
     // the Peak Tram's car, up and down its incline
-    const F = FUNICULAR, z0 = F.z0 + 4.5, z1 = F.z1 - 2.5;
-    const slope = (F.y(z1) - F.y(z0)) / (z1 - z0);
-    shuttle(k, peakTramCar(slope), [F.x, F.y(z0) + 0.16, z0], [F.x, F.y(z1) + 0.16, z1], { speed: 5, dwell: 6 });
+    const F = FUNICULAR, z0 = F.z0 + 1, z1 = F.z1 - 0.4, n = Math.ceil(z1 - z0);
+    shuttle(peakTramCar(), Array.from({ length: n + 1 }, (_, i): P3 => [F.x, F.y(z0 + ((z1 - z0) * i) / n) + 0.02, z0 + ((z1 - z0) * i) / n]), 5, 7, 0);
   }
 
   // -------------------------------------------------------------------------
