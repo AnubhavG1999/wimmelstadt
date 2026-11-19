@@ -331,7 +331,8 @@ function build(k: Build): TileParts {
     // poplars between London and Italy, and cypresses behind the factory and along the Via Emilia
     for (let z = 10; z <= 20; z += 5) k.tree(-63, z, 0.9, true);
     for (let x = -57; x <= -38; x += 5) k.tree(x, 110.2, 0.85, true);
-    for (let x = 14; x <= 62; x += 6) k.tree(x, 110.5, 0.8, true);
+    // (the Colosseum's road reaches to 111 here, so they stand on the pavement beyond it)
+    for (let x = 14; x <= 62; x += 6) k.tree(x, 111.9, 0.8, true);
     for (const [x, z] of [[-16, 77.5], [-9, 77.8], [4, 77.6], [10, 77.9], [-20, 42], [14, 42.5], [16, 50], [15, 58], [66, 4], [74, 2], [82, 6], [-57, 18], [-50, 18.5], [50, -40], [51.5, -45], [92, 51.6], [97.5, 50.8], [101.6, 52.6], [52.6, 45.4], [53.4, 58]]) k.tree(x, z, 0.7 + rand() * 0.3);
     // on Montmartre: the wide end of the first level, and round Sacré-Cœur
     for (const [t, o, y] of [[37, 6, h1], [42, 10, h1], [38, 18, h1], [46, 22, h1], [35.5, 27, h1], [40, 33, h1], [13, 26, h3], [28.5, 26, h3], [12, 31, h3]]) {
@@ -370,7 +371,7 @@ function build(k: Build): TileParts {
     { id: 'maranello', x: -47, y: 0.03, z: 101.5, heading: 0.5 },
     { id: 'sant-agata', ...turntable, heading: 0.6, turn: 0.35 },
     { id: 'piazza', x: -50, y: 0.03, z: 66, heading: -0.6 },
-    { id: 'lingotto-roof', x: -93.2, y: LINGOTTO_ROOF.y + 0.05, z: 57, heading: -Math.PI / 2 },
+    { id: 'lingotto-roof', x: -93.2, y: LINGOTTO_ROOF.y + 0.05, z: 57, heading: Math.PI / 2 },
   ];
   const parked: ParkedSpot[] = [{ x: -64.6, y: 0.03, z: 61.5, heading: Math.PI / 2 }, { x: -45.5, y: 0.03, z: 64.5, heading: -1.9 }];
   // Ace Cafe's forecourt: a line of cars beyond the motorbikes, with one bay of it kept for a hero

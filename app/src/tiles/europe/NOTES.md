@@ -81,25 +81,34 @@ The London Eye turns. The guard marches up and down the palace's forecourt. The 
 
 ## How high things stand
 
-Added by the main session on 19 November 2026, when the tile joined the board. The city's towers are roughly to one scale, about 3.2 metres to a unit, which North America's set: see [the page for tile builders](../../../../docs/building-a-tile.md). The collector's word on it is that things should be roughly to scale, and that looking good comes first.
+Added by the main session on 19 November 2026, when the tile joined the board, and brought up to date by the tile's own session the same day, after two heights were raised. The city's towers are roughly to one scale, about 3.2 metres to a unit, which North America's set: see [the page for tile builders](../../../../docs/building-a-tile.md). The collector's word on it is that things should be roughly to scale, and that looking good comes first.
 
 | | Units | In life | At that scale |
 | --- | --- | --- | --- |
 | The Eiffel Tower | 110 | 330 m | 104 |
-| The Gherkin | 50 | 180 m | 57 |
-| The London Eye | 46 | 135 m | 43 |
-| St Paul's Cathedral | 36.5 | 111 m | 35 |
+| The Gherkin | 58 | 180 m | 57 |
+| The London Eye | 47 | 135 m | 43 |
+| Florence's cathedral, to its cross | 37.6 | 114.5 m | 36 |
+| St Paul's Cathedral, to its cross | 36.5 | 111 m | 35 |
 | Venice's bell tower | 32 | 99 m | 31 |
-| Florence's cathedral | 28 | 114 m | 36 |
-| Sacré-Cœur, above its hill | 26 | 83 m | 26 |
-| The Colosseum | 17 | 48 m | 15 |
+| Notre-Dame, to the top of its spire | 28 | 96 m | 30 |
+| Florence's bell tower | 27 | 85 m | 27 |
+| Sacré-Cœur's dome, above its hill | 26 | 83 m | 26 |
+| Notre-Dame's towers | 20.5 | 69 m | 22 |
+| The Colosseum | 17.6 | 48 m | 15 |
+| Pisa's baptistery | 15 | 55 m | 17 |
 | Big Ben | 56 | 96 m | 30 |
-| Tower Bridge | 37 | 65 m | 21 |
-| Notre-Dame | 28 | 69 m | 22 |
+| The Victoria Tower, to its roof | 38 | 98.5 m | 31 |
+| Tower Bridge, to its finials | 37.4 | 65 m | 21 |
 | The Leaning Tower of Pisa | 24 | 56 m | 18 |
-| The Arc de Triomphe | 21 | 50 m | 16 |
+| The Arc de Triomphe | 22 | 50 m | 16 |
+| The obelisk of the Concorde | 21 | 23 m | 7 |
+| The White Tower, to the top of its walls | 11.4 | 27 m | 9 |
+| Lingotto, to its roof | 25 | about 25 m | 8 |
 
-The first eight are within about a fifth of the scale, and most within a tenth. The last five are small landmarks that stand taller than their scale height so that they can be recognised. That puts Big Ben a little above the Gherkin, which in life is nearly twice as tall. It is kept: Big Ben is what says London, and the Gherkin stands at the far corner. The heights in life are the commonly published ones.
+The first ten are within a tenth of the scale and stand in the order they do in life: the Gherkin is the tallest thing in London, and Florence's cross is a little above St Paul's. The Colosseum is a sixth over. Pisa's baptistery is an eighth under, and is kept low so that the tower beside it, which in life is hardly taller, is the one that is seen. The last eight stand taller than their scale height so that they can be recognised: Big Ben and Tower Bridge nearly twice, the Leaning Tower, the Arc de Triomphe and the White Tower a third over, and the obelisk and Lingotto three times, since at scale the obelisk would be a post in the middle of a roundabout and Lingotto a slab with nothing to see under its track. The Victoria Tower is a fifth over, because Parliament was built to its clock tower. That still puts Big Ben above the London Eye and St Paul's, which in life are taller. It is kept: Big Ben is what says London. The Victoria Tower is 44 to the tips of its turrets, Tower Bridge is 35 to its roofs, and Sacré-Cœur's bell tower is 29 above the hill. Montmartre itself is 12 high, where at scale it would be 40. The heights in life are the commonly published ones, except Lingotto's, which is reckoned from its five storeys. The heights in units were read back from what is built, in the page's console.
+
+What was raised, and why. The rule about one scale was written after this tile was built and called final. The collector was then shown where the tile departed from it: Big Ben, at 56, stood above the Gherkin, at 50, and Florence's dome, at 28, was eight under its scale height. To "I'd raise the Gherkin to about 58 and the dome to about 36, and leave Big Ben alone", with the note that Big Ben would still stand above the Eye, he said: "Yes, raise them". The Gherkin went from 50 to 58. Florence's cathedral went up with its nave, its drum, its chapels, its front and its bell tower in proportion: first to 35.5 at its cross, which still left it a unit under St Paul's, and then to 37.6, when the main session pointed out that the two stood the wrong way round. That second step was the tile session's own, to keep the order. The collector was shown it afterwards, and to "Keep Florence's cathedral at 37.6, just above St Paul's?" he said: "Keep 37.6".
 
 ## Liberties taken with the real places
 
@@ -172,16 +181,27 @@ Everything else is generic or invented: THE RED LION, TEA ROOMS, FISH & CHIPS, B
 
 ## What it costs
 
-On the machine it was built on, with the tile alone: about 34,700 triangles that stand still, 440 people, 97 trees and 89 vehicles, and 3 to 4.5 thousandths of a second for a frame with `wimmel.bench(60)`. North America, on the same machine, is about 43,000 triangles and 5 thousandths of a second. The Eiffel Tower is about 3,300 of the triangles and the Colosseum about 2,800: they are the two things the collector asked to have more work on.
+About 34,700 triangles that stand still, 440 people, 97 trees and 89 vehicles. North America has about 42,400 triangles, 260 people and 86 vehicles. The Eiffel Tower is about 3,300 of Europe's triangles and the Colosseum about 2,800: they are the two things the collector asked to have more work on.
+
+Measured as the page sets it out, each tile alone at `?tiles=<id>&drift=0`, in the same minute and the same window, three times each with `wimmel.bench()`:
+
+| | By day, at 14 | At night, at 21 |
+| --- | --- | --- |
+| Europe | 5.6 to 5.8 ms | 4.5 to 5.0 ms |
+| North America | 3.8 to 4.8 ms | 4.4 to 5.2 ms |
+
+At night the two cost the same. By day Europe costs about four tenths more, and that is its river: a tile with water is drawn a second time at every hour, as its mirror image, and a dry tile only at night.
 
 ## Checks
 
-All on 19 November 2026, the last of them after `main` was merged in at `f493936`.
+All on 19 November 2026. The traffic, the roads and the heroes were checked after `main` was merged in at `b9c0ae8`. `main` was merged in once more at `4d282dd`, after the two buildings were raised: it brought the tile's place on the board and no change to the engine.
 
-- **Traffic.** Fifteen minutes, stepped a quarter of a second at a time with `wimmel.advance`: no two of the 89 vehicles at the same height came closer than 4.95, none stood still, and `vehicles.shared()` was empty. The nearest are in neighbouring lanes of the star.
-- **Heroes.** With `?place=`, each of the six places took a hero, standing where the plan says, and a ray from it towards the camera met nothing. On the two routes tried, `paris-circuit` and `montmartre`, a hero drove. No picture of a hero was taken.
+- **Traffic.** The page's own check, twenty minutes in steps of a twentieth of a second: no two of the 89 vehicles came nearer than 4.95, none stood still, no vehicle came nearer than 11 to the next on its own route (that was on the Champs-Élysées; every other route kept 12.8 or more), and `vehicles.shared()` was empty. The nearest two are in neighbouring lanes of the star.
+- **Nothing in a road.** Every figure and every tree was tried against every carriageway, from the page's console. Five cypresses stood in the outer lane of the Colosseum's road, where they had been since the blockout, and are moved onto the pavement. No figure stood in a road.
+- **Heroes.** With `?place=`, each of the six places took a hero, standing where the plan says, and a ray from it towards the camera met nothing. On the two routes tried, `paris-circuit` and `montmartre`, a hero drove. No picture of a hero was taken. Each hero on show faces east or south, towards the first view.
 - **Nothing in a street.** `clear` is asked about every plot and every box in each quarter's list, and says nothing.
 - **Weather and hours.** Looked at by day and by night from all four sides, and in rain and in snow.
+- **After the Gherkin and Florence's cathedral were raised**, and again after the cathedral's second step. `clear` was given the Gherkin's wider foot and says nothing. Both were looked at by day, at night and in rain, the cathedral from two sides, and London and Florence from the side with the view laid nearly flat, to see the heights against one another. The sight lines were asked again, as the page says to when a height changes. A ray from each of the six places for a hero towards the camera meets nothing, and no thing's foot, middle or top stands behind either building. The cathedral's dome hides a little more of the quay behind it than it did: about 13 units of each of the two lanes there, by the tile's own triangles, so a car is out of sight for a second. On the board, the Gherkin stands in front of a little more of the south-west corner of the tile to the north, which is Japan's as the board stands. No road and no route was touched, so the traffic was not run again.
 - `npm run typecheck` and `npm run build` pass, and the console shows no warnings and no errors.
 
 ## For the engine
@@ -222,7 +242,7 @@ What building Europe taught, for someone who is about to start a tile and has no
 - **A plan from straight above.** It is in "For the engine". Every decision about where a road or a building went was made on it.
 - **Ask the engine's paths whether anything stands in a street**, and ask about every footprint, not only the boxes of the blockout. `clear` in `index.ts` found a wing of the Louvre in a roundabout's road, and a round thing's corner on a sidewalk, that no picture had shown. Round and slanted things need several small boxes: one big box gives false alarms.
 - **A file for each quarter, and one for the parts they share.** By the third quarter a dome, a roof, an arch and a rose window were one call each (`parts.ts`), and a landmark took a quarter of the time the first ones had.
-- **Decide heights together.** Before building, write the real heights of the tall things side by side and choose each toy height from them, so that Big Ben, a dome and a glass tower stand in the right order. Plan sizes come from the ground there is. Heights come from each other.
+- **Decide heights together.** Before building, write the real heights of the tall things side by side and choose each toy height from them, so that Big Ben, a dome and a glass tower stand in the right order. Plan sizes come from the ground there is. Heights come from each other. I set mine one at a time, and after the tile was called final the Gherkin had to go up by 8 and Florence's cathedral by nearly 10, in two steps, because the first forgot that St Paul's stands a little over its own scale height.
 - **Small things that move.** A guard that marches, sails, a merry-go-round, a gondola, a boat on the river, a lamp that sweeps: each is one mesh and a few lines in `k.each`, and they are what the collector's eye goes to.
 - **Send pictures after each quarter, and ask one question early.** After the first group of landmarks I asked whether that was the right amount of detail. The answer was "Yes, carry on", and nothing more had to be asked until the end.
 
@@ -236,6 +256,8 @@ What building Europe taught, for someone who is about to start a tile and has no
 6. **Thin bars come out dark.** The outline is drawn round every bar, so ironwork is mostly outline. Paint it a good deal lighter than it should look.
 7. **Taking pictures in the pane the collector is looking at.** `wimmel.shot` moves the view and the hour of whatever page it is called on, and he may have gone to another address by then: I got pictures of the whole city where I expected my tile. Open a tab of your own for checks and leave his alone.
 8. **A session that is summarised forgets its files.** Read the file again before editing it. For anything longer than a line, write a small script that swaps one exact piece of text for another and stops if the piece is not there: it cannot half-apply, and it is a record of what was done.
+9. **Trees in the road.** My check for things in streets was asked about buildings only. A row of cypresses stood half a unit inside a lane from the blockout until the day the tile was called final, and cars brushed their trunks in every picture I took. Ask the same question of every tree and every figure: their places can be read back from the page, from the tile's meshes that are drawn many times over.
+10. **Two hands in one file.** When the tile joined the board, the main session added a section to these notes under the same heading as one of mine, with the heights as they were before two of them changed. Git merged both in without a conflict, and the notes then said two things. They are one section now, in the form main gives it on every tile. Before the last hand-over, merge `main` and read your own folder against it: `git diff main -- app/src/tiles/<id>`.
 
 ### What I would do differently from the start
 

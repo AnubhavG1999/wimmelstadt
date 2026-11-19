@@ -260,7 +260,10 @@ export function fieldOfMiracles(k: Build): void {
 export function duomo(k: Build): void {
   const b = k.b;
   const MARBLE = 0xf1ece0, GREEN = 0x58735f, PINK = 0xd9a79a, RED = 0xb8553a;
-  const ax = 95.4, dz = 9.5, zf = 29.5, zn = 14.2, hw = 4.3, h = 9.5;
+  // (Its heights are to the city's scale of about 3.2 m to a unit. The cross is 114.5 m up in life and 37.6 here:
+  // a little above the cross of St Paul's on this tile, as it is in life. The nave, the drum, the chapels and the
+  // bell tower are in proportion to that.)
+  const ax = 95.4, dz = 9.5, zf = 29.5, zn = 14.2, hw = 4.3, h = 13;
   const win: WinSpec = { cell: 2.1, storey: h, lit: 0.35, kind: 6 };
   /** A line of green marble round a block, at each of the heights given. */
   const lines = (x0: number, z0: number, x1: number, z1: number, ys: number[], color = GREEN): void => {
@@ -269,14 +272,15 @@ export function duomo(k: Build): void {
 
   // --- the nave ---
   b.box(ax - hw, 0, zn, ax + hw, h, zf, MARBLE, { win, seed: 0.3, faces: 'ESW' });
-  lines(ax - hw, zn, ax + hw, zf, [3.0, 6.2, h - 0.25]);
-  hipped(b, ax - hw, zn - 1, ax + hw, zf, h, h + 1.7, hw, 0.6, RED);
+  lines(ax - hw, zn, ax + hw, zf, [4.1, 8.5, h - 0.25]);
+  hipped(b, ax - hw, zn - 1, ax + hw, zf, h, h + 2.3, hw, 0.6, RED);
 
   // --- the dome: an eight-sided drum with a round window in every side, then the dome itself, pointed, with a white rib up every corner ---
-  const yd = 14.2, R = 5.4, rise = 7.6;
-  b.cyl(ax, dz, 0, h + 1.2, R, R, 8, MARBLE, { win: { cell: 1.41, storey: h + 1.2, lit: 0.3, kind: 6 }, seed: 0.5, cap: false });
-  b.cyl(ax, dz, h + 1.2, yd, R - 0.15, R - 0.15, 8, MARBLE, { win: { cell: 4.0, storey: 3.5, lit: 0.6, kind: 4 }, seed: 0.6, cap: false });
-  b.cyl(ax, dz, h + 0.95, h + 1.3, R + 0.2, R + 0.2, 8, GREEN, { cap: GREEN });
+  // (the drum's round windows are one row of the wall's windows, so the drum begins at a whole number of its storeys)
+  const drum = 4.9, yb = drum * 3, yd = yb + 5.4, R = 5.4, rise = 9.7;
+  b.cyl(ax, dz, 0, yb, R, R, 8, MARBLE, { win: { cell: 1.41, storey: yb, lit: 0.3, kind: 6 }, seed: 0.5, cap: false });
+  b.cyl(ax, dz, yb, yd, R - 0.15, R - 0.15, 8, MARBLE, { win: { cell: 4.0, storey: drum, lit: 0.6, kind: 4 }, seed: 0.6, cap: false });
+  b.cyl(ax, dz, yb - 0.25, yb + 0.1, R + 0.2, R + 0.2, 8, GREEN, { cap: GREEN });
   b.cyl(ax, dz, yd - 0.1, yd + 0.3, R + 0.15, R + 0.15, 8, MARBLE, { cap: MARBLE });
   const levels = [0, 16, 32, 48, 62, 74], w = rad(3.4);
   const edges: number[] = [];
@@ -295,32 +299,32 @@ export function duomo(k: Build): void {
   // the lantern, the ball and the cross
   const yl = yd + 0.3 + rise * Math.sin(rad(74));
   b.cyl(ax, dz, yl - 0.2, yl + 0.3, 1.75, 1.75, 8, MARBLE, { cap: MARBLE });
-  b.cyl(ax, dz, yl + 0.3, yl + 3.0, 0.95, 0.95, 8, MARBLE, { win: interior(1.0), cap: false });
-  b.cyl(ax, dz, yl + 3.0, yl + 4.4, 1.15, 0.1, 8, MARBLE, { cap: false });
-  b.cyl(ax, dz, yl + 4.4, yl + 5.0, 0.3, 0.3, 6, GOLD, { win: interior(0.9) });
-  b.box(ax - 0.05, yl + 5.0, dz - 0.05, ax + 0.05, yl + 6.1, dz + 0.05, GOLD, { win: interior(0.9) });
-  b.box(ax - 0.32, yl + 5.5, dz - 0.05, ax + 0.32, yl + 5.7, dz + 0.05, GOLD, { win: interior(0.9), faces: 'NESWTB' });
+  b.cyl(ax, dz, yl + 0.3, yl + 3.8, 0.95, 0.95, 8, MARBLE, { win: interior(1.0), cap: false });
+  b.cyl(ax, dz, yl + 3.8, yl + 5.6, 1.15, 0.1, 8, MARBLE, { cap: false });
+  b.cyl(ax, dz, yl + 5.6, yl + 6.3, 0.3, 0.3, 6, GOLD, { win: interior(0.9) });
+  b.box(ax - 0.05, yl + 6.3, dz - 0.05, ax + 0.05, yl + 7.9, dz + 0.05, GOLD, { win: interior(0.9) });
+  b.box(ax - 0.38, yl + 6.95, dz - 0.05, ax + 0.38, yl + 7.2, dz + 0.05, GOLD, { win: interior(0.9), faces: 'NESWTB' });
   // the round chapels about the dome's foot, each under half a dome of tiles
   for (const [cx, cz] of [[ax, dz - 5.0], [ax + 5.0, dz], [ax - 5.0, dz]]) {
-    b.cyl(cx, cz, 0, 6.6, 2.8, 2.8, 8, MARBLE, { win: { cell: 2.14, storey: 6.6, lit: 0.3, kind: 6 }, seed: 0.8, cap: false });
-    b.cyl(cx, cz, 6.4, 6.7, 2.95, 2.95, 8, GREEN, { cap: false });
-    b.cyl(cx, cz, 6.7, 8.6, 2.8, 0.2, 8, RED, { cap: false });
+    b.cyl(cx, cz, 0, 9.0, 2.8, 2.8, 8, MARBLE, { win: { cell: 2.14, storey: 9.0, lit: 0.3, kind: 6 }, seed: 0.8, cap: false });
+    b.cyl(cx, cz, 8.8, 9.1, 2.95, 2.95, 8, GREEN, { cap: false });
+    b.cyl(cx, cz, 9.1, 11.6, 2.8, 0.2, 8, RED, { cap: false });
   }
 
   // --- the front: three doors, a round window, and a gable in the middle ---
   b.box(ax - hw - 0.1, 0, zf, ax + hw + 0.1, h + 0.6, zf + 0.3, MARBLE, { faces: 'ESWT' });
-  b.box(ax - 2.1, h + 0.6, zf, ax + 2.1, h + 1.6, zf + 0.3, MARBLE, { faces: 'ESW' });
-  tri(b, [ax - 2.1, h + 1.6, zf + 0.3], [ax + 2.1, h + 1.6, zf + 0.3], [ax, h + 3.2, zf + 0.3], [0, 0, 1], MARBLE);
-  tri(b, [ax - 2.1, h + 1.6, zf], [ax + 2.1, h + 1.6, zf], [ax, h + 3.2, zf], [0, 0, -1], MARBLE);
-  for (const y of [3.0, 6.2]) b.box(ax - hw - 0.1, y, zf + 0.3, ax + hw + 0.1, y + 0.22, zf + 0.36, y < 4 ? GREEN : PINK, { faces: 'S' });
-  for (const [dx, w2, hh] of [[0, 0.75, 2.2], [-2.8, 0.55, 1.8], [2.8, 0.55, 1.8]]) {
+  b.box(ax - 2.1, h + 0.6, zf, ax + 2.1, h + 2.0, zf + 0.3, MARBLE, { faces: 'ESW' });
+  tri(b, [ax - 2.1, h + 2.0, zf + 0.3], [ax + 2.1, h + 2.0, zf + 0.3], [ax, h + 4.2, zf + 0.3], [0, 0, 1], MARBLE);
+  tri(b, [ax - 2.1, h + 2.0, zf], [ax + 2.1, h + 2.0, zf], [ax, h + 4.2, zf], [0, 0, -1], MARBLE);
+  for (const y of [4.1, 8.5]) b.box(ax - hw - 0.1, y, zf + 0.3, ax + hw + 0.1, y + 0.22, zf + 0.36, y < 5 ? GREEN : PINK, { faces: 'S' });
+  for (const [dx, w2, hh] of [[0, 0.85, 3.05], [-2.8, 0.6, 2.45], [2.8, 0.6, 2.45]]) {
     b.box(ax + dx - w2, 0, zf + 0.3, ax + dx + w2, hh, zf + 0.36, DARK, { faces: 'S' });
     roundel(b, [ax + dx, hh, zf + 0.36], w2, 'S', GOLD, { win: interior(0.4) }, 8);
   }
-  roundel(b, [ax, 7.9, zf + 0.34], 1.0, 'S', 0x5a6fe0, { win: interior(0.9) }, 12);
+  roundel(b, [ax, 10.9, zf + 0.34], 1.3, 'S', 0x5a6fe0, { win: interior(0.9) }, 12);
 
   // --- the bell tower: square, in bands of white, green and pink, with taller windows the higher it goes ---
-  const tx = 101.6, tzz = 27.6, th = 1.4, stage = 5.6;
+  const tx = 101.6, tzz = 27.6, th = 1.4, stage = 6.6;
   b.box(tx - th, 0, tzz - th, tx + th, stage * 4, tzz + th, MARBLE, { win: { cell: 1.4, storey: stage, lit: 0.35, kind: 6 }, seed: 0.9, faces: 'NESW' });
   lines(tx - th, tzz - th, tx + th, tzz + th, [stage - 0.11, stage * 2 - 0.11, stage * 3 - 0.11], PINK);
   lines(tx - th, tzz - th, tx + th, tzz + th, [stage * 0.5, stage * 1.5]);
