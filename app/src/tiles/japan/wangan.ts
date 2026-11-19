@@ -161,8 +161,9 @@ export function buildWangan(k: Build): void {
   /** A beam across the road on two posts, with a board that faces each way. `yaw` is the way the road runs. */
   const gantry = (x: number, z: number, yaw: number, y: number, hw: number, ahead: string, behind: string): void => {
     const rx = -Math.sin(yaw), rz = Math.cos(yaw), POST = 0x6b7076;
-    for (const side of [-1, 1]) b.obox(x + rx * (hw + 0.5) * side, y + 3.3, z + rz * (hw + 0.5) * side, 0.22, 3.3, 0.22, yaw, POST);
-    b.obox(x, y + 6.5, z, 0.2, 0.25, hw + 0.7, yaw, POST, { faces: 'B' });
+    // its posts stand on the road's low walls
+    for (const side of [-1, 1]) b.obox(x + rx * (hw - 0.23) * side, y + 3.3, z + rz * (hw - 0.23) * side, 0.2, 3.3, 0.2, yaw, POST);
+    b.obox(x, y + 6.5, z, 0.2, 0.25, hw, yaw, POST, { faces: 'B' });
     const fx = Math.cos(yaw), fz = Math.sin(yaw);
     // the board that traffic coming along the road reads faces back down it
     k.sign(ahead, x - fx * 0.26, y + 5.3, z - fz * 0.26, -fx, -fz, 2.5, hw * 1.7);

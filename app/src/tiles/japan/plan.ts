@@ -110,15 +110,19 @@ export function loopOf(pts: P2[], r: number): Piece[] {
   return t.pieces;
 }
 
-/** Kyoto's streets: a ring of four, and one across the middle. Its corners are in the order traffic keeps left round the outside. */
-export const KYOTO = { west: -64, east: -36, north: -17, mid: 14, south: 70, r: 7 };
+/**
+ * Kyoto's streets: a ring of four, and one across the middle. Its corners are
+ * in the order traffic keeps left round the outside. `walk` is how wide its
+ * sidewalks are: narrower than Tokyo's.
+ */
+export const KYOTO = { west: -64, east: -36, north: -14, mid: 14, south: 70, r: 7, walk: 2 };
 export const KYOTO_RING = loopOf(
   [[KYOTO.west, KYOTO.north], [KYOTO.east, KYOTO.north], [KYOTO.east, KYOTO.south], [KYOTO.west, KYOTO.south]],
   KYOTO.r,
 );
 
 /** Tokyo's streets: an L of six round the whole of it, and the streets inside. */
-export const TOKYO = { west: 14, mid: 58, east: 97, north: -105, cross: -50, avenue: -1, south: 36, r: 6 };
+export const TOKYO = { west: 14, mid: 58, east: 97, north: -105, cross: -50, avenue: -1, south: 36, r: 6, walk: 3 };
 export const TOKYO_RING = loopOf(
   [[TOKYO.west, TOKYO.north], [TOKYO.east, TOKYO.north], [TOKYO.east, TOKYO.cross], [TOKYO.mid, TOKYO.cross], [TOKYO.mid, TOKYO.south], [TOKYO.west, TOKYO.south]],
   TOKYO.r,
@@ -189,6 +193,20 @@ export const TOUGE: Piece[] = (() => {
   t.goToX(xEnd - bend * S2).turn(-45, bend);
   t.go(Math.hypot(start.x - t.x, start.z - t.z));
   return [...down, ...t.pieces, ...up, ...LOOKOUT_LOOP];
+})();
+
+/**
+ * The ground between the foot of the pass and Kyoto's streets. Both of the
+ * pass's lanes cross it, so it is asphalt, like the road on either side.
+ */
+export const PASS_FOOT: P2[] = (() => {
+  const end = endOf(PASS_LINE), w = PASS.width + 0.3;
+  // the two corners of the road's end, a little way back up it
+  const bx = end.x + S2 * 0.5, bz = end.z - S2 * 0.5;
+  return [
+    [bx - S2 * w, bz - S2 * w], [bx + S2 * w, bz + S2 * w],
+    [KYOTO.east + 5, KYOTO.north + KYOTO.r], [KYOTO.east, KYOTO.north + 1.5], [KYOTO.east - 9, KYOTO.north - 4.4],
+  ];
 })();
 
 /** Where the lookout's loop is, for the ground under it. */
@@ -292,13 +310,13 @@ export const ROTARY_LOOP: Piece[] = from(endOf(lane(back(WANGAN_NORTH), LANE_OFF
  * hill and ends there out of sight (`hidden`). A train is `train` long, and
  * stops at Kyoto Station with its middle at `kyoto`.
  */
-export const RAIL = { z: -30, y: 13, off: 2.2, west: -72, hidden: -102, east: 54, half: 5, train: 26, kyoto: -58 };
+export const RAIL = { z: -30, y: 13, off: 2.2, west: -72, hidden: -102, east: 51, half: 5, train: 26, kyoto: -58 };
 
 /** Kyoto's hill, which the line runs into. It is high enough to hide a train. */
 export const KYOTO_HILL = { x0: BOARD.x0, x1: RAIL.west, z0: -44, z1: -12, y: 19 };
 
 /** Ueno Park: flat ground at Tokyo's east edge, kept low so that the scramble can be seen over it. */
-export const UENO_PARK: Rect = { x0: 79, z0: -43, x1: BOARD.x1 - 0.4, z1: -17 };
+export const UENO_PARK: Rect = { x0: 79, z0: TOKYO.cross + 5 + TOKYO.walk, x1: BOARD.x1 - 0.4, z1: -17 };
 
 /**
  * The round the dragon flies: about Fuji's summit, out over Kyoto and the river,
@@ -358,15 +376,32 @@ export const ROUTES: Route[] = [
 ];
 
 // ---------------------------------------------------------------------------
-// What stands where. Until its model is built, each thing is a plain box with
-// its name on a board, so that the tile can be judged for where things are and
-// how full it is.
+// What stands where
 // ---------------------------------------------------------------------------
 
-/** Tokyo Tower: where it stands and how high it is. */
-export const TOKYO_TOWER = { x: 36, z: -80, h: 112 };
-/** Kyoto Tower's block, and how high the tower on it reaches. */
-export const KYOTO_TOWER = { x: -58.5, z: -11, w: 16, d: 16, h: 58 };
+/**
+ * How far the front of a building is from the middle of the street it faces:
+ * it stands behind the sidewalk, and never on it.
+ */
+const FRONT = { tokyo: 5 + TOKYO.walk, kyoto: 5 + KYOTO.walk, avenue: AVENUE.width / 2 + TOKYO.walk };
+
+/** The ground inside the sidewalks of each block: four in Tokyo and two in Kyoto. */
+export const BLOCKS = {
+  tower: { x0: TOKYO.west + FRONT.tokyo, z0: TOKYO.north + FRONT.tokyo, x1: TOKYO.mid - FRONT.tokyo, z1: TOKYO.cross - FRONT.tokyo },
+  shibuya: { x0: TOKYO.mid + FRONT.tokyo, z0: TOKYO.north + FRONT.tokyo, x1: TOKYO.east - FRONT.tokyo, z1: TOKYO.cross - FRONT.tokyo },
+  station: { x0: TOKYO.west + FRONT.tokyo, z0: TOKYO.cross + FRONT.tokyo, x1: TOKYO.mid - FRONT.tokyo, z1: AVENUE.z - FRONT.avenue },
+  ginza: { x0: TOKYO.west + FRONT.tokyo, z0: AVENUE.z + FRONT.avenue, x1: TOKYO.mid - FRONT.tokyo, z1: TOKYO.south - FRONT.tokyo },
+  kyotoTower: { x0: KYOTO.west + FRONT.kyoto, z0: KYOTO.north + FRONT.kyoto, x1: KYOTO.east - FRONT.kyoto, z1: KYOTO.mid - FRONT.kyoto },
+  gion: { x0: KYOTO.west + FRONT.kyoto, z0: KYOTO.mid + FRONT.kyoto, x1: KYOTO.east - FRONT.kyoto, z1: KYOTO.south - FRONT.kyoto },
+} satisfies Record<string, Rect>;
+
+/** Tokyo Tower: where it stands, how high it is, and how far each foot is from its middle. */
+export const TOKYO_TOWER = { x: 36, z: -80, h: 112, foot: 13.6 };
+/** Kyoto Tower's block, and how high the tower on it reaches. The hotel under it fills its block. */
+export const KYOTO_TOWER = {
+  x: BLOCKS.kyotoTower.x0 - 0.5, z: BLOCKS.kyotoTower.z0 - 0.5,
+  w: BLOCKS.kyotoTower.x1 - BLOCKS.kyotoTower.x0 + 1, d: BLOCKS.kyotoTower.z1 - BLOCKS.kyotoTower.z0 + 1, h: 58,
+};
 /** The pagoda, on the top of Kyoto's hill. */
 export const PAGODA = { x: -82, z: -30, h: 30 };
 /** The castle, in the middle of its moat. */
@@ -379,17 +414,48 @@ export const POND: Rect = { x0: -102, z0: 32, x1: -75, z1: 66 };
 export const INARI = { way: [[-74.5, -10.6], [-81, -13.5], [-87, -17], [-92, -21.5], [-96.5, -26]] as P2[] };
 /** Sensō-ji: the line it stands along, its gate, the two ends of its lane of stalls, and the back and front of its hall. */
 export const SENSOJI = { x: -2, gate: -66, lane: [-84, -70] as P2, hall: [-106, -94] as P2 };
+/** Tokyo Station: the length of its front, and where that front stands, on the avenue. */
+export const TOKYO_STATION = { x0: BLOCKS.station.x0, x1: BLOCKS.station.x1, z1: BLOCKS.station.z1 };
 
-/** Ground that is kept clear of trees and of people, because something stands there. */
-export const KEEP_CLEAR: Rect[] = [
-  { x0: PAGODA.x - 7, z0: PAGODA.z - 7, x1: PAGODA.x + 7, z1: PAGODA.z + 7 },
-  { x0: -101, z0: -30, x1: -70, z1: -6 },
-  { x0: SENSOJI.x - 9, z0: -108, x1: SENSOJI.x + 9, z1: -62 },
-  { x0: KYOTO_TOWER.x, z0: KYOTO_TOWER.z, x1: KYOTO_TOWER.x + KYOTO_TOWER.w, z1: KYOTO_TOWER.z + KYOTO_TOWER.d },
-  { x0: 19, z0: -40, x1: 54, z1: -15 },
-  { x0: -71, z0: -41, x1: -45, z1: -20 },
-  { x0: TOKYO_TOWER.x - 16, z0: TOKYO_TOWER.z - 16, x1: TOKYO_TOWER.x + 16, z1: TOKYO_TOWER.z + 16 },
-];
+/** The tuner's garage: a showroom and a workshop with one side open to the street, and a turntable in the showroom. */
+export const GARAGE = {
+  x0: BLOCKS.ginza.x0, z0: BLOCKS.ginza.z0 + 1, x1: BLOCKS.ginza.x1, z1: BLOCKS.ginza.z1 - 1, h: 9,
+  table: { x: BLOCKS.ginza.x0 + 9.5, z: BLOCKS.ginza.z0 + 7.2, r: 4.3 }, turn: 0.22,
+  /** Where the wall between the showroom and the workshop is, and the lift in the workshop. */
+  wall: BLOCKS.ginza.x0 + 19, lift: { x: BLOCKS.ginza.x1 - 5, z: BLOCKS.ginza.z0 + 7.4 },
+};
+/** The konbini, with its car park in front of it, on the side away from the river. */
+export const KONBINI = { x0: -17, z0: 15.5, x1: -4, z1: 24, park: 34.5 };
+/** The petrol station: a roof on posts, with the hoses hanging from it. */
+export const PETROL = { x0: -18, z0: 37.5, x1: -3.5, z1: 47.5 };
+/** The tofu shop at the foot of the pass. */
+export const TOFU = { x0: -27.6, z0: -23, x1: -21.4, z1: -14 };
+/** The parts shop and the used-car lot, under the Wangan. */
+export const PARTS = { x0: TOKYO.mid + FRONT.tokyo + 0.5, z0: -15.6, x1: TOKYO.mid + FRONT.tokyo + 10.5, z1: -8.2 };
+export const USED_CARS = { x0: TOKYO.mid + FRONT.tokyo + 0.5, z0: 3.6, x1: 90, z1: 21.4, rows: [7.5, 17.5], first: 69.4, pitch: 3.6 };
+/** The scramble: where its two streets cross. */
+export const SCRAMBLE = { x: TOKYO.mid, z: TOKYO.cross };
+/** The tower of screens and the round-fronted tower, on two corners of the scramble, and Hachikō's square on a third. */
+export const SCREENS = { x0: BLOCKS.tower.x1 - 8.5, z0: BLOCKS.tower.z1 - 7, x1: BLOCKS.tower.x1, z1: BLOCKS.tower.z1, h: 42 };
+export const ROUND_TOWER = { x0: BLOCKS.shibuya.x0, z0: BLOCKS.shibuya.z1 - 13, x1: BLOCKS.shibuya.x0 + 8.5, z1: BLOCKS.shibuya.z1, h: 38 };
+export const HACHIKO = { x: TOKYO.mid + FRONT.tokyo + 2.2, z: TOKYO.cross + FRONT.tokyo + 2.6, x0: TOKYO.mid + FRONT.tokyo, z0: TOKYO.cross + FRONT.tokyo, x1: 75, z1: -18.5 };
+/** The car carrier at Tatsumi's pier, and where the cars that wait to go aboard stand. */
+export const CARRIER = { x0: -19.5, z0: 88.6, x1: 5.5, z1: 96.2, ramp: [-15.5, -10.5] as P2, waiting: { xs: [-18.4, -8.4, -4.8], z: 82.3 } };
+/** The rock garden, behind its wall, in the middle of Gion. */
+export const ROCK_GARDEN: Rect = { x0: BLOCKS.gion.x0 + 0.5, z0: 41.5, x1: BLOCKS.gion.x0 + 7.8, z1: 53.5 };
+/** The snow monkeys' pool and the thatched farmhouses, on the shelf below Fuji. Each farmhouse is [x, z, how far it is turned]. */
+export const MONKEYS = { x: -22, z: -109, r: 3 };
+export const FARMS: [number, number, number][] = [[-22.4, -98.6, 6], [-30.8, -104.2, -8]];
+export const PADDIES: Rect[] = [{ x0: -35, z0: -112.6, x1: -27.5, z1: -110.2 }, { x0: -30.4, z0: -98.2, x1: -27, z1: -95.6 }];
+/**
+ * The ways the lantern boats go. In the cove they pass between the shrine's
+ * stage and the great torii, and then out through the torii. In the bay they
+ * go round under the Bay Bridge.
+ */
+export const BOATS = {
+  cove: { pts: [[-97, 96.5], [-66, 96.5], [-66, 110.3], [-97, 110.3]] as P2[], r: 6 },
+  bay: { pts: [[18, 58], [44, 58], [44, 106], [18, 106]] as P2[], r: 8 },
+};
 
 /** The great torii, standing in the water of Kyoto's cove. */
 export const TORII = { x: -66, z: 103 };
@@ -413,49 +479,26 @@ export const DAIKOKU_BAYS = {
 /** Tatsumi's parking area: a deck beside the loop at the Wangan's west end. */
 export const TATSUMI: Rect = { x0: -15, z0: 54.5, x1: -1, z1: 64 };
 
-/** A thing that is still to be built: a box on the ground, or on whatever is at `y`. */
-export interface Lot { id: string; name: string; x: number; z: number; w: number; d: number; h: number; color: number; y?: number; label?: boolean }
-
-const lot = (id: string, name: string, x: number, z: number, w: number, d: number, h: number, color: number, y = 0, label = true): Lot =>
-  ({ id, name, x, z, w, d, h, color, y, label });
-
-const PLASTER = 0xe9e3d6, VERMILION = 0xd8432b, BRICK = 0xa8553f, GLASS = 0x8fb4cf, DARK = 0x3d3856, THATCH = 0x9a8356;
-
-export const LOTS: Lot[] = [
-  // the mountain
-  lot('monkeys', 'SNOW MONKEYS', -34, -109, 9, 7, 1.6, 0x9fd3e8, SHELF.y),
-  lot('farm-1', 'THATCHED FARMS', -28, -98, 7, 9, 8, THATCH, SHELF.y),
-  lot('farm-2', '', -19, -106, 6, 8, 7, THATCH, SHELF.y, false),
-  lot('farm-3', '', -19, -93, 6, 7, 7, THATCH, SHELF.y, false),
-  lot('tofu', 'TOFU SHOP', -27.5, -23, 6, 9, 6, PLASTER),
-
-  // Kyoto
-  lot('rock-garden', 'ROCK GARDEN', -58, 42, 16, 10, 0.5, 0xf0ede4),
-
-  // Tokyo
-  lot('screens', 'SHIBUYA', 44, -64, 9, 9, 42, GLASS),
-  lot('tower-109', '', 63.5, -64, 10, 10, 38, 0xd9dde4, 0, false),
-  lot('hachiko', 'HACHIKO', 63.5, -44.5, 11, 27, 0.5, 0xd8d2c4),
-  lot('arcade', 'ARCADE', 19.5, -64, 11, 9, 24, DARK),
-  lot('arches', 'UNDER THE ARCHES', -13, -34, 22, 8, 6.5, BRICK),
-
-  // the bay
-  lot('garage', "TUNER'S GARAGE", 21, 15, 30, 12, 9, 0xe9e6df),
-  lot('konbini', 'KONBINI', -17, 16, 13, 9, 5, 0xf2f0ea),
-  lot('petrol', 'PETROL STATION', -18, 36, 15, 10, 6, 0xf2f0ea),
-  lot('carrier', 'CAR CARRIER', -20, 88, 24, 8, 11, 0x2f5fa8, -1),
-  lot('parts', 'PARTS SHOP', 64.5, -15.6, 12, 7.4, 6, 0xf2c14e),
-];
-
-/** Things that are named on a board but are not a box: the mountain, the roads, the bridges. */
-export const NAMES: { id: string; name: string; x: number; y: number; z: number }[] = [
-  { id: 'crossing', name: 'SHIBUYA CROSSING', x: TOKYO.mid, y: 7, z: TOKYO.cross },
-  { id: 'ueno', name: 'UENO PARK', x: 91, y: 9, z: -30 },
-  { id: 'river', name: 'RED BRIDGE', x: -25, y: 7, z: 30 },
-  { id: 'gion', name: 'GION', x: -50, y: 13, z: 30 },
-  { id: 'used', name: 'USED CARS', x: 84, y: 5, z: 16 },
-  { id: 'neon', name: 'NEON ALLEYS', x: 84, y: 60, z: -78 },
-  { id: 'yokocho', name: 'YOKOCHO', x: -10, y: 9, z: -8 },
+/** Ground that is kept clear of trees, and of the people who are scattered along the sidewalks, because something stands there. */
+export const KEEP_CLEAR: Rect[] = [
+  { x0: PAGODA.x - 7, z0: PAGODA.z - 7, x1: PAGODA.x + 7, z1: PAGODA.z + 7 },
+  { x0: -101, z0: -30, x1: -70, z1: -6 },
+  { x0: SENSOJI.x - 9, z0: -108, x1: SENSOJI.x + 9, z1: -62 },
+  { x0: KYOTO_TOWER.x, z0: KYOTO_TOWER.z, x1: KYOTO_TOWER.x + KYOTO_TOWER.w, z1: KYOTO_TOWER.z + KYOTO_TOWER.d },
+  { x0: TOKYO_STATION.x0, z0: BLOCKS.station.z0, x1: TOKYO_STATION.x1, z1: TOKYO_STATION.z1 + 1.2 },
+  { x0: -71, z0: -41, x1: -45, z1: -20 },
+  { x0: TOKYO_TOWER.x - TOKYO_TOWER.foot, z0: TOKYO_TOWER.z - TOKYO_TOWER.foot, x1: TOKYO_TOWER.x + TOKYO_TOWER.foot, z1: TOKYO_TOWER.z + TOKYO_TOWER.foot },
+  { x0: SHELF.x0, z0: SHELF.z0, x1: SHELF.x1, z1: SHELF.z1 - 2 },
+  { x0: TOFU.x0 - 1, z0: TOFU.z0 - 1, x1: TOFU.x1 + 1, z1: TOFU.z1 + 4 },
+  { x0: GARAGE.x0, z0: GARAGE.z0, x1: GARAGE.x1, z1: GARAGE.z1 + 1 },
+  { x0: KONBINI.x0 - 1, z0: KONBINI.z0, x1: KONBINI.x1 + 3, z1: PETROL.z1 + 1 },
+  { x0: HACHIKO.x0, z0: HACHIKO.z0, x1: PARTS.x1, z1: PARTS.z1 + 3 },
+  { x0: ROUND_TOWER.x0, z0: ROUND_TOWER.z0, x1: ROUND_TOWER.x1 + 0.4, z1: ROUND_TOWER.z1 },
+  { x0: SCREENS.x0, z0: SCREENS.z0, x1: SCREENS.x1, z1: SCREENS.z1 },
+  { x0: USED_CARS.x0, z0: USED_CARS.z0, x1: USED_CARS.x1, z1: USED_CARS.z1 },
+  { x0: ROCK_GARDEN.x0 - 0.5, z0: ROCK_GARDEN.z0, x1: ROCK_GARDEN.x1 + 2, z1: ROCK_GARDEN.z1 + 0.5 },
+  // the foot of the pass, where its lanes leave Kyoto's streets
+  { x0: KYOTO.east - 10, z0: KYOTO.north - 13, x1: KYOTO.east + 6.5, z1: KYOTO.north + 7 },
 ];
 
 // ---------------------------------------------------------------------------
@@ -487,16 +530,22 @@ export const HERO_SPOTS: HeroSpot[] = [];
   HERO_SPOTS.push({ id: 'lookout', x: yard.x, y: PASS.y1 + 0.02, z: yard.z, heading: Math.PI / 4 });
   PARKED.push({ x: yard.x - bay, y: PASS.y1 + 0.02, z: yard.z + bay, heading: Math.PI / 4 });
   PARKED.push({ x: yard.x + bay, y: PASS.y1 + 0.02, z: yard.z - bay, heading: Math.PI / 4 });
-  // the tuner's garage, and the konbini's car park
-  const g = LOTS.find((l) => l.id === 'garage')!;
-  HERO_SPOTS.push({ id: 'garage', x: g.x + g.w / 2, y: 0.02, z: g.z + g.d + 5, heading: 0.5 });
-  const c = LOTS.find((l) => l.id === 'konbini')!;
-  HERO_SPOTS.push({ id: 'konbini', x: c.x + 6.5, y: 0.02, z: c.z + c.d + 4.5, heading: 0 });
-  PARKED.push({ x: c.x + 2, y: 0.02, z: c.z + c.d + 4, heading: -south });
-  // the used-car lot under the Wangan: two rows, nose out to the street
+  // the tuner's garage: its turntable waits for a hero, and a car is up on the lift in the workshop
+  HERO_SPOTS.push({ id: 'garage', x: GARAGE.table.x, y: 0.45, z: GARAGE.table.z, heading: 0.6, lit: true, turn: GARAGE.turn });
+  PARKED.push({ x: GARAGE.lift.x, y: 1.62, z: GARAGE.lift.z, heading: south });
+  // the konbini's three bays: cars are backed into them, as in Japan. The middle one is kept for a hero.
+  for (let i = 0; i < 3; i++) {
+    const spot = { x: KONBINI.x0 + 2.4 + i * 4.1, y: 0.02, z: KONBINI.z1 + 5.4, heading: south };
+    if (i === 1) HERO_SPOTS.push({ id: 'konbini', ...spot });
+    else if (i === 0) PARKED.push(spot);
+  }
+  // a car at the petrol station's hoses, one by the tofu shop, and the cars that wait for the carrier
+  PARKED.push({ x: (PETROL.x0 + PETROL.x1) / 2 - 1, y: 0.02, z: (PETROL.z0 + PETROL.z1) / 2 - 0.4, heading: 0 });
+  PARKED.push({ x: TOFU.x0 + 3.1, y: 0.02, z: TOFU.z1 + 2.2, heading: 0 });
+  for (const x of CARRIER.waiting.xs) PARKED.push({ x, y: 0.02, z: CARRIER.waiting.z, heading: south });
+  // the used-car lot under the Wangan: two rows, nose out
   for (let i = 0; i < 6; i++) {
-    PARKED.push({ x: 67 + i * 3.8, y: 0.02, z: 17.5, heading: south });
-    if (i > 0) PARKED.push({ x: 67 + i * 3.8, y: 0.02, z: 7.5, heading: south });
+    for (const [n, z] of USED_CARS.rows.entries()) if (n > 0 || i > 0) PARKED.push({ x: USED_CARS.first + i * USED_CARS.pitch, y: 0.02, z, heading: south });
   }
 }
 
@@ -514,34 +563,40 @@ const o = (x: number, z: number, w: number, d: number, top: number, style: Style
 const machiya = (x: number, z: number, w: number, d: number, top: number, signs: string): Ordinary =>
   o(x, z, w, d, top, 'machiya', signs, { roof: 'hip', kyoto: true });
 
-export const ORDINARY: Ordinary[] = [
-  // Tokyo, round the scramble: the dark towers of the neon alleys
-  o(74, -99, 18, 13, 40, 'neon'),
-  o(63.5, -99, 9, 13, 28, 'pencil', 'SW'),
-  o(76, -84, 16, 12, 54, 'neon', 'E'),
-  o(63.5, -84, 11, 12, 34, 'pencil', 'W'),
-  o(76, -70, 16, 15, 30, 'neon'),
-  o(31.5, -64, 11.5, 9, 32, 'pencil', 'S'),
-  // behind the station
-  o(19.5, -45.5, 8, 9.5, 26, 'pencil', 'N'),
-  o(28.5, -45.5, 8, 9.5, 34, 'neon', 'N'),
-  o(37.5, -45.5, 7.5, 9.5, 22, 'pencil', 'N'),
-  o(46, -45.5, 7, 9.5, 30, 'office', 'N'),
-  // the yokocho by the river: two rows of tiny bars with a lane between them
-  o(-19, -21, 7, 5, 6, 'shop', 'S'),
-  o(-11.5, -21, 7, 5, 7, 'shop', 'S'),
-  o(-4, -21, 7, 5, 6, 'shop', 'S'),
-  o(-19, -12.5, 7, 5, 7, 'shop', 'N'),
-  o(-11.5, -12.5, 7, 5, 6, 'shop', 'N'),
-  o(-4, -12.5, 7, 5, 8, 'shop', 'NE'),
-  o(-19, -4, 9, 9, 14, 'pencil', 'E'),
-  o(-8, -4, 12, 9, 11, 'pencil', 'SE'),
-  // Kyoto: Gion's townhouses, and inns along the river
-  machiya(-58.5, 20, 7.5, 9, 7, 'W'),
-  machiya(-58.5, 30.5, 7.5, 9, 6, 'W'),
-  machiya(-49, 20, 7.5, 9, 6, 'E'),
-  machiya(-49, 30.5, 7.5, 9, 7, 'E'),
-  machiya(-48, 42, 6.5, 10, 6, 'E'),
-  machiya(-58.5, 55, 7.5, 9.5, 7, 'W'),
-  machiya(-49, 55, 7.5, 9.5, 6, 'ES'),
-];
+export const ORDINARY: Ordinary[] = (() => {
+  const s = BLOCKS.shibuya, t = BLOCKS.tower, st = BLOCKS.station, g = BLOCKS.gion;
+  return [
+    // Tokyo, north-east of the scramble: the dark towers of the neon alleys
+    o(s.x1 - 16, s.z0, 16, 12, 40, 'neon'),
+    o(s.x0, s.z0, 6, 12, 28, 'pencil', 'SW'),
+    o(s.x1 - 14, s.z0 + 13, 14, 11.5, 54, 'neon', 'E'),
+    o(s.x0, s.z0 + 13, 8, 11.5, 34, 'pencil', 'W'),
+    o(s.x1 - 13.5, s.z1 - 13.5, 13.5, 13.5, 30, 'neon'),
+    // north-west of it, beside the tower of screens: an arcade and a pencil building
+    o(t.x0 + 9.5, t.z1 - 7, 9, 7, 32, 'pencil', 'S'),
+    o(t.x0, t.z1 - 7, 8.5, 7, 24, 'neon', 'S'),
+    // under the Shinkansen's arches: a bar by the river, and a row of eating places behind the station
+    o(-7.4, -34.4, 9, 8.6, 6.4, 'shop', 'S'),
+    o(st.x0, st.z0, 6.5, 6.3, 7, 'shop', 'N'),
+    o(st.x0 + 7.5, st.z0, 6.5, 6.3, 8.5, 'shop', 'N'),
+    o(st.x0 + 15, st.z0, 6.5, 6.3, 6.5, 'shop', 'N'),
+    o(st.x0 + 22.5, st.z0, 5.5, 6.3, 9, 'shop', 'N'),
+    // the yokocho by the river: two rows of tiny bars with a lane between them
+    o(-19, -21, 7, 5, 6, 'shop', 'S'),
+    o(-11.5, -21, 7, 5, 7, 'shop', 'S'),
+    o(-4, -21, 7, 5, 6, 'shop', 'S'),
+    o(-19, -12.5, 7, 5, 7, 'shop', 'N'),
+    o(-11.5, -12.5, 7, 5, 6, 'shop', 'N'),
+    o(-4, -12.5, 7, 5, 8, 'shop', 'NE'),
+    o(-19, -4, 9, 9, 14, 'pencil', 'E'),
+    o(-8, -4, 12, 9, 11, 'pencil', 'SE'),
+    // Kyoto: Gion's townhouses, in two rows with a lane between them, and the hall beside the rock garden
+    machiya(g.x0, g.z0, 6, 9, 7, 'W'),
+    machiya(g.x0, g.z0 + 10.5, 6, 9, 6, 'W'),
+    machiya(g.x1 - 6, g.z0, 6, 9, 6, 'E'),
+    machiya(g.x1 - 6, g.z0 + 10.5, 6, 9, 7, 'E'),
+    machiya(g.x1 - 4.2, g.z0 + 21, 4.2, 10.5, 6, 'E'),
+    machiya(g.x0, g.z1 - 8.5, 6, 8.5, 7, 'W'),
+    machiya(g.x1 - 6, g.z1 - 8.5, 6, 8.5, 6, 'ES'),
+  ];
+})();

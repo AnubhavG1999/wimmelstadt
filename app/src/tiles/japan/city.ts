@@ -8,16 +8,16 @@ import type { WinSpec } from '../../engine/geo';
 import { LAWN, PLAZA, area, flat, ground, oval, rect, water } from '../../engine/ground';
 import { buildPath, type Path } from '../../engine/paths';
 import { lampsAlong, roadDeck, street } from '../../engine/roads';
-import type { SignDef } from '../../engine/signs';
 import type { Build, TileParts } from '../../engine/tile';
 import { dragon } from './dragon';
 import { buildLandmarks } from './landmarks';
 import { sample, toSegs, type Piece } from './lines';
 import {
-  AVENUE, BOARD, DRAGON_ROUND, FUJI, HERO_SPOTS, KEEP_CLEAR, KYOTO, KYOTO_RING, LOOKOUT, LOOKOUT_LOOP, LOOKOUT_YARD, LOTS, MOAT, NAMES, ORDINARY, PARKED,
-  PASS, PASS_LINE, POND, ROTARY, ROUTES, SHORE, TOKYO, TOKYO_RING, UENO_PARK, WATER,
-  type Lot, type Ordinary, type Style,
+  AVENUE, BOARD, DRAGON_ROUND, FUJI, HERO_SPOTS, KEEP_CLEAR, KYOTO, KYOTO_RING, LOOKOUT, LOOKOUT_LOOP, LOOKOUT_YARD, MOAT, ORDINARY, PARKED,
+  PASS, PASS_FOOT, PASS_LINE, POND, ROTARY, ROUTES, SHORE, TOKYO, TOKYO_RING, UENO_PARK, WATER,
+  type Ordinary, type Style,
 } from './plan';
+import { buildScenes } from './scenes';
 import { buildShinkansen } from './shinkansen';
 import { KYOTO_SIGNS, NEON, TOKYO_SIGNS } from './signs';
 import { buildFuji, buildHills, groundHeight } from './terrain';
@@ -26,12 +26,6 @@ import { buildWangan, inside } from './wangan';
 const S2 = Math.SQRT1_2;
 /** What the street material is told about a patch of plain ground. */
 const PLAIN: WinSpec = { cell: 0, storey: 1, lit: 0, kind: 1 };
-
-/** The boards that name things which are still plain boxes. They go when the things are built. */
-export const NAME_BOARDS: SignDef[] = [...LOTS.filter((l) => l.label !== false), ...NAMES].map((l) => {
-  const aspect = 0.5 * l.name.length + 0.7;
-  return { id: `name-${l.id}`, lines: [l.name], color: '#fffdf2', ink: '#1b1b20', aspect, kind: 'board', size: [Math.round(64 * aspect), 64] };
-});
 
 /** What Tokyo's and Kyoto's ordinary buildings look like. */
 const STYLES: Record<Style, { palette: number[]; win: WinSpec; shops?: boolean; neon?: boolean }> = {
@@ -62,7 +56,7 @@ export function buildJapan(k: Build): TileParts {
 
   // gardens, squares and yards
   flat(k.street, rect(-103.6, -10, -72.2, SHORE.kyoto - 3), 0.02, LAWN, { win: PLAIN, holes: [moat, pond] });
-  area(k, rect(-12, -110, 8, -62), PLAZA);
+  area(k, rect(-12, -110, 6, -62), PLAZA);
   area(k, rect(SHORE.pier.x0 + 1, SHORE.tokyo + 1, SHORE.pier.x1 - 1, SHORE.pier.z1 - 1), 0x8f8c86);
   area(k, rect(TOKYO.west + 6, TOKYO.south + 8.2, SHORE.arm.x - 1, SHORE.tokyo - 0.6), PLAZA);
   area(k, rect(UENO_PARK.x0, UENO_PARK.z0, UENO_PARK.x1, UENO_PARK.z1), LAWN);
@@ -76,11 +70,16 @@ export function buildJapan(k: Build): TileParts {
   const tokyoMid = line(TOKYO.mid, TOKYO.cross + 4, TOKYO.mid, TOKYO.north - 0.5);
   const tokyoCross = line(TOKYO.mid + 4, TOKYO.cross, TOKYO.west - 0.5, TOKYO.cross);
   const avenue = line(AVENUE.x0 - 0.5, AVENUE.z, AVENUE.x1, AVENUE.z);
-  const streets = [kyotoRing, kyotoMid, tokyoRing, tokyoMid, tokyoCross];
-  for (const p of streets) street(k, p);
-  street(k, avenue, { lanes: 4, width: AVENUE.width });
-  for (const p of streets) lampsAlong(k, p, 6.3);
-  lampsAlong(k, avenue, AVENUE.width / 2 + 1.3);
+  // each street with half the width of its carriageway, and how wide its sidewalks are
+  const streets: { path: Path; half: number; walk: number }[] = [
+    { path: kyotoRing, half: 5, walk: KYOTO.walk }, { path: kyotoMid, half: 5, walk: KYOTO.walk },
+    { path: tokyoRing, half: 5, walk: TOKYO.walk }, { path: tokyoMid, half: 5, walk: TOKYO.walk }, { path: tokyoCross, half: 5, walk: TOKYO.walk },
+    { path: avenue, half: AVENUE.width / 2, walk: TOKYO.walk },
+  ];
+  for (const s of streets) street(k, s.path, s.path === avenue ? { lanes: 4, width: AVENUE.width, sidewalk: s.walk } : { sidewalk: s.walk });
+  for (const s of streets) lampsAlong(k, s.path, s.half + Math.min(1.3, s.walk * 0.45));
+  // where the pass's lanes leave Kyoto's streets: asphalt over the sidewalk, as at any way in
+  area(k, PASS_FOOT, 0x4a4c52, 0.025);
 
   // the island in the rotary, where the Wangan's two lanes turn round
   {
@@ -135,29 +134,11 @@ export function buildJapan(k: Build): TileParts {
   }
 
   // -------------------------------------------------------------------------
-  // What stands on the tile
+  // What stands on the tile, and the smaller things to find
   // -------------------------------------------------------------------------
 
   buildLandmarks(k);
-
-  // whatever is still to be built is a plain box, with its name on a board
-  const WINDOWS: Record<number, WinSpec> = {
-    0x3d3856: { cell: 3.4, storey: 5, lit: 0.3, kind: 3 },
-    0x8fb4cf: { cell: 2.4, storey: 5, lit: 0.44, kind: 1 },
-    0xe9e3d6: { cell: 3, storey: 5, lit: 0.34, kind: 0 },
-    0xa8553f: { cell: 2.6, storey: 4.3, lit: 0.4, kind: 0 },
-  };
-  const board = (id: string, x: number, y: number, z: number, h = 3.4): void => {
-    // it faces the south-east, where the view first looks from
-    k.sign(`name-${id}`, x, y, z, S2, S2, h);
-  };
-  const box = (l: Lot): void => {
-    const y0 = l.y ?? 0;
-    b.box(l.x, y0, l.z, l.x + l.w, y0 + l.h, l.z + l.d, l.color, { win: WINDOWS[l.color], seed: (Math.abs(l.x * 0.37 + l.z * 0.11)) % 1 });
-    if (l.label !== false) board(l.id, l.x + l.w / 2, y0 + l.h + 3, l.z + l.d / 2);
-  };
-  LOTS.forEach(box);
-  for (const n of NAMES) board(n.id, n.x, n.y, n.z, 3.8);
+  buildScenes(k);
 
   // -------------------------------------------------------------------------
   // Trees
@@ -167,7 +148,6 @@ export function buildJapan(k: Build): TileParts {
   const nearPass = (x: number, z: number, pad: number): boolean => road.some((p) => Math.hypot(p[0] - x, p[2] - z) < PASS.width + pad);
   const taken = (x: number, z: number, pad = 2): boolean =>
     KEEP_CLEAR.some((r) => x > r.x0 - pad && x < r.x1 + pad && z > r.z0 - pad && z < r.z1 + pad) ||
-    LOTS.some((l) => x > l.x - pad && x < l.x + l.w + pad && z > l.z - pad && z < l.z + l.d + pad) ||
     ORDINARY.some((l) => x > l.x - pad && x < l.x + l.w + pad && z > l.z - pad && z < l.z + l.d + pad);
   {
     let planted = 0;
@@ -185,14 +165,11 @@ export function buildJapan(k: Build): TileParts {
     }
     // Ueno Park: cherry trees along its far sides, so that they do not stand between the scramble and the view
     for (let i = 0; i < 9; i++) {
-      k.tree(UENO_PARK.x1 - 2.5, UENO_PARK.z0 + 2.5 + i * 2.9, 0.7 + k.rand() * 0.3);
-      if (i > 2) k.tree(UENO_PARK.x0 + 3 + i * 2.6, UENO_PARK.z0 + 2.2, 0.7 + k.rand() * 0.3);
+      if (i < 8) k.tree(UENO_PARK.x1 - 2.5, UENO_PARK.z0 + 2.5 + i * 2.9, 0.7 + k.rand() * 0.3);
+      if (i > 0) k.tree(UENO_PARK.x0 + 0.6 + i * 2.6, UENO_PARK.z0 + 2.2, 0.7 + k.rand() * 0.3);
     }
-    // cherry trees along the river, and trees in the castle's and the pavilion's grounds
-    for (let z = SHORE.river.head + 6; z < SHORE.kyoto - 4; z += 9) {
-      k.tree(SHORE.river.west - 1.4, z, 0.6);
-      k.tree(SHORE.river.east + 1.6, z + 4.5, 0.6);
-    }
+    // cherry trees along the river's east bank, and trees in the castle's and the pavilion's grounds
+    for (let z = SHORE.river.head + 10; z < SHORE.tokyo - 4; z += 9) k.tree(SHORE.river.east + 1.6, z + 4.5, 0.6);
     for (const [x, z] of [[-78, 29], [-99, 29], [-100, 70], [-88, 70.5], [-76, 70], [-73.3, 48]]) k.tree(x, z, 0.8);
   }
 
@@ -202,34 +179,28 @@ export function buildJapan(k: Build): TileParts {
 
   {
     // along the sidewalks of every street
-    const all = [...streets, avenue];
-    const half = (p: Path): number => (p === avenue ? AVENUE.width / 2 : 5);
-    for (const p of all) {
-      const n = Math.round(p.length / 9);
+    for (const s of streets) {
+      const p = s.path, n = Math.round(p.length / 7);
       for (let i = 0; i < n; i++) {
         const j = Math.min(p.pts.length - 2, Math.floor(k.rand() * p.pts.length)), side = k.rand() < 0.5 ? -1 : 1;
         const at = p.pts[j], on = p.pts[j + 1];
         const tx = on.x - at.x, tz = on.z - at.z, l = Math.hypot(tx, tz) || 1;
-        const off = side * (half(p) + 0.9 + k.rand() * 1.5);
+        const off = side * (s.half + 0.5 + k.rand() * (s.walk - 1));
         const x = at.x - (tz / l) * off, z = at.z + (tx / l) * off;
-        if (taken(x, z, 0.4) || groundHeight(x, z) > 0.3 || inside(WATER, x, z)) continue;
+        if (taken(x, z, 0.3) || groundHeight(x, z) > 0.3 || inside(WATER, x, z)) continue;
+        if (x < BOARD.x0 + 0.6 || x > BOARD.x1 - 0.6 || z < BOARD.z0 + 0.6 || z > BOARD.z1 - 0.6) continue;
         // not in another street's carriageway
-        if (all.some((q) => {
-          if (q === p) return false;
-          const c = q.pts[Math.min(q.pts.length - 1, Math.round((q.closest(x, z) / q.length) * q.pts.length))];
-          return Math.hypot(c.x - x, c.z - z) < half(q) + 0.6;
+        if (streets.some((q) => {
+          if (q === s) return false;
+          const c = q.path.pts[Math.min(q.path.pts.length - 1, Math.round((q.path.closest(x, z) / q.path.length) * q.path.pts.length))];
+          return Math.hypot(c.x - x, c.z - z) < q.half + 0.6;
         })) continue;
         k.person(x, z);
       }
     }
-    // at the lookout, in Daikoku's parking area, at the temple and round the scramble's corners
-    const y = LOOKOUT_YARD;
-    for (let i = 0; i < 6; i++) k.person(y.x + S2 * 5 + (k.rand() - 0.5) * 9 * S2 * 1.2, y.z + S2 * 5 - (k.rand() - 0.5) * 9 * S2 * 1.2, PASS.y1);
+    // in Daikoku's parking area, and along the temple's lane of stalls
     for (let i = 0; i < 22; i++) k.person(61 + k.rand() * 32, 84.5 + k.rand() * 3.4);
     for (let i = 0; i < 26; i++) k.person(-3.9 + k.rand() * 3.8, -91 + k.rand() * 26);
-    for (const [cx, cz] of [[51.5, -56.5], [64.5, -56.5], [51.5, -43.5], [64.5, -43.5]]) {
-      for (let i = 0; i < 9; i++) k.person(cx + (k.rand() - 0.5) * 3.4, cz + (k.rand() - 0.5) * 3.4);
-    }
   }
 
   return { routes: ROUTES, parked: PARKED, heroSpots: HERO_SPOTS };

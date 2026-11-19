@@ -2,14 +2,14 @@
 // bay to Daikoku. Traffic keeps left.
 
 import type { TileDef } from '../../engine/tile';
-import { NAME_BOARDS, buildJapan } from './city';
-import { PLACE_SIGNS, ROAD_SIGNS, SIGNS } from './signs';
+import { buildJapan } from './city';
+import { PLACE_SIGNS, ROAD_SIGNS, SCENE_SIGNS, SIGNS } from './signs';
 
 export const japan: TileDef = {
   id: 'japan',
   name: 'Japan',
   seed: 20261119,
-  signs: [...SIGNS, ...ROAD_SIGNS, ...PLACE_SIGNS, ...NAME_BOARDS],
+  signs: [...SIGNS, ...ROAD_SIGNS, ...PLACE_SIGNS, ...SCENE_SIGNS],
   build: buildJapan,
 };
 

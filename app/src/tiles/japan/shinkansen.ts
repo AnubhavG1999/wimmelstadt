@@ -113,7 +113,7 @@ export function buildShinkansen(k: Build): void {
   // Columns keep out of the roads below. Where the pass and the river road run
   // under it there is no room for one, and a steel girder carries the line across.
   const spanFrom = -44, spanTo = -9;
-  for (const x of [-66, -55, spanFrom, spanTo, 3, 25, 36, 47, east - 2]) {
+  for (const x of [-66, -55, spanFrom, spanTo, 3, 25, 38, east - 2]) {
     b.box(x - 0.9, 0, r.z - 1.6, x + 0.9, slab - 2.3, r.z + 1.6, CONCRETE);
     b.box(x - 1.1, slab - 2.3, r.z - r.half + 0.6, x + 1.1, slab - 1.4, r.z + r.half - 0.6, CONCRETE, { faces: 'NESWB' });
   }

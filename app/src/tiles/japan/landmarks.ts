@@ -9,7 +9,7 @@ import { placed } from '../../engine/build';
 import type { GeoBuilder, V3, WinSpec } from '../../engine/geo';
 import { interior } from '../../engine/geo';
 import type { Build } from '../../engine/tile';
-import { CASTLE, FERRIS, INARI, KINKAKU, KYOTO_HILL, KYOTO_TOWER, PAGODA, RAIL, SENSOJI, SHORE, TOKYO_TOWER, TORII } from './plan';
+import { CASTLE, INARI, KINKAKU, KYOTO_HILL, KYOTO_TOWER, MOAT, PAGODA, RAIL, SENSOJI, SHORE, TOKYO_STATION, TOKYO_TOWER, TORII } from './plan';
 import { lantern } from './props';
 import { groundHeight } from './terrain';
 
@@ -19,7 +19,7 @@ const D = Math.SQRT2;
 const VERMILION = 0xd8432b, TILE = 0x4a4f55, DARK_TILE = 0x3d4347, PLASTER = 0xf1ede2, WOOD = 0x6b3b2a, GOLD = 0xd9b24a, STONE = 0x9a968c;
 
 /** A shape turned from a profile of [height, radius] pairs, as on a lathe. */
-function turnedShape(b: GeoBuilder, cx: number, cz: number, profile: [number, number][], sides: number, color: number, win?: WinSpec): void {
+export function turnedShape(b: GeoBuilder, cx: number, cz: number, profile: [number, number][], sides: number, color: number, win?: WinSpec): void {
   for (let i = 0; i < profile.length - 1; i++) {
     const [y0, r0] = profile[i], [y1, r1] = profile[i + 1];
     b.cyl(cx, cz, y0, y1, r0, r1, sides, color, { win, cap: i === profile.length - 2 ? color : false });
@@ -31,7 +31,7 @@ function turnedShape(b: GeoBuilder, cx: number, cz: number, profile: [number, nu
  * that sweeps in, or the battered stone of a castle's base. Each rectangle is
  * [x0, z0, x1, z1].
  */
-function slopes(b: GeoBuilder, low: number[], y0: number, high: number[], y1: number, color: number, win?: WinSpec): void {
+export function slopes(b: GeoBuilder, low: number[], y0: number, high: number[], y1: number, color: number, win?: WinSpec): void {
   const [a0, c0, a1, c1] = low, [e0, g0, e1, g1] = high;
   const rise = y1 - y0;
   b.quad([a0, y0, c1], [a1, y0, c1], [e1, y1, g1], [e0, y1, g1], [0, c1 - g1, rise], color, { win });
@@ -45,7 +45,7 @@ function slopes(b: GeoBuilder, low: number[], y0: number, high: number[], y1: nu
  * well out and sweep up gently, and steeper slopes above them to a ridge.
  * `over` is how far the eaves stand out, `rise` how high the ridge is.
  */
-function tiledRoof(b: GeoBuilder, x0: number, z0: number, x1: number, z1: number, y: number, rise: number, over: number, color = TILE, under = WOOD): void {
+export function tiledRoof(b: GeoBuilder, x0: number, z0: number, x1: number, z1: number, y: number, rise: number, over: number, color = TILE, under = WOOD): void {
   const e = [x0 - over, z0 - over, x1 + over, z1 + over];
   const m = [x0 - over * 0.25, z0 - over * 0.25, x1 + over * 0.25, z1 + over * 0.25];
   // the underside of the eaves, and their edge
@@ -77,7 +77,7 @@ function tokyoTower(k: Build): void {
   const b = k.b, { x: cx, z: cz, h: H } = TOKYO_TOWER;
   const ORANGE = 0xe8541f, WHITE = 0xf4f1ea, glow = interior(0.9);
   // half its width at each of the heights where a girder runs round it
-  const levels: [number, number][] = [[0, 14.6], [9, 11.7], [20, 9.0], [34, 6.7], [48, 5.1], [56, 4.35], [63, 3.75], [70, 3.2], [77, 2.7], [84, 2.25], [91, 1.6]];
+  const levels: [number, number][] = [[0, TOKYO_TOWER.foot], [9, 11.1], [20, 8.8], [34, 6.7], [48, 5.1], [56, 4.35], [63, 3.75], [70, 3.2], [77, 2.7], [84, 2.25], [91, 1.6]];
   // orange below the main deck, then bands of white and orange, as it is painted
   const colorOf = (i: number): number => (i < 4 ? ORANGE : (i - 4) % 2 === 0 ? WHITE : ORANGE);
   const corner = (i: number, j: number): V3 => {
@@ -178,7 +178,7 @@ function pagoda(k: Build, h: number): void {
 }
 
 /** A stone lantern: a post, a lit box and a cap. */
-function stoneLantern(k: Build, x: number, z: number, y = 0): void {
+export function stoneLantern(k: Build, x: number, z: number, y = 0): void {
   const b = k.b;
   b.box(x - 0.25, y, z - 0.25, x + 0.25, y + 1.3, z + 0.25, STONE);
   b.box(x - 0.45, y + 1.3, z - 0.45, x + 0.45, y + 1.9, z + 0.45, 0xfff1c9, { win: interior(3) });
@@ -194,7 +194,7 @@ function stoneLantern(k: Build, x: number, z: number, y = 0): void {
  * A torii: two posts, a tie beam, and a lintel whose ends turn up. It is built
  * round (x, z), `half` wide to either side, and faces along `yaw`.
  */
-function torii(k: Build, x: number, z: number, yaw: number, half: number, top: number, y = 0, color = VERMILION): void {
+export function torii(k: Build, x: number, z: number, yaw: number, half: number, top: number, y = 0, color = VERMILION): void {
   const b = k.b, rx = -Math.sin(yaw), rz = Math.cos(yaw), post = Math.max(0.16, half * 0.085);
   const glow = interior(0.4), BLACK = 0x23262b;
   for (const s of [-1, 1]) {
@@ -345,7 +345,8 @@ function castle(k: Build): void {
       if (i === 1 || i === 2) {
         for (const s of [-1, 1]) {
           const gz = cz + s * (w + 0.4);
-          b.tri([cx - 2.1, y + 0.45, gz], [cx + 2.1, y + 0.45, gz], [cx, y + 2.1, gz], [0, 0, s], PLASTER);
+          // (a triangle shows from one side only: its corners go the other way round on the north face)
+          b.tri([cx - 2.1 * s, y + 0.45, gz], [cx + 2.1 * s, y + 0.45, gz], [cx, y + 2.1, gz], [0, 0, s], PLASTER);
           b.beam([cx - 2.4, y + 0.4, gz + s * 0.2], [cx, y + 2.35, gz + s * 0.2], 0.2, 0.2, TILE);
           b.beam([cx + 2.4, y + 0.4, gz + s * 0.2], [cx, y + 2.35, gz + s * 0.2], 0.2, 0.2, TILE);
         }
@@ -370,9 +371,11 @@ function castle(k: Build): void {
     b.box(x0 + 0.1, 7.9, z0 + 0.1, x1 - 0.1, 8.15, z1 - 0.1, VERMILION, { faces: 'NESW' });
     tiledRoof(b, x0 + 0.6, z0 + 0.6, x1 - 0.6, z1 - 0.6, 10.3, 2.2, 1.3);
   }
-  // the red bridge over the moat, from the street: a low arch on posts
+  // the red bridge over the moat, from the bank by the street to a gate in the stone: a low arch on posts
   {
-    const z = cz + 4, x0 = cx + 14.5, x1 = cx + 20.5;
+    const z = cz - 4, x0 = cx + 9, x1 = MOAT.x1 + 0.5;
+    b.box(x0 - 0.5, 0.2, z - 1.4, x0 + 0.25, 3.1, z + 1.4, BLACK, { win: interior(0.5) });
+    b.box(x0 - 0.7, 3.1, z - 1.9, x0 + 0.7, 3.5, z + 1.9, TILE, { faces: 'NESWTB' });
     for (let i = 0; i < 6; i++) {
       const u0 = i / 6, u1 = (i + 1) / 6, ax = x0 + (x1 - x0) * u0, bx = x0 + (x1 - x0) * u1;
       const y0 = 0.25 + Math.sin(u0 * Math.PI) * 1.3, y1 = 0.25 + Math.sin(u1 * Math.PI) * 1.3;
@@ -493,8 +496,11 @@ function sensoji(k: Build): void {
  * end, and the platforms behind it up on the viaduct, each under a roof.
  */
 function tokyoStation(k: Build): void {
-  const b = k.b, x0 = 19, x1 = 53, z1 = -16, z0 = RAIL.z + RAIL.half + 0.4;
+  const b = k.b, { x0, x1, z1 } = TOKYO_STATION;
   const BRICK = 0xa8553f, BAND = 0xe9e3d6, SLATE = 0x3a3f46, top = RAIL.y - 0.2;
+  // how deep a platform is, and where the brick front begins: in front of the near platform
+  const deep = 3, z0 = RAIL.z + RAIL.half + deep + 0.2;
+  const floor = RAIL.y + 0.67, roof = RAIL.y + 5.9;
   b.box(x0, 0, z0, x1, top, z1, BRICK, { win: { cell: 1.9, storey: 4.2, lit: 0.6, kind: 0 }, seed: 0.42 });
   for (const y of [4.2, 8.4, top - 0.35]) b.box(x0 - 0.08, y, z0, x1 + 0.08, y + 0.35, z1 + 0.08, BAND, { faces: 'ESW' });
   // the middle of the front stands forward under a gable, where the way in is
@@ -503,30 +509,32 @@ function tokyoStation(k: Build): void {
   b.tri([mx - 4, top + 1.6, z1 + 1.12], [mx + 4, top + 1.6, z1 + 1.12], [mx, top + 4, z1 + 1.12], [0, 0, 1], BAND);
   b.box(mx - 1.6, 0, z1 + 1.1, mx + 1.6, 3.4, z1 + 1.16, 0xfff0d6, { win: interior(1.4), faces: 'S' });
   // a slate roof along it, and an eight-sided dome over each end
-  slopes(b, [x0, z0 + 0.6, x1, z1], top, [x0 + 1.6, z0 + 2, x1 - 1.6, z1 - 1.6], top + 2.3, SLATE);
-  b.box(x0 + 1.6, top + 2.28, z0 + 2, x1 - 1.6, top + 2.3, z1 - 1.6, 0x2f343a, { faces: 'T' });
-  for (const cx of [x0 + 5.2, x1 - 5.2]) {
-    const cz = (z0 + z1) / 2 + 0.6;
-    b.cyl(cx, cz, top - 0.2, top + 2.6, 4.5, 4.5, 8, BRICK, { win: { cell: 1.7, storey: 2.8, lit: 0.9, kind: 0 }, seed: 0.3, cap: false });
-    b.cyl(cx, cz, top + 2.6, top + 3, 4.8, 4.8, 8, BAND, { cap: false });
-    turnedShape(b, cx, cz, [[top + 3, 4.6], [top + 5.2, 3.6], [top + 6.6, 2.0], [top + 7.1, 0.9]], 8, SLATE);
-    b.cyl(cx, cz, top + 7.1, top + 8.4, 0.5, 0.1, 6, BAND, { cap: false });
+  slopes(b, [x0, z0, x1, z1], top, [x0 + 1.6, z0 + 1.9, x1 - 1.6, z1 - 1.9], top + 2.3, SLATE);
+  b.box(x0 + 1.6, top + 2.28, z0 + 1.9, x1 - 1.6, top + 2.3, z1 - 1.9, 0x2f343a, { faces: 'T' });
+  for (const cx of [x0 + 4.6, x1 - 4.6]) {
+    const cz = (z0 + z1) / 2;
+    b.cyl(cx, cz, top - 0.2, top + 2.6, 3.3, 3.3, 8, BRICK, { win: { cell: 1.3, storey: 2.8, lit: 0.9, kind: 0 }, seed: 0.3, cap: false });
+    b.cyl(cx, cz, top + 2.6, top + 3, 3.55, 3.55, 8, BAND, { cap: false });
+    turnedShape(b, cx, cz, [[top + 3, 3.4], [top + 4.8, 2.7], [top + 6, 1.5], [top + 6.5, 0.7]], 8, SLATE);
+    b.cyl(cx, cz, top + 6.5, top + 7.7, 0.42, 0.08, 6, BAND, { cap: false });
   }
   k.sign('tokyo-eki', mx, top - 2.2, z1 + 1.2, 0, 1, 1.5);
+  // behind the front, under the near platform: the hall that people come up through
+  b.box(x0 + 0.6, 0, RAIL.z + RAIL.half + 0.4, x1 - 0.6, floor - 0.52, z0, 0xd9d2c2, { win: { cell: 2.4, storey: 4.3, lit: 0.5, kind: 0 }, seed: 0.7 });
   // the platforms: one each side of the two tracks, each with a roof on posts
-  const floor = RAIL.y + 0.67, roof = RAIL.y + 5.9;
   for (const side of [-1, 1]) {
-    const pz0 = RAIL.z + side * (RAIL.half + 0.1), pz1 = RAIL.z + side * (RAIL.half + 3.9);
-    b.box(x0 + 1, floor - 0.5, Math.min(pz0, pz1), x1 - 0.4, floor, Math.max(pz0, pz1), 0xcfc8b8, { faces: 'NESWTB' });
-    b.box(x0 + 1, floor, Math.min(pz0, pz0 + side * 0.3), x1 - 0.4, floor + 0.03, Math.max(pz0, pz0 + side * 0.3), 0xe9c94a, { faces: 'T' });
+    const pz0 = RAIL.z + side * (RAIL.half + 0.1), pz1 = RAIL.z + side * (RAIL.half + deep);
+    const lo = Math.min(pz0, pz1), hi = Math.max(pz0, pz1);
+    b.box(x0 + 0.6, floor - 0.5, lo, x1 + 0.4, floor, hi, 0xcfc8b8, { faces: 'NESWTB' });
+    b.box(x0 + 0.6, floor, Math.min(pz0, pz0 + side * 0.3), x1 + 0.4, floor + 0.03, Math.max(pz0, pz0 + side * 0.3), 0xe9c94a, { faces: 'T' });
     // the far platform has nothing under it, so it rests on brackets from the viaduct
     if (side < 0) for (let x = x0 + 3; x < x1; x += 6) b.beam([x, floor - 0.5, pz1 + 0.3], [x, floor - 2.6, pz0], 0.22, 0.22, 0xbdb8ad);
-    b.box(x0 + 2, roof, Math.min(pz0, pz1) - 0.4, x1 - 1.4, roof + 0.3, Math.max(pz0, pz1) + 0.4, 0xf2f0ea, { faces: 'NESWTB', top: 0xcfd6dc });
-    for (let x = x0 + 4; x < x1 - 1; x += 7) {
-      b.box(x - 0.12, floor, pz1 - side * 0.5 - 0.12, x + 0.12, roof, pz1 - side * 0.5 + 0.12, 0x6b7076);
+    b.box(x0 + 1.6, roof, lo - 0.4, x1 - 0.2, roof + 0.3, hi + 0.4, 0xf2f0ea, { faces: 'NESWTB', top: 0xcfd6dc });
+    for (let x = x0 + 3.5; x < x1 - 1; x += 7) {
+      b.box(x - 0.12, floor, pz1 - side * 0.45 - 0.12, x + 0.12, roof, pz1 - side * 0.45 + 0.12, 0x6b7076);
       k.glows.push({ x, y: roof - 0.16, z: (pz0 + pz1) / 2, sx: 1.4, sy: 0.12, sz: 0.4, color: '#fff3dc' });
     }
-    for (let i = 0; i < 9; i++) k.person(x0 + 3 + ((i * 3.37 + (side > 0 ? 1.2 : 0)) % (x1 - x0 - 5)), (pz0 + pz1) / 2 + side * 0.6, floor);
+    for (let i = 0; i < 9; i++) k.person(x0 + 2.4 + ((i * 3.37 + (side > 0 ? 1.2 : 0)) % (x1 - x0 - 5)), (pz0 + pz1) / 2 + side * 0.35, floor);
     k.lights.push({ x: mx, z: (pz0 + pz1) / 2, r: 16, color: '#fff0d6', k: 0.5 });
   }
   k.lights.push({ x: mx, z: z1 + 5, r: 18, color: '#ffe2ae', k: 0.6 });
@@ -569,7 +577,6 @@ function kyotoStation(k: Build): void {
 // ---------------------------------------------------------------------------
 
 export function buildLandmarks(k: Build): void {
-  const b = k.b;
   tokyoTower(k);
   kyotoTower(k);
   placed(k, PAGODA.x, PAGODA.z, 0, (q) => pagoda(q, PAGODA.h), KYOTO_HILL.y - 0.1);
@@ -580,21 +587,4 @@ export function buildLandmarks(k: Build): void {
   sensoji(k);
   tokyoStation(k);
   kyotoStation(k);
-
-  // the red bridge over the river
-  b.box(SHORE.river.west - 1, 0.6, 28.4, SHORE.river.east + 1, 1.3, 31.6, 0xd8432b, { faces: 'NESWTB' });
-  // the Ferris wheel: a rim, spokes and two legs
-  {
-    const f = FERRIS, n = 20, STEEL = 0xf2f0ea;
-    const at = (i: number, r = f.r): [number, number, number] => [f.x + Math.cos((i / n) * Math.PI * 2) * r, f.y + Math.sin((i / n) * Math.PI * 2) * r, f.z];
-    for (let i = 0; i < n; i++) {
-      b.beam(at(i), at(i + 1), 0.3, 0.3, STEEL);
-      if (i % 2 === 0) b.beam([f.x, f.y, f.z], at(i), 0.14, 0.14, STEEL);
-      const [x, y, z] = at(i);
-      b.box(x - 0.8, y - 1.5, z - 0.8, x + 0.8, y - 0.2, z + 0.8, [0xe8523f, 0xf2c14e, 0x4fa3d8, 0x6fbf73][i % 4]);
-    }
-    for (const s of [-1, 1]) for (const dz of [-1.6, 1.6]) b.beam([f.x + s * 7, 0, f.z + dz], [f.x, f.y, f.z + dz * 0.6], 0.45, 0.35, STEEL);
-    b.cyl(f.x, f.z, f.y - 1, f.y + 1, 1.2, 1.2, 8, 0xd9dde4);
-    k.lights.push({ x: f.x, z: f.z + 4, r: 18, color: '#ffd9f0', k: 0.5 });
-  }
 }
