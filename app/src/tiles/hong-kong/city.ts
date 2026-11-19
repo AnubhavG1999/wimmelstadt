@@ -25,6 +25,8 @@ import { drawField } from './terrain';
 
 const SEA = 0x3f8fb0, QUAY = 0xa9a59a, ROCK = 0x9a8f7c, DARK = 0x0c0c10;
 const GRASS = [0x6fa85a, 0x74ad5c, 0x67a052], SCRUB = [0x5c8f52, 0x578a55], CRAG = [0x9a8f7c, 0x8d8376, 0xa3977f];
+/** The beds of rock that show where a hill is cut off at the edge of the board. */
+const BEDS = [0x9a8f7c, 0x8b8170, 0xa69b86, 0x938976, 0x857b6b];
 const N = BOARD.z0;
 /** Half the width of the tunnel's two lanes and their kerbs. */
 const TUBE = 5.1;
@@ -98,7 +100,7 @@ export function buildCity(k: Build): TileParts {
     return CRAG[pick % CRAG.length];
   };
   // its east side ends in a wall behind the buildings of the shore, and its south side in the wall that the first leg of the road rides on
-  drawField(b, PEAK_GROUND, { color: slopes(HILL.top), cut: ROCK, edges: 'ESW' });
+  drawField(b, PEAK_GROUND, { color: slopes(HILL.top), cut: ROCK, edges: 'ESW', strata: BEDS });
   {
     // the line of the Peak Tram: ballast on the slope, and the rails on it
     const F = FUNICULAR, y0 = F.y(F.z0), y1 = F.y(F.z1);
@@ -116,7 +118,8 @@ export function buildCity(k: Build): TileParts {
   const shore = pathOf(road2([[-30, -80], [-30, 60]]));
   street(k, shore, { lanes: 2, width: 10, sidewalk: 0 });
   street(k, pathOf(flat(fineRound([[SHORE.nb, -80], [SHORE.nb, -101], [-13, -101], [-13, -87], [SHORE.sb, -87], [SHORE.sb, -80]], 4))), lane1);
-  street(k, pathOf(flat(fineRound([[-43.5, 108], [-47.5, 108], [-47.5, 68], [SHORE.nb, 68], [SHORE.nb, 60]], 4))), lane1walk);
+  const causeway = pathOf(flat(fineRound([[-43.5, 108], [-47.5, 108], [-47.5, 68], [SHORE.nb, 68], [SHORE.nb, 60]], 4)));
+  street(k, causeway, lane1walk);
   street(k, pathOf(flat(PEAK.foot)), { lanes: 1, width: 4, sidewalk: 0 });
   // on to the Convention Centre's point, and down to the tunnel
   street(k, pathOf(road2([[-30, 24.5], [midI + TUBE - 0.1, 24.5]])), { lanes: 2, width: 10, sidewalk: 0 });
@@ -131,12 +134,17 @@ export function buildCity(k: Build): TileParts {
   const nathan = pathOf(road2([[K.salisbury, K.nathan], [97, K.nathan]]));
   street(k, salisbury, { lanes: 2, width: 10, sidewalk: 2 });
   street(k, nathan, { lanes: 4, width: 20, sidewalk: 3 });
-  street(k, pathOf(road2([[K.salisbury, -44.5], [73, -44.5]])), { lanes: 3, width: 15, sidewalk: 2 });
-  street(k, pathOf(road2([[68, -44.5], [68, K.nathan]])), { lanes: 2, width: 10, sidewalk: 2 });
-  street(k, pathOf(road2([[K.chatham, K.nathan], [K.chatham, 24]])), { lanes: 2, width: 10, sidewalk: 2 });
-  street(k, pathOf(road2([[66.5, 24], [66.5, 57.5]])), { lanes: 3, width: 15, sidewalk: 2 });
+  const mongKok = pathOf(road2([[K.salisbury, -44.5], [73, -44.5]]));
+  const jordan = pathOf(road2([[68, -44.5], [68, K.nathan]]));
+  const chatham = pathOf(road2([[K.chatham, K.nathan], [K.chatham, 24]]));
+  const hungHom = pathOf(road2([[66.5, 24], [66.5, 57.5]]));
+  street(k, mongKok, { lanes: 3, width: 15, sidewalk: 2 });
+  street(k, jordan, { lanes: 2, width: 10, sidewalk: 2 });
+  street(k, chatham, { lanes: 2, width: 10, sidewalk: 2 });
+  street(k, hungHom, { lanes: 3, width: 15, sidewalk: 2 });
   street(k, pathOf(flat(fineRound([[37.5, -47], [37.5, -103.5], [K.east, -103.5], [K.east, -49.5], [73, -49.5]], 4))), lane1walk);
-  street(k, pathOf(flat(fineRound([[74, 27.5], [K.east, 27.5], [K.east, 96.5], [71.5, 96.5], [71.5, 57.5]], 4))), lane1walk);
+  const choiHung = pathOf(flat(fineRound([[74, 27.5], [K.east, 27.5], [K.east, 96.5], [71.5, 96.5], [71.5, 57.5]], 4)));
+  street(k, choiHung, lane1walk);
   // where Nathan Road's traffic turns back at its east end
   area(k, rect(86, -13, 100, 7), ASPHALT, 0.026);
   {
@@ -193,7 +201,7 @@ export function buildCity(k: Build): TileParts {
     const L = LION, gate = L.gate, gz0 = L.street - L.half, gz1 = L.street + L.half, gx0 = L.lane - L.half, gx1 = L.lane + L.half;
     // rock and scrub, with a mouth for the road in its west face and another in its south face
     drawField(b, LION_GROUND, {
-      color: slopes(Infinity), cut: ROCK, edges: 'NESW',
+      color: slopes(Infinity), cut: ROCK, edges: 'NESW', strata: BEDS,
       gap: (edge, at) => ((edge === 'W' && at > gz0 && at < gz1) || (edge === 'S' && at > gx0 && at < gx1) ? gate : 0),
     });
     // concrete round each mouth, and darkness a little way in
@@ -331,8 +339,9 @@ export function buildCity(k: Build): TileParts {
     sail(junkBoat(), fine(rounded([[-11, 60], [17, 60], [17, 93], [-11, 93]], 10, true)), 3.2);
     // dragon boats in Hung Hom's bay: three crews, down the course and back
     [0xc8322b, 0xe8c24a, 0x3f6fb5].forEach((team, i) => {
-      const x = 24.4 + i * 3;
-      sail(dragonBoat(team), fine(rounded([[x, 68], [x, 108], [x + 1.5, 108], [x + 1.5, 68]], 0.75, true)), 6.4 + i * 0.5, 0.02 + i * 0.03);
+      // each crew's lane out and its lane back are far enough from the next crew's that no two cross paddles
+      const x = 23.9 + i * 3.4;
+      sail(dragonBoat(team), fine(rounded([[x, 68], [x, 108], [x + 1.7, 108], [x + 1.7, 68]], 0.85, true)), 6.4 + i * 0.5, 0.02 + i * 0.03);
     });
     // what lies at anchor: a lighter working cargo off the Convention Centre, another off Central, sampans off Tsim Sha Tsui
     lighter(b, 7.5, 16, Math.PI / 2 - 0.2);
@@ -377,6 +386,8 @@ export function buildCity(k: Build): TileParts {
       k.tree(x, z, 0.5 + k.rand() * 0.35, false, y);
     }
   }
+  // banyans that have taken root in the wall behind Wan Chai, as they do in Hong Kong's old walls of stone
+  for (const [z, y] of [[-4.5, 9], [3, 8], [18, 7.5], [31.5, 5.5], [-32.4, 12]]) k.tree(HILL.x1 + 0.2, z, 0.42, false, y);
   // along both promenades, round the racecourse, and on the Convention Centre's point
   for (let z = -54; z < 0; z += 9) k.tree(-22.6, z, 0.6);
   for (let z = 6; z < 60; z += 8) k.tree(26.9, z, 0.55);
@@ -391,6 +402,16 @@ export function buildCity(k: Build): TileParts {
   for (let z = -76; z < 60; z += 17) k.lamp(-24.3, z, Math.PI);
   lampsAlong(k, nathan, 11.2);
   lampsAlong(k, salisbury, 6.2);
+  lampsAlong(k, mongKok, 8.7);
+  lampsAlong(k, jordan, 6.2);
+  lampsAlong(k, chatham, 6.2);
+  lampsAlong(k, hungHom, 8.7);
+  lampsAlong(k, choiHung, 3.7);
+  lampsAlong(k, causeway, 3.7);
+  // the road round the north of Kowloon has lamps as far as the tunnel's mouths, and none inside the hill
+  lampsAlong(k, pathOf(road2([[37.5, -50], [37.5, -100]])), 3.7);
+  lampsAlong(k, pathOf(road2([[K.east, -50], [K.east, -82]])), 3.7);
+  lampsAlong(k, pathOf(road2([[42, -103.5], [74, -103.5]])), 3.7);
   {
     const string = (pts: P3[], hw: number, every: number, to = Infinity): void => {
       const along = lengths3(pts);
@@ -440,7 +461,16 @@ export function buildCity(k: Build): TileParts {
   minibus(b, 98.7, -3, Math.PI / 2, 0x2f8f5f);
   minibus(b, 13.6, -27.2, 0, 0xc8322b);
 
-  if (import.meta.env.DEV) checkRoads(ROUTES, { tram: flat(TRAM, 0.04), buses: flat(BUSES, 0.02) });
+  if (import.meta.env.DEV) {
+    const solids = [
+      ...LOTS.map((l) => ({ id: l.id, x0: l.x0, z0: l.z0, x1: l.x1, z1: l.z1, y0: l.y0 ?? 0, y1: (l.y0 ?? 0) + l.h })),
+      ...BUILDINGS.map((o) => {
+        const y0 = o.y0 === -1 ? groundAt((o.x0 + o.x1) / 2, (o.z0 + o.z1) / 2) : o.y0 ?? 0;
+        return { id: o.id, x0: o.x0, z0: o.z0, x1: o.x1, z1: o.z1, y0, y1: y0 + o.h };
+      }),
+    ];
+    checkRoads(ROUTES, { tram: flat(TRAM, 0.04), buses: flat(BUSES, 0.02) }, solids);
+  }
 
   return { routes: ROUTES, parked: PARKED, heroSpots: HERO_SPOTS };
 }

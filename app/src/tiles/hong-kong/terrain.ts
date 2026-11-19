@@ -5,6 +5,7 @@
 // each triangle is green or rock by how steep it is.
 
 import type { GeoBuilder, V3 } from '../../engine/geo';
+import { face3 } from './shapes';
 
 /** A hill: the rectangle it covers, how many squares it is divided into each way, and its height at every corner. */
 export interface Field { x0: number; z0: number; x1: number; z1: number; nx: number; nz: number; y: Float32Array }
@@ -39,7 +40,15 @@ export interface DrawOpts {
   edges: string;
   /** For a gap in an edge's face, such as the mouth of a tunnel: how high the face begins at a place along that edge. 0 if there is none. */
   gap?(edge: string, at: number): number;
+  /**
+   * Colours for beds of rock in those faces, one above another, as the cut
+   * side of a model of a landscape shows them. Without them a face is all `cut`.
+   */
+  strata?: number[];
 }
+
+/** How thick a bed of rock is in a cut face, and how far it wanders up and down along the face. */
+const BED = 3.3, WANDER = 0.8;
 
 /** Draws a hill: its facets, and an upright face along each edge that asks for one. */
 export function drawField(b: GeoBuilder, f: Field, o: DrawOpts): void {
@@ -67,7 +76,22 @@ export function drawField(b: GeoBuilder, f: Field, o: DrawOpts): void {
   const wall = (p: V3, q: V3, n: V3, edge: string, along: number): void => {
     const base = o.gap?.(edge, along) ?? 0;
     if (p[1] <= base + 0.03 && q[1] <= base + 0.03) return;
-    b.quad([p[0], base, p[2]], [q[0], base, q[2]], [q[0], Math.max(base, q[1]), q[2]], [p[0], Math.max(base, p[1]), p[2]], n, o.cut);
+    const beds = o.strata;
+    if (!beds) {
+      b.quad([p[0], base, p[2]], [q[0], base, q[2]], [q[0], Math.max(base, q[1]), q[2]], [p[0], Math.max(base, p[1]), p[2]], n, o.cut);
+      return;
+    }
+    // bed above bed: each is cut off by the ground above it, and each wanders a little, the same on both sides of a corner
+    const where = (v: V3): number => (edge === 'N' || edge === 'S' ? v[0] : v[2]);
+    const top = (bed: number, c: number): number => (bed + 1) * BED + WANDER * Math.sin(c * 0.11 + bed * 1.9);
+    for (let bed = 0; bed * BED - WANDER < Math.max(p[1], q[1]); bed++) {
+      const a0 = Math.max(base, bed === 0 ? base : top(bed - 1, where(p))), a1 = Math.max(a0, Math.min(p[1], top(bed, where(p))));
+      const c0 = Math.max(base, bed === 0 ? base : top(bed - 1, where(q))), c1 = Math.max(c0, Math.min(q[1], top(bed, where(q))));
+      if (a1 - a0 < 0.01 && c1 - c0 < 0.01) continue;
+      const colour = beds[bed % beds.length];
+      face3(b, [p[0], a0, p[2]], [q[0], c0, q[2]], [q[0], c1, q[2]], n, colour);
+      face3(b, [p[0], a0, p[2]], [q[0], c1, q[2]], [p[0], a1, p[2]], n, colour);
+    }
   };
   for (let i = 0; i < f.nx; i++) {
     if (o.edges.includes('N')) wall(at(i, 0), at(i + 1, 0), [0, 0, -1], 'N', (X(i) + X(i + 1)) / 2);

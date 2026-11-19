@@ -977,7 +977,7 @@ const carFerry: Model = (k, l) => {
   k.sign('car-ferry', x0 - 1.79, 5.0, mid, -1, 0, 0.8, 5.4);
   k.sign('car-ferry', x0 - 1.39, 5.0, mid, 1, 0, 0.8, 5.4);
   k.person(x0 + 1.0, z1 - 0.8, y);
-  k.person(x1 - 2.4, hz1 + 0.6, y);
+  k.person(x1 - 1.6, hz1 + 0.5, y);
   k.lights.push({ x: (x0 + x1) / 2, z: mid, r: 10, color: '#fff0d6', k: 0.9 });
   k.lights.push({ x: x0 - 3, z: mid, r: 8, color: '#fff0d6', k: 0.7 });
 };

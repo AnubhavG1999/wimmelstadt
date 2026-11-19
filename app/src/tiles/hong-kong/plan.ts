@@ -439,8 +439,8 @@ export const BUILDINGS: Ordinary[] = [
 export const HERO_SPOTS: HeroSpot[] = [
   { id: 'peak-lookout', x: -68, y: HILL.top + 0.04, z: -21, heading: 0 },
   { id: 'peninsula', x: 46.6, y: 0.06, z: -19.4, heading: 0 },
-  { id: 'car-ferry', x: 3.6, y: 0.94, z: 106.4, heading: Math.PI },
-  { id: 'choi-hung', x: 89.75, y: 9.06, z: 84.6, heading: -Math.PI / 2 },
+  { id: 'car-ferry', x: 3.6, y: 0.94, z: 106.4, heading: 0 },
+  { id: 'choi-hung', x: 89.75, y: 9.06, z: 84.4, heading: Math.PI / 2 },
 ];
 
 /** Plain vehicles that stand parked: on the summit, in the queue for the car ferry, and here and there in Kowloon. */
