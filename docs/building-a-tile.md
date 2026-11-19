@@ -57,7 +57,8 @@ Only your tile's own folder, `app/src/tiles/<id>/`. A tile is found by its folde
 - the things on the tile, numbered, so the count can be checked;
 - liberties taken with the real place, and why;
 - every real name on a sign, and how it was checked;
-- "For the engine": what was built in the tile's folder that belongs in the engine, and what was missed.
+- "For the engine": what was built in the tile's folder that belongs in the engine, and what was missed;
+- "For the next tile": what building this one taught you that whoever builds the next should know. What worked, what cost time and how you got past it, what you would do differently, and anything this page got wrong or left out. Write it when the tile is done. It is gathered into this page when the tile is merged, so that every tile starts from what the earlier ones learned.
 
 ## Running it
 
