@@ -46,7 +46,7 @@
         --ink: #3a2a10;
         --edge: #6e531f;
       }
-      body.idle #ui, body.idle #hint { opacity: 0; }
+      body.idle #ui { opacity: 0; }
       #ui button, #ui .dial, #ui .options, #ui .pin { pointer-events: auto; }
       body.idle #ui button, body.idle #ui .dial, body.idle #ui .options, body.idle #ui .pin { pointer-events: none; }
 
@@ -294,22 +294,7 @@
       }
       #hud.on { display: block; }
 
-      #hint {
-        position: fixed;
-        bottom: calc(14px + env(safe-area-inset-bottom));
-        left: 50%;
-        transform: translateX(-50%);
-        padding: 5px 12px;
-        border-radius: 999px;
-        background: rgba(14, 14, 22, 0.5);
-        font-size: 12px;
-        opacity: 0.85;
-        transition: opacity 0.6s ease;
-        pointer-events: none;
-        white-space: nowrap;
-      }
       @media (max-width: 900px), (max-height: 520px) {
-        #hint { display: none; }
         .cluster { transform: scale(0.82); }
         .plate { padding: 5px 12px 4px 14px; font-size: 12px; }
         .plate-hero { padding: 4px 11px 4px 8px; font-size: 10.5px; }
@@ -322,7 +307,6 @@
   </head>
   <body>
     <canvas id="c"></canvas>
-    <div id="hint">Drag to move · Right-drag or two fingers to rotate · Scroll or pinch to zoom · Double-click a tile to visit it</div>
     <pre id="hud"></pre>
     <div id="ui"></div>
     <script type="module" src="/src/main.ts"></script>
