@@ -65,7 +65,7 @@ Kowloon
 38. Choi Hung Estate, with the courts on its car park's roof (a place for a hero)
 39. A jumbo jet on the old approach to Kai Tak
 
-Between them stand about sixty ordinary buildings, built by the engine's `ordinaryBuildings`: tong lau over shops, dark blocks trimmed with neon, slim towers of flats, slabs of public housing, and houses with tiled roofs on the south face of the Peak.
+Between them stand 69 ordinary buildings, built by the engine's `ordinaryBuildings`: tong lau over shops, dark blocks trimmed with neon, slim towers of flats, slabs of public housing, and houses with tiled roofs on the south face of the Peak.
 
 ## Roads
 
@@ -154,7 +154,7 @@ Missed, or found wanting:
 - **Boats.** The ferries, the junk and the dragon boats are `train`s too, on lines across the water. A train does not bob. In snow the water turns white, and they sail on it all the same.
 - **A place for a hero that moves.** The car ferry is moored, because a hero's place on show cannot move.
 - **Ordinary buildings take a storey to be 5 high.** Hong Kong's are lower here (3.4), so a sign over a shop hangs at the height of the floor above it. A billboard on a roof is as wide as the building, which makes it small on a narrow lot.
-- **Cost.** With water on a tile the whole city is drawn twice, once for the mirror image, and every train is a draw of its own. The tile takes about 3.4 ms a frame where North America takes 2.4 to 2.9, with as many triangles.
+- **Cost.** With water on a tile the whole city is drawn twice, once for the mirror image, and every train is a draw of its own. The tile takes 2.6 to 3.5 ms a frame where North America takes 2.4 to 2.9, with as many triangles.
 
 ## How it was checked
 
@@ -162,3 +162,145 @@ Missed, or found wanting:
 - `npm run typecheck` and `npm run build` pass.
 - The console of the development server shows no error and no warning, and the two lines from `check.ts`.
 - The traffic, the trams and the places for heroes as said above.
+
+## For the next tile
+
+What building this tile taught, for whoever is about to start one of their own. It leaves out what is under "For the engine" above.
+
+### First: what the opening view can see
+
+The view a tile opens with (`az` 42) has the camera in the south-south-east, looking down at 38 degrees. Most of the time lost on this tile was lost for not doing sums with that at the start. The numbers:
+
+- **Towards the camera** is 0.67 east and 0.74 south for each unit along the ground, and the line of sight rises 0.78 for each such unit.
+- **A thing `H` high hides the ground for `1.28 × H` behind it**, to the north-north-west. A point at height `y` is hidden by a building `H` high that stands `t` units towards the camera if `y + 0.78 × t < H`.
+- **A street is hidden by its own south side.** A building south of a road hides the middle of the road if it is taller than about its distance from that middle line (1.05 times it; on the east side, 1.17 times). Nathan Road is 20 wide with pavements of 3, and anything over 15 on its south side hid the buses.
+- **To take a picture of something high up**, aim `wimmel.shot` at the ground behind it: for a thing at height `y`, at `x - 0.86 × y` and `z - 0.95 × y`. Its `x` and `z` are a place on the ground.
+
+What it cost here:
+
+- The first layout had the Peak behind Central's towers, as in life. The towers are 110 to 125 high and hid the whole road up the Peak, which is the road the tile is about. The Island was laid out again after the blockout.
+- Boxes for ordinary buildings 28 and 40 high, put east of Salisbury Road to fill the ground, hid the Cultural Centre and the Space Museum. It was found only once those two were modelled.
+- Two places for a hero were hidden by what they belong to: the Peninsula's forecourt by the hotel's own wing, and Choi Hung's courts by the flats beside them. Both were turned round.
+- The lion on Lion Rock lay end-on to the view and looked like a pile of rock. A thing whose outline is the point must lie across the view.
+
+So do these sums on the map in text, before the collector sees it. Put what is tall in the north and the west. Put the road worth watching, and every place for a hero, on the south or the east side of what it belongs to. Give every lot its height in the blockout, the ordinary buildings too: their heights are part of the layout, not filling.
+
+Then check with numbers and not by eye. On the development server the page can read the tile's own plan. Pasted into the console, this says which lots stand between a point and the camera, where a lot is `{ id, x0, z0, x1, z1, top }` and a point `{ x, y, z }`:
+
+```js
+const plan = await import('/src/tiles/<id>/plan.ts');
+const E = Math.sin(42 * Math.PI / 180), S = Math.cos(42 * Math.PI / 180), UP = Math.tan(38 * Math.PI / 180);
+const hides = (p, lots) => lots.filter((l) => {
+  const tx = [(l.x0 - p.x) / E, (l.x1 - p.x) / E], tz = [(l.z0 - p.z) / S, (l.z1 - p.z) / S];
+  const t0 = Math.max(Math.min(...tx), Math.min(...tz), 0), t1 = Math.min(Math.max(...tx), Math.max(...tz));
+  return t1 > t0 && p.y + UP * t0 < l.top;
+}).map((l) => l.id);
+```
+
+Ask it about the foot and the middle of every landmark, about the middle of every street worth watching and about every place for a hero, after the blockout and again whenever a height changes. Written late on this tile, it still found what no picture had shown yet: Mong Kok's shops behind a block on Nathan Road, half of Choi Hung's long block and all of its courts behind the other block, and the Star Ferry's pier behind the Clock Tower.
+
+### The order of work I would follow
+
+1. Read the page for tile builders, the sample tile, North America and the district's research note.
+2. Draw the map in text with heights on it, and do the sums above for the road worth watching, the places for heroes and the landmarks at the front.
+3. Put it to the collector.
+4. Write the tile as data (`plan.ts`): the shapes of the ground, every road as a list of corners, every lot as a rectangle with a height, the ordinary buildings as well as the landmarks. Build it as a blockout: boxes with their names on boards, the roads, the traffic. Write the check for roads now and have it run on every load. Run the traffic check and the sight-line check. Take pictures by day and by night from all four sides, and show the collector.
+5. Build what the engine lacks before any landmark: ground that slopes, a tunnel, shapes. Landmarks stand on it. Merge `main` first, because the engine may have gained it since: on this tile the ferries were written by hand and then written again when `train` learnt to turn back at the end of a line.
+6. What moves on a line of its own: trams, boats.
+7. Landmarks, one area at a time and about ten to a batch: write, typecheck, load, read the console, take one picture of the whole tile and three or four close ones by day and one by night, mend, commit.
+8. Ordinary buildings and their signs. Check every real name as it is written, and enter it in `NOTES.md` at once with what confirmed it.
+9. People, trees, lamps and parked vehicles in one pass, through helpers that know where the roads are (see the traps).
+10. The places for heroes, with a box standing in for the hero.
+11. The list under "A tile is done when", and `NOTES.md`.
+
+What I did otherwise and would not do again: ordinary buildings last, as filling (their heights turned out to matter); a hill in terraces before a hill that slopes (the collector asked whether the steps were meant to be mountains); people and trees put in by hand early (many stood on carriageways); and the notes at the end (the sources for the real names had to be found again).
+
+### What worked, and is worth doing again
+
+- **The tile as data, and a model as a function of its lot.** `plan.ts` draws nothing. Each landmark is one function `(k, lot) => void` in `landmarks.ts`, found by the lot's id, and it takes every measure from the lot's rectangle. Seven landmarks were moved or resized by changing one line of the plan, and their models followed.
+- **Boxes with their names on them.** In the blockout every lot without a model was a plain box with its name on a painted board (a `SignDef` of `kind: 'board'` for each lot in the list). The collector could read the first picture, and a box gave way to its model the moment the model was registered.
+- **A check that speaks on every load.** `check.ts` prints one line in the console when no road crosses another on the level and none runs through a building, and a warning that names the two when one does. A mistake in a road showed on the next load, not in a picture much later.
+- **`train` for everything that goes round a line of its own**: trams, double-decker buses, ferries, a junk, racehorses, a jumbo jet. A car is a `GeoBuilder` shape that stands on y = 0 with its nose along +x and its middle at the origin. For what goes to and fro (a ferry, a funicular) the path is the line out and the same line back (`joined` in `engine/paths.ts`), with `ends` at the far end and at 0 and a stop just short of each, and the car is the same at both ends so that it never needs to turn. Trains on one loop keep apart if all have the same `stops` and the same `dwell`.
+- **`ordinaryBuildings` with styles of the tile's own.** One call built 69 buildings in seven styles. The `neon` style alone gives a building 14 high or more a sign that stands out from its wall, a building up to 50 high a billboard on its roof, and every one strips of light round its roof. With a pool of signs in the place's own script, that was most of Kowloon by night. `sign` puts a name near a building's top on all four sides.
+- **Shop signs that say what is sold, not whose shop it is** (茶餐廳, 金魚, 當舖). An invented name in another language is quite likely the name of a real shop; a trade is not. Only twelve names on the tile are real, and each could be checked.
+- **Storeys lower than the engine's 5**: 3.4 for shops and offices, 2.6 for flats. Towers read as tall and thin without being taller.
+- **Pictures to the collector at each milestone**, by day and by night. His two remarks (roads and density under all the sights; steps are not mountains) both changed the tile.
+- **A commit for each batch, with a message that says what and why.** This session's memory ran out once and it was carried on from a summary. What it really carried on from was the plan, the notes and the commits.
+
+### Traps
+
+Building:
+
+- `b.quad` turns its triangles to face the way its normal points, but it decides from corners 0, 1 and 3. A triangle written as a quad with two corners alike can come out facing away, and then it is not drawn. `b.tri` turns nothing. `face3` in `shapes.ts` is a triangle that always faces its normal: have one, and use it for every triangle.
+- `b.box` takes two corners, and `b.obox` a middle and half sizes. `b.cyl` with 4 sides and `phase: Math.PI / 4` is a square, and its radius is to the corner: half the side times 1.41. With `r0` smaller than `r1` its walls lean outwards.
+- `b.box` leaves out its bottom. What is seen from below (a canopy, a deck, the board behind a sign) needs `faces` with `B` in it.
+- Windows are placed by height above the ground. Storeys stacked as boxes of their own line up only if each box is as high as the `storey` of its `win`.
+- Two boxes that end flush flicker where they meet. Let one stand 0.3 proud. Paint on a floor goes 0.02 to 0.05 above it, each layer at a height of its own. A sign hangs 0.06 to 0.12 off its wall.
+- A sign is one face and is seen from one side only. A sign that hangs in the air needs a second one back to back, and a thin dark box between the two. `k.signs.atlas.rects.get(id)` gives a sign's `aspect` and `color`, to size that box and to colour the light the sign throws.
+- Give a small sign a `size` in pixels (a plaque of three characters is 240 by 72), or it takes a row 120 or 176 high on the sheet. Two lines of neon, the script above and English below, read on a shopfront 5 wide at `aspect: 2`.
+- A glow (`k.glows`) is a box that is always drawn, dim by day and bright by night: a red lantern is nothing but a glow. A light (`k.lights`) is a pool on the ground by night and nothing by day. A landmark with no light near it stands in the dark with its windows lit: give each one or two, of radius 8 to 14 and `k` 0.5 to 0.9.
+- For something that turns, build it with a `GeoBuilder` of its own, make a mesh of it with `k.mat.city()`, add it to `k.group` and turn it in `k.each`. What hangs on it should look the same however far it has turned: the wheel's cabins are drums on the wheel's own axle.
+- Use `k.rand()`, never `Math.random()`. Each call moves all the later ones, so a crowd shifts when something is added before it.
+- `area` cannot have a hole. Where a square has a cutting or a pool in it, use `flat(k.street, shape, y, colour, { holes, win })` from `engine/ground.ts`, or the square is drawn across the hole.
+- `k.person`, `k.tree` and `k.lamp` each take a height as their last argument, so figures can stand on a terrace, a roof or a deck.
+
+Roads, and what stands beside them:
+
+- `street`'s `width` is the carriageway alone. The pavement is `sidewalk` wide outside it. A figure on the pavement of a road 20 wide stands 10 to 13 from its middle, not 8.
+- Figures, trees and parked vehicles do not know where the roads are. From the blockout until the models were nearly done, this tile had crowds in the kerb lanes of Nathan Road, on the racecourse's track and on the ramp into the tunnel, and six trees on carriageways. In a still picture they look right. Place crowds through one function that refuses a place inside a lot, on a hero's place or on a parked vehicle, and check every rectangle given to it against the plan.
+- A tree is 7 to 8 times its size high, and its crown reaches 2.7 times its size to each side. A lamp is 8 high with an arm of 2.3. A figure is about 2.5 high. Under a deck 5 up, a tree of size 0.6 can come through the road.
+- Lay every street before calling `lampsAlong`, and give it half the carriageway and 1.2. It keeps lamps out of other streets, but it knows nothing of buildings or hills: for a road that goes into a tunnel, call it on a path of the open stretch alone.
+- A lot on the island inside a turning loop: the lane reaches 2.5 to either side of the line the route follows, and the loop's corners are rounded, so the island is smaller than the corners of the loop suggest.
+- What worked for a road up a hill: hairpins of radius 7.5 with the lanes 2.1 to either side, a grade of 0.15, a speed of 13. The ramps into the tunnel have a grade of 0.27 and still drive well. Ease every change of slope over 3 to 5 units.
+- The ground is at 0, water at -0.9 and the floor of the base at -2.4. A road can sink below all three, as the tunnel does at -6.5, and is then out of sight from above.
+
+Looking and checking:
+
+- **Never take a picture of the page with the browser's own tools.** The heroes drive on the development server, so such a picture has them in it. `wimmel.shot` leaves them out, and it is the only way to take a picture.
+- `?place=` puts a hero on a place, and a picture of that may not be kept or shown. To check a place without a hero, add a plain box the size of a car (7 by 2.6 by 3) at each `HeroSpot` from the console and take an ordinary picture. What is needed to make the box is in the scene already: a train's mesh is a `Mesh`, and the mesh of glows has a `BoxGeometry` and a `MeshBasicMaterial`.
+- A hero on show looks best with a heading of 0 or of a quarter turn, facing east or south: the opening view then sees its front and one side.
+- A train's mesh is not moved by its `position`. From the console, find trains by `name === 'train'` and read `matrix.elements[12]`, `[13]` and `[14]`.
+- The console keeps the lines of earlier loads. After a change, load the page afresh and read the last lines only, and read the warnings as well as the errors: a sign whose id is not on the sheet only warns ("There is no sign called …") and is simply not there.
+- `wimmel.shot` also takes `w` and `h`, the size of the picture. 1100 to 1300 wide is enough to judge a landmark, and 1500 the whole tile.
+- On this machine a shell command with backquotes or long quoted text in it is mangled. Write a script to a file and run the file. Where a script edits a file, have it stop if the text it means to replace is not there.
+
+Names and care:
+
+- Check a real name in the script it will be written in, with both forms in one search. A search for the English name confirms only the English name.
+- A number can be political too. The tile's seed was first the date of the handover. It is now the dialling code.
+
+### How it was checked, and the numbers that mattered
+
+- **Traffic.** Pasted into the console, this lets fifteen minutes pass half a second at a time:
+
+  ```js
+  const v = wimmel.board.tiles[0].vehicles, last = new Map();
+  let nearest = Infinity, longest = 0;
+  for (let i = 0; i < 1800; i++) {
+    wimmel.advance(0.5);
+    const ps = v.positions();
+    ps.forEach((p, n) => {
+      for (const q of ps.slice(n + 1)) nearest = Math.min(nearest, Math.hypot(p.x - q.x, p.y - q.y, p.z - q.z));
+      const was = last.get(n), stood = was && Math.hypot(was.x - p.x, was.z - p.z) < 0.01 ? was.stood + 0.5 : 0;
+      last.set(n, { x: p.x, z: p.z, stood });
+      longest = Math.max(longest, stood);
+    });
+  }
+  ({ nearest, longest, shared: v.shared() })
+  ```
+
+  `nearest` must stay above 3: nearer than that, two vehicles overlap. `longest` is the longest any vehicle stood still, in seconds. Here the nearest was 4.2, two vehicles passing on the Peak road; nothing stood still at all; and no lane is shared. It takes a few seconds.
+- **Roads.** `check.ts` takes a point about every unit along every route and rail. Two lines nearer than 2.9, at heights less than 3.4 apart, are a crossing on the level. A point within 1.5 of the ground a lot covers, and no higher than its top, is a road through a building.
+- **Trams.** The same loop over the trains' meshes, for twenty minutes. Trams that pass on two tracks 3 apart come within 3 of each other, so those pairs are left out, or nothing else shows.
+- **Cost.** `wimmel.setHour(20)` on both tiles, then `await wimmel.bench()` several times on each, one tile straight after the other. It varies from run to run, and with what else the machine is doing while other sessions build beside you: Hong Kong gave 2.6 to 3.5 ms a frame over four runs, and 4.9 on a fifth, straight after the traffic check; North America gave 2.4 to 2.9. `wimmel.info()` at that hour: about 135 draws against 90. `wimmel.info().city`: 44,800 triangles standing still against 42,400, 521 people against 259, 206 trees against 57, 174 signs against 73, 61 moving vehicles against 86. People, trees, lamps and glows are cheap however many there are. What costs is water, and every mesh of its own: here 22 trains, the wheel, eight beams of light and four lamps.
+- **Sides and weather.** `az` 42, 132, 222 and 312, by day (`hour: 13`) and by night (`hour: 21`); `weather: 'rain'` at dusk and by night (`hour: 18.5` and `20`); `weather: 'snow'` by day. Rain by night is where wet streets and signs show best. Snow lies on everything in `k.b` that faces the sky, paint on a roof included, and turns water white.
+- **Flicker** was looked for by reading the models for faces in one plane, and in still pictures from the four sides. That is weaker than watching the tile turn. The one flicker found showed in a still picture as stripes of the wrong colour: stair towers flush with the ends of a block.
+
+### What the page for tile builders could say
+
+- That `az` 42 is the south-south-east, with the numbers above, and that a layout is checked against them before the blockout.
+- That ordinary buildings are part of a tile. "A tile is never padded with ordinary buildings to fill it" reads as if a tile should have few. North America's density needs them, and this tile has 69 between its 39 things. What the sentence means is that they do not count towards the 20.
+- An order of work with the steps it leaves out: the sight-line check, ordinary buildings and signs, the pass for people, trees and lamps, and the check of the places for heroes.
+- How to check a place for a hero without making a picture of a hero, and that the browser's own screenshot must never be used.
+- That `street`'s `width` is the carriageway alone; that a sign is seen from one side; that `wimmel.shot` takes `w` and `h` and aims at the ground; that `lampsAlong` comes after every street; and that `ordinaryBuildings` wants a lot as a corner and a size (`x`, `z`, `w`, `d`, `y0`, `y1`), not as two corners.
+- The heights under the ground: 0, -0.9 and -2.4.
