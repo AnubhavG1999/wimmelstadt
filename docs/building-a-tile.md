@@ -92,6 +92,7 @@ Only your tile's own folder, `app/src/tiles/<id>/`. A tile is found by its folde
 - The engine goes on improving on `main` while you work. Merging `main` into your branch brings the improvements in, and since your branch only adds a folder it merges cleanly.
 - Documents, the glossary, the READMEs and the public pictures are brought up to date in one pass when the tile is final. Leave them alone until then.
 - Commit to your own branch as you go. Do not push, and do not merge: the tiles are merged from the main session.
+- When your tile joins the board, the main session may add to its notes: a table of heights, or the line that says the tile is final. If you go on working after that, merge `main` first and read your folder against it, with `git diff main -- app/src/tiles/<id>`. Two hands in one file can merge without a conflict and leave the notes saying two things.
 
 `NOTES.md`, in the tile's folder, records what a later reader cannot see in the code:
 
