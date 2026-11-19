@@ -11,10 +11,14 @@ import type { Seg } from '../../engine/paths';
 
 export type P2 = [number, number];
 
-export type Piece =
+export type Piece = (
   | { t: 'line'; a: P2; b: P2; y0: number; y1: number }
   /** An arc round `c`: from angle a0 to a1 in radians, as the engine's helix has them. */
-  | { t: 'arc'; c: P2; r: number; a0: number; a1: number; y0: number; y1: number };
+  | { t: 'arc'; c: P2; r: number; a0: number; a1: number; y0: number; y1: number }
+) & {
+  /** How fast it is driven, where that is not the road's own speed. */
+  speed?: number;
+};
 
 const RAD = Math.PI / 180;
 
@@ -145,8 +149,13 @@ export function from(e: End): Trace {
 export function toSegs(pieces: Piece[]): Seg[] {
   return pieces.map((p): Seg =>
     p.t === 'line'
-      ? { t: 'ramp', pts: [p.a, p.b], y0: p.y0, y1: p.y1, r: 0 }
-      : { t: 'helix', cx: p.c[0], cz: p.c[1], R: p.r, phi0: p.a0, phi1: p.a1, y0: p.y0, y1: p.y1 });
+      ? { t: 'ramp', pts: [p.a, p.b], y0: p.y0, y1: p.y1, r: 0, speed: p.speed }
+      : { t: 'helix', cx: p.c[0], cz: p.c[1], R: p.r, phi0: p.a0, phi1: p.a1, y0: p.y0, y1: p.y1, speed: p.speed });
+}
+
+/** The same pieces, driven at a speed of their own. */
+export function paced(pieces: Piece[], speed: number): Piece[] {
+  return pieces.map((p) => ({ ...p, speed }));
 }
 
 /** Points along a line of pieces, about `step` apart: [x, y, z]. */

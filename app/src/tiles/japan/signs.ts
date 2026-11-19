@@ -43,6 +43,24 @@ export const SIGNS: SignDef[] = [
   neon('yu', ['ゆ'], '#9fd8ff', 1.4),
 ];
 
+/** A board in an expressway's green, with white lettering. */
+const green = (id: string, lines: string[], aspect: number): SignDef => ({ id, lines, color: '#12784a', ink: '#ffffff', aspect, kind: 'board', font: JAPANESE });
+
+/**
+ * Signs on the Wangan. Their names are those of the road and of the places it
+ * leads to: the Wangan line, Daikoku pier, Tatsumi and Tokyo.
+ */
+export const ROAD_SIGNS: SignDef[] = [
+  green('g-daikoku', ['湾岸線', '大黒ふ頭'], 2.3),
+  green('g-tatsumi', ['湾岸線', '辰巳'], 2.3),
+  green('g-tokyo', ['湾岸線', '東京'], 2.3),
+  green('daikoku-pa', ['大黒PA'], 3.6),
+  green('tatsumi-pa', ['辰巳PA'], 3.6),
+  // the two kinds of lane at a toll gate: for cars that pay by card as they pass, and for the rest
+  { id: 'etc', lines: ['ETC'], color: '#5b3fa8', ink: '#ffffff', aspect: 2.6, kind: 'board' },
+  { id: 'ippan', lines: ['一般'], color: '#12784a', ink: '#ffffff', aspect: 2.6, kind: 'board', font: JAPANESE },
+];
+
 export const TOKYO_SIGNS: SignPool = {
   fascia: ['ramen', 'karaoke', 'pachinko', 'konbini', 'sushi', 'izakaya', 'yakitori', 'kusuri'],
   blade: ['kaiju-v', 'ramen-v', 'yume-v', 'sushi-v', 'donut-v', 'neko-v', 'game-v'],

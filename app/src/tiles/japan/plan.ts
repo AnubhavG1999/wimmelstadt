@@ -14,7 +14,7 @@
 // is about 7 long. x points east, z points south, y points up.
 
 import { TILE, type HeroSpot, type ParkedSpot, type Rect, type Route, type TrafficType } from '../../engine/tile';
-import { Trace, back, endOf, from, lane, lengthOf, toSegs, totalLength, type P2, type Piece } from './lines';
+import { Trace, back, endOf, from, lane, lengthOf, paced, toSegs, totalLength, type P2, type Piece } from './lines';
 
 export const BOARD = TILE;
 /** How far a shape that runs to the edge of the board stops short of it. */
@@ -225,6 +225,7 @@ export const WANGAN_NORTH: Piece[] = new Trace(ROTARY.x, AVENUE.z, 0, 0.02)
 /** Second stretch: the Bay Bridge, from Daikoku west to Tatsumi on its pier. */
 export const WANGAN_WEST: Piece[] = new Trace(DAIKOKU.x0 - 2, 72, 180, WANGAN.island)
   .goToX(25, WANGAN.span)
+  .goToX(12, WANGAN.span - (WANGAN.span - WANGAN.tatsumi) * 0.52)
   .goToX(SHORE.pier.x1, WANGAN.tatsumi)
   .goToX(SHORE.pier.x1 - 2)
   .pieces;
@@ -239,9 +240,9 @@ export const DAIKOKU_RING: Piece[] = (() => {
   const south = 101, west = 56;
   t.goToZ(south - 12).turn(90, 12);
   const flat = t.pieces.length;
-  t.goToX(74);
+  t.goToX(west + 10);
   const rise = t.pieces.length;
-  t.goToX(west + 12).turn(90, 12).goToZ(72 + LANE_OFF + 8).turn(-90, 8);
+  t.turn(90, 10).goToZ(72 + LANE_OFF + 8).turn(-90, 8);
   const down = grade(t.pieces.slice(0, flat), (s, total) => WANGAN.island * (1 - s / total) + 0.02);
   const level = grade(t.pieces.slice(flat, rise), () => 0.02);
   const up = grade(t.pieces.slice(rise), (s, total) => (WANGAN.island * s) / total + 0.02);
@@ -256,13 +257,25 @@ export const DAIKOKU_BYPASS: Piece[] = (() => {
   return t.goToX(to.x - r).turn(-90, r).pieces;
 })();
 
-/** The whole of it, as one road that keeps left: out by the parking area, back by the bypass. */
+/**
+ * The whole of it, as one road that keeps left: out by the parking area, back
+ * by the bypass. It is quick over the bridges, slower on the ramps, and slow
+ * past the meet and round the loops at its ends.
+ */
 export const WANGAN_ROUTE: Piece[] = (() => {
   const out1 = lane(WANGAN_NORTH, LANE_OFF), out2 = lane(WANGAN_WEST, LANE_OFF);
   const home2 = lane(back(WANGAN_WEST), LANE_OFF), home1 = lane(back(WANGAN_NORTH), LANE_OFF);
   const tatsumi = from(endOf(out2)).loopBack(2 * LANE_OFF, 6).pieces;
   const rotary = from(endOf(home1)).loopBack(2 * LANE_OFF, ROTARY.r).pieces;
-  return [...out1, ...DAIKOKU_RING, ...out2, ...tatsumi, ...home2, ...DAIKOKU_BYPASS, ...home1, ...rotary];
+  const ring = DAIKOKU_RING, flat = ring.findIndex((p) => p.y0 < 0.1 && p.y1 < 0.1);
+  return [
+    ...paced(out1.slice(0, 2), 20), ...out1.slice(2),
+    // down to Daikoku, past the meet at a walk, and up again
+    ...paced(ring.slice(0, flat), 19), ...paced(ring.slice(flat, flat + 1), 8), ...paced(ring.slice(flat + 1), 19),
+    ...out2.slice(0, -2), ...paced(out2.slice(-2), 18), ...paced(tatsumi, 10),
+    ...home2, ...paced(DAIKOKU_BYPASS, 26),
+    ...home1.slice(0, -2), ...paced(home1.slice(-2), 20), ...paced(rotary, 9),
+  ];
 })();
 
 /** The loop at Tatsumi, for the deck under it. */
@@ -341,7 +354,7 @@ export const ROUTES: Route[] = [
   // the pass and the way round Kyoto
   { id: 'touge', types: MIX.touge, segs: toSegs(TOUGE), speed: 17, count: 13 },
   // the Wangan
-  { id: 'wangan', types: MIX.wangan, segs: toSegs(WANGAN_ROUTE), speed: 31, count: 15 },
+  { id: 'wangan', types: MIX.wangan, segs: toSegs(WANGAN_ROUTE), speed: 38, count: 16 },
 ];
 
 // ---------------------------------------------------------------------------
@@ -358,6 +371,19 @@ export const FERRIS = { x: 36, y: 16.6, z: 47.3, r: 13.4 };
 
 /** The yard at the lookout, on the side of the loop that looks out over the tile. */
 export const LOOKOUT_YARD = { x: LOOKOUT.x + S2 * 13, z: LOOKOUT.z + S2 * 13, half: 7.5, deep: 3.6 };
+
+/**
+ * Daikoku's parking area: two rows of bays, nose out towards the bay, and the
+ * rest house at the west end of the back row. Bay i of a row is at x0 + i * pitch.
+ */
+export const DAIKOKU_BAYS = {
+  x0: 62, pitch: 3.6,
+  rows: [{ z: 80, from: 4, to: 8 }, { z: 92.5, from: 0, to: 8 }],
+  house: { x0: 60.5, z0: 74, x1: 73.6, z1: 82 },
+};
+
+/** Tatsumi's parking area: a deck beside the loop at the Wangan's west end. */
+export const TATSUMI: Rect = { x0: -15, z0: 54.5, x1: -1, z1: 64 };
 
 /** A thing that is still to be built: a box on the ground, or on whatever is at `y`. */
 export interface Lot { id: string; name: string; x: number; z: number; w: number; d: number; h: number; color: number; y?: number; label?: boolean }
@@ -397,33 +423,23 @@ export const LOTS: Lot[] = [
   lot('arches', 'UNDER THE ARCHES', -13, -34, 22, 8, 6.5, BRICK),
 
   // the bay
-  lot('rest-house', 'DAIKOKU PA', 61, 59.4, 20, 6, 6, PLASTER),
   lot('garage', "TUNER'S GARAGE", 21, 15, 30, 12, 9, 0xe9e6df),
   lot('konbini', 'KONBINI', -17, 16, 13, 9, 5, 0xf2f0ea),
   lot('petrol', 'PETROL STATION', -18, 36, 15, 10, 6, 0xf2f0ea),
   lot('carrier', 'CAR CARRIER', -20, 88, 24, 8, 11, 0x2f5fa8, -1),
   lot('parts', 'PARTS SHOP', 64.5, -15.6, 12, 7.4, 6, 0xf2c14e),
-  lot('tatsumi', 'TATSUMI PA', -15, 55, 14, 9.5, 0.6, 0x55575d, WANGAN.tatsumi - 0.6),
 ];
 
 /** Things that are named on a board but are not a box: the mountain, the roads, the bridges. */
 export const NAMES: { id: string; name: string; x: number; y: number; z: number }[] = [
-  { id: 'fuji', name: 'MOUNT FUJI', x: FUJI.x + 6, y: 56, z: FUJI.z + 6 },
-  { id: 'pass', name: 'THE PASS', x: -22, y: 12, z: -64 },
-  { id: 'lookout', name: 'LOOKOUT', x: LOOKOUT.x, y: PASS.y1 + 4, z: LOOKOUT.z },
   { id: 'inari', name: 'FUSHIMI INARI', x: -90, y: KYOTO_HILL.y + 5, z: -18 },
   { id: 'tokyo-tower', name: 'TOKYO TOWER', x: 36, y: 118, z: -80 },
   { id: 'crossing', name: 'SHIBUYA CROSSING', x: TOKYO.mid, y: 7, z: TOKYO.cross },
   { id: 'ueno', name: 'UENO PARK', x: 91, y: 9, z: -30 },
-  { id: 'shinkansen', name: 'SHINKANSEN', x: 0, y: RAIL.y + 9, z: RAIL.z },
-  { id: 'bay-bridge', name: 'BAY BRIDGE', x: 25, y: 52, z: 72 },
-  { id: 'wangan', name: 'WANGAN', x: 96, y: 22, z: 40 },
   { id: 'torii', name: 'GREAT TORII', x: TORII.x, y: 16, z: TORII.z },
   { id: 'river', name: 'RED BRIDGE', x: -25, y: 7, z: 30 },
   { id: 'gion', name: 'GION', x: -50, y: 13, z: 30 },
-  { id: 'toll', name: 'TOLL GATE', x: 47, y: 9, z: AVENUE.z },
   { id: 'used', name: 'USED CARS', x: 84, y: 5, z: 16 },
-  { id: 'ferris', name: 'FERRIS WHEEL', x: FERRIS.x, y: FERRIS.y + FERRIS.r + 4, z: FERRIS.z },
   { id: 'neon', name: 'NEON ALLEYS', x: 84, y: 60, z: -78 },
   { id: 'yokocho', name: 'YOKOCHO', x: -10, y: 9, z: -8 },
 ];
@@ -437,17 +453,20 @@ export const HERO_SPOTS: HeroSpot[] = [];
 {
   const south = Math.PI / 2;
   // Daikoku's parking area: two rows, nose out towards the bay. Three bays of the front row are kept for heroes.
-  for (let i = 0; i < 9; i++) {
-    const x = 62 + i * 3.6;
-    if (i !== 2 && i !== 6) PARKED.push({ x, y: 0.02, z: 80, heading: south });
-    if (i >= 3 && i <= 5) HERO_SPOTS.push({ id: `daikoku-${i - 2}`, x, y: 0.02, z: 92.5, heading: south });
-    else if (i !== 7) PARKED.push({ x, y: 0.02, z: 92.5, heading: south });
+  const bays = DAIKOKU_BAYS, [backRow, frontRow] = bays.rows;
+  // (the last bay of the back row is the dekotora's)
+  for (let i = backRow.from; i < backRow.to; i++) PARKED.push({ x: bays.x0 + i * bays.pitch, y: 0.02, z: backRow.z, heading: south });
+  for (let i = frontRow.from; i <= frontRow.to; i++) {
+    const x = bays.x0 + i * bays.pitch;
+    if (i >= 3 && i <= 5) HERO_SPOTS.push({ id: `daikoku-${i - 2}`, x, y: 0.02, z: frontRow.z, heading: south });
+    else if (i !== 7) PARKED.push({ x, y: 0.02, z: frontRow.z, heading: south });
   }
-  // Tatsumi: a lay-by up on the expressway, with the city behind it
-  const t = LOTS.find((l) => l.id === 'tatsumi')!;
-  PARKED.push({ x: t.x + 3, y: WANGAN.tatsumi + 0.02, z: t.z + 4.6, heading: -south });
-  HERO_SPOTS.push({ id: 'tatsumi', x: t.x + 7, y: WANGAN.tatsumi + 0.02, z: t.z + 4.6, heading: -south });
-  PARKED.push({ x: t.x + 11, y: WANGAN.tatsumi + 0.02, z: t.z + 4.6, heading: -south });
+  // Tatsumi: three bays up on the expressway, with the city behind them. The middle one is kept for a hero.
+  for (let i = 0; i < 3; i++) {
+    const spot = { x: TATSUMI.x0 + 3.14 + i * 3.9, y: WANGAN.tatsumi + 0.03, z: TATSUMI.z0 + 4.7, heading: -south };
+    if (i === 1) HERO_SPOTS.push({ id: 'tatsumi', ...spot });
+    else PARKED.push(spot);
+  }
   // the lookout at the top of the pass
   // (its bays face south-east, out over the pass)
   const yard = LOOKOUT_YARD, bay = 3.9 * S2;
