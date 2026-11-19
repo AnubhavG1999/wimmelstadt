@@ -90,8 +90,9 @@ function meet(a: Guide, b: Guide, first: boolean, what: string): P2 {
   const c = (a.t === 'circle' ? a : b) as Extract<Guide, { t: 'circle' }>;
   const m = dot(sub(c.c, l.p), l.d);
   const off = len(sub(along(l.p, l.d, m), c.c));
-  const h2 = c.r * c.r - off * off;
-  if (c.r <= 0 || h2 < 0) throw new Error(`${what}: a straight that misses its circle`);
+  // a straight that only touches its circle meets it once: rounding must not make that a miss
+  const h2 = Math.max(0, c.r * c.r - off * off);
+  if (c.r <= 0 || off > c.r + 1e-6) throw new Error(`${what}: a straight that misses its circle`);
   return along(l.p, l.d, first ? m - Math.sqrt(h2) : m + Math.sqrt(h2));
 }
 
@@ -146,7 +147,8 @@ export function loop(steps: Step[], o: { r?: number; y?: number; name?: string }
     const before = bends[(i + n - 1) % n], after = bends[i], h = heightsOf(s, y);
     const p = piece(s.g, before.to, after.from, h, `${what}, guide ${i + 1}`);
     if (p) out.push(p);
-    if (after.r > 0) out.push(arc(after.c, after.r, after.from, after.to, after.side > 0, h[1], h[1]));
+    // a bend climbs, if the guide it leads into starts higher or lower than this one ends
+    if (after.r > 0) out.push(arc(after.c, after.r, after.from, after.to, after.side > 0, h[1], heightsOf(steps[(i + 1) % n], y)[0]));
   });
   return out;
 }

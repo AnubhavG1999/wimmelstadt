@@ -18,8 +18,8 @@ import type { Seg } from '../../engine/paths';
 import type { Route, TrafficType } from '../../engine/tile';
 import { beside, circle, line, loop, run, shift, type P2, type Step } from './lanes';
 import {
-  ARC, CIRCUS_R, COLOSSEUM, CONCORDE, CONCORDE_LANES, EMBANKMENT_X, EMILIA_Z, IENA_X, LINGOTTO_ROOF, LUNGARNO_TOP, NEUF_X,
-  NORTH_QUAI_Z, PICCADILLY, ROYALE_X, SOUTH_BANK_X, SOUTH_QUAI_Z, STAR_LANES, STRAND_X, TOWER_HILL, TOWER_Z, VALLEY, WESTMINSTER_Z,
+  ACE_TURN, ARC, CIRCUS_R, COLOSSEUM, CONCORDE, CONCORDE_LANES, EMBANKMENT_X, EMILIA_Z, HILL, IENA_X, LINGOTTO_ROOF, LUNGARNO_TOP, NEUF_X,
+  NORTH_QUAI_Z, PICCADILLY, ROYALE_X, SOUTH_BANK_X, SOUTH_QUAI_Z, STAR_LANES, STRAND_X, TOWER_HILL, TOWER_Z, TURN_R, VALLEY, WESTMINSTER_Z, onHill,
 } from './plan';
 
 /** From the middle of a two-lane street to the middle of either lane. */
@@ -52,6 +52,9 @@ export const STREETS: Laid[] = [
   { id: 'strand', segs: straight([STRAND_X, TOWER_Z + 6], [STRAND_X, WESTMINSTER_Z - 6]), opts: { sidewalk: 2.5 } },
   { id: 'piccadilly-circus', segs: ringOf(PICCADILLY, CIRCUS_R), closed: true, opts: { ...ROUNDABOUT, lanes: 1, width: 6 }, lamps: 0 },
   { id: 'tower-hill-circus', segs: ringOf(TOWER_HILL, CIRCUS_R), closed: true, opts: { ...ROUNDABOUT, lanes: 1, width: 6 }, lamps: 0 },
+  // the road south from Piccadilly Circus, which ends in a turning circle at Ace Cafe
+  { id: 'ace-road', segs: straight([STRAND_X, WESTMINSTER_Z + 6], [STRAND_X, ACE_TURN[1] - 2]), opts: { sidewalk: 2.5 } },
+  { id: 'ace-turn', segs: ringOf(ACE_TURN, TURN_R), closed: true, opts: { lanes: 1, width: 6, sidewalk: 1.5, zebras: false }, lamps: 0 },
 
   // --- Paris ---
   { id: 'quai-nord', segs: straight([IENA_X - 5, NORTH_QUAI_Z], [ROYALE_X + 5, NORTH_QUAI_Z]), opts: { sidewalk: 2 } },
@@ -107,15 +110,19 @@ const LONDON_RING: Step[] = [line([B, WZ], [B, TZ]), line([B, TZ], [E, TZ]), lin
 const LONDON: Route[] = [
   // black cabs, round the water: up the South Bank past the Eye, over Tower Bridge, down the Embankment, over Westminster Bridge
   lane('london-river', beside(LONDON_RING, -HALF), { speed: 14, count: 6, types: ['sedan'], paint: CAB_BLACK }),
-  // red buses, round the outside of it all: over Westminster Bridge, round Piccadilly Circus, up the Strand, round Tower Hill, over Tower Bridge
+  // red buses, round the outside of it all: over Westminster Bridge, down to Ace Cafe and back, up the Strand, round Tower Hill, over Tower Bridge
   lane('london-circuit', [
     { g: shift(line([B, TZ], [B, WZ]), -HALF), r: 8.5 },
     { g: shift(line([B, WZ], [S, WZ]), -HALF), r: 4 },
     { g: circle(PICCADILLY, CIRCUS_R, true), r: 4 },
+    { g: shift(line(PICCADILLY, ACE_TURN), -HALF), r: 4 },
+    { g: circle(ACE_TURN, TURN_R, true), r: 4 },
+    { g: shift(line(ACE_TURN, PICCADILLY), -HALF), r: 4 },
+    { g: circle(PICCADILLY, CIRCUS_R, true), r: 4 },
     { g: shift(line([S, WZ], [S, TZ]), -HALF), r: 4 },
     { g: circle(TOWER_HILL, CIRCUS_R, true), r: 4 },
     { g: shift(line([S, TZ], [B, TZ]), -HALF), r: 8.5 },
-  ], { speed: 15, count: 8, types: ['bus', 'bus', 'sedan'], paint: BUS_RED }),
+  ], { speed: 15, count: 9, types: ['bus', 'bus', 'sedan'], paint: BUS_RED }),
   // and round the block between the Strand and the river
   lane('london-city', [
     { g: shift(line([S, TZ], [S, WZ]), -HALF), r: 4 },
@@ -131,6 +138,21 @@ const LONDON: Route[] = [
 
 const NQ = NORTH_QUAI_Z, SQ = SOUTH_QUAI_Z, I = IENA_X, N = NEUF_X, R = ROYALE_X;
 const [STAR_IN, STAR_MID, STAR_OUT] = STAR_LANES;
+
+/**
+ * The road on Montmartre: one lane east along the hill's first level, a hairpin
+ * that climbs to the second, back west below Sacré-Cœur, and a hairpin down.
+ */
+export const HILL_ROAD: Seg[] = (() => {
+  const [low, high] = HILL.lanes, mid = (low + high) / 2, hair = (high - low) / 2;
+  const [y1, y2] = HILL.heights;
+  return loop([
+    { g: line(onHill(HILL.t0, low), onHill(HILL.t1, low)), y: [y1, y1] },
+    { g: circle(onHill(HILL.t1, mid), hair, false), y: [y1, y2] },
+    { g: line(onHill(HILL.t1, high), onHill(HILL.t0, high)), y: [y2, y2] },
+    { g: circle(onHill(HILL.t0, mid), hair, false), y: [y2, y1] },
+  ], { name: 'montmartre' });
+})();
 
 /** Round the Seine between its two bridges, as it is driven on the inside: east along the north quay and west along the south. */
 const PARIS_RING: Step[] = [line([I, NQ], [N, NQ]), line([N, NQ], [N, SQ]), line([N, SQ], [I, SQ]), line([I, SQ], [I, NQ])].map((g) => ({ g, r: 6 }));
@@ -168,6 +190,7 @@ const PARIS: Route[] = [
   ], { speed: 19, count: 7, types: MIX.avenue }),
   // and those who never leave the star
   lane('etoile', [{ g: circle(ARC, STAR_IN, false) }], { speed: 13, count: 4, types: MIX.town }),
+  { id: 'montmartre', segs: HILL_ROAD, speed: 9, count: 4, types: MIX.town },
 ];
 
 // --- Italy ---
