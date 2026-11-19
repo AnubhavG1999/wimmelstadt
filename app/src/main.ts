@@ -167,23 +167,13 @@ function aimShadows(): void {
   shadowDirty = true;
 }
 
-// --- the board, a tile, a hero: the three distances the view settles at -----------
+// --- the board and its tiles --------------------------------------------------------
+// The view is free: it stays wherever the hand leaves it, over one tile, across
+// two, or anywhere between. Only an asking moves it by itself.
 const many = board.tiles.length > 1;
 const toBoard = (): void => rig.fly(boardMid.x, boardMid.z + 4, rig.fitBoard);
 /** The tile nearest to a place on the ground. */
 const nearestTile = (x: number, z: number) => board.tiles.reduce((a, b) => (Math.hypot(b.x - x, b.z - z) < Math.hypot(a.x - x, a.z - z) ? b : a));
-// When the hand lets go, the view settles: on the whole board if it has been
-// zoomed well out, on the nearest tile if a tile about fills it. Closer in
-// than that it stays where it was put, for looking round a tile.
-rig.onRest = () => {
-  if (!many || follow >= 0) return;
-  const g = rig.goal, fit = rig.fitTile;
-  if (g.viewH > fit * 1.3) toBoard();
-  else if (g.viewH > fit * 0.8) {
-    const t = nearestTile(g.x, g.z);
-    rig.fly(t.x, t.z + 4, fit);
-  }
-};
 // Twice on a tile goes to that tile, and twice on the table goes back to the board.
 rig.onDouble = (x, z) => {
   const t = board.tileAt(x, z);
