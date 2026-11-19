@@ -261,6 +261,7 @@ What building Europe taught, for someone who is about to start a tile and has no
 7. **Taking pictures in the pane the collector is looking at.** `wimmel.shot` moves the view and the hour of whatever page it is called on, and he may have gone to another address by then: I got pictures of the whole city where I expected my tile. Open a tab of your own for checks and leave his alone.
 8. **A session that is summarised forgets its files.** Read the file again before editing it. For anything longer than a line, write a small script that swaps one exact piece of text for another and stops if the piece is not there: it cannot half-apply, and it is a record of what was done.
 9. **Trees in the road.** My check for things in streets was asked about buildings only. A row of cypresses stood half a unit inside a lane from the blockout until the day the tile was called final, and cars brushed their trunks in every picture I took. Ask the same question of every tree and every figure: their places can be read back from the page, from the tile's meshes that are drawn many times over.
+10. **Two hands in one file.** When the tile joined the board, the main session added a section to these notes under the same heading as one of mine, with the heights as they were before two of them changed. Git merged both in without a conflict, and the notes then said two things. Before the last hand-over, merge `main` and read your own folder against it: `git diff main -- app/src/tiles/<id>`.
 
 ### What I would do differently from the start
 
