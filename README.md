@@ -1,6 +1,6 @@
 # Wimmelstadt
 
-![Three miniature cities standing edge to edge on a green table with a wooden rim, each on a dark base of its own: skyscrapers round a ring of raised road at the back, a harbour between two shores of towers on the left, and a white mountain, a red and white lattice tower and a bridge over a bay on the right. The front quarter of the table is empty.](app/screenshots/board.jpg)
+![Four miniature cities standing edge to edge on a green table with a wooden rim, each on a dark base of its own: skyscrapers round a ring of raised road at the back, a harbour between two shores of towers on the left, a white mountain and a red and white lattice tower on the right, and at the front an iron lattice tower beside a river, with a round arena below it.](app/screenshots/board.jpg)
 
 A living miniature city for a diecast collection.
 
@@ -32,7 +32,7 @@ It is deliberately not a collection manager: no prices, no wish lists, no checkl
 | Research | Done for all 23 districts, with sources. See [docs/districts/research](docs/districts/research). |
 | A first attempt at the city | Built and set aside: one continuous island of 23 districts. Beside the prototype its density and its layout did not hold up. It is kept on the branch `island-prototype`, where every document says why. |
 | A first try at tiles | Built and set aside: two larger tiles, blocked out side by side. Beside the prototype they were too thinly filled. See [prototype/two-tiles](prototype/two-tiles). |
-| The city | Three tiles are built and stand together on a board: North America, Japan and Hong Kong. More are being built. See [app](app), [0009](docs/adr/0009-a-city-of-hand-built-tiles.md) and [0010](docs/adr/0010-the-tiles-stand-together-on-a-table.md). |
+| The city | Four tiles are built and stand together on a board: North America, Japan, Hong Kong and Europe. More are to come. See [app](app), [0009](docs/adr/0009-a-city-of-hand-built-tiles.md) and [0010](docs/adr/0010-the-tiles-stand-together-on-a-table.md). |
 | Heroes | One, the black Countach from the generator trial, carried through by hand. It drives in the published city for whoever has the collector's PIN. See [0011](docs/adr/0011-the-heroes-sit-behind-a-pin.md). The pipeline that makes a hero from the phone is not built. |
 
 The order of building is: this prototype, then the city, then the pipeline that turns photos into heroes, then life in the city, then music, then extras.
@@ -41,7 +41,7 @@ The order of building is: this prototype, then the city, then the pipeline that 
 
 The city is made of tiles. A tile is one district on a board of its own, built by hand, lot by lot, until nothing in it is filler. It is the size of the look prototype's board, because that board turned out to be the right size: small enough that its landmarks stand shoulder to shoulder, with roads squeezed between them and streets passing underneath. Each tile stands on its own base, like a model on a table, with its name on a brass plate. The tiles stand together on one table, edge to edge, and that table is the board.
 
-Three tiles are built, each to the same [page for tile builders](docs/building-a-tile.md). Each keeps notes in its own folder: what stands on it, the liberties taken with the real place, and every real name on a sign.
+Four tiles are built, each to the same [page for tile builders](docs/building-a-tile.md). Each keeps notes in its own folder: what stands on it, the liberties taken with the real place, and every real name on a sign.
 
 ### North America
 
@@ -51,8 +51,8 @@ The first tile is the prototype's board itself. The Sears Tower, the Twin Towers
 | --- | --- |
 | ![A city of skyscrapers round a ring of raised road and a tall slim tower, with a green ballpark in front, a harbour city's towers at the lower left and a white mountain at the right](app/screenshots/north-america.jpg) | ![The same view at night: windows lit, a ring of pink light round the slim tower, the ballpark under floodlights, and beams of light crossing the sky from the harbour city](app/screenshots/north-america-night.jpg) |
 | North America, with Hong Kong in front of it and Japan beside it. | Half past nine in the evening. |
-| ![A ballpark with full stands and a red sign that reads Wrigley Field, an elevated railway on stilts behind it, and at the bottom the corners of two other tiles: a rocky hill and a temple on a pond](app/screenshots/ballpark.jpg) | ![A black tower of bundled tubes in front, a stone tower that steps back to a mast, a steel arch, a red suspension bridge and a car park with two spiral ramps](app/screenshots/west.jpg) |
-| Wrigley Field, the L, the diner and Marina City, where three tiles meet. | From the north-west: the Sears Tower, the Empire State Building, the Gateway Arch, the Golden Gate Bridge and the car park. |
+| ![A ballpark with full stands and a red sign that reads Wrigley Field, an elevated railway on stilts behind it, and round the bottom the corners of three other tiles: a rocky hill, a golden temple on a pond and a rounded glass tower](app/screenshots/ballpark.jpg) | ![A black tower of bundled tubes in front, a stone tower that steps back to a mast, a steel arch, a red suspension bridge and a car park with two spiral ramps](app/screenshots/west.jpg) |
+| Wrigley Field, the L, the diner and Marina City, where the four tiles meet: Hong Kong's Lion Rock, Japan's Kinkaku-ji and Europe's Gherkin. | From the north-west: the Sears Tower, the Empire State Building, the Gateway Arch, the Golden Gate Bridge and the car park. |
 
 See its [notes](app/src/tiles/north-america/NOTES.md).
 
@@ -82,14 +82,31 @@ Both sides of Victoria Harbour, as seen from Kowloon. On the Island stand the Pe
 
 See its [notes](app/src/tiles/hong-kong/NOTES.md).
 
+### Europe
+
+One river runs through it under three names. London stands on its first bend: the Houses of Parliament and Big Ben, Tower Bridge, the Tower, the London Eye, St Paul's, Buckingham Palace with its guard marching, Piccadilly Circus, the Gherkin, and Ace Cafe with a line of cars outside. Paris is on the second: the Eiffel Tower in open ironwork, the Arc de Triomphe in its star, the Louvre and its pyramid, Notre-Dame on its island, Sacré-Cœur on Montmartre and the Moulin Rouge. Beyond them is Italy: the Leaning Tower of Pisa, the Colosseum, Florence's cathedral, the Ponte Vecchio, a canal of Venice, and for a collector of diecasts Lingotto with the test track on its roof and the gates of Maranello and Sant'Agata. London keeps left, and Paris and Italy keep right. Concorde flies a round over all of it, and a balloon drifts over the left bank. It has 29 things to find.
+
+| | |
+| --- | --- |
+| ![A tile with a river winding through it: an iron lattice tower and a round arena in front, a clock tower, a big wheel and a rounded glass tower behind, and a long white building with a track on its roof at the left](app/screenshots/europe.jpg) | ![The same tile at night: the lattice tower lit gold, the arena's arches glowing, the big wheel and the clock tower lit, and a bay bridge on the next tile behind](app/screenshots/europe-night.jpg) |
+| Europe. | At night. |
+| ![A clock tower beside a long Gothic building on a river, a big wheel, a domed cathedral, a castle with four turrets, a bridge with two towers, a rounded glass tower, a curved front of bright screens and a blue and gold balloon](app/screenshots/europe-london.jpg) | ![An iron lattice tower over a lawn, a round arena, a leaning white tower beside a cathedral, a triumphal arch, a cathedral on an island in the river and a red-domed cathedral](app/screenshots/europe-paris.jpg) |
+| London: Parliament and Big Ben, the Eye, St Paul's, the Tower, Tower Bridge, the Gherkin, Piccadilly Circus and Ace Cafe. | Paris and Italy: the Eiffel Tower, the Colosseum, Pisa, the Arc de Triomphe, Notre-Dame and Florence's cathedral. |
+
+![A long white factory with a banked test track on its roof and cars on it, a piazza with a fountain, the leaning tower beside its cathedral and baptistery, the round arena and the feet of the lattice tower](app/screenshots/europe-italy.jpg)
+
+Lingotto, with the test track on its roof, above Pisa and the Colosseum.
+
+See its [notes](app/src/tiles/europe/NOTES.md).
+
 ### The board
 
 | | |
 | --- | --- |
-| ![The whole board at night, three lit tiles on a dark table](app/screenshots/board-night.jpg) | ![The whole board under snow, with flakes falling and every roof white](app/screenshots/board-snow.jpg) |
+| ![The whole board at night, four lit tiles on a dark table, with beams of light rising from one of them](app/screenshots/board-night.jpg) | ![The whole board under snow, with flakes falling and every roof white](app/screenshots/board-snow.jpg) |
 | The board at night. | Snow. |
 
-The tiles stand on the board in the order they were built, and the fourth place is waiting for the next one. [0010](docs/adr/0010-the-tiles-stand-together-on-a-table.md) says why the tiles are joined like this. How a hero will get from one tile to the next is not decided yet: for now each hero is put on a tile at random whenever the page loads.
+The tiles stand on the board in the order they were built: North America at the back, Japan and Hong Kong at its sides, and Europe at the front. [0010](docs/adr/0010-the-tiles-stand-together-on-a-table.md) says why the tiles are joined like this. How a hero will get from one tile to the next is not decided yet: for now each hero is put on a tile at random whenever the page loads.
 
 Two other forms of the city were built first and set aside. One was a continuous island with a coast, rivers and mountains. It was too large to build by hand, so the ground between its landmarks was filled with ordinary buildings made by rule, and it looked empty where the prototype looks full. It is kept on the branch `island-prototype`. The other was a pair of larger tiles joined by an avenue, which thinned out in the same way. It is kept in [prototype/two-tiles](prototype/two-tiles). [0009](docs/adr/0009-a-city-of-hand-built-tiles.md) records both.
 
@@ -123,7 +140,7 @@ Famous landmarks stand in the city as toy versions of themselves, each on the ti
 | [docs/adr](docs/adr) | Eleven short records of decisions that would be hard to undo, each with its reason. |
 | [docs/building-a-tile.md](docs/building-a-tile.md) | The page for whoever builds a tile: what a tile is, the kit, the checks, and what the earlier tiles taught their builders. |
 | [docs/districts/research](docs/districts/research) | The research notes behind each of the 23 districts: what stands where, what it looks like, and what was and was not checked. |
-| [app](app) | The real app, built with three.js: an engine, and a folder for each tile. So far three tiles. |
+| [app](app) | The real app, built with three.js: an engine, and a folder for each tile. So far four tiles. |
 | [supabase](supabase) | The backend's database, as the changes that made it: the heroes, the store for their models, and who may see them. |
 | [prototype/look](prototype/look) | The look prototype. Its README says what to judge and what is faked. |
 | [prototype/two-tiles](prototype/two-tiles) | The first try at tiles, set aside. Its README says why, and what is worth taking from it. |

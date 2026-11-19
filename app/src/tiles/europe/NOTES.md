@@ -1,6 +1,6 @@
 # Europe: notes
 
-What a later reader cannot see in the code. Everything on the list below is built. The collector has not yet called the tile final.
+What a later reader cannot see in the code. Everything on the list below is built, and the collector called the tile final on 19 November 2026.
 
 ## The things on the tile
 
@@ -78,6 +78,28 @@ Six. Each is open towards the south-east, where the tile is usually looked at fr
 ## What moves, besides the traffic
 
 The London Eye turns. The guard marches up and down the palace's forecourt. The Moulin Rouge's sails turn, and so does the merry-go-round beside it. A gondola is rowed along Venice's canal and out onto the river, and a boat for sightseers goes round the river's bend between London and Paris. The lamp at the top of the Eiffel Tower sweeps round at night. Concorde flies its round, and the balloon drifts.
+
+## How high things stand
+
+Added by the main session on 19 November 2026, when the tile joined the board. The city's towers are roughly to one scale, about 3.2 metres to a unit, which North America's set: see [the page for tile builders](../../../../docs/building-a-tile.md). The collector's word on it is that things should be roughly to scale, and that looking good comes first.
+
+| | Units | In life | At that scale |
+| --- | --- | --- | --- |
+| The Eiffel Tower | 110 | 330 m | 104 |
+| The Gherkin | 50 | 180 m | 57 |
+| The London Eye | 46 | 135 m | 43 |
+| St Paul's Cathedral | 36.5 | 111 m | 35 |
+| Venice's bell tower | 32 | 99 m | 31 |
+| Florence's cathedral | 28 | 114 m | 36 |
+| Sacré-Cœur, above its hill | 26 | 83 m | 26 |
+| The Colosseum | 17 | 48 m | 15 |
+| Big Ben | 56 | 96 m | 30 |
+| Tower Bridge | 37 | 65 m | 21 |
+| Notre-Dame | 28 | 69 m | 22 |
+| The Leaning Tower of Pisa | 24 | 56 m | 18 |
+| The Arc de Triomphe | 21 | 50 m | 16 |
+
+The first eight are within about a fifth of the scale, and most within a tenth. The last five are small landmarks that stand taller than their scale height so that they can be recognised. That puts Big Ben a little above the Gherkin, which in life is nearly twice as tall. It is kept: Big Ben is what says London, and the Gherkin stands at the far corner. The heights in life are the commonly published ones.
 
 ## Liberties taken with the real places
 

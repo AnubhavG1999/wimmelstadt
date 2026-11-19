@@ -2,7 +2,7 @@
 
 The real Wimmelstadt: a board of tiles, each a district built by hand, with traffic on its roads and the collector's heroes among it. See [0009](../docs/adr/0009-a-city-of-hand-built-tiles.md) for why the city is made of tiles and why a tile is the size it is, and [0010](../docs/adr/0010-the-tiles-stand-together-on-a-table.md) for how the tiles stand together.
 
-![Three miniature cities standing edge to edge on a green table with a wooden rim, each on a dark base of its own](screenshots/board.jpg)
+![Four miniature cities standing edge to edge on a green table with a wooden rim, each on a dark base of its own](screenshots/board.jpg)
 
 The pictures of each tile are in the [README at the top](../README.md).
 
@@ -15,6 +15,7 @@ Every tile stands on a base of its own, with its name on a brass plate on each s
 | North America | 20, the L and a helicopter | The look prototype's board, kept as it was and made North American throughout: a ring of raised expressway round Halo Tower, a flyover, a car park with two spirals, and an elevated railway. | [NOTES.md](src/tiles/north-america/NOTES.md) |
 | Japan | 41 | Fuji and a pass of hairpins, Kyoto and Tokyo on the two banks of a river with a Shinkansen between them, and the Wangan with Daikoku and Tatsumi. | [NOTES.md](src/tiles/japan/NOTES.md) |
 | Hong Kong | 39 | Both sides of Victoria Harbour: the Peak and Central on one shore, Tsim Sha Tsui and Kowloon on the other, with trams, ferries and a jumbo jet. | [NOTES.md](src/tiles/hong-kong/NOTES.md) |
+| Europe | 29 | One river under three names, with London, Paris and Italy along it, roundabouts in place of a grid, and traffic that keeps left in London and right elsewhere. Concorde and a balloon fly over it. | [NOTES.md](src/tiles/europe/NOTES.md) |
 
 A tile's notes list what stands on it, the liberties taken with the real place, every real name on a sign and how it was checked, and what its builder learned.
 
@@ -106,4 +107,4 @@ From the browser's console, `wimmel.shot('name', { hour: 21.5, weather: 'rain', 
 - Vehicles follow fixed loops. They do not choose a way or turn at a junction, and where two loops share a lane they merge. Real driving comes with the road network.
 - There is no roster, no card and no bench. The one hero was carried through by hand.
 - Nothing has a name on screen but the tile in view.
-- How it runs on the phone has not been measured. On the desktop, three tiles take about 7 ms a frame.
+- How it runs on the phone has not been measured. On the desktop, four tiles take about 9 ms a frame.
