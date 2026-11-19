@@ -10,7 +10,7 @@
 
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { makeModelMaterial } from './materials';
+import { looseLook, makeModelMaterial, type TileLook } from './look/materials';
 
 export interface HeroInfo {
   capture: string;
@@ -30,6 +30,8 @@ export interface LoadedHero {
   /** How long and how wide it is. */
   length: number;
   width: number;
+  /** Which tile's lamps and signs light it. Set when it is put on a tile. */
+  look: TileLook;
 }
 
 /** The outline: the model's back faces, pushed outwards by about a pixel and a half and drawn dark. */
@@ -49,18 +51,19 @@ export function sizeOutline(widthPx: number, heightPx: number): void {
   outlineSize.value.set(3 / Math.max(1, widthPx), 3 / Math.max(1, heightPx));
 }
 
-function cityLook(source: THREE.Material): THREE.Material {
+function cityLook(look: TileLook, source: THREE.Material): THREE.Material {
   const s = source as THREE.MeshStandardMaterial;
-  return makeModelMaterial(s.map ?? null, s.color ? s.color.clone() : new THREE.Color('#ffffff'), s.side);
+  return makeModelMaterial(look, s.map ?? null, s.color ? s.color.clone() : new THREE.Color('#ffffff'), s.side);
 }
 
 /** Stands a model on the ground, nose along +x, at its toy's length, and dresses it in the city's look. */
 function settle(root: THREE.Object3D, info: HeroInfo): LoadedHero {
+  const look = looseLook();
   const hulls: [THREE.Mesh, THREE.Mesh][] = [];
   root.traverse((o) => {
     const mesh = o as THREE.Mesh;
     if (!mesh.isMesh) return;
-    mesh.material = Array.isArray(mesh.material) ? mesh.material.map(cityLook) : cityLook(mesh.material);
+    mesh.material = Array.isArray(mesh.material) ? mesh.material.map((m) => cityLook(look, m)) : cityLook(look, mesh.material);
     mesh.receiveShadow = true;
     if (mesh.geometry.getAttribute('normal')) hulls.push([mesh, new THREE.Mesh(mesh.geometry, outline)]);
   });
@@ -84,12 +87,12 @@ function settle(root: THREE.Object3D, info: HeroInfo): LoadedHero {
   const body = new THREE.Group();
   body.name = info.name;
   body.add(root);
-  return { info, body, length: Math.max(s.x, s.z) * k, width: Math.min(s.x, s.z) * k };
+  return { info, body, length: Math.max(s.x, s.z) * k, width: Math.min(s.x, s.z) * k, look };
 }
 
 /**
  * Loads every hero the development server has. A built copy of the app has
- * none yet, and that is not an error: the city simply runs with its stand-ins.
+ * none yet, and that is not an error: the city simply has traffic and no heroes.
  */
 export async function loadHeroes(): Promise<LoadedHero[]> {
   let list: HeroInfo[];

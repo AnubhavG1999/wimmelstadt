@@ -7,6 +7,13 @@
 node_modules/
 dist/
 
+# Pictures taken to check work in progress: wimmel.shot('check-...')
+app/screenshots/check-*.jpg
+
+# Each session's own way of starting the app, and the worktrees sessions work in
+.claude/launch.json
+.claude/worktrees/
+
 # Editor and operating-system files
 .DS_Store
 Thumbs.db

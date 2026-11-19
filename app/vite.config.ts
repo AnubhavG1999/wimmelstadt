@@ -1,7 +1,26 @@
+import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { defineConfig, type Plugin } from 'vite';
+
+/**
+ * Where the captures are. They are private and are never checked in, so a
+ * worktree of this repository has none of its own: there they are looked for
+ * in the main checkout, which is where the collector keeps them.
+ */
+function capturesDir(root: string): string {
+  const own = resolve(root, '../captures');
+  if (existsSync(own)) return own;
+  try {
+    const common = execFileSync('git', ['rev-parse', '--path-format=absolute', '--git-common-dir'], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+    const main = resolve(common, '../captures');
+    if (existsSync(main)) return main;
+  } catch {
+    // not a checkout at all: then there are no captures, and the city has traffic alone
+  }
+  return own;
+}
 
 /**
  * Development server only: lets the page hand over a picture of itself, which is
@@ -15,11 +34,12 @@ function saveShots(): Plugin {
     name: 'wimmelstadt-save-shots',
     apply: 'serve',
     configureServer(server) {
+      const captures = capturesDir(server.config.root);
       server.middlewares.use('/__shot', (req, res) => {
         const query = new URL(req.url ?? '', 'http://localhost').searchParams;
         const name = query.get('name') ?? '', capture = query.get('capture');
         // a plain file name, and at most the plain name of a capture that exists, so nothing can be written anywhere else
-        const known = capture === null || (/^[a-z0-9-]+$/.test(capture) && existsSync(resolve(server.config.root, '../captures', capture)));
+        const known = capture === null || (/^[a-z0-9-]+$/.test(capture) && existsSync(resolve(captures, capture)));
         if (req.method !== 'POST' || !/^[a-z0-9-]+\.jpg$/.test(name) || !known) {
           res.statusCode = 400;
           res.end('bad request');
@@ -28,7 +48,7 @@ function saveShots(): Plugin {
         const chunks: Buffer[] = [];
         req.on('data', (c: Buffer) => chunks.push(c));
         req.on('end', () => {
-          const dir = capture === null ? resolve(server.config.root, 'screenshots') : resolve(server.config.root, '../captures', capture, 'screenshots');
+          const dir = capture === null ? resolve(server.config.root, 'screenshots') : resolve(captures, capture, 'screenshots');
           mkdir(dir, { recursive: true })
             .then(() => writeFile(resolve(dir, name), Buffer.concat(chunks)))
             .then(() => res.end('saved'))
@@ -55,7 +75,7 @@ function serveHeroes(): Plugin {
     name: 'wimmelstadt-serve-heroes',
     apply: 'serve',
     configureServer(server) {
-      const root = resolve(server.config.root, '../captures');
+      const root = capturesDir(server.config.root);
       server.middlewares.use('/captures', (req, res) => {
         const path = decodeURIComponent(new URL(req.url ?? '', 'http://localhost').pathname);
         if (path === '/heroes.json') {
@@ -88,6 +108,10 @@ function serveHeroes(): Plugin {
 export default defineConfig({
   base: './',
   plugins: [saveShots(), serveHeroes()],
+  // One port, and no other if it is taken, so that a preview always knows where
+  // the app is. A second copy of the app, such as one in a worktree, is given
+  // its own: npm run dev -- --port 5191
+  server: { port: 5187, strictPort: true },
   build: {
     target: 'es2022',
     chunkSizeWarningLimit: 1200,

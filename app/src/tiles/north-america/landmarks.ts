@@ -1,28 +1,16 @@
 // Toy versions of famous North American buildings and monuments. Each is a few
 // dozen boxes, cylinders and bars: enough for the silhouette. Their places come
-// from scene-data.ts.
+// from plan.ts.
 
-import type { GeoBuilder, QuadOpts, V3, WinSpec } from './geo';
-import { interior, rng } from './geo';
+import type { GeoBuilder, QuadOpts, V3, WinSpec } from '../../engine/geo';
+import { interior, rng } from '../../engine/geo';
+import type { Build, Glow } from '../../engine/tile';
 import {
   ARCH, EXPRESS_HALF, EXPRESS_Y, GOLDEN_GATE, ROUTE66, WRIGLEY, type Building,
-} from './scene-data';
+} from './plan';
 
-export interface Light { x: number; z: number; r: number; color: string; k: number }
-export interface Glow { x: number; y: number; z: number; sx: number; sy: number; sz: number; color: string }
-
-/** What a model is given to build with. */
-export interface LandmarkCtx {
-  b: GeoBuilder;
-  glows: Glow[];
-  lights: Light[];
-  /** Hangs a sign that faces the way (nx, nz) points, `h` tall and no wider than `maxW`. Returns its width. */
-  sign(id: string, x: number, y: number, z: number, nx: number, nz: number, h: number, maxW?: number): number;
-  /** Plants a tree. A tall one is slender, like a redwood. */
-  tree(x: number, z: number, size: number, tall?: boolean): void;
-  /** Stands a figure on the ground. */
-  person(x: number, z: number): void;
-}
+/** What a model builds with: the tile's own build. */
+type LandmarkCtx = Build;
 
 type P2 = [number, number];
 const Q = Math.PI / 4;

@@ -38,14 +38,43 @@ export class GeoBuilder {
   private win: number[] = [];
   private uv: number[] = [];
   private c = new THREE.Color();
+  /** Where everything that is added now is turned and moved to: see `moved`. */
+  private tf: { yaw: number; x: number; y: number; z: number } | null = null;
 
   get triangles(): number {
     return this.pos.length / 9;
   }
 
+  /**
+   * Everything added inside `fn` is turned by `yaw` about the vertical and then
+   * moved by (x, y, z). Rows of windows stay where the shape itself has them.
+   */
+  moved(x: number, y: number, z: number, yaw: number, fn: () => void): void {
+    const outer = this.tf;
+    if (outer) {
+      // inside another move: this one first, then that one
+      const c = Math.cos(outer.yaw), s = Math.sin(outer.yaw);
+      this.tf = { yaw: outer.yaw + yaw, x: outer.x + x * c - z * s, y: outer.y + y, z: outer.z + x * s + z * c };
+    } else {
+      this.tf = { yaw, x, y, z };
+    }
+    try {
+      fn();
+    } finally {
+      this.tf = outer;
+    }
+  }
+
   private vert(p: V3, n: V3, wu: number, wv: number, L: number, seed: number, w: WinSpec, uv: [number, number]): void {
-    this.pos.push(p[0], p[1], p[2]);
-    this.nor.push(n[0], n[1], n[2]);
+    const t = this.tf;
+    if (t) {
+      const c = Math.cos(t.yaw), s = Math.sin(t.yaw);
+      this.pos.push(t.x + p[0] * c - p[2] * s, t.y + p[1], t.z + p[0] * s + p[2] * c);
+      this.nor.push(n[0] * c - n[2] * s, n[1], n[0] * s + n[2] * c);
+    } else {
+      this.pos.push(p[0], p[1], p[2]);
+      this.nor.push(n[0], n[1], n[2]);
+    }
     this.col.push(this.c.r, this.c.g, this.c.b);
     this.wall.push(wu, wv, L, seed);
     this.win.push(w.cell, w.storey, w.lit, w.kind);
@@ -79,6 +108,13 @@ export class GeoBuilder {
     this.c.set(color);
     const w = o.win ?? NO_WIN;
     for (const p of [p0, p1, p2]) this.vert(p, n, 0, p[1], 1, o.seed ?? 0, w, [0, 0]);
+  }
+
+  /** A triangle that faces the sky, whichever way round its corners are given. */
+  up(p0: V3, p1: V3, p2: V3, color: Col, o: QuadOpts = {}): void {
+    const over = (p1[2] - p0[2]) * (p2[0] - p0[0]) - (p1[0] - p0[0]) * (p2[2] - p0[2]);
+    if (over >= 0) this.tri(p0, p1, p2, [0, 1, 0], color, o);
+    else this.tri(p0, p2, p1, [0, 1, 0], color, o);
   }
 
   /** An axis-aligned box. Walls carry wall coordinates so windows line up with its corners. */

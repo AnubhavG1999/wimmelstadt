@@ -1,9 +1,38 @@
-// Draws every sign onto one sheet, so all the signs in the city are one draw call.
+// Draws every sign of a tile onto one sheet, so all its signs are one draw call.
 // Each sign is a dark panel with glowing lettering; at night the sheet is simply
 // made brighter and the bloom does the rest.
 
 import * as THREE from 'three';
-import { SIGNS, type SignDef } from './scene-data';
+import type { V3 } from './geo';
+
+export interface SignDef {
+  id: string;
+  lines: string[];
+  color: string;
+  /** Characters stacked top to bottom. */
+  vertical?: boolean;
+  /** Width over height. */
+  aspect: number;
+  /**
+   * How it is drawn. Neon lettering on a dark panel unless it says otherwise:
+   * `box` is a lit board with dark lettering, `board` a painted one in exactly
+   * its own colour, `p` a parking sign and `screen` the big screen.
+   */
+  kind?: 'neon' | 'box' | 'board' | 'screen' | 'p';
+  /** For a board: the colour of the lettering. */
+  ink?: string;
+  /**
+   * The lettering it is set in, as a CSS font family. Leave it out for Latin
+   * letters. For another script, give a family that has it: JAPANESE, CHINESE
+   * and DEVANAGARI below, or a list of the tile's own.
+   */
+  font?: string;
+  /** The name of a real company or place. */
+  real?: boolean;
+  /** For a sign that a tile draws itself: its size on the sheet in pixels, and what draws it. */
+  size?: [number, number];
+  paint?: (ctx: CanvasRenderingContext2D, s: SignDef, w: number, h: number) => void;
+}
 
 /** Where a sign sits on the sheet. v runs downwards, as on the canvas. */
 export interface SignRect { u0: number; u1: number; vTop: number; vBottom: number; aspect: number; color: string }
@@ -15,12 +44,22 @@ export interface SignAtlas {
 
 const SIZE = 2048;
 const PAD = 8;
-const EN = '"Arial Black", "Segoe UI Black", "Helvetica Neue", Arial, sans-serif';
+export const EN = '"Arial Black", "Segoe UI Black", "Helvetica Neue", Arial, sans-serif';
+// Lettering for other scripts. Each names what Windows, Apple and Android call theirs.
+export const JAPANESE = '"Yu Gothic UI", "Yu Gothic", Meiryo, "Hiragino Sans", "Noto Sans JP", sans-serif';
+/** Traditional characters, as Hong Kong writes them. */
+export const CHINESE = '"Microsoft JhengHei UI", "Microsoft JhengHei", "PingFang HK", "PingFang TC", "Noto Sans TC", sans-serif';
+export const DEVANAGARI = '"Nirmala UI", "Kohinoor Devanagari", "Devanagari Sangam MN", "Noto Sans Devanagari", sans-serif';
+
+/** A line of lettering as the pieces a reader sees as single characters, so that stacking them breaks no letter in two. */
+function characters(text: string): string[] {
+  if (typeof Intl.Segmenter !== 'function') return [...text];
+  return [...new Intl.Segmenter().segment(text)].map((g) => g.segment);
+}
 
 function pixelSize(s: SignDef): [number, number] {
+  if (s.size) return s.size;
   if (s.kind === 'screen') return [640, 360];
-  if (s.kind === 'shield') return [Math.round(256 * s.aspect), 256];
-  if (s.kind === 'score') return [Math.round(240 * s.aspect), 240];
   if (s.kind === 'p') return [160, 160];
   if (s.aspect < 1) return [96, Math.round(96 / s.aspect)];
   if (s.aspect === 1) return [176, 176];
@@ -28,18 +67,18 @@ function pixelSize(s: SignDef): [number, number] {
   return [Math.round(h * s.aspect), h];
 }
 
-function lighten(hex: string, t: number): string {
+export function lighten(hex: string, t: number): string {
   const c = new THREE.Color(hex).lerp(new THREE.Color('#ffffff'), t);
   return '#' + c.getHexString();
 }
 
-function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number): void {
+export function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number): void {
   ctx.beginPath();
   ctx.roundRect(x, y, w, h, r);
 }
 
 /** Fits a font size so the text is no wider than maxW. */
-function fit(ctx: CanvasRenderingContext2D, text: string, family: string, size: number, maxW: number, weight = '900'): number {
+export function fit(ctx: CanvasRenderingContext2D, text: string, family: string, size: number, maxW: number, weight = '900'): number {
   let s = size;
   for (let i = 0; i < 20; i++) {
     ctx.font = `${weight} ${s}px ${family}`;
@@ -49,7 +88,7 @@ function fit(ctx: CanvasRenderingContext2D, text: string, family: string, size: 
   return s;
 }
 
-function glowText(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, color: string, size: number): void {
+export function glowText(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, color: string, size: number): void {
   ctx.shadowColor = color;
   ctx.shadowBlur = size * 0.45;
   ctx.fillStyle = color;
@@ -72,10 +111,10 @@ function drawNeon(ctx: CanvasRenderingContext2D, s: SignDef, w: number, h: numbe
   ctx.globalAlpha = 1;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  const family = EN;
+  const family = s.font ?? EN;
 
   if (s.vertical) {
-    const chars = [...s.lines[0]];
+    const chars = characters(s.lines[0]);
     const cellH = (h - 24) / chars.length;
     const size = Math.min(w - 26, cellH * 0.92);
     ctx.font = `900 ${size}px ${family}`;
@@ -90,7 +129,7 @@ function drawNeon(ctx: CanvasRenderingContext2D, s: SignDef, w: number, h: numbe
   });
 }
 
-function drawBox(ctx: CanvasRenderingContext2D, s: SignDef, w: number, h: number): void {
+export function drawBox(ctx: CanvasRenderingContext2D, s: SignDef, w: number, h: number): void {
   // a lightbox: a bright panel with dark lettering. A painted board keeps exactly
   // its own colour and has a line round its edge in the colour of its lettering.
   const dark = s.ink ?? '#0f3b66';
@@ -109,95 +148,9 @@ function drawBox(ctx: CanvasRenderingContext2D, s: SignDef, w: number, h: number
   ctx.fillStyle = dark;
   const lineH = (h - 18) / s.lines.length;
   s.lines.forEach((line, i) => {
-    const size = fit(ctx, line, EN, lineH * 0.84, w - 30);
-    ctx.font = `900 ${size}px ${EN}`;
+    const size = fit(ctx, line, s.font ?? EN, lineH * 0.84, w - 30);
+    ctx.font = `900 ${size}px ${s.font ?? EN}`;
     ctx.fillText(line, w / 2, 9 + lineH * (i + 0.5) + size * 0.05);
-  });
-  if (s.id === 'billboard') {
-    // a little rocket, the made-up cola's mascot
-    ctx.save();
-    ctx.translate(w - 48, 48);
-    ctx.rotate(Math.PI / 4);
-    ctx.fillStyle = dark;
-    ctx.beginPath(); ctx.moveTo(0, -30); ctx.quadraticCurveTo(14, -12, 10, 12); ctx.lineTo(-10, 12); ctx.quadraticCurveTo(-14, -12, 0, -30); ctx.fill();
-    ctx.beginPath(); ctx.moveTo(-10, 0); ctx.lineTo(-21, 19); ctx.lineTo(-10, 12); ctx.fill();
-    ctx.beginPath(); ctx.moveTo(10, 0); ctx.lineTo(21, 19); ctx.lineTo(10, 12); ctx.fill();
-    ctx.fillStyle = lighten(s.color, 0.35);
-    ctx.beginPath(); ctx.arc(0, -8, 4.5, 0, Math.PI * 2); ctx.fill();
-    ctx.restore();
-  }
-}
-
-/** A highway marker in neon: the outline of the shield, the word across its top and the number below. */
-function drawShield(ctx: CanvasRenderingContext2D, s: SignDef, w: number, h: number): void {
-  ctx.fillStyle = '#0b0b14';
-  roundRect(ctx, 0, 0, w, h, 12);
-  ctx.fill();
-  const X = (u: number) => w * (0.07 + 0.86 * u), Y = (v: number) => h * (0.06 + 0.88 * v);
-  const outline = (): void => {
-    ctx.beginPath();
-    ctx.moveTo(X(0.5), Y(0.07));
-    ctx.quadraticCurveTo(X(0.74), Y(0.13), X(0.95), Y(0));
-    ctx.bezierCurveTo(X(0.8), Y(0.24), X(1.07), Y(0.44), X(0.94), Y(0.66));
-    ctx.quadraticCurveTo(X(0.85), Y(0.88), X(0.5), Y(1));
-    ctx.quadraticCurveTo(X(0.15), Y(0.88), X(0.06), Y(0.66));
-    ctx.bezierCurveTo(X(-0.07), Y(0.44), X(0.2), Y(0.24), X(0.05), Y(0));
-    ctx.quadraticCurveTo(X(0.26), Y(0.13), X(0.5), Y(0.07));
-    ctx.closePath();
-  };
-  ctx.lineJoin = 'round';
-  ctx.shadowColor = s.color;
-  ctx.shadowBlur = 16;
-  ctx.strokeStyle = s.color;
-  ctx.lineWidth = 7;
-  outline(); ctx.stroke();
-  outline(); ctx.stroke();
-  ctx.shadowBlur = 0;
-  ctx.strokeStyle = lighten(s.color, 0.72);
-  ctx.lineWidth = 3;
-  outline(); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(X(0.13), Y(0.37)); ctx.lineTo(X(0.87), Y(0.37)); ctx.stroke();
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  const small = fit(ctx, s.lines[0], EN, h * 0.15, w * 0.5);
-  glowText(ctx, s.lines[0], w / 2, Y(0.27), '#ff5a4f', small);
-  const big = fit(ctx, s.lines[1], EN, h * 0.46, w * 0.62);
-  ctx.font = `900 ${big}px ${EN}`;
-  glowText(ctx, s.lines[1], w / 2, Y(0.67), s.color, big);
-}
-
-/** A ballpark's scoreboard: two line scores, one above the other, in white on green. */
-function drawScore(ctx: CanvasRenderingContext2D, s: SignDef, w: number, h: number): void {
-  const ink = s.ink ?? '#f2efe6';
-  ctx.fillStyle = s.color;
-  ctx.fillRect(0, 0, w, h);
-  ctx.strokeStyle = ink;
-  ctx.lineWidth = 4;
-  ctx.strokeRect(7, 7, w - 14, h - 14);
-  ctx.textBaseline = 'middle';
-  const nameW = w * 0.3, x0 = 22 + nameW, cell = (w - 40 - nameW) / 12.8;
-  const column = (k: number): number => x0 + cell * (k + 0.5 + (k > 8 ? 0.8 : 0));
-  ctx.fillStyle = ink;
-  ctx.textAlign = 'center';
-  ctx.font = `900 ${h * 0.1}px ${EN}`;
-  ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'R', 'H', 'E'].forEach((c, k) => ctx.fillText(c, column(k), h * 0.2));
-  // every game on this board ends the same way
-  const innings = ['0 1 0 0 2 0 0 0 0  3 7 1', '1 0 0 3 0 0 1 0 x  5 9 0'];
-  s.lines.forEach((name, r) => {
-    const y = h * (0.45 + r * 0.29);
-    ctx.fillStyle = ink;
-    ctx.textAlign = 'left';
-    const size = fit(ctx, name, EN, h * 0.15, nameW - 8);
-    ctx.font = `900 ${size}px ${EN}`;
-    ctx.fillText(name, 20, y);
-    ctx.textAlign = 'center';
-    innings[r % innings.length].split(/\s+/).forEach((c, k) => {
-      ctx.fillStyle = '#16261f';
-      ctx.fillRect(column(k) - cell * 0.4, y - h * 0.09, cell * 0.8, h * 0.18);
-      ctx.fillStyle = k > 8 ? '#ffd23f' : ink;
-      ctx.font = `900 ${h * 0.13}px ${EN}`;
-      ctx.fillText(c, column(k), y + h * 0.01);
-    });
   });
 }
 
@@ -264,7 +217,7 @@ function drawScreen(ctx: CanvasRenderingContext2D, s: SignDef, w: number, h: num
   ctx.fillRect(tx, 284, (w - tx - 36) * 0.42, 8);
 }
 
-export function buildSignAtlas(): SignAtlas {
+export function buildSignAtlas(signs: SignDef[]): SignAtlas {
   const cv = document.createElement('canvas');
   cv.width = cv.height = SIZE;
   const ctx = cv.getContext('2d')!;
@@ -272,7 +225,7 @@ export function buildSignAtlas(): SignAtlas {
   ctx.fillRect(0, 0, SIZE, SIZE);
 
   const rects = new Map<string, SignRect>();
-  const items = SIGNS.map((s) => ({ s, size: pixelSize(s) })).sort((a, b) => b.size[1] - a.size[1]);
+  const items = signs.map((s) => ({ s, size: pixelSize(s) })).sort((a, b) => b.size[1] - a.size[1]);
   let x = PAD, y = PAD, shelf = 0;
   for (const { s, size } of items) {
     const [w, h] = size;
@@ -287,11 +240,10 @@ export function buildSignAtlas(): SignAtlas {
     ctx.beginPath();
     ctx.rect(0, 0, w, h);
     ctx.clip();
-    if (s.kind === 'screen') drawScreen(ctx, s, w, h);
+    if (s.paint) s.paint(ctx, s, w, h);
+    else if (s.kind === 'screen') drawScreen(ctx, s, w, h);
     else if (s.kind === 'p') drawP(ctx, w, h);
     else if (s.kind === 'box' || s.kind === 'board') drawBox(ctx, s, w, h);
-    else if (s.kind === 'shield') drawShield(ctx, s, w, h);
-    else if (s.kind === 'score') drawScore(ctx, s, w, h);
     else drawNeon(ctx, s, w, h);
     ctx.restore();
     rects.set(s.id, { u0: x / SIZE, u1: (x + w) / SIZE, vTop: y / SIZE, vBottom: (y + h) / SIZE, aspect: w / h, color: s.color });
@@ -305,4 +257,76 @@ export function buildSignAtlas(): SignAtlas {
   texture.anisotropy = 8;
   texture.needsUpdate = true;
   return { texture, rects };
+}
+
+// ---------------------------------------------------------------------------
+// Hanging signs
+// ---------------------------------------------------------------------------
+
+/** Which way is to the right of someone who reads a sign on each face of a building, and which way the face looks. */
+export const FACE_RIGHT: Record<string, V3> = { S: [1, 0, 0], N: [-1, 0, 0], E: [0, 0, -1], W: [0, 0, 1] };
+export const FACE_NORMAL: Record<string, V3> = { S: [0, 0, 1], N: [0, 0, -1], E: [1, 0, 0], W: [-1, 0, 0] };
+
+/** What a tile hangs its signs with. */
+export interface Signs {
+  /** The sheet the tile's signs are drawn on, and where each is on it. */
+  readonly atlas: SignAtlas;
+  /** Adds a sign centred at the given point, facing `face` (N, E, S or W) and `h` tall. Returns its width. */
+  add(id: string, cx: number, cy: number, cz: number, face: string, h: number, maxW?: number): number;
+  /** The same, for a sign that faces any way: (nx, nz) is the way it faces. */
+  addFacing(id: string, cx: number, cy: number, cz: number, nx: number, nz: number, h: number, maxW?: number): number;
+}
+
+/** Collects every sign a tile hangs into one mesh. */
+export class SignBuilder implements Signs {
+  private pos: number[] = [];
+  private uv: number[] = [];
+  readonly atlas: SignAtlas;
+
+  constructor(atlas: SignAtlas) {
+    this.atlas = atlas;
+  }
+
+  /** How many signs have been hung. */
+  get count(): number {
+    return this.pos.length / 18;
+  }
+
+  /** Adds a sign centred at the given point, facing `face` (N, E, S or W) and `h` tall. Returns its width. */
+  add(id: string, cx: number, cy: number, cz: number, face: string, h: number, maxW = Infinity): number {
+    const n = FACE_NORMAL[face];
+    return this.addFacing(id, cx, cy, cz, n[0], n[2], h, maxW);
+  }
+
+  /** The same, for a sign that faces any way: (nx, nz) is the way it faces. */
+  addFacing(id: string, cx: number, cy: number, cz: number, nx: number, nz: number, h: number, maxW = Infinity): number {
+    const r = this.atlas.rects.get(id);
+    if (!r) {
+      console.warn(`There is no sign called "${id}" on this tile's sheet.`);
+      return 0;
+    }
+    let w = h * r.aspect;
+    if (w > maxW) {
+      w = maxW;
+      h = w / r.aspect;
+    }
+    const R: V3 = [nz, 0, -nx]; // to the right of someone who reads it
+    const hw = w / 2, hh = h / 2;
+    const p = (sx: number, sy: number): V3 => [cx + R[0] * hw * sx, cy + hh * sy, cz + R[2] * hw * sx];
+    const corners = [p(-1, -1), p(1, -1), p(1, 1), p(-1, 1)];
+    const uvs = [[r.u0, r.vBottom], [r.u1, r.vBottom], [r.u1, r.vTop], [r.u0, r.vTop]];
+    for (const i of [0, 1, 2, 0, 2, 3]) {
+      this.pos.push(...corners[i]);
+      this.uv.push(uvs[i][0], uvs[i][1]);
+    }
+    return w;
+  }
+
+  build(): THREE.BufferGeometry {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(this.pos, 3));
+    g.setAttribute('uv', new THREE.Float32BufferAttribute(this.uv, 2));
+    g.computeBoundingSphere();
+    return g;
+  }
 }

@@ -1,16 +1,16 @@
-// Wimmelstadt. So far the city is one tile, North America: the look prototype's
-// board with North American things on it. See README.md.
+// Wimmelstadt: the page. It puts the tiles of the city on the board, lights them
+// by the hour and the weather, and lets the view roam over them.
 
 import * as THREE from 'three';
-import { buildCity } from './city';
-import { buildVehicles } from './vehicles';
-import { loadHeroes, sizeOutline } from './hero';
-import { IsoRig } from './camera';
-import { Post, makeBackdrop } from './post';
-import { atmosphereAt, formatHour, makeAtmo } from './atmosphere';
-import { U } from './materials';
-import { TURNTABLE_RATE } from './scene-data';
-import { WEATHER_NAMES, Weather, type WeatherName } from './weather';
+import { buildBoard } from './engine/board';
+import { IsoRig } from './engine/camera';
+import { loadHeroes, sizeOutline } from './engine/hero';
+import { atmosphereAt, formatHour, makeAtmo } from './engine/look/atmosphere';
+import { U } from './engine/look/materials';
+import { Post, makeBackdrop } from './engine/look/post';
+import { WEATHER_NAMES, Weather, type WeatherName } from './engine/look/weather';
+import { PARTY_TRICKS } from './heroes';
+import { tilesFor } from './tiles';
 
 // --- options, from the address bar ---------------------------------------
 const query = new URLSearchParams(location.search);
@@ -62,30 +62,34 @@ sun.castShadow = true;
 sun.shadow.mapSize.set(opts.shadow, opts.shadow);
 sun.shadow.bias = -0.0006;
 sun.shadow.normalBias = 0.5;
-{
-  const c = sun.shadow.camera;
-  c.left = -190; c.right = 190; c.top = 190; c.bottom = -190; c.near = 20; c.far = 950;
-  c.updateProjectionMatrix();
-}
 const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
 scene.add(sun, sun.target, hemi);
 
 const backdrop = makeBackdrop();
 scene.add(backdrop.mesh);
 
-const city = buildCity();
-scene.add(city.group);
-const vehicles = buildVehicles();
-scene.add(vehicles.group);
+const board = buildBoard(tilesFor(query));
+scene.add(board.group);
 
-// The heroes made from real diecasts. Each takes the place of a stand-in. Only
-// the development server has any; without them the stand-ins drive on.
-const captures: string[] = [];
+// The sun's shadows have to reach every tile on the board.
+const reach = Math.hypot(board.bounds.x1 - board.bounds.x0, board.bounds.z1 - board.bounds.z0) / 2 + 36;
+const sunDist = 260 + reach;
+{
+  const c = sun.shadow.camera;
+  c.left = -reach; c.right = reach; c.top = reach; c.bottom = -reach; c.near = 20; c.far = sunDist + reach + 310;
+  c.updateProjectionMatrix();
+}
+
+// The heroes, each made from a real diecast. Every time the page loads, each
+// one is put on a tile picked at random, somewhere on its roads or on show.
+// Only the development server has any; without them the city has traffic alone.
 void loadHeroes().then((list) => {
-  for (const h of list) if (vehicles.adopt(h.body, h.info.name, h.length, h.width)) captures.push(h.info.capture);
+  for (const h of list) if (!PARTY_TRICKS[h.info.capture]) console.warn(`${h.info.name} has no party trick yet. Every hero gets one: see src/heroes.`);
+  // ?place=express-inner puts them on one road or spot instead, for looking at it
+  board.placeHeroes(list, PARTY_TRICKS, query.get('place'));
 });
 
-const rig = new IsoRig();
+const rig = new IsoRig(board.bounds);
 rig.drift = opts.drift;
 rig.camera.layers.enable(1);
 rig.attach(canvas);
@@ -156,7 +160,7 @@ const lapseBtn = document.getElementById('lapse')!;
 const statsBtn = document.getElementById('stats')!;
 const followBtn = document.getElementById('follow')!;
 const nextHero = (): void => {
-  follow = follow + 1 >= vehicles.heroes.length ? -1 : follow + 1;
+  follow = follow + 1 >= board.heroes.length ? -1 : follow + 1;
 };
 followBtn.addEventListener('click', () => {
   nextHero();
@@ -275,13 +279,14 @@ function step(dt: number, now: number): void {
   sun.color.copy(atmo.sunColor);
   sun.intensity = atmo.sunI;
   sun.shadow.intensity = atmo.shadow;
-  sun.position.copy(atmo.sunDir).multiplyScalar(450);
+  sun.position.copy(atmo.sunDir).multiplyScalar(sunDist);
   hemi.color.copy(atmo.sky);
   hemi.groundColor.copy(atmo.ground);
   hemi.intensity = atmo.hemiI;
   fog.color.copy(atmo.fog);
-  fog.near = atmo.fogNear;
-  fog.far = rig.dist + atmo.fogFar;
+  // the haze brackets the board, however many tiles are on it: clear at its near side, faint at its far side
+  fog.near = atmo.fogNear * rig.span;
+  fog.far = rig.dist + atmo.fogFar * rig.span;
   U.uSnow.value = atmo.snow;
   backdrop.top.copy(atmo.bgTop);
   backdrop.bot.copy(atmo.bgBot);
@@ -289,29 +294,28 @@ function step(dt: number, now: number): void {
   U.uTime.value = simTime;
   U.uSkyTint.value.copy(atmo.sky);
   U.uWet.value = atmo.wet;
-  city.setNight(atmo.night, simTime);
   if (shadowDirty || sun.position.distanceToSquared(lastSun) > 1) {
     renderer.shadowMap.needsUpdate = true;
     lastSun.copy(sun.position);
     shadowDirty = false;
   }
 
-  vehicles.update(dt, simTime, atmo.night, atmo.wet);
-  if (follow >= 0 && follow < vehicles.heroes.length) {
+  board.update(dt, simTime, atmo.night, atmo.wet);
+  if (follow >= 0 && follow < board.heroes.length) {
     // ride along with a hero, and keep the focus on it wherever it climbs
-    rig.center(vehicles.heroes[follow].pos);
-    rig.focusY = vehicles.heroes[follow].pos.y + 1;
+    rig.center(board.heroes[follow].pos);
+    rig.focusY = board.heroes[follow].pos.y + 1;
   } else {
     rig.focusY = null;
   }
-  city.turntable.rotation.y -= TURNTABLE_RATE * dt;
   rig.update(dt, now);
   rig.camera.getWorldDirection(U.uViewDir.value);
 }
 
 function draw(): void {
   renderer.info.reset();
-  const reflOn = opts.refl && atmo.wet > 0.03;
+  // wet streets mirror the city, and so does water, whatever the weather
+  const reflOn = opts.refl && (atmo.wet > 0.03 || board.mirrors);
   U.uReflOn.value = reflOn ? 1 : 0;
   if (reflOn) {
     updateMirror();
@@ -406,9 +410,10 @@ function frame(now: number): boolean {
     liveBtn.classList.toggle('on', pinned === null);
     lapseBtn.classList.toggle('on', lapse);
     statsBtn.classList.toggle('on', showStats);
-    const following = follow >= 0 && follow < vehicles.heroes.length;
+    const following = follow >= 0 && follow < board.heroes.length;
     followBtn.classList.toggle('on', following);
-    followBtn.textContent = following ? vehicles.heroes[follow].name : 'follow';
+    followBtn.textContent = following ? board.heroes[follow].name : 'follow';
+    followBtn.hidden = board.heroes.length === 0;
     weatherBtn.textContent = weather.choice === 'auto' ? `weather: ${weather.name}` : weather.choice;
     weatherBtn.classList.toggle('on', weather.choice !== 'auto');
     focusBtn.textContent = `focus: ${FOCUS[focusMode].name}`;
@@ -421,7 +426,7 @@ function frame(now: number): boolean {
         `script ${cpuMs.toFixed(1)} ms per frame${benchMs !== null ? `   bench ${benchMs.toFixed(2)} ms` : ''}`,
         `${r.calls} draw calls   ${(r.triangles / 1000).toFixed(0)}k triangles`,
         `${bufSize.x}x${bufSize.y} px   ${ratio.toFixed(2)}x the screen   msaa ${msaa}   shadow ${opts.shadow}`,
-        `${vehicles.moving} moving, ${vehicles.parked} parked, ${vehicles.heroes.length} heroes`,
+        `${board.stats().moving} moving, ${board.stats().parked} parked, ${board.heroes.length} heroes on ${board.tiles.length} ${board.tiles.length === 1 ? 'tile' : 'tiles'}`,
         `${calm ? 'calm: 30 fps cap' : `cap ${opts.fps} fps`} on a ${(1000 / refreshMs).toFixed(0)} Hz screen   ${reflectionNote()}`,
         `screen kept awake: ${wakeLock ? 'yes' : 'no'}`,
       ].join('\n');
@@ -453,7 +458,7 @@ function bench(count = 120): number {
 
 interface ShotOptions {
   w?: number; h?: number; hour?: number; x?: number; z?: number; az?: number; zoom?: number; follow?: number; steps?: number; weather?: WeatherName;
-  /** Whether the real heroes are in the picture. They are not unless this says so. */
+  /** Whether the heroes are in the picture. They are not unless this says so. */
   heroes?: boolean;
 }
 
@@ -461,15 +466,15 @@ interface ShotOptions {
  * Draws one picture at a chosen size, without the interface, and hands it to the
  * development server to save. Only works under `npm run dev`.
  *
- * A picture is public unless it shows a real hero: it goes in screenshots/, with
- * the stand-ins driving. Ask for `heroes: true` and the real heroes are in it,
- * and it is saved with the first hero's capture instead, which is private.
+ * A picture is public unless it shows a hero: it goes in screenshots/, with no
+ * heroes in it. Ask for `heroes: true` and the heroes are in it, and it is
+ * saved with the first hero's capture instead, which is private.
  */
 async function shot(name: string, o: ShotOptions = {}): Promise<string> {
   if (!import.meta.env.DEV) return 'only available on the development server';
   const file = name.endsWith('.jpg') ? name : `${name}.jpg`;
-  const real = o.heroes === true && captures.length > 0;
-  vehicles.showReal(real);
+  const real = o.heroes === true && board.heroes.length > 0;
+  board.showHeroes(real);
   const w = o.w ?? 1600, h = o.h ?? 1000;
   if (o.hour !== undefined) { pinned = o.hour; lapse = false; }
   applySize(w, h);
@@ -485,7 +490,7 @@ async function shot(name: string, o: ShotOptions = {}): Promise<string> {
   // let the weather settle before the picture is taken
   for (let i = 0; i < 400; i++) weather.update(0.1);
   for (let i = 0; i < (o.steps ?? 2); i++) step(1 / 60, now);
-  if (o.follow !== undefined && vehicles.heroes[o.follow]) {
+  if (o.follow !== undefined && board.heroes[o.follow]) {
     follow = o.follow;
     step(0, now); // aims and focuses at the hero
     rig.snap();
@@ -503,22 +508,23 @@ async function shot(name: string, o: ShotOptions = {}): Promise<string> {
   const blob = await new Promise<Blob | null>((done) => out.toBlob(done, 'image/jpeg', 0.9));
   follow = keep;
   weather.choice = keepWeather;
-  vehicles.showReal(true);
+  board.showHeroes(true);
   resize();
   rig.set(view.x, view.z, view.az, view.viewH);
   if (!blob) return 'could not encode the picture';
-  const where = real ? `&capture=${encodeURIComponent(captures[0])}` : '';
+  const capture = real ? board.heroes[0].capture : '';
+  const where = real ? `&capture=${encodeURIComponent(capture)}` : '';
   const res = await fetch(`./__shot?name=${encodeURIComponent(file)}${where}`, { method: 'POST', body: blob });
-  return `${real ? `captures/${captures[0]}/screenshots/` : 'screenshots/'}${file}: ${res.status}, ${Math.round(blob.size / 1024)} kB, drawn at ${drawnAt}`;
+  return `${real ? `captures/${capture}/screenshots/` : 'screenshots/'}${file}: ${res.status}, ${Math.round(blob.size / 1024)} kB, drawn at ${drawnAt}`;
 }
 
 // A handle for poking at the city from the console.
 Object.assign(window, {
   wimmel: {
-    opts, rig, renderer, atmo, vehicles, city, weather, bench, frame, shot,
+    opts, rig, renderer, atmo, board, weather, bench, frame, shot,
     setHour(h: number | null) { pinned = h; lapse = false; },
     setFollow(i: number) { follow = i; },
-    info() { return { calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, fps, avgMs, cpuMs, hour, city: city.stats }; },
+    info() { return { calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, fps, avgMs, cpuMs, hour, city: board.stats() }; },
   },
 });
 

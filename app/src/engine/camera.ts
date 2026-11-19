@@ -2,7 +2,7 @@
 // turntable and zoomed, by mouse or by touch. Left alone, it slowly drifts.
 
 import * as THREE from 'three';
-import { BOARD } from './scene-data';
+import type { Rect } from './tile';
 
 const MIN_VIEW = 34, MAX_VIEW = 470;
 const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
@@ -14,7 +14,11 @@ const smooth = (a: number, b: number, v: number) => {
 export class IsoRig {
   readonly camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 10, 1700);
   readonly elev = THREE.MathUtils.degToRad(38);
-  readonly dist = 700;
+  readonly dist: number;
+  /** The ground the view may roam over. */
+  private readonly bounds: Rect;
+  /** How many times larger than one tile that ground is. */
+  readonly span: number;
 
   /** What the camera is doing now. */
   target = new THREE.Vector3(0, 0, 4);
@@ -46,6 +50,16 @@ export class IsoRig {
 
   private fitted = false;
 
+  constructor(bounds: Rect) {
+    this.bounds = bounds;
+    this.span = Math.max((bounds.x1 - bounds.x0) / 208, (bounds.z1 - bounds.z0) / 226);
+    // a larger board is looked at from further away, so that none of it is cut off
+    this.dist = 700 * this.span;
+    this.camera.far = 1700 * this.span;
+    this.target.set((bounds.x0 + bounds.x1) / 2, 0, (bounds.z0 + bounds.z1) / 2 + 4);
+    this.gTarget.copy(this.target);
+  }
+
   resize(w: number, h: number): void {
     // a page that loads while hidden can report no size at all; wait for a real one
     if (!(w > 0 && h > 0)) return;
@@ -54,7 +68,7 @@ export class IsoRig {
     if (!this.fitted) {
       // start with the whole board in view
       this.fitted = true;
-      this.viewH = this.gViewH = clamp(Math.max(268, 372 / this.aspect), MIN_VIEW, MAX_VIEW);
+      this.viewH = this.gViewH = clamp(Math.max(268, 372 / this.aspect) * this.span, MIN_VIEW, MAX_VIEW * this.span);
     }
   }
 
@@ -72,15 +86,15 @@ export class IsoRig {
     // right on screen is (c, 0, -s); away from the camera along the ground is (-s, 0, -c)
     this.gTarget.x += -c * dx * wpp + (-s * dy * wpp) / Math.sin(this.elev);
     this.gTarget.z += s * dx * wpp + (-c * dy * wpp) / Math.sin(this.elev);
-    this.gTarget.x = clamp(this.gTarget.x, BOARD.x0 - 10, BOARD.x1 + 10);
-    this.gTarget.z = clamp(this.gTarget.z, BOARD.z0 - 10, BOARD.z1 + 10);
+    this.gTarget.x = clamp(this.gTarget.x, this.bounds.x0 - 10, this.bounds.x1 + 10);
+    this.gTarget.z = clamp(this.gTarget.z, this.bounds.z0 - 10, this.bounds.z1 + 10);
   }
 
   private zoomAt(factor: number, px: number, py: number, el: HTMLElement): void {
     const r = el.getBoundingClientRect();
     const sx = px - r.left - r.width / 2, sy = py - r.top - r.height / 2;
     const before = this.worldPerPx;
-    this.gViewH = clamp(this.gViewH * factor, MIN_VIEW, MAX_VIEW);
+    this.gViewH = clamp(this.gViewH * factor, MIN_VIEW, MAX_VIEW * this.span);
     const d = before - this.worldPerPx;
     // keep the point under the cursor where it is
     const s = Math.sin(this.gAz), c = Math.cos(this.gAz);
@@ -108,7 +122,7 @@ export class IsoRig {
         let other = p;
         for (const [id, q] of this.pointers) if (id !== e.pointerId) other = q;
         const d0 = Math.hypot(p.x - other.x, p.y - other.y), d1 = Math.hypot(e.clientX - other.x, e.clientY - other.y);
-        if (d0 > 2 && d1 > 2) this.gViewH = clamp((this.gViewH * d0) / d1, MIN_VIEW, MAX_VIEW);
+        if (d0 > 2 && d1 > 2) this.gViewH = clamp((this.gViewH * d0) / d1, MIN_VIEW, MAX_VIEW * this.span);
         let da = Math.atan2(e.clientY - other.y, e.clientX - other.x) - Math.atan2(p.y - other.y, p.x - other.x);
         if (da > Math.PI) da -= 2 * Math.PI;
         if (da < -Math.PI) da += 2 * Math.PI;
@@ -138,8 +152,8 @@ export class IsoRig {
       else if (e.key === 'ArrowRight') this.pan(-step, 0);
       else if (e.key === 'ArrowUp') this.pan(0, step);
       else if (e.key === 'ArrowDown') this.pan(0, -step);
-      else if (e.key === '+' || e.key === '=') this.gViewH = clamp(this.gViewH * 0.85, MIN_VIEW, MAX_VIEW);
-      else if (e.key === '-') this.gViewH = clamp(this.gViewH / 0.85, MIN_VIEW, MAX_VIEW);
+      else if (e.key === '+' || e.key === '=') this.gViewH = clamp(this.gViewH * 0.85, MIN_VIEW, MAX_VIEW * this.span);
+      else if (e.key === '-') this.gViewH = clamp(this.gViewH / 0.85, MIN_VIEW, MAX_VIEW * this.span);
       else return;
       this.touch();
     });
@@ -170,7 +184,7 @@ export class IsoRig {
     this.target.set(x, 0, z);
     this.gTarget.copy(this.target);
     this.az = this.gAz = THREE.MathUtils.degToRad(azDeg);
-    this.viewH = this.gViewH = clamp(viewH, MIN_VIEW, MAX_VIEW);
+    this.viewH = this.gViewH = clamp(viewH, MIN_VIEW, MAX_VIEW * this.span);
   }
 
   update(dt: number, now: number): void {

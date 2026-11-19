@@ -3,9 +3,9 @@
 // streets, and the light that street lamps and signs throw at night.
 
 import * as THREE from 'three';
-import { BOARD, CUTS, H_STREETS, MEDIAN_X, PARKS, STREET_CARR, V_STREETS } from './scene-data';
+import type { Rect } from '../tile';
 
-/** Values shared by every material. Changing one here changes it everywhere. */
+/** Values shared by every material on every tile. Changing one here changes it everywhere. */
 export const U = {
   uNight: { value: 0 },
   uTime: { value: 0 },
@@ -16,9 +16,38 @@ export const U = {
   uReflOn: { value: 0 },
   uMirrorVP: { value: new THREE.Matrix4() },
   uViewDir: { value: new THREE.Vector3(0, -1, 0) },
-  uLightMap: { value: null as THREE.Texture | null },
-  uBoard: { value: new THREE.Vector4(BOARD.x0, BOARD.z0, 1 / (BOARD.x1 - BOARD.x0), 1 / (BOARD.z1 - BOARD.z0)) },
 };
+
+/**
+ * Values that belong to one tile: the map of its lights at night, where its
+ * ground lies in the city, and where its own (0, 0) is. Every material made
+ * for a tile carries that tile's.
+ */
+export interface TileLook {
+  uLightMap: { value: THREE.Texture | null };
+  uBoard: { value: THREE.Vector4 };
+  uOrigin: { value: THREE.Vector2 };
+}
+
+export function makeTileLook(board: Rect, ox: number, oz: number): TileLook {
+  return {
+    uLightMap: { value: null },
+    uBoard: { value: new THREE.Vector4(ox + board.x0, oz + board.z0, 1 / (board.x1 - board.x0), 1 / (board.z1 - board.z0)) },
+    uOrigin: { value: new THREE.Vector2(ox, oz) },
+  };
+}
+
+/** A look that stands for no tile yet, for something that will be put on one later. */
+export function looseLook(): TileLook {
+  return { uLightMap: { value: null }, uBoard: { value: new THREE.Vector4(0, 0, 1, 1) }, uOrigin: { value: new THREE.Vector2() } };
+}
+
+/** Makes one look the same as another, so that whatever carries it is lit by that tile. */
+export function copyLook(to: TileLook, from: TileLook): void {
+  to.uLightMap.value = from.uLightMap.value;
+  to.uBoard.value.copy(from.uBoard.value);
+  to.uOrigin.value.copy(from.uOrigin.value);
+}
 
 /** The light ramp: unlit, then three flat bands. This is what makes the shading "cel". */
 export const gradientMap = (() => {
@@ -60,6 +89,7 @@ uniform float uSnow;
 uniform vec3 uSkyTint;
 uniform sampler2D uLightMap;
 uniform vec4 uBoard;
+uniform vec2 uOrigin;
 uniform vec3 uViewDir;
 varying vec3 vWPos;
 varying vec3 vWNrm;
@@ -79,7 +109,7 @@ float vnoise(vec2 p) {
   return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
 }
 // The light that street lamps, shopfronts and signs throw. It is painted once into
-// a small map of the board and fades with height above the street.
+// a small map of the tile and fades with height above the street.
 vec3 streetLightRaw(vec3 wp) {
   vec2 uv = (wp.xz - uBoard.xy) * uBoard.zw;
   float inside = step(0.0, uv.x) * step(uv.x, 1.0) * step(0.0, uv.y) * step(uv.y, 1.0);
@@ -98,7 +128,7 @@ const snowOn = (k: number): string => /* glsl */ `
   }
 `;
 
-interface Patch {
+export interface Patch {
   /** How much snow settles on this material, from 0 to 1. */
   snow?: number;
   vertPars?: string;
@@ -110,9 +140,14 @@ interface Patch {
   uniforms?: Record<string, THREE.IUniform>;
 }
 
-function patch(mat: THREE.Material, key: string, p: Patch): void {
+/**
+ * Extends one of three.js's materials with pieces of shader. `key` names the
+ * result: two materials with the same key share one compiled program, so a
+ * tile that writes a material of its own gives it a key of its own.
+ */
+export function patch(mat: THREE.Material, key: string, look: TileLook, p: Patch): void {
   mat.onBeforeCompile = (shader) => {
-    Object.assign(shader.uniforms, U, p.uniforms ?? {});
+    Object.assign(shader.uniforms, U, look, p.uniforms ?? {});
     let vs = shader.vertexShader, fs = shader.fragmentShader;
     vs = vs.replace('#include <common>', '#include <common>\n' + COMMON_VERT_PARS + (p.vertPars ?? ''));
     if (p.vertColor) vs = vs.replace('#include <color_vertex>', p.vertColor);
@@ -128,7 +163,7 @@ function patch(mat: THREE.Material, key: string, p: Patch): void {
   mat.customProgramCacheKey = () => key;
 }
 
-function toon(extra: THREE.MeshToonMaterialParameters = {}): THREE.MeshToonMaterial {
+export function toon(extra: THREE.MeshToonMaterialParameters = {}): THREE.MeshToonMaterial {
   return new THREE.MeshToonMaterial({ vertexColors: true, gradientMap, ...extra });
 }
 
@@ -136,9 +171,9 @@ function toon(extra: THREE.MeshToonMaterialParameters = {}): THREE.MeshToonMater
 // Buildings and other static structure
 // ---------------------------------------------------------------------------
 
-export function makeCityMaterial(): THREE.MeshToonMaterial {
+export function makeCityMaterial(look: TileLook): THREE.MeshToonMaterial {
   const m = toon();
-  patch(m, 'city', {
+  patch(m, 'city', look, {
     snow: 0.95,
     vertPars: /* glsl */ `
       attribute vec4 aWall;
@@ -218,145 +253,12 @@ export function makeCityMaterial(): THREE.MeshToonMaterial {
 }
 
 // ---------------------------------------------------------------------------
-// The ground: streets, sidewalks, markings, and the wet look at night
-// ---------------------------------------------------------------------------
-
-export function makeGroundMaterial(): THREE.MeshToonMaterial {
-  const m = toon({ vertexColors: false });
-  const vs = V_STREETS.map((s) => new THREE.Vector4(s.x, s.carr, s.corr, 0));
-  const hs = H_STREETS.map((s) => new THREE.Vector4(s.z, s.carr, s.corr, s.median));
-  patch(m, 'ground', {
-    uniforms: {
-      uVS: { value: vs },
-      uHS: { value: hs },
-      // streets that cut through a block: where they run, from where to where, and how wide
-      uCut: { value: CUTS.map((c) => new THREE.Vector4(c.z, c.x0, c.x1, STREET_CARR)) },
-      uPark: { value: PARKS.map((r) => new THREE.Vector4(r.x0, r.z0, r.x1, r.z1)) },
-      uMedianX: { value: MEDIAN_X },
-      uAsphalt: { value: new THREE.Color(0x4a4c52) },
-      uWalk: { value: new THREE.Color(0xc9c2b4) },
-      uPaving: { value: new THREE.Color(0xb3ab9c) },
-      uGrass: { value: new THREE.Color(0x6fa85a) },
-      uPaint: { value: new THREE.Color(0xf2efe6) },
-      uMedianCol: { value: new THREE.Color(0x7fae68) },
-    },
-    fragPars: /* glsl */ `
-      uniform vec4 uVS[4];
-      uniform vec4 uHS[4];
-      uniform vec4 uCut[${CUTS.length}];
-      uniform vec4 uPark[${PARKS.length}];
-      uniform float uMedianX;
-      uniform vec3 uAsphalt, uWalk, uPaving, uGrass, uPaint, uMedianCol;
-      uniform float uWet;
-      uniform float uReflOn;
-      uniform sampler2D uRefl;
-      uniform mat4 uMirrorVP;
-    `,
-    fragColor: /* glsl */ `
-      vec2 gp = vWPos.xz;
-      vec2 gfw = fwidth(gp);
-      float aa = max(gfw.x, gfw.y) * 0.8 + 1e-4;
-      float inV = 0.0, corV = 0.0, inH = 0.0, corH = 0.0;
-      float lineV = 0.0, lineH = 0.0, med = 0.0;
-      for (int i = 0; i < 4; i++) {
-        float d = abs(gp.x - uVS[i].x);
-        float carr = uVS[i].y;
-        inV = max(inV, 1.0 - smoothstep(carr - aa, carr + aa, d));
-        corV = max(corV, 1.0 - smoothstep(uVS[i].z - aa, uVS[i].z + aa, d));
-        float dash = step(0.5, fract(gp.y / 7.0));
-        lineV = max(lineV, (1.0 - smoothstep(0.14 - aa, 0.14 + aa, d)) * dash);
-        lineV = max(lineV, (1.0 - smoothstep(0.1 - aa, 0.1 + aa, abs(d - (carr - 0.45)))) * 0.55);
-      }
-      for (int i = 0; i < 4; i++) {
-        float d = abs(gp.y - uHS[i].x);
-        float carr = uHS[i].y;
-        float medw = uHS[i].w;
-        inH = max(inH, 1.0 - smoothstep(carr - aa, carr + aa, d));
-        corH = max(corH, 1.0 - smoothstep(uHS[i].z - aa, uHS[i].z + aa, d));
-        float dash = step(0.5, fract(gp.x / 7.0));
-        if (medw > 0.0) {
-          float mm = (1.0 - smoothstep(medw - aa, medw + aa, d)) * (1.0 - smoothstep(uMedianX - aa, uMedianX + aa, abs(gp.x)));
-          med = max(med, mm);
-          float mid = medw + (carr - medw) * 0.5;
-          lineH = max(lineH, (1.0 - smoothstep(0.14 - aa, 0.14 + aa, abs(d - mid))) * dash);
-          lineH = max(lineH, (1.0 - smoothstep(0.1 - aa, 0.1 + aa, abs(d - (medw + 0.5)))) * 0.7);
-        } else {
-          lineH = max(lineH, (1.0 - smoothstep(0.14 - aa, 0.14 + aa, d)) * dash);
-        }
-        lineH = max(lineH, (1.0 - smoothstep(0.1 - aa, 0.1 + aa, abs(d - (carr - 0.45)))) * 0.55);
-      }
-      // streets that cut through a block end at the kerbs of the streets on either side
-      float inC = 0.0, corC = 0.0, lineC = 0.0;
-      for (int i = 0; i < ${CUTS.length}; i++) {
-        float d = abs(gp.y - uCut[i].x);
-        float carr = uCut[i].w;
-        float along = smoothstep(uCut[i].y - aa, uCut[i].y + aa, gp.x) * (1.0 - smoothstep(uCut[i].z - aa, uCut[i].z + aa, gp.x));
-        inC = max(inC, (1.0 - smoothstep(carr - aa, carr + aa, d)) * along);
-        corC = max(corC, (1.0 - smoothstep(carr + 2.0 - aa, carr + 2.0 + aa, d)) * along);
-        float dash = step(0.5, fract(gp.x / 7.0));
-        lineC = max(lineC, (1.0 - smoothstep(0.14 - aa, 0.14 + aa, d)) * dash);
-        lineC = max(lineC, (1.0 - smoothstep(0.1 - aa, 0.1 + aa, abs(d - (carr - 0.45)))) * 0.55);
-      }
-      float road = max(max(inV, inH), inC);
-      med *= (1.0 - inV);
-      float walk = max(max(corV, corH), corC) * (1.0 - road);
-      // zebra crossings, where a carriageway passes the crossing street's sidewalk
-      float zebra = inV * max(corH - inH, 0.0) * step(0.5, fract(gp.x / 1.5))
-                  + inH * max(corV - inV, 0.0) * step(0.5, fract(gp.y / 1.5));
-      float lines = max(lineV * inV * (1.0 - corH), lineH * inH * (1.0 - corV));
-      lines = max(lines, lineC * inC * (1.0 - corV));
-
-      float park = 0.0;
-      for (int i = 0; i < ${PARKS.length}; i++) {
-        park = max(park, step(uPark[i].x, gp.x) * step(gp.x, uPark[i].z) * step(uPark[i].y, gp.y) * step(gp.y, uPark[i].w));
-      }
-      vec3 albedo = uPaving * (0.95 + 0.1 * vnoise(gp * 0.8));
-      albedo = mix(albedo, uGrass * (0.86 + 0.28 * vnoise(gp * 0.35)), park);
-      albedo = mix(albedo, uWalk * (0.96 + 0.08 * vnoise(gp * 1.3)), walk);
-      albedo = mix(albedo, uAsphalt * (0.9 + 0.2 * vnoise(gp * 0.9)), road);
-      albedo = mix(albedo, uMedianCol, med);
-      albedo = mix(albedo, uPaint, clamp(lines + zebra, 0.0, 1.0) * road * (1.0 - med));
-      // snow lies thick on lawns and paving, thinner where traffic keeps the road clear
-      albedo = mix(albedo, vec3(0.9, 0.94, 1.0), uSnow * (0.95 - 0.5 * road) * (0.85 + 0.15 * vnoise(gp * 0.5)));
-
-      float puddle = smoothstep(0.35, 0.7, vnoise(gp * 0.07 + 3.1));
-      float wetArea = road * (1.0 - med) + 0.45 * walk + 0.3 * (1.0 - max(road, walk)) * (1.0 - park);
-      float wet = uWet * (0.55 + 0.45 * puddle) * wetArea;
-      albedo *= mix(1.0, 0.6, wet);
-      diffuseColor.rgb = albedo;
-    `,
-    fragEmissive: /* glsl */ `
-      totalEmissiveRadiance += albedo * streetLightRaw(vWPos) * uNight * 1.25;
-      if (uReflOn > 0.5) {
-        // the mirror image, smeared along the view as a wet road would smear it
-        vec4 mc = uMirrorVP * vec4(vWPos, 1.0);
-        vec2 ruv = mc.xy / mc.w * 0.5 + 0.5;
-        float rn = vnoise(gp * 1.7) - 0.5;
-        float rn2 = vnoise(gp * 0.6 + 7.0);
-        float jit = ign(gl_FragCoord.xy) - 0.5;
-        vec3 refl = vec3(0.0);
-        float tot = 0.0;
-        for (int i = 0; i < 9; i++) {
-          float t = (float(i) + jit) / 4.0 - 1.0;
-          vec2 o = vec2(rn * 0.01, t * (0.008 + 0.028 * rn2));
-          float wgt = 1.0 - 0.7 * abs(t);
-          refl += min(texture2D(uRefl, ruv + o).rgb, vec3(2.5)) * wgt;
-          tot += wgt;
-        }
-        totalEmissiveRadiance += refl / tot * wet * 0.6;
-      }
-    `,
-  });
-  return m;
-}
-
-// ---------------------------------------------------------------------------
 // Road decks above the ground: the expressway and the ramps
 // ---------------------------------------------------------------------------
 
-export function makeDeckMaterial(): THREE.MeshToonMaterial {
+export function makeDeckMaterial(look: TileLook): THREE.MeshToonMaterial {
   const m = toon();
-  patch(m, 'deck', {
+  patch(m, 'deck', look, {
     snow: 0.45,
     uniforms: {
       uAsphalt: { value: new THREE.Color(0x4f5157) },
@@ -452,16 +354,9 @@ const VEHICLE_PATCH: Patch = {
 };
 
 /** For instanced traffic and for people: the instance colour tints only the paint. */
-export function makeVehicleMaterial(): THREE.MeshToonMaterial {
+export function makeVehicleMaterial(look: TileLook): THREE.MeshToonMaterial {
   const m = toon();
-  patch(m, 'vehicle', VEHICLE_PATCH);
-  return m;
-}
-
-/** For a hero: its own decal sheet, on the same shading as traffic. */
-export function makeHeroMaterial(map: THREE.Texture): THREE.MeshToonMaterial {
-  const m = toon({ map });
-  patch(m, 'hero', VEHICLE_PATCH);
+  patch(m, 'vehicle', look, VEHICLE_PATCH);
   return m;
 }
 
@@ -471,9 +366,9 @@ export function makeHeroMaterial(map: THREE.Texture): THREE.MeshToonMaterial {
  * removes the photographed shine but keeps the edges of decals. After that it
  * is lit like everything else that drives.
  */
-export function makeModelMaterial(map: THREE.Texture | null, color: THREE.Color, side: THREE.Side): THREE.MeshToonMaterial {
+export function makeModelMaterial(look: TileLook, map: THREE.Texture | null, color: THREE.Color, side: THREE.Side): THREE.MeshToonMaterial {
   const m = toon({ vertexColors: false, map, color, side });
-  patch(m, 'model', {
+  patch(m, 'model', look, {
     snow: 0.35,
     fragColor: /* glsl */ `
       {
@@ -505,12 +400,160 @@ export function makeModelMaterial(map: THREE.Texture | null, color: THREE.Color,
 }
 
 /** Trees, lamp posts and other small things: plain cel shading plus street light at night. */
-export function makePropMaterial(extra: THREE.MeshToonMaterialParameters = {}): THREE.MeshToonMaterial {
+export function makePropMaterial(look: TileLook, extra: THREE.MeshToonMaterialParameters = {}): THREE.MeshToonMaterial {
   const m = toon(extra);
-  patch(m, 'prop' + (extra.map ? '-map' : ''), {
+  patch(m, 'prop' + (extra.map ? '-map' : ''), look, {
     snow: 0.9,
     fragEmissive: /* glsl */ `
       totalEmissiveRadiance += diffuseColor.rgb * streetLight(vWPos) * uNight * 0.95;
+    `,
+  });
+  return m;
+}
+
+// ---------------------------------------------------------------------------
+// Streets on the ground, laid as strips along any line
+// ---------------------------------------------------------------------------
+
+/**
+ * For streets and pavements laid as strips (see roads.ts). A strip says what
+ * it is in its `aWin`: x is how many lanes it has (0 for a plain patch such as
+ * a junction), y is how wide it is, and w is what it is made of: 0 for asphalt,
+ * 1 for paving. Its `uv` runs across it from 0 to 1, and along it in units.
+ */
+export function makeStreetMaterial(look: TileLook): THREE.MeshToonMaterial {
+  const m = toon();
+  patch(m, 'street', look, {
+    uniforms: { uPaint: { value: new THREE.Color(0xf2efe6) } },
+    vertPars: /* glsl */ `
+      attribute vec4 aWin;
+      varying vec4 vWin;
+      varying vec2 vStreetUv;
+    `,
+    vertBegin: /* glsl */ `
+      vWin = aWin;
+      vStreetUv = uv;
+    `,
+    fragPars: /* glsl */ `
+      varying vec4 vWin;
+      varying vec2 vStreetUv;
+      uniform vec3 uPaint;
+      uniform float uWet;
+      uniform float uReflOn;
+      uniform sampler2D uRefl;
+      uniform mat4 uMirrorVP;
+    `,
+    fragColor: /* glsl */ `
+      float lanes = vWin.x;
+      float wide = vWin.y;
+      float paving = step(0.5, vWin.w);
+      float road = 1.0 - paving;
+      vec2 gp = vWPos.xz - uOrigin;
+      float dd = (vStreetUv.x - 0.5) * wide;
+      float daa = fwidth(dd) * 0.8 + 1e-4;
+      // a line along each edge, and dashes between the lanes
+      float edge = (1.0 - smoothstep(0.1 - daa, 0.1 + daa, abs(abs(dd) - (wide * 0.5 - 0.45)))) * 0.55 * step(0.5, lanes);
+      float laneW = (wide - 0.9) / max(lanes, 1.0);
+      float lu = dd / laneW + lanes * 0.5;
+      float between = abs(fract(lu + 0.5) - 0.5) * laneW;
+      float dashes = (1.0 - smoothstep(0.14 - daa, 0.14 + daa, between)) * step(0.5, fract(vStreetUv.y / 7.0))
+                   * step(0.5, lu) * step(lu, lanes - 0.5) * step(1.5, lanes);
+      vec3 albedo = diffuseColor.rgb * mix(0.9 + 0.2 * vnoise(gp * 0.9), 0.96 + 0.08 * vnoise(gp * 1.3), paving);
+      albedo = mix(albedo, uPaint, clamp(edge + dashes, 0.0, 1.0) * road);
+      // snow lies thick on paving, thinner where traffic keeps the road clear
+      albedo = mix(albedo, vec3(0.9, 0.94, 1.0), uSnow * (0.95 - 0.5 * road) * (0.85 + 0.15 * vnoise(gp * 0.5)));
+      float puddle = smoothstep(0.35, 0.7, vnoise(gp * 0.07 + 3.1));
+      float wet = uWet * (0.55 + 0.45 * puddle) * (road + 0.45 * paving);
+      albedo *= mix(1.0, 0.6, wet);
+      diffuseColor.rgb = albedo;
+    `,
+    fragEmissive: /* glsl */ `
+      totalEmissiveRadiance += albedo * streetLightRaw(vWPos) * uNight * 1.25;
+      if (uReflOn > 0.5) {
+        // the mirror image, smeared along the view as a wet road would smear it
+        vec4 mc = uMirrorVP * vec4(vWPos, 1.0);
+        vec2 ruv = mc.xy / mc.w * 0.5 + 0.5;
+        float rn = vnoise(gp * 1.7) - 0.5;
+        float rn2 = vnoise(gp * 0.6 + 7.0);
+        float jit = ign(gl_FragCoord.xy) - 0.5;
+        vec3 refl = vec3(0.0);
+        float tot = 0.0;
+        for (int i = 0; i < 9; i++) {
+          float t = (float(i) + jit) / 4.0 - 1.0;
+          vec2 o = vec2(rn * 0.01, t * (0.008 + 0.028 * rn2));
+          float wgt = 1.0 - 0.7 * abs(t);
+          refl += min(texture2D(uRefl, ruv + o).rgb, vec3(2.5)) * wgt;
+          tot += wgt;
+        }
+        totalEmissiveRadiance += refl / tot * wet * 0.6;
+      }
+    `,
+  });
+  return m;
+}
+
+// ---------------------------------------------------------------------------
+// One tile's materials
+// ---------------------------------------------------------------------------
+
+/** The city's materials, made for one tile so that they are lit by that tile's lamps and signs. */
+export interface TileMaterials {
+  /** Buildings and everything else solid: windows that light up, snow on what faces the sky. */
+  city(): THREE.MeshToonMaterial;
+  /** The surface of a road above the ground. */
+  deck(): THREE.MeshToonMaterial;
+  /** The surface of a street on the ground. */
+  street(): THREE.MeshToonMaterial;
+  /** Plain vehicles and figures: an instance's colour tints only its paint. */
+  vehicle(): THREE.MeshToonMaterial;
+  /** Trees, lamp posts and other small things. */
+  prop(extra?: THREE.MeshToonMaterialParameters): THREE.MeshToonMaterial;
+}
+
+export function tileMaterials(look: TileLook): TileMaterials {
+  return {
+    city: () => makeCityMaterial(look),
+    deck: () => makeDeckMaterial(look),
+    street: () => makeStreetMaterial(look),
+    vehicle: () => makeVehicleMaterial(look),
+    prop: (extra) => makePropMaterial(look, extra),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Water
+// ---------------------------------------------------------------------------
+
+/** For a sheet of water: flat bands of colour that drift, with the city mirrored in it. */
+export function makeWaterMaterial(look: TileLook, color: number): THREE.MeshToonMaterial {
+  const m = toon({ vertexColors: false, color });
+  patch(m, 'water', look, {
+    fragPars: /* glsl */ `
+      uniform float uReflOn;
+      uniform sampler2D uRefl;
+      uniform mat4 uMirrorVP;
+    `,
+    fragColor: /* glsl */ `
+      vec2 gp = vWPos.xz - uOrigin;
+      // two layers of slow ripples, cut into flat bands as a map would draw them
+      float ripple = vnoise(gp * 0.16 + vec2(uTime * 0.09, uTime * 0.05)) * 0.6 + vnoise(gp * 0.5 - vec2(uTime * 0.12, 0.0)) * 0.4;
+      float band = floor(ripple * 4.0) / 3.0;
+      vec3 albedo = diffuseColor.rgb * mix(0.86, 1.1, clamp(band, 0.0, 1.0));
+      albedo = mix(albedo, uSkyTint, 0.16);
+      // in snow it freezes over
+      albedo = mix(albedo, vec3(0.86, 0.91, 0.97), uSnow * 0.6);
+      diffuseColor.rgb = albedo;
+    `,
+    fragEmissive: /* glsl */ `
+      totalEmissiveRadiance += albedo * streetLightRaw(vWPos) * uNight * 0.5;
+      if (uReflOn > 0.5) {
+        // the city, mirrored in it and broken up by the ripples
+        vec4 mc = uMirrorVP * vec4(vWPos.x, 0.0, vWPos.z, 1.0);
+        vec2 ruv = mc.xy / mc.w * 0.5 + 0.5;
+        vec2 wob = vec2(vnoise(gp * 1.1 + uTime * 0.3) - 0.5, vnoise(gp * 0.9 - uTime * 0.25) - 0.5) * 0.014;
+        vec3 refl = min(texture2D(uRefl, ruv + wob).rgb, vec3(2.5));
+        totalEmissiveRadiance += refl * (0.3 + 0.25 * (1.0 - uSnow));
+      }
     `,
   });
   return m;

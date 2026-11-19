@@ -7,15 +7,23 @@
 // Units: 1 unit is 1 cm of toy. A lane is 5 wide, a storey is 5 high and a car
 // is about 7 long. x points east, z points south, y points up.
 
-export const LANE = 5;
-export const STOREY = 5;
+import type { Roof } from '../../engine/buildings';
+import type { Hump, Seg } from '../../engine/paths';
+import type { SignDef } from '../../engine/signs';
+import { LANE, STOREY, TILE, type HeroSpot, type ParkedSpot, type Rect, type Route, type TrafficType } from '../../engine/tile';
+import { paintBillboard, paintScore, paintShield } from './signs';
+
+export { LANE, STOREY };
+export { humpHeight } from '../../engine/paths';
+export type { Hump, Rect, Roof, Seg };
+
 export const STREET_CARR = 5; // half-width of a two-lane carriageway
 export const STREET_CORR = 8; // half-width including both sidewalks
 export const BLVD_MEDIAN = 3; // half-width of the boulevard's median
 export const BLVD_CARR = 13;
 export const BLVD_CORR = 17;
 
-export const BOARD = { x0: -104, x1: 104, z0: -113, z1: 113 };
+export const BOARD = TILE;
 
 export interface StreetV { x: number; carr: number; corr: number }
 export interface StreetH { z: number; carr: number; corr: number; median: number }
@@ -40,7 +48,6 @@ export type BlockId = 'A1' | 'B1' | 'C1' | 'A2' | 'B2' | 'C2' | 'A3' | 'B3' | 'C
 const COL_X: Record<string, [number, number]> = { A: [-88, -40], B: [-24, 24], C: [40, 88] };
 const ROW_Z: Record<string, [number, number]> = { '1': [-97, -49], '2': [-15, 33], '3': [49, 97] };
 
-export interface Rect { x0: number; z0: number; x1: number; z1: number }
 
 export function blockRect(id: BlockId): Rect {
   const [x0, x1] = COL_X[id[0]];
@@ -85,8 +92,6 @@ export function inCorridor(x: number, z: number, pad = 0): boolean {
 // ---------------------------------------------------------------------------
 
 export type Style = 'glass' | 'office' | 'resi' | 'shop' | 'neon' | 'concrete' | 'stucco';
-/** `hip` is a pitched roof: clay tile or shingle, depending on the block's quarter. */
-export type Roof = 'bare' | 'units' | 'tank' | 'helipad' | 'garden' | 'hip' | 'none';
 
 /** A toy version of a famous building that stands on a lot instead of a plain one. */
 export type LandmarkKind =
@@ -231,6 +236,17 @@ export const ARCH = { x: -64, z: -32, span: 52, height: 52 };
 export const GOLDEN_GATE = { x: -32, z0: -46.5, z1: -17.5, top: 56 };
 /** A neon arch for Route 66 stands over the street on the east side, so traffic drives through it. */
 export const ROUTE66 = { x: 96, z: 55.5, half: 6.6, height: 12 };
+/**
+ * The L: a loop of elevated railway round block C2. Its south side runs above
+ * the middle of the street beside Wrigley Field, its east side above the
+ * middle of the street on the east, its north side above the boulevard's
+ * sidewalk, and its west side above one lane of the street under the expressway.
+ */
+export const L_LINE = (() => {
+  const west = 34.5, east = 96, north = -17, south = 41, y = 9;
+  const ring: Seg = { t: 'ring', pts: [[west, north], [east, north], [east, south], [west, south]], y, r: 7 };
+  return { west, east, north, south, y, ring };
+})();
 /** A plain pond in the park. */
 export const POND = { x: 15.5, z: -6.5, r: 6.8 };
 /** A small square with a fountain, in the gap in block B3's south row. */
@@ -278,34 +294,16 @@ export const CARPARK = (() => {
 // Roads that vehicles follow
 // ---------------------------------------------------------------------------
 
-export type Seg =
-  | { t: 'ring'; pts: [number, number][]; y: number; r: number } // closed, every corner filleted
-  | { t: 'poly'; pts: [number, number][]; y: number; r: number } // open, interior corners filleted
-  | { t: 'helix'; cx: number; cz: number; R: number; phi0: number; phi1: number; y0: number; y1: number };
-
-/** A rise in a road that runs east to west: up between x0 and x1, level to x2, down to x3. */
-export interface Hump { x0: number; x1: number; x2: number; x3: number; y: number }
-
-export function humpHeight(h: Hump, x: number): number {
-  const ease = (t: number) => t * t * (3 - 2 * t);
-  if (x <= h.x0 || x >= h.x3) return 0;
-  if (x < h.x1) return h.y * ease((x - h.x0) / (h.x1 - h.x0));
-  if (x <= h.x2) return h.y;
-  return h.y * ease((h.x3 - x) / (h.x3 - h.x2));
-}
-
 export type LoopKind = 'street' | 'boulevard' | 'perimeter' | 'express' | 'carpark';
 
-export interface LoopDef {
-  id: string;
-  kind: LoopKind;
-  segs: Seg[];
-  speed: number; // cruising speed in units per second
-  count: number; // traffic vehicles on the loop
-  /** Index into HEROES of a hero that drives this loop. */
-  hero?: number;
-  hump?: Hump;
-}
+/** Which plain vehicles drive on each kind of road. A kind that is named twice is twice as common. */
+const MIX: Record<LoopKind, TrafficType[]> = {
+  street: ['sedan', 'sedan', 'hatch', 'hatch', 'van', 'pickup'],
+  boulevard: ['sedan', 'sedan', 'hatch', 'van', 'pickup', 'bus'],
+  perimeter: ['sedan', 'hatch', 'hatch', 'van', 'pickup', 'bus'],
+  express: ['sedan', 'sedan', 'hatch', 'van', 'pickup'],
+  carpark: ['sedan', 'hatch', 'hatch'],
+};
 
 export const EXPRESS_Y = 24;
 export const EXPRESS_HALF = 6;
@@ -342,7 +340,7 @@ export function onCut(x: number, z: number, pad = 0): boolean {
   return CUTS.some((c) => x > c.x0 - pad && x < c.x1 + pad && Math.abs(z - c.z) < STREET_CARR + pad);
 }
 
-export const LOOPS: LoopDef[] = [];
+export const LOOPS: Route[] = [];
 
 // One clockwise loop around every block, in the kerb lanes. Clockwise means right
 // turns only, so these loops never cross each other or anything else. A block with
@@ -356,24 +354,23 @@ for (const id of BLOCK_IDS) {
   if (cut === undefined) {
     LOOPS.push({
       id: `block-${id}`,
-      kind: 'street',
+      types: MIX.street,
       segs: [{ t: 'ring', pts: [[xw, zn], [xe, zn], [xe, zs], [xw, zs]], y: 0, r: 4 }],
       speed: 15,
       count: id === 'B2' ? 5 : 4,
-      hero: id === 'B2' ? 2 : undefined,
     });
   } else {
     // westbound traffic keeps to the cut's north lane, eastbound to its south lane
     LOOPS.push({
       id: `block-${id}-north`,
-      kind: 'street',
+      types: MIX.street,
       segs: [{ t: 'ring', pts: [[xw, zn], [xe, zn], [xe, cut - 2.5], [xw, cut - 2.5]], y: 0, r: 4 }],
       speed: 14,
       count: 3,
     });
     LOOPS.push({
       id: `block-${id}-south`,
-      kind: 'street',
+      types: MIX.street,
       segs: [{ t: 'ring', pts: [[xw, cut + 2.5], [xe, cut + 2.5], [xe, zs], [xw, zs]], y: 0, r: 4 }],
       speed: 14,
       count: 3,
@@ -384,7 +381,7 @@ for (const id of BLOCK_IDS) {
 // The outer lane of the perimeter streets, counter-clockwise around the whole board.
 LOOPS.push({
   id: 'perimeter',
-  kind: 'perimeter',
+  types: MIX.perimeter,
   segs: [{ t: 'ring', pts: [[-98.5, 107.5], [98.5, 107.5], [98.5, -107.5], [-98.5, -107.5]], y: 0, r: 6 }],
   speed: 18,
   count: 11,
@@ -394,26 +391,24 @@ LOOPS.push({
 // median gap at each end.
 LOOPS.push({
   id: 'boulevard',
-  kind: 'boulevard',
+  types: MIX.boulevard,
   segs: [{ t: 'ring', pts: [[-89.5, -26.5], [89.5, -26.5], [89.5, -37.5], [-89.5, -37.5]], y: 0, r: 5.5 }],
   speed: 21,
   count: 8,
-  hero: 1,
   hump: FLYOVER,
 });
 
 // The expressway: the inner lane runs clockwise, the outer lane counter-clockwise.
 LOOPS.push({
   id: 'express-inner',
-  kind: 'express',
+  types: MIX.express,
   segs: [{ t: 'ring', pts: [[-29.25, -70.25], [29.25, -70.25], [29.25, 70.25], [-29.25, 70.25]], y: EXPRESS_Y, r: 11.25 }],
   speed: 30,
   count: 6,
-  hero: 0,
 });
 LOOPS.push({
   id: 'express-outer',
-  kind: 'express',
+  types: MIX.express,
   segs: [{ t: 'ring', pts: [[-34.75, -75.75], [-34.75, 75.75], [34.75, 75.75], [34.75, -75.75]], y: EXPRESS_Y, r: 16.75 }],
   speed: 28,
   count: 6,
@@ -425,7 +420,7 @@ LOOPS.push({
   const L = (lx: number, lz: number): [number, number] => [c.ox + lx, c.oz + lz];
   LOOPS.push({
     id: 'carpark',
-    kind: 'carpark',
+    types: MIX.carpark,
     segs: [
       { t: 'poly', pts: [L(30.5, 34), L(30.5, 45), L(17.5, 45), L(17.5, 34)], y: 0, r: 3.5 },
       { t: 'helix', cx: c.helixA.cx, cz: c.helixA.cz, R: c.helixA.R, phi0: 0, phi1: -4 * Math.PI, y0: 0, y1: c.roofY },
@@ -438,37 +433,11 @@ LOOPS.push({
 }
 
 // ---------------------------------------------------------------------------
-// Stand-in heroes and parked vehicles
+// Parked vehicles, and the places where a hero may stand on show
 // ---------------------------------------------------------------------------
 
-export type HeroBody = 'racer' | 'coupe' | 'kei';
-
-export interface HeroDef {
-  name: string;
-  body: HeroBody;
-  paint: string; accent: string; accent2: string;
-  number: string;
-  sponsor: string;
-}
-
-/** Placeholders for real diecasts. Each carries more detail than any traffic vehicle. */
-export const HEROES: HeroDef[] = [
-  { name: 'Racer 27', body: 'racer', paint: '#f4f1e8', accent: '#d8232a', accent2: '#1b4fa0', number: '27', sponsor: 'ROCKET COLA' },
-  { name: 'Drift coupe', body: 'coupe', paint: '#12b5b0', accent: '#ff4fa3', accent2: '#ffd23f', number: '86', sponsor: 'TURBO TACOS' },
-  { name: 'Kei van', body: 'kei', paint: '#ffd23f', accent: '#1d1d1f', accent2: '#ff6b2c', number: '5', sponsor: 'BIG DOG' },
-  // The same castings again in other colours and decals: different heroes, not twins.
-  { name: 'Drift coupe, night purple', body: 'coupe', paint: '#5b2a86', accent: '#35e0ff', accent2: '#f4f1e8', number: '13', sponsor: 'ATOMIC' },
-  { name: 'Racer 64, gulf blue', body: 'racer', paint: '#8fd3e8', accent: '#ff7a1a', accent2: '#1d1d1f', number: '64', sponsor: 'BIG BLOCK' },
-];
-
-export interface ParkedSpot {
-  x: number; y: number; z: number;
-  heading: number; // radians: 0 faces east, pi/2 faces south
-  hero?: number; // index into HEROES
-  lit?: boolean; // stands inside a lit interior
-  turntable?: boolean;
-}
-
+/** Each is empty until a hero is given it. */
+export const HERO_SPOTS: HeroSpot[] = [];
 export const PARKED: ParkedSpot[] = [];
 {
   const c = CARPARK;
@@ -482,19 +451,20 @@ export const PARKED: ParkedSpot[] = [];
   }
   // The roof: parallel parking on the island and along the north edge.
   PARKED.push({ x: c.ox + 14, y: c.roofY, z: c.oz + 12.75, heading: 0 });
-  PARKED.push({ x: c.ox + 23.5, y: c.roofY, z: c.oz + 12.75, heading: 0, hero: 3 });
+  HERO_SPOTS.push({ id: 'car-park-roof', x: c.ox + 23.5, y: c.roofY, z: c.oz + 12.75, heading: 0 });
   PARKED.push({ x: c.ox + 33, y: c.roofY, z: c.oz + 12.75, heading: 0 });
   for (const lx of [9, 18.5, 28, 37.5]) PARKED.push({ x: c.ox + lx, y: c.roofY, z: c.oz + 4.3, heading: Math.PI });
 
-  // The showroom: a hero on the turntable and two plain cars beside it.
+  // The showroom: the turntable, which waits for a hero, and two plain cars beside it.
   const s = SHOWROOM;
-  PARKED.push({ x: s.turntable.x, y: 0.45, z: s.turntable.z, heading: 0.6, hero: 4, lit: true, turntable: true });
+  HERO_SPOTS.push({ id: 'showroom', x: s.turntable.x, y: 0.45, z: s.turntable.z, heading: 0.6, lit: true, turn: TURNTABLE_RATE });
   PARKED.push({ x: s.x0 + 6.5, y: 0.06, z: s.z0 + 6.5, heading: Math.PI / 2 - 0.5, lit: true });
   PARKED.push({ x: s.x1 - 6.5, y: 0.06, z: s.z0 + 6.5, heading: Math.PI / 2 + 0.5, lit: true });
 
-  // The diner's forecourt: three cars, nose in.
+  // The diner's forecourt: two cars nose in, and the bay between them kept for a hero.
   const d = blockRect('C2');
-  for (const lx of [19.6, 24, 28.4]) PARKED.push({ x: d.x0 + lx, y: 0.02, z: d.z0 + 43.8, heading: -Math.PI / 2 });
+  for (const lx of [19.6, 28.4]) PARKED.push({ x: d.x0 + lx, y: 0.02, z: d.z0 + 43.8, heading: -Math.PI / 2 });
+  HERO_SPOTS.push({ id: 'diner', x: d.x0 + 24, y: 0.02, z: d.z0 + 43.8, heading: -Math.PI / 2 });
 }
 
 // ---------------------------------------------------------------------------
@@ -502,24 +472,6 @@ export const PARKED: ParkedSpot[] = [];
 // culture, and a few are the names of the places themselves: they appear as
 // plain lettering on a plain board, never as a copied logo.
 // ---------------------------------------------------------------------------
-
-export interface SignDef {
-  id: string;
-  lines: string[];
-  color: string;
-  vertical?: boolean; // characters stacked top to bottom
-  aspect: number; // width over height
-  /**
-   * How it is drawn. Neon lettering on a dark panel unless it says otherwise:
-   * `box` is a lit board with dark lettering, `board` a painted one in exactly
-   * its own colour, `shield` a highway marker and `score` a ballpark's scoreboard.
-   */
-  kind?: 'neon' | 'box' | 'board' | 'screen' | 'p' | 'shield' | 'score';
-  /** For a board: the colour of the lettering. */
-  ink?: string;
-  /** The name of a real company. */
-  real?: boolean;
-}
 
 const neon = (id: string, lines: string[], color: string, aspect: number): SignDef => ({ id, lines, color, aspect });
 const blade = (id: string, text: string, color: string): SignDef => ({
@@ -585,17 +537,21 @@ export const SIGNS: SignDef[] = [
   // boards
   { id: 'showroom', lines: ['BIG BLOCK MOTORS'], color: '#ffffff', ink: '#c2183a', aspect: 6.4, kind: 'board' },
   { id: 'carpark', lines: ['LOOP PARKING'], color: '#b9e2ff', ink: '#0f3b66', aspect: 5.6, kind: 'box' },
-  { id: 'billboard', lines: ['DRINK', 'ROCKET COLA'], color: '#8fecff', ink: '#0b2a4a', aspect: 2.2, kind: 'box' },
+  { id: 'billboard', lines: ['DRINK', 'ROCKET COLA'], color: '#8fecff', ink: '#0b2a4a', aspect: 2.2, kind: 'box', paint: paintBillboard },
   { id: 'p', lines: ['P'], color: '#ffffff', aspect: 1, kind: 'p' },
   { id: 'screen', lines: ['NOW PLAYING', 'Midnight Freeway Loop', 'The Diecasts'], color: '#ff3d9a', aspect: 1.78, kind: 'screen' },
 
   // Route 66: the highway marker, and the word that goes with it on the road's signs today
-  { id: 'shield66', lines: ['ROUTE', '66'], color: '#f4f1e8', aspect: 0.94, kind: 'shield' },
+  { id: 'shield66', lines: ['ROUTE', '66'], color: '#f4f1e8', aspect: 0.94, size: [241, 256], paint: paintShield },
   neon('historic', ['HISTORIC'], '#ffb02e', 4.6),
+
+  // the L: the names of its two stations
+  { id: 'addison', lines: ['ADDISON'], color: '#1c2f5e', ink: '#ffffff', aspect: 4.6, kind: 'board' },
+  { id: 'state-lake', lines: ['STATE / LAKE'], color: '#1c2f5e', ink: '#ffffff', aspect: 6.2, kind: 'board' },
 
   // Wrigley Field: the red marquee, and the face of the scoreboard
   { id: 'marquee', lines: ['WRIGLEY FIELD', 'GAME TODAY 1:20'], color: '#c8202c', ink: '#ffffff', aspect: 3.3, kind: 'board' },
-  { id: 'scoreboard', lines: ['VISITORS', 'HOME'], color: '#2f5d48', ink: '#f2efe6', aspect: 1.9, kind: 'score' },
+  { id: 'scoreboard', lines: ['VISITORS', 'HOME'], color: '#2f5d48', ink: '#f2efe6', aspect: 1.9, size: [456, 240], paint: paintScore },
 
   // real names
   real('hotwheels', 'HOT WHEELS'),

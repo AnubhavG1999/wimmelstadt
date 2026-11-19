@@ -1,8 +1,25 @@
-// Turns the road descriptions in scene-data.ts into lines that vehicles and
-// road decks can follow, sampled evenly along their length.
+// Turns the description of a road into a line that vehicles, trains and road
+// decks can follow, sampled evenly along its length.
 
 import * as THREE from 'three';
-import { humpHeight, type Hump, type Seg } from './scene-data';
+
+/** A stretch of road. A road is one stretch or several, end to end. */
+export type Seg =
+  | { t: 'ring'; pts: [number, number][]; y: number; r: number } // closed, every corner rounded with radius r
+  | { t: 'poly'; pts: [number, number][]; y: number; r: number } // open, its inner corners rounded
+  | { t: 'ramp'; pts: [number, number][]; y0: number; y1: number; r: number } // open, and rising evenly from y0 to y1
+  | { t: 'helix'; cx: number; cz: number; R: number; phi0: number; phi1: number; y0: number; y1: number };
+
+/** A rise in a road that runs east to west: up between x0 and x1, level to x2, down to x3. */
+export interface Hump { x0: number; x1: number; x2: number; x3: number; y: number }
+
+export function humpHeight(h: Hump, x: number): number {
+  const ease = (t: number) => t * t * (3 - 2 * t);
+  if (x <= h.x0 || x >= h.x3) return 0;
+  if (x < h.x1) return h.y * ease((x - h.x0) / (h.x1 - h.x0));
+  if (x <= h.x2) return h.y;
+  return h.y * ease((h.x3 - x) / (h.x3 - h.x2));
+}
 
 const STEP = 0.5;
 
@@ -66,6 +83,16 @@ export class Path {
   radiusAt(s: number): number {
     return this.radius[this.index(Math.round(this.wrap(s) / this.ds))];
   }
+
+  /** How far along the path the point nearest to (x, z) is. */
+  closest(x: number, z: number): number {
+    let best = 0, least = Infinity;
+    this.pts.forEach((p, i) => {
+      const d = (p.x - x) ** 2 + (p.z - z) ** 2;
+      if (d < least) { least = d; best = i; }
+    });
+    return best * this.ds;
+  }
 }
 
 function v(x: number, y: number, z: number): THREE.Vector3 {
@@ -115,9 +142,17 @@ export function segPoints(seg: Seg): THREE.Vector3[] {
     for (let i = 0; i < n; i++) fillet(p[(i + n - 1) % n], p[i], p[(i + 1) % n], seg.r, seg.y, out);
     return out;
   }
-  out.push(v(p[0][0], seg.y, p[0][1]));
-  for (let i = 1; i < n - 1; i++) fillet(p[i - 1], p[i], p[i + 1], seg.r, seg.y, out);
-  out.push(v(p[n - 1][0], seg.y, p[n - 1][1]));
+  const y = seg.t === 'ramp' ? seg.y0 : seg.y;
+  out.push(v(p[0][0], y, p[0][1]));
+  for (let i = 1; i < n - 1; i++) fillet(p[i - 1], p[i], p[i + 1], seg.r, y, out);
+  out.push(v(p[n - 1][0], y, p[n - 1][1]));
+  if (seg.t === 'ramp') {
+    // it rises evenly along its length
+    const cum = [0];
+    for (let i = 1; i < out.length; i++) cum.push(cum[i - 1] + Math.hypot(out[i].x - out[i - 1].x, out[i].z - out[i - 1].z));
+    const total = cum[cum.length - 1] || 1;
+    out.forEach((q, i) => { q.y = seg.y0 + (seg.y1 - seg.y0) * (cum[i] / total); });
+  }
   return out;
 }
 
