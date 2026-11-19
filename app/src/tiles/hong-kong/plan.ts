@@ -52,15 +52,15 @@ const pastZ = (x: number, z: number, dir: 1 | -1) => (p: P2): number => (Math.ab
 // The harbour
 // ---------------------------------------------------------------------------
 
-/** The typhoon shelter: a bay in the Island's shore, which the viaduct crosses. */
-export const SHELTER = { x0: -40, x1: -20, z0: 80, z1: 98 };
+/** The typhoon shelter: a bay in the Island's shore, which the viaduct crosses. Its south shore steps back at `step` to leave room for the car ferry's forecourt. */
+export const SHELTER = { x0: -42, x1: -20, z0: 73, z1: 102, step: { x: -26, z: 98 } };
 /** The reclaimed point the Convention Centre stands on, with the tunnel's mouth at its south end. */
 export const POINT = { x0: -20, x1: -6, z0: 2, z1: 52 };
 
 /** The Island's shore, from the north edge to the south: Central's reclaimed front, the Convention Centre's point, the typhoon shelter. */
 const WEST_BANK: P2[] = [
   [-10, N], [-10, -58], [-20, -58], [-20, POINT.z0], [POINT.x1, POINT.z0], [POINT.x1, POINT.z1], [-20, POINT.z1],
-  [-20, SHELTER.z0], [SHELTER.x0, SHELTER.z0], [SHELTER.x0, SHELTER.z1], [-4, SHELTER.z1], [-4, S],
+  [-20, SHELTER.z0], [SHELTER.x0, SHELTER.z0], [SHELTER.x0, SHELTER.z1], [SHELTER.step.x, SHELTER.z1], [SHELTER.step.x, SHELTER.step.z], [-4, SHELTER.step.z], [-4, S],
 ];
 /** Kowloon's shore, from the south edge to the north: Hung Hom's bay, and the tip of Tsim Sha Tsui. */
 const EAST_BANK: P2[] = [
@@ -106,7 +106,7 @@ export const PEAK = (() => {
   const road = eased(raised(mid, through([[0, 0], [sFly, fly], [sHill, fly], [sTop, HILL.top], [total, HILL.top]])), 5);
   const up = lane(road, -laneOff), down = turned(lane(road, laneOff));
   // the turning place at the foot, on the car ferry's forecourt, and the one on the summit
-  const foot = line([[-17.9, 100], [-12, 104.5], [-12, 110.5], [-22.1, 110.5], [-22.1, 100]], [0, 3, 3.5, 3.5, 0]);
+  const foot = line([[-17.9, 100], [-8.5, 103], [-8.5, 110.5], [-22.1, 110.5], [-22.1, 100]], [0, 4.5, 4.5, 4.5, 0]);
   const summit = line([[-95.1, -21], [-98.5, -24.5], [-98.5, -33], [-87.5, -33], [-87.5, -24.5], [-90.9, -21]], [0, 3, 4.5, 4.5, 3, 0]);
   const loop = joined(flat(foot), up, flat(summit, HILL.top), down);
   return { half, laneOff, fly, z: 52, road, sFly, sHill, sTop, total, foot, summit, loop };
@@ -234,7 +234,7 @@ const TOWN: TrafficType[] = ['sedan', 'sedan', 'hatch', 'hatch', 'van', 'pickup'
 
 export const ROUTES: Route[] = [
   { id: 'harbour-run', segs: segsOf(RUN.loop, true), speed: 20, count: 30, types: TOWN },
-  { id: 'peak-road', segs: segsOf(PEAK.loop, true), speed: 13, count: 12, types: ['sedan', 'sedan', 'hatch'], paint: [...TAXI, 0xd9d4cc, 0x2e3440, 0x3f6fa3] },
+  { id: 'peak-road', segs: segsOf(PEAK.loop, true), speed: 13, count: 10, types: ['sedan', 'sedan', 'hatch'], paint: [...TAXI, 0xd9d4cc, 0x2e3440, 0x3f6fa3] },
   // round the Peninsula: red taxis, keeping to the kerb
   { id: 'peninsula', segs: ring([[37.5, -39.5], [37.5, -10.5], [65.5, -10.5], [65.5, -39.5]]), speed: 12, count: 4, types: ['sedan'], paint: TAXI },
   // the north of Kowloon, through the tunnel under Lion Rock
@@ -296,7 +296,7 @@ export const LOTS: Lot[] = [
   lot('hkcec', 'CONVENTION CENTRE', -19, 3.5, -7.5, 18.5, 11, 0xe9e6df),
   lot('blue-house', 'BLUE HOUSE', -58.5, 20, -46, 30, 20, 0x5f8fc4),
   lot('monster', 'MONSTER BUILDING', -103, 66, -92, 111, 36, PINK),
-  lot('noonday-gun', 'NOONDAY GUN', -44, 88, -41, 91, 2.5, 0x4a4f55),
+  lot('noonday-gun', 'NOONDAY GUN', -44.8, 84, -42.4, 87, 2.5, 0x4a4f55),
   lot('car-ferry', 'CAR FERRY', -3.6, 101, 9.5, 110, 3, 0xe9e6df),
   // Tsim Sha Tsui
   lot('star-ferry', 'STAR FERRY', 2, -38, 10, -32, 4, 0x3f7f5a),

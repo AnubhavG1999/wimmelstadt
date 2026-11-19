@@ -69,8 +69,11 @@ export function buildCity(k: Build): TileParts {
   area(k, rect(-25, -58, -20.4, POINT.z0), PLAZA);
   fill(k.street, rect(-25, POINT.z0, POINT.x1 - 0.4, POINT.z1), 0.018, PLAZA, { holes: [cutIsland], win: { cell: 0, storey: 1, lit: 0, kind: 1 } });
   area(k, rect(-25, POINT.z1, -20.4, SHELTER.z0), PLAZA);
-  area(k, rect(-45, SHELTER.z0, SHELTER.x0 - 0.4, SHELTER.z1), PLAZA);
-  area(k, rect(-45, SHELTER.z1, -4.4, BOARD.z1 - 0.4), PLAZA);
+  {
+    // the quays round the typhoon shelter, and the car ferry's forecourt south of it
+    const S = SHELTER, e = 0.4;
+    area(k, [[-45, S.z0 - e], [S.x0 - e, S.z0 - e], [S.x0 - e, S.z1 + e], [S.step.x - e, S.z1 + e], [S.step.x - e, S.step.z + e], [-4 - e, S.step.z + e], [-4 - e, BOARD.z1 - e], [-45, BOARD.z1 - e]], PLAZA);
+  }
   area(k, rect(22.4, -2, 28, 62), PLAZA);
   area(k, rect(10.4, -42, 28, -2), PLAZA);
   area(k, rect(34.4, 62, 43, BOARD.z1 - 0.4), PLAZA);
@@ -258,8 +261,18 @@ export function buildCity(k: Build): TileParts {
     k.signs.add('happy-valley', (R.x0 + R.x1) / 2, 2, R.z1 + 0.6, 'S', 2.6);
   }
   // the breakwater of the typhoon shelter, and a few boats in it
-  b.box(SHELTER.x1 - 0.6, -1.4, SHELTER.z0 + 4, SHELTER.x1 + 0.6, 0.5, SHELTER.z1, QUAY);
-  for (const [x, z, a, c] of [[-37, 84, 1.5, 0x4f8f6a], [-34, 89, 1.7, 0xc8523f], [-37, 94, 1.5, 0x3f6fa3], [-22.8, 86, 1.6, 0xd1b25a], [-22.8, 93, 1.5, 0x4f8f6a]]) sampan(b, x, z, a, c);
+  b.box(SHELTER.x1 - 0.6, -1.4, SHELTER.z0 + 4.5, SHELTER.x1 + 0.6, 0.5, SHELTER.step.z, QUAY);
+  {
+    // moored in rows, as they are: clear of the viaduct's piers
+    const AWNINGS = [0x4f8f6a, 0xc8523f, 0x3f6fa3, 0xd1b25a, 0xe9e3d6];
+    let n = 0;
+    for (const x of [-39.4, -35.8, -32.2, -23.6]) {
+      for (let z = 77; z < (x < -27 ? 100 : 96); z += 5.6) {
+        if ((n * 7) % 5 !== 3) sampan(b, x, z + ((n * 3) % 4) * 0.3, Math.PI / 2 + (((n * 5) % 7) - 3) * 0.04, AWNINGS[n % AWNINGS.length]);
+        n++;
+      }
+    }
+  }
 
   // -------------------------------------------------------------------------
   // On the water, and up the hill
@@ -331,7 +344,7 @@ export function buildCity(k: Build): TileParts {
   for (let z = -54; z < 0; z += 9) k.tree(-22.6, z, 0.6);
   for (let z = 4; z < 60; z += 8) k.tree(25.2, z, 0.6);
   for (let z = -38; z < -4; z += 8.5) k.tree(29, z, 0.55);
-  for (const [x, z] of [[-17, 30], [-8.5, 20.5], [-8.5, 30.5], [-22.5, 48], [-22.5, 66], [-22.5, 74], [-42, 100], [-30, 111], [-36, 111], [39, 66], [39, 78], [39, 90], [39, 102]]) k.tree(x, z, 0.6);
+  for (const [x, z] of [[-17, 30], [-8.5, 20.5], [-8.5, 30.5], [-22.5, 48], [-22.5, 66], [-44, 104], [-30, 111.6], [-36, 111.6], [39, 66], [39, 78], [39, 90], [39, 102]]) k.tree(x, z, 0.6);
   for (const [x, z] of [[46, -50], [58, -50], [70, -50], [82, -62], [90, -62], [80, -50], [92, -50], [82, 48], [80, 94], [92, 80], [47, 60], [58, 62], [47, 88], [58, 90]]) k.tree(x, z, 0.65);
 
   // -------------------------------------------------------------------------
@@ -380,7 +393,7 @@ export function buildCity(k: Build): TileParts {
     crowd(16, -66, -23, -60.5, -16, HILL.top); // at the lookout on the Peak
     crowd(8, -100, -30, -89, -24, HILL.top);
     crowd(20, RACECOURSE.x1 - 5, RACECOURSE.z0 + 3, RACECOURSE.x1 - 3.2, RACECOURSE.z1 - 3); // along the rail at the races
-    crowd(10, -44, 82, -40.6, 97); // on the quay of the typhoon shelter
+    crowd(10, -44.8, 75, -42.7, 101); // on the quay of the typhoon shelter
     crowd(12, -19, 20, -7, 33); // on the Convention Centre's point
     crowd(10, -102, -112, -60, -102); // Sheung Wan
     for (const z of [-12.5, 6.5]) crowd(18, 42, z - 1.2, 96, z + 1.2); // Nathan Road's pavements
