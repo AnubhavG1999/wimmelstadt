@@ -141,7 +141,7 @@ const T = (n: number, id: string, name: string, quarter: Quarter, x: number, z: 
 
 export const THINGS: Thing[] = [
   // London
-  T(1, 'parliament', 'PARLIAMENT & BIG BEN', 'london', -60, -13, 13.5, 20, 15),
+  T(1, 'parliament', 'PARLIAMENT & BIG BEN', 'london', -58.6, -22, 12.4, 36, 56, { shaped: true }),
   T(2, 'tower-bridge', 'TOWER BRIDGE', 'london', -46, -98, 20, 12, 34, { shaped: true }),
   T(3, 'tower', 'TOWER OF LONDON', 'london', -76, -82, 14, 18, 13),
   T(4, 'eye', 'LONDON EYE', 'london', -26, -82, 6, 42, 46, { shaped: true }),

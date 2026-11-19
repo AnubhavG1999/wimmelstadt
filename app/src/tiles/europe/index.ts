@@ -1,24 +1,25 @@
 // Europe: London, Paris and Italy along one river.
 //
-// This is the blockout. The ground, the river, the roads and the traffic are
-// as they will be. The things that will stand on the tile are plain boxes with
-// their numbers on, except the few whose shape decides how a road runs: the
-// bridges, the wheel, the arch and the tower with the lawn under it.
+// The ground, the river, the roads and the traffic are as they will be, and
+// London's river front is built. The rest of the things that will stand on
+// the tile are still plain boxes with their numbers on, or rough shapes where
+// the shape decides how a road runs: see NOTES.md for which is which.
 
 import * as THREE from 'three';
 import { placed } from '../../engine/build';
 import { ordinaryBuildings, type BuildingRules, type Lot } from '../../engine/buildings';
-import { interior, type V3 } from '../../engine/geo';
+import { interior } from '../../engine/geo';
 import { LAWN, area, flat, ground, oval, rect, terrace, walls, water, type P2 } from '../../engine/ground';
 import { buildPath, type Path } from '../../engine/paths';
 import { lampsAlong, roadDeck, street } from '../../engine/roads';
 import type { SignDef } from '../../engine/signs';
 import type { Build, HeroSpot, ParkedSpot, TileDef, TileParts } from '../../engine/tile';
 import { balloon, concorde } from './air';
-import { bigBen, eiffel, pisa } from './landmarks';
+import { eiffel, pisa } from './landmarks';
+import { bridgeStreetLamps, londonEye, parliament, towerBridge, westminsterBridge } from './london';
 import {
   ARC, ARNO_X, BEND_1, BEND_2, CANAL, COLOSSEUM, CONCORDE, HILL, IENA_X, ISLAND, LINGOTTO_ROOF, NEUF_X, PLOTS, RIVER_WIDTH, SEINE_Z,
-  THAMES_X, THINGS, TOWER_Z, WATER_DROP, WESTMINSTER_Z, onHill, type Quarter, type Thing,
+  THAMES_X, THINGS, WATER_DROP, onHill, type Quarter, type Thing,
 } from './plan';
 import { HILL_DOWN_ROAD, HILL_ROAD, HILL_UP_ROAD, ROUTES, STREETS } from './roads';
 
@@ -197,7 +198,7 @@ function build(k: Build): TileParts {
   area(k, rect(-15, 76, 11, 79.5), LAWN);
   area(k, rect(-36, 95, 12, 112.5), LAWN);
   // Victoria Tower Gardens, beside Parliament, and the Tuileries, between the Louvre and the Champs-Élysées
-  area(k, rect(-60, 8.5, -47, 20), LAWN);
+  area(k, rect(-60, 15, -47, 21.3), LAWN);
   area(k, [[47, -49.5], [60, -41.5], [60, -36.5], [47, -36.5]], LAWN);
   // Ace Cafe's forecourt
   area(k, rect(-83, 9, -66, 20.5), 0x55575d);
@@ -214,9 +215,7 @@ function build(k: Build): TileParts {
   });
   for (const s of laid) if (s.lamps > 0) lampsAlong(k, s.path, s.lamps);
 
-  const tx0 = THAMES_X - 10.4, tx1 = THAMES_X + 10.4;
-  slabBridge(k, tx0, TOWER_Z - 7.5, tx1, TOWER_Z + 7.5, true, 0);
-  slabBridge(k, tx0, WESTMINSTER_Z - 7.5, tx1, WESTMINSTER_Z + 7.5, true, 3);
+  // (London's two bridges are built with the rest of its river front)
   slabBridge(k, IENA_X - 7.5, SEINE_Z - 13.9, IENA_X + 7.5, SEINE_Z + 13.9, false, 3);
   slabBridge(k, NEUF_X - 6.5, SEINE_Z - 13.9, NEUF_X + 6.5, SEINE_Z + 13.9, false, 2);
 
@@ -265,40 +264,12 @@ function build(k: Build): TileParts {
     }
   }
 
-  // --- Tower Bridge: two towers astride the road, and the walkways between their tops ---
-  {
-    const t = thing('tower-bridge');
-    for (const x of [THAMES_X - 6.5, THAMES_X + 6.5]) {
-      for (const side of [-1, 1]) b.box(x - 2.6, -(WATER_DROP + 0.6), TOWER_Z + side * 8.2 - 1.8, x + 2.6, 30, TOWER_Z + side * 8.2 + 1.8, 0xb9ad96);
-      b.box(x - 2.6, 9, TOWER_Z - 6.4, x + 2.6, 30, TOWER_Z + 6.4, 0xb9ad96, { faces: 'NESWTB' });
-      b.cyl(x, TOWER_Z, 30, 36, 7.4, 0.3, 4, 0x4a4f55, { phase: Math.PI / 4, cap: false });
-    }
-    for (const z of [TOWER_Z - 5.5, TOWER_Z + 5.5]) b.box(THAMES_X - 4, 25, z - 0.6, THAMES_X + 4, 27.5, z + 0.6, 0x6fa3c7, { faces: 'NESWTB' });
-    board(k, t, THAMES_X, 50, TOWER_Z);
-  }
-
-  // --- The London Eye: a wheel over the water's edge, on two legs ---
-  {
-    const t = thing('eye');
-    const cx = THAMES_X + 9.4, cz = t.z + t.d / 2, hub = 24.5, R = 21;
-    const rim: V3[] = [];
-    for (let i = 0; i <= 36; i++) {
-      const a = (i / 36) * Math.PI * 2;
-      rim.push([cx, hub + Math.sin(a) * R, cz + Math.cos(a) * R]);
-    }
-    b.sweep(rim, rim.map(() => 0.45), 0xf2f2f2);
-    for (let i = 0; i < 12; i++) {
-      const a = (i / 12) * Math.PI * 2;
-      b.beam([cx, hub, cz], [cx, hub + Math.sin(a) * R, cz + Math.cos(a) * R], 0.16, 0.12, 0xdadada);
-      b.box(cx - 1.1, hub + Math.sin(a) * (R + 1.4) - 0.9, cz + Math.cos(a) * (R + 1.4) - 1.3, cx + 1.1, hub + Math.sin(a) * (R + 1.4) + 0.9, cz + Math.cos(a) * (R + 1.4) + 1.3, 0xbfe0ee);
-    }
-    for (const side of [-1, 1]) b.beam([cx + 5.5, 0, cz + side * 9], [cx + 0.6, hub, cz], 0.6, 0.45, 0xf2f2f2);
-    b.box(cx - 0.6, hub - 0.8, cz - 0.8, cx + 1.4, hub + 0.8, cz + 0.8, 0xdadada, { faces: 'NESWTB' });
-    board(k, t, cx + 5, 58, cz);
-  }
-
-  // --- Big Ben, at the north end of Parliament, by Westminster Bridge ---
-  placed(k, -51, -18.5, 0, (q) => bigBen(q, 56));
+  // --- London's river: Parliament and Big Ben, Westminster Bridge, Tower Bridge and the Eye ---
+  parliament(k);
+  westminsterBridge(k);
+  towerBridge(k);
+  londonEye(k);
+  bridgeStreetLamps(k);
 
   // --- The Eiffel Tower ---
   {
@@ -410,7 +381,7 @@ function build(k: Build): TileParts {
     for (let z = 10; z <= 20; z += 5) k.tree(-63, z, 0.9, true);
     for (let x = -72; x <= -38; x += 5) k.tree(x, 109.5, 0.85, true);
     for (let x = 14; x <= 62; x += 6) k.tree(x, 110.5, 0.8, true);
-    for (const [x, z] of [[-16, 77.5], [-9, 77.8], [4, 77.6], [10, 77.9], [-20, 42], [14, 42.5], [16, 50], [15, 58], [-21, -3], [-14, -14], [-25, -8], [66, 4], [74, 2], [82, 6], [-56, 11], [-50, 17], [50, -40], [56, -38.5]]) k.tree(x, z, 0.7 + rand() * 0.3);
+    for (const [x, z] of [[-16, 77.5], [-9, 77.8], [4, 77.6], [10, 77.9], [-20, 42], [14, 42.5], [16, 50], [15, 58], [-21, -3], [-14, -14], [-25, -8], [66, 4], [74, 2], [82, 6], [-57, 18], [-50, 18.5], [50, -40], [56, -38.5]]) k.tree(x, z, 0.7 + rand() * 0.3);
     // on Montmartre: the wide end of the first level, and round Sacré-Cœur
     for (const [t, o, y] of [[37, 6, h1], [42, 10, h1], [38, 18, h1], [46, 22, h1], [35.5, 27, h1], [40, 33, h1], [13, 26, h3], [28.5, 26, h3], [12, 31, h3]]) {
       const [x, z] = onHill(t, o);
@@ -436,7 +407,6 @@ function build(k: Build): TileParts {
     ringOf(6, CONCORDE[0], CONCORDE[1], 2.6, 5.4);
     scatter(26, -15, 47, 11, 73); // under the Eiffel Tower
     scatter(8, -22, -16, -12, -9); // the Trocadéro
-    scatter(10, THAMES_X + 11, -80, THAMES_X + 16, -42); // under the Eye
     scatter(12, -34, 97, 11, 111); // the Field of Miracles
     scatter(10, -66, 58, -44, 71); // the piazza
     scatter(8, 88, 31, 103, 34); // in front of the Duomo

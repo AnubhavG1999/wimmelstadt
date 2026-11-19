@@ -1,6 +1,6 @@
 # Europe: notes
 
-What a later reader cannot see in the code. The tile is at the blockout stage: its ground, roads and traffic are built, and most of its things are still boxes.
+What a later reader cannot see in the code. The tile's ground, roads and traffic are built, and so is London's river front. Most of the other things are still boxes.
 
 ## The things on the tile
 
@@ -47,12 +47,15 @@ The numbers are the ones on the boards in the blockout, and in `THINGS` in `plan
 28. Concorde, on a round over London and Paris
 29. A Montgolfier balloon, over the left bank
 
-Built so far, in the sense that they can be recognised: Big Ben (1), the Eiffel Tower (10) and the Leaning Tower (19), which are the look prototype's models, and Concorde (28) and the balloon (29). Tower Bridge, the Eye, the Arc, the obelisk, the Louvre, the Colosseum, the Ponte Vecchio and Lingotto have rough shapes of their own, because their shape decides how a road runs. The rest are boxes.
+Built so far, in the sense that they can be recognised: the Houses of Parliament and Big Ben (1), Tower Bridge (2) and the London Eye (4), with Westminster Bridge between them; the Eiffel Tower (10) and the Leaning Tower (19), which are the look prototype's models; and Concorde (28) and the balloon (29). The Arc, the obelisk, the Louvre, the Colosseum, the Ponte Vecchio and Lingotto have rough shapes of their own, because their shape decides how a road runs. The rest are boxes.
 
 ## Liberties taken with the real places
 
 - **One river with three names.** The Thames, the Seine and the Arno are one river here. It comes in at the north edge, turns east, turns south and leaves at the south edge.
 - **London is turned a quarter.** Its north bank is the west bank on the tile, and its South Bank the east. This puts Parliament's river front towards the middle of the tile, where it is seen across the water from the usual view. The order along the river is the real one: Parliament and Westminster Bridge at one end, the Tower and Tower Bridge at the other, the Eye between them on the far bank.
+- **Tower Bridge is squeezed.** The Thames is 20 wide here, so the towers stand closer together than they are tall, and the spans to either bank are short and steep. Its lifting span stays down.
+- **Parliament is its river front.** The range along the water, the spire over the middle, the Victoria Tower and the clock tower are there. Westminster Hall and the courts behind them are not.
+- **The Union Flag flies over the Victoria Tower**, as it does when Parliament sits. It is the one flag on the tile so far.
 - **Piccadilly Circus stands where Trafalgar Square would**, at the end of the street from Westminster Bridge. Trafalgar Square is not on the tile.
 - **Ace Cafe is in central London**, at the end of a road from Piccadilly Circus. The real one is on the North Circular, miles out.
 - **The star has three roads, not twelve avenues**: the Champs-Élysées, avenue Kléber, and the road that comes down into it from Montmartre. It stands close to the north edge, so there is no room for avenues to the north of it. A ring of trees stands in for them.

@@ -53,8 +53,9 @@ export const STREETS: Laid[] = [
   // --- London ---
   { id: 'embankment', segs: straight([EMBANKMENT_X, TOWER_Z - 5], [EMBANKMENT_X, WESTMINSTER_Z + 5]), opts: { sidewalk: 2.5 } },
   { id: 'south-bank', segs: straight([SOUTH_BANK_X, TOWER_Z - 5], [SOUTH_BANK_X, WESTMINSTER_Z + 5]), opts: { sidewalk: 2.5 } },
-  { id: 'tower-hill', segs: straight([STRAND_X + 6, TOWER_Z], [SOUTH_BANK_X + 5, TOWER_Z]), opts: { sidewalk: 2.5 } },
-  { id: 'bridge-street', segs: straight([STRAND_X + 6, WESTMINSTER_Z], [SOUTH_BANK_X + 5, WESTMINSTER_Z]), opts: { sidewalk: 2.5 } },
+  // (the two streets that cross the river get their lamps with the bridges, in london.ts)
+  { id: 'tower-hill', segs: straight([STRAND_X + 6, TOWER_Z], [SOUTH_BANK_X + 5, TOWER_Z]), opts: { sidewalk: 2.5 }, lamps: 0 },
+  { id: 'bridge-street', segs: straight([STRAND_X + 6, WESTMINSTER_Z], [SOUTH_BANK_X + 5, WESTMINSTER_Z]), opts: { sidewalk: 2.5 }, lamps: 0 },
   { id: 'strand', segs: straight([STRAND_X, TOWER_Z + 6], [STRAND_X, WESTMINSTER_Z - 6]), opts: { sidewalk: 2.5 } },
   { id: 'piccadilly-circus', segs: ringOf(PICCADILLY, CIRCUS_R), closed: true, opts: { ...ROUNDABOUT, lanes: 1, width: 6 }, lamps: 0 },
   { id: 'tower-hill-circus', segs: ringOf(TOWER_HILL, CIRCUS_R), closed: true, opts: { ...ROUNDABOUT, lanes: 1, width: 6 }, lamps: 0 },
