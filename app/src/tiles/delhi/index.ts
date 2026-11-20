@@ -18,6 +18,7 @@ import {
   type Quarter, type Thing,
 } from './plan';
 import { AXIS } from './axis';
+import { KINDS } from './traffic';
 import { life } from './life';
 import * as bazaar from './bazaar';
 import * as centre from './centre';
@@ -150,8 +151,12 @@ function build(k: Build): TileParts {
     for (let i = 1; i + 1 < p.length; i++) k.tree(p[i][0], p[i][2], 0.3, false, 0.35);
   };
   {
-    const x0 = RING.x0 + 2, x1 = FLYOVERS[1].x1 + RING.ramp;
-    area(k, rect(x0, RING.z - RING.verge, x1, RING.z + RING.verge), VERGE, 0.03);
+    // the verge under the flyovers, left open where the two streets pass under them
+    let x = RING.x0 + 2;
+    for (const [a, c] of [...FLYOVERS.map((f) => [f.over - 7.6, f.over + 7.6]), [FLYOVERS[1].x1 + RING.ramp, 0]]) {
+      area(k, rect(x, RING.z - RING.verge, a, RING.z + RING.verge), VERGE, 0.022);
+      x = c;
+    }
   }
   // On the ground round the corner and beside the river, and again on the east bank, it is one street with the verge down its middle.
   const riverPath = pathOf(RING_PARTS.river), bankPath = pathOf(RING_PARTS.bank);
@@ -278,12 +283,12 @@ function build(k: Build): TileParts {
   // (the Buddh circuit's ground, until it is built)
   area(k, rect(BUDDH.x0 - 3.2, BUDDH.z0 - 5.5, BUDDH.x1 + 3.2, BUDDH.z1 + 5.5), 0x86a866);
 
-  // what stands between the things: people, trees along the avenues, autos, carts, boards over the roads
-  life(k, heroSpots);
+  // what stands between the things: people, trees along the avenues, autos at their stands, carts, boards over the roads
+  parked.push(...life(k, heroSpots));
 
-  return { routes: ROUTES, parked, heroSpots };
+  return { routes: ROUTES, parked, heroSpots, kinds: KINDS };
 }
 
-export const delhi: TileDef = { id: 'delhi', name: 'Delhi', seed: 110001, signs: SIGNS, build };
+export const delhi: TileDef = { id: 'delhi', name: 'Delhi', seed: 110001, signs: SIGNS, place: { lon: 77.2, lat: 28.6 }, build };
 
 export default delhi;

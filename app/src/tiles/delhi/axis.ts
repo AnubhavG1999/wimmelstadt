@@ -109,7 +109,7 @@ function block(k: Build, t: Thing): void {
   b.box(x1, y, cz - 3.2, x1 + 1.4, y + BASE, cz + 3.2, RED, { faces: 'ENS' });
   b.box(x1 + 0.04, y + BASE, cz - 2.8, x1 + 0.1, y + BASE + BODY - 0.6, cz + 2.8, RECESS, { win: interior(0.8), faces: 'E' });
   for (let i = 0; i < 4; i++) b.box(x1 + 0.75, y + BASE, cz - 2.7 + i * 1.8 - 0.24, x1 + 1.25, y + BASE + BODY - 0.6, cz - 2.7 + i * 1.8 + 0.24, CREAM, { faces: 'NESW' });
-  b.box(x1, y + BASE + BODY - 0.6, cz - 3.2, x1 + 1.4, y + BASE + BODY + 0.3, cz + 3.2, CREAM, { faces: 'ENSTB' });
+  b.box(x1, y + BASE + BODY - 0.6, cz - 3.2, x1 + 1.4, y + BASE + BODY + 0.46, cz + 3.2, CREAM, { faces: 'ENSTB' });
   // the tower: square, then eight-sided, then a dome of red stone
   const tx = x0 + (x1 - x0) * 0.62, tz = north ? z1 - 3 : z0 + 3;
   b.box(tx - 2.2, roof - 0.4, tz - 2.2, tx + 2.2, roof + 2.6, tz + 2.2, CREAM, { win: { cell: 1.4, storey: 2.7, lit: 0.4, kind: 6 }, seed: 0.4 });

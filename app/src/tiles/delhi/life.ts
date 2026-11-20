@@ -11,7 +11,7 @@ import { rng, type GeoBuilder } from '../../engine/geo';
 import { buildPath } from '../../engine/paths';
 import { figure, parasol, wheel } from '../../engine/parts';
 import { standingCar } from '../../engine/props';
-import type { Build, HeroSpot } from '../../engine/tile';
+import type { Build, HeroSpot, ParkedSpot } from '../../engine/tile';
 import { AXIS_Z, CP, CP_R, EAST_BANK, GROUNDS, HEX, HEX_LANES, PLOTS, RAISINA, THINGS, WATERS, WEST_BANK } from './plan';
 import { ROUTES, STREETS } from './roads';
 
@@ -158,9 +158,9 @@ function raisina(k: Build): void {
   }
 }
 
-/** Everything this file adds, once all the things are built. */
-export function life(k: Build, heroes: HeroSpot[]): void {
-  const places = new Places(heroes), rand = rng(77201), b = k.b;
+/** Everything this file adds, once all the things are built. It hands back the autos that wait at their stands. */
+export function life(k: Build, heroes: HeroSpot[]): ParkedSpot[] {
+  const places = new Places(heroes), rand = rng(77201), b = k.b, parked: ParkedSpot[] = [];
   const scatter = (n: number, x0: number, z0: number, x1: number, z1: number, y = 0): void => {
     for (let i = 0, tries = 0; i < n && tries < n * 8; tries++) {
       const x = x0 + rand() * (x1 - x0), z = z0 + rand() * (z1 - z0);
@@ -236,7 +236,7 @@ export function life(k: Build, heroes: HeroSpot[]): void {
   for (const [x, z, yaw, n] of [[-66.5, -47.5, 0, 3], [-11.5, 47, Math.PI / 2, 3], [-46.5, 52.5, 0, 2], [24.5, -30, Math.PI / 2, 3]]) {
     for (let i = 0; i < n; i++) {
       const ax = x + Math.cos(yaw) * i * 3.9, az = z + Math.sin(yaw) * i * 3.9;
-      if (places.free(ax, az, 1.6)) auto(b, ax, az, yaw);
+      if (places.free(ax, az, 1.6)) parked.push({ x: ax, y: 0.03, z: az, heading: yaw, type: 'auto' });
     }
   }
   for (const [x, z] of [[-9.5, -46.5], [26, -43], [-47, 20.5], [9, 53.5]]) if (places.free(x, z, 1.2)) cart(k, x, z, 0xd9a25f, 0xd8432b, 0xe9dcc4);
@@ -252,5 +252,7 @@ export function life(k: Build, heroes: HeroSpot[]): void {
   gantry(k, 'road-india-gate', -2, 78, 0, 1, 7.7);
   gantry(k, 'road-moti-bagh', -54, 82, 0, 1, 7.7);
   gantry(k, 'road-connaught-place', 4, -38, 1, 0, 7.7);
+
+  return parked;
 
 }

@@ -21,11 +21,11 @@
 
 import type { StreetOpts } from '../../engine/roads';
 import type { Hump, Seg } from '../../engine/paths';
-import type { Route, TrafficType } from '../../engine/tile';
+import type { Route } from '../../engine/tile';
 import { circle, line, loop, run, shift, type P2, type Step } from '../../engine/lanes';
 import { Trace, back, endOf, from, lane, toSegs, type Piece } from '../../engine/lines';
 import {
-  AKBAR_FOOT, AUROBINDO_X, AXIS_Z, BUDDH, CP, CP_R, CP_ROAD_Z, HEX, HEX_LANES, KAROL_BAGH_TURN, KASHMERE_TURN, METRO, NS_MARG_X, QUTUB_TURN,
+  AKBAR_FOOT, AUROBINDO_X, AXIS_Z, BUDDH, CHANDNI, CP, CP_R, CP_ROAD_Z, HEX, HEX_LANES, KAROL_BAGH_TURN, KASHMERE_TURN, METRO, NS_MARG_X, QUTUB_TURN,
   RAISINA, RAISINA_TURN, RING, SHANTI, SHANTI_X, TURN_R, hexCorner,
 } from './plan';
 
@@ -170,8 +170,8 @@ const CP_ROAD: Step[] = [
 export interface Laid { id: string; segs: Seg[]; closed?: boolean; opts?: StreetOpts; lamps?: number; hump?: Hump }
 
 const TURNING: StreetOpts = { lanes: 1, width: 6, sidewalk: 1.5, zebras: false };
-/** How far from the hexagon's middle a street that meets it at a corner has to run, to reach its inner kerb. */
-const HEX_KERB = (HEX_IN - HALF) / Math.cos(Math.PI / 6);
+/** How far from the hexagon's middle a street that meets it at a corner runs: just across the middle of the hexagon's own road, so that the junction is found, and no further. */
+const HEX_KERB = (HEX_MID - 1.5) / Math.cos(Math.PI / 6);
 
 export const STREETS: Laid[] = [
   // --- the axis ---
@@ -205,17 +205,17 @@ export const STREETS: Laid[] = [
 // Loops, as they are driven
 // ---------------------------------------------------------------------------
 
-const MIX: Record<string, TrafficType[]> = {
-  ring: ['sedan', 'sedan', 'hatch', 'hatch', 'hatch', 'van', 'bus'],
-  avenue: ['sedan', 'sedan', 'sedan', 'hatch'],
-  town: ['hatch', 'hatch', 'hatch', 'sedan', 'van'],
+/**
+ * What drives on each kind of road, by the names of the kinds in traffic.ts. A name written twice is picked twice as
+ * often. No route gives its vehicles a `paint`: that would repaint the autos and the buses too.
+ */
+const MIX: Record<string, string[]> = {
+  ring: ['small-car', 'small-car', 'car', 'car', 'mini-van', 'city-bus', 'city-bus', 'lorry', 'auto', 'bike', 'bike'],
+  avenue: ['white-saloon', 'white-saloon', 'car', 'small-car', 'auto', 'bike'],
+  town: ['small-car', 'small-car', 'car', 'auto', 'auto', 'bike', 'bike', 'mini-van'],
+  school: ['school-bus', 'school-bus', 'small-car', 'car', 'mini-van', 'auto', 'bike'],
   circuit: ['sedan', 'hatch'],
 };
-/** Delhi's traffic is mostly white and silver, with a little colour in it. */
-const WHITE = [0xf2f0ea, 0xf2f0ea, 0xf2f0ea, 0xd9dbe0, 0xbfc3c9, 0x8e939b];
-const STREET = [...WHITE, 0x9c2b2b, 0x2a3f6b, 0x1b1b1f, 0x6a4a2c];
-/** Buses of the city, and the cars among them. */
-const RING_PAINT = [...WHITE, 0xd9dbe0, 0x9c2b2b, 0x2f7d4f, 0xd8762a, 0x2a3f6b];
 
 const lanes = (id: string, steps: Step[], more: Omit<Route, 'id' | 'segs'>): Route => ({ id, segs: loop(steps, { name: id }), ...more });
 
@@ -223,13 +223,19 @@ export const ROUTES: Route[] = [
   {
     id: 'ring-road',
     segs: toSegs([...RING_LANES.out, ...RING_LANES.far, ...RING_LANES.home, ...RING_LANES.near]),
-    speed: 19, count: 20, types: MIX.ring, paint: RING_PAINT,
+    speed: 19, count: 20, types: MIX.ring,
   },
-  { ...lanes('long-drive', LONG_DRIVE, { speed: 15, count: 12, types: MIX.avenue, paint: WHITE }), hump: RAISINA_HUMP },
-  { id: 'hexagon', segs: hexagon(HEX_IN, 4), speed: 13, count: 5, types: MIX.town, paint: STREET },
-  lanes('shanti-path', SHANTI_PATH, { speed: 13, count: 7, types: MIX.town, paint: STREET }),
-  lanes('connaught-place', CP_ROAD, { speed: 14, count: 12, types: MIX.town, paint: STREET }),
-  { id: 'inner-circle', segs: ringOf(CP, CP_R.inner), speed: 11, count: 3, types: MIX.town, paint: STREET },
+  { ...lanes('long-drive', LONG_DRIVE, { speed: 15, count: 12, types: MIX.avenue }), hump: RAISINA_HUMP },
+  { id: 'hexagon', segs: hexagon(HEX_IN, 4), speed: 13, count: 5, types: MIX.town },
+  lanes('shanti-path', SHANTI_PATH, { speed: 13, count: 7, types: MIX.school }),
+  lanes('connaught-place', CP_ROAD, { speed: 14, count: 12, types: MIX.town }),
+  { id: 'inner-circle', segs: ringOf(CP, CP_R.inner), speed: 11, count: 3, types: MIX.town },
+  {
+    // Chandni Chowk carries no motor traffic: cycle rickshaws go east along its north half and back west along its south
+    id: 'chandni-chowk',
+    segs: [{ t: 'ring', pts: [[CHANDNI.x0 + 4.5, CHANDNI.z - 2.5], [CHANDNI.x1 - 4.5, CHANDNI.z - 2.5], [CHANDNI.x1 - 4.5, CHANDNI.z + 2.5], [CHANDNI.x0 + 4.5, CHANDNI.z + 2.5]], y: 0.03, r: 2.5 }],
+    speed: 6, count: 5, types: ['rickshaw'], heroes: false,
+  },
   {
     id: 'buddh',
     // (driven clockwise, as the real circuit is)
