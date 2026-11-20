@@ -34,6 +34,11 @@ export interface Cue {
   look?: number;
   /** How far it keeps its wings drawn in, from 0 to 1: as it drops off a ledge with others beside it, or drops onto one. */
   tuck?: number;
+  /**
+   * How far above where its line and its landing put it its body is carried, in units, without turning it: for a home
+   * on a roof that falls away under a dragon too large for its line to clear it.
+   */
+  lift?: number;
 }
 
 /** A dragon held still, for looking at it: where, which way it heads, and how it is posed. */
@@ -222,6 +227,7 @@ export class Pilot {
       p.quat.slerp(perch, land);
       p.pos.y += stn.root * d.kind.length * land;
     }
+    if (cue.lift) p.pos.y += cue.lift;
 
     p.speed = speed;
     p.time = time;
