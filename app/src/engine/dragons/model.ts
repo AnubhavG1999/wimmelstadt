@@ -280,6 +280,12 @@ function weals(b: Shape, k: DragonKind, x0: number, s0: Slice, x1: number, s1: S
 // Building a part
 // ---------------------------------------------------------------------------
 
+/**
+ * The corners of a bar's ring, across it: six, as round as a bar this small needs to look, set a little further out
+ * than the faces of the four-sided bar they replaced, so that it is as stout as it was.
+ */
+const HEX = [0, 1, 2, 3, 4, 5].map((i) => [1.22 * Math.cos(((30 + 60 * i) * Math.PI) / 180), 1.22 * Math.sin(((30 + 60 * i) * Math.PI) / 180)]);
+
 /** Collects the flat triangles of one rigid part. */
 class Shape {
   readonly pos: number[] = [];
@@ -328,7 +334,7 @@ class Shape {
     for (let i = 1; i + 1 < ring.length; i++) this.tri(ring[0], ring[i], ring[i + 1], color, out);
   }
 
-  /** A bar with four sides from a to b, as thick as `ra` at one end and `rb` at the other. `flat` makes it that much thinner one way than the other. */
+  /** A bar with six sides from a to b, as thick as `ra` at one end and `rb` at the other. `flat` makes it that much thinner one way than the other. */
   beam(a: V3, b: V3, ra: number, rb: number, color: number, flat = 1): void {
     const d: V3 = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
     const l = Math.hypot(d[0], d[1], d[2]) || 1;
@@ -338,22 +344,27 @@ class Shape {
     if (ul < 1e-6 * l) { u = [1, 0, 0]; ul = 1; }
     u = [u[0] / ul, 0, u[2] / ul];
     const v: V3 = [(d[1] * u[2]) / l, (d[2] * u[0] - d[0] * u[2]) / l, (-d[1] * u[0]) / l];
-    const ring = (p: V3, r: number): V3[] => [[1, 1], [-1, 1], [-1, -1], [1, -1]].map(([su, sv]): V3 =>
+    const ring = (p: V3, r: number): V3[] => HEX.map(([su, sv]): V3 =>
       [p[0] + (u[0] * su + v[0] * sv * flat) * r, p[1] + v[1] * sv * flat * r, p[2] + (u[2] * su + v[2] * sv * flat) * r]);
-    const ra4 = ring(a, ra), rb4 = ring(b, rb);
-    this.loft(ra4, rb4, () => color);
-    if (rb > 1e-5) this.cap(rb4, color, d);
+    const ra6 = ring(a, ra), rb6 = ring(b, rb);
+    this.loft(ra6, rb6, () => color);
+    if (rb > 1e-5) this.cap(rb6, color, d);
   }
 }
 
 /** The corners of a slice, at `x` along the part: round the right side from the back to the keel, and up the left. */
 function ring(x: number, s: Slice): V3[] {
   const r = s.w * 0.3;
-  return [[x, s.up, r], [x, s.up * 0.32, s.w], [x, -s.down * 0.5, s.w * 0.76], [x, -s.down, 0], [x, -s.down * 0.5, -s.w * 0.76], [x, s.up * 0.32, -s.w], [x, s.up, -r]];
+  // the belly rounded through a corner on each side between the lower flank and the keel, and a low ridge along the
+  // middle of the back; the flanks between, where the streak and the scars lie, are as they were
+  return [
+    [x, s.up, r], [x, s.up * 0.32, s.w], [x, -s.down * 0.5, s.w * 0.76], [x, -s.down * 0.86, s.w * 0.45], [x, -s.down, 0],
+    [x, -s.down * 0.86, -s.w * 0.45], [x, -s.down * 0.5, -s.w * 0.76], [x, s.up * 0.32, -s.w], [x, s.up, -r], [x, s.up * 1.12, 0],
+  ];
 }
-/** A thinner slice for the tail: four corners. */
-function diamond(x: number, s: Slice): V3[] {
-  return [[x, s.up, 0], [x, 0, s.w], [x, -s.down, 0], [x, 0, -s.w]];
+/** A thinner slice for the tail: six corners, at its widest a little above and below its middle. */
+function tailRing(x: number, s: Slice): V3[] {
+  return [[x, s.up, 0], [x, s.up * 0.4, s.w * 0.92], [x, -s.down * 0.4, s.w * 0.92], [x, -s.down, 0], [x, -s.down * 0.4, -s.w * 0.92], [x, s.up * 0.4, -s.w * 0.92]];
 }
 
 /** One joint of the neck or the body, from x0 to x1, with its plate on top, a streak along each flank, and its scars, if `seed` is given. */
@@ -361,8 +372,8 @@ function joint(k: DragonKind, m: Measures, x0: number, s0: Slice, x1: number, s1
   const b = new Shape();
   const a = ring(x0, s0), c = ring(x1, s1);
   // back and upper flanks in the body's colour, the keel lighter
-  const glow = throat > 0 ? (i: number): [number, number] => [0, i === 2 || i === 3 ? throat : i === 1 || i === 4 ? throat * 0.35 : 0] : undefined;
-  b.loft(a, c, (i) => (i === 2 || i === 3 ? k.belly : k.body), glow);
+  const glow = throat > 0 ? (i: number): [number, number] => [0, i >= 2 && i <= 5 ? throat : i === 1 || i === 6 ? throat * 0.35 : 0] : undefined;
+  b.loft(a, c, (i) => (i >= 2 && i <= 5 ? k.belly : k.body), glow);
   for (const side of [1, -1]) {
     // the streak: a narrow band that stands a hair proud of the upper flank
     const at = (x: number, s: Slice, t: number): V3 => [x, s.up * (1 - 0.68 * t) + 0.0012, side * (s.w * (0.3 + 0.7 * t) + 0.0012)];
@@ -445,7 +456,7 @@ function jawShape(k: DragonKind): Shape {
 function tailShape(k: DragonKind, m: Measures, j: number): Shape {
   const b = new Shape(), TL = m.tailL, f = m.fin;
   const s0 = tailSlice(m, j), s1 = tailSlice(m, j + 1);
-  b.loft(diamond(0, s0), diamond(-TL, s1), (i) => (i === 1 || i === 2 ? k.belly : k.body));
+  b.loft(tailRing(0, s0), tailRing(-TL, s1), (i) => (i === 2 || i === 3 ? k.belly : k.body));
   const plate = 0.026 * (1 - j / TAIL) ** 1.3 * m.crest;
   if (j < TAIL - 2) b.tri([-TL * 0.1, s0.up, 0], [-TL * 0.9, s1.up, 0], [-TL * 1.15, s1.up + plate, 0], k.horn, [0, 0, 1]);
   if (j === TAIL - 1) {
@@ -546,8 +557,14 @@ const turn = (yawRight: number, pitchUp: number, out: THREE.Quaternion): THREE.Q
 
 interface Part { start: number; count: number; pos: Float32Array; nor: Float32Array; at: THREE.Vector3; q: THREE.Quaternion }
 
-/** How many corners the wings' skin takes: ten triangles to a wing. */
-const SKIN_TRIS = 10;
+/**
+ * Which of its kind's two shades each triangle of a wing's skin takes, in the order `skin` draws them: four triangles
+ * to each panel between two tips, so that its trailing edge hangs in a curve, one shade to each panel between two
+ * fingers, and the other to the panels by the arm and the body.
+ */
+const SKIN_SHADES = [0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1];
+/** How many triangles a wing's skin takes. */
+const SKIN_TRIS = SKIN_SHADES.length;
 
 /** The material the dragons are drawn in: the city's cel shading, both sides of every face, no snow, and light of their own in the eyes and the throat. */
 export function dragonMaterial(look: TileLook): { mat: THREE.MeshToonMaterial; eye: THREE.Color; throat: THREE.Color; lit: THREE.Color } {
@@ -666,8 +683,7 @@ export class Dragon {
     const c = new THREE.Color();
     for (let w = 0; w < 2; w++) {
       for (let t = 0; t < SKIN_TRIS; t++) {
-        // one shade to each panel between two fingers, and one to the panel next to the body
-        c.set(kind.skin[[0, 0, 1, 1, 0, 0, 1, 1, 1, 1][t] ?? 0]);
+        c.set(kind.skin[SKIN_SHADES[t] ?? 0]);
         for (let v = 0; v < 3; v++) { pos.push(0, 0, 0); col.push(c.r, c.g, c.b); glow.push(0, 0); }
       }
     }
@@ -980,21 +996,27 @@ export class Dragon {
   private readonly e1 = new THREE.Vector3();
   private readonly e2 = new THREE.Vector3();
   private readonly nn = new THREE.Vector3();
-  private readonly mids = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
+  private readonly mids = Array.from({ length: 12 }, () => new THREE.Vector3());
 
-  /** The skin of one wing: drawn taut between the shoulder, the elbow, the wrist, the finger tips and the flank, with a slight scallop between tips. */
+  /** The skin of one wing: drawn taut between the shoulder, the elbow, the wrist, the finger tips and the flank, its trailing edge hanging in a curve between tips. */
   private skin(w: number, shoulder: THREE.Vector3, elbow: THREE.Vector3, wrist: THREE.Vector3, t1: THREE.Vector3, t2: THREE.Vector3, t3: THREE.Vector3, t4: THREE.Vector3, flank: THREE.Vector3, up: THREE.Vector3, ground: (x: number, z: number) => number): void {
     const out = this.position.array as Float32Array, nout = this.normal.array as Float32Array, sp = this.shadowPos.array as Float32Array;
     let o = (this.skinStart + w * SKIN_TRIS * 3) * 3, so = w * SKIN_TRIS * 9;
     const { e1, e2, nn, mids } = this;
-    // the middle of each trailing edge, drawn in a little towards where the edge is hung from
-    // and torn deeper, and unevenly, where its kind's wings are ragged
+    // each trailing edge hangs in a curve between the tips it joins, drawn in towards where it is hung from, deepest in
+    // its middle, and torn deeper, and unevenly, where its kind's wings are ragged: three places along it, from `at`
     const r = this.measures.ragged;
-    const scallop = (a: THREE.Vector3, b: THREE.Vector3, from: THREE.Vector3, into: THREE.Vector3, tear: number): THREE.Vector3 => into.addVectors(a, b).multiplyScalar(0.5).lerp(from, 0.07 + r * tear);
-    scallop(t1, t2, wrist, mids[0], 0.2);
-    scallop(t2, t3, wrist, mids[1], 0.34);
-    scallop(t3, t4, wrist, mids[2], 0.14);
-    scallop(t4, flank, shoulder, mids[3], 0.26);
+    const scallop = (a: THREE.Vector3, b: THREE.Vector3, from: THREE.Vector3, at: number, tear: number): void => {
+      const depth = 0.1 + r * tear;
+      for (let i = 0; i < 3; i++) {
+        const s = (i + 1) / 4;
+        mids[at + i].lerpVectors(a, b, s).lerp(from, depth * 4 * s * (1 - s));
+      }
+    };
+    scallop(t1, t2, wrist, 0, 0.2);
+    scallop(t2, t3, wrist, 3, 0.34);
+    scallop(t3, t4, wrist, 6, 0.14);
+    scallop(t4, flank, shoulder, 9, 0.26);
     const tri = (a: THREE.Vector3, b0: THREE.Vector3, c0: THREE.Vector3): void => {
       let b = b0, c = c0;
       nn.crossVectors(e1.subVectors(b, a), e2.subVectors(c, a)).normalize();
@@ -1007,16 +1029,19 @@ export class Dragon {
         sp[so++] = v.x; sp[so++] = ground(v.x, v.z) + 0.07; sp[so++] = v.z;
       }
     };
-    tri(wrist, t1, mids[0]);
-    tri(wrist, mids[0], t2);
-    tri(wrist, t2, mids[1]);
-    tri(wrist, mids[1], t3);
-    tri(wrist, t3, mids[2]);
-    tri(wrist, mids[2], t4);
+    /** A panel from a hub out to its curved edge between two tips, in four triangles. */
+    const panel = (hub: THREE.Vector3, a: THREE.Vector3, at: number, b: THREE.Vector3): void => {
+      tri(hub, a, mids[at]);
+      tri(hub, mids[at], mids[at + 1]);
+      tri(hub, mids[at + 1], mids[at + 2]);
+      tri(hub, mids[at + 2], b);
+    };
+    panel(wrist, t1, 0, t2);
+    panel(wrist, t2, 3, t3);
+    panel(wrist, t3, 6, t4);
     tri(shoulder, elbow, t4);
     tri(elbow, wrist, t4);
-    tri(shoulder, t4, mids[3]);
-    tri(shoulder, mids[3], flank);
+    panel(shoulder, t4, 9, flank);
   }
 }
 
