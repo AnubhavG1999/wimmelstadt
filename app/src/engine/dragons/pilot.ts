@@ -11,7 +11,7 @@
 
 import * as THREE from 'three';
 import { rng } from '../geo';
-import { Dragon, FLARE, FOLDED, blendForm, formAt, stance, wingPose, type DragonFlight, type Pose, type WingPose } from './model';
+import { Dragon, FLARE, FOLDED, TUCK, blendForm, formAt, stance, wingPose, type DragonFlight, type Pose, type WingPose } from './model';
 
 const RAD = Math.PI / 180;
 const UP = new THREE.Vector3(0, 1, 0), Z = new THREE.Vector3(0, 0, 1);
@@ -28,6 +28,12 @@ export interface Cue {
   beat: number;
   /** How much it sits: 0 flying, towards 1 as it flares, lands and folds its wings. */
   sit: number;
+  /** How far its jaws open of their own, from 0 to 1, without fire: a roar, or a shriek. */
+  jaw?: number;
+  /** A turn of its head to its right, in radians, on top of where it looks of itself: to watch something. */
+  look?: number;
+  /** How far it keeps its wings drawn in, from 0 to 1: as it drops off a ledge with others beside it, or drops onto one. */
+  tuck?: number;
 }
 
 /** A dragon held still, for looking at it: where, which way it heads, and how it is posed. */
@@ -125,10 +131,12 @@ export class Pilot {
   }
 
   /** Sets its wings: by its speed, by how far it is through landing, and by where it is in a beat and how deep the beat is. */
-  wings(speed: number, sit: number, beat: number, deep = 1): void {
+  wings(speed: number, sit: number, beat: number, deep = 1, tuck = 0): void {
     const p = this.pose;
-    const flying = formAt(speed);
-    const form = sit <= 0 ? flying : sit < 0.5 ? blendForm(flying, FLARE, sit * 2) : blendForm(FLARE, FOLDED, (sit - 0.5) * 2);
+    // drawn in, it neither spreads them to fly nor to flare: they go from folded to tucked and back
+    const flying = tuck > 0 ? blendForm(formAt(speed), TUCK, tuck) : formAt(speed);
+    const flare = tuck > 0 ? blendForm(FLARE, TUCK, tuck) : FLARE;
+    const form = sit <= 0 ? flying : sit < 0.5 ? blendForm(flying, flare, sit * 2) : blendForm(flare, FOLDED, (sit - 0.5) * 2);
     const m = this.dragon.measures;
     wingPose(form, sit > 0.5 ? 0 : beat, p.right, deep, m);
     wingPose(form, sit > 0.5 ? 0 : beat, p.left, deep, m);
@@ -235,6 +243,7 @@ export class Pilot {
     p.neckYaw = this.neckYaw + p.sit * 0.5 * Math.sin(time * 0.5 + ph) + about * f.look * (0.13 * Math.sin(clock * (0.61 + 0.11 * ph) + 1.9 * ph) + 0.05 * Math.sin(clock * 1.37 + 0.7 * ph));
     p.neckPitch = this.neckPitch + about * f.look * 0.06 * Math.sin(clock * (0.43 + 0.09 * ph) + 2.6 * ph);
     p.fin = this.bank / 4;
+    if (cue.look) p.neckYaw += cue.look;
 
     // Its wings: shaped by its speed, with a little lag, and beaten as a great bird beats them. It beats when
     // it has to work: without a pause while it climbs, two or three beats and then a glide while it cruises,
@@ -265,7 +274,8 @@ export class Pilot {
       this.beat = 0;
       this.more = 0;
     }
-    this.wings(this.shaped, cue.sit, beat, deep);
+    if (cue.tuck) this.wings(this.shaped, cue.sit, beat, deep, cue.tuck);
+    else this.wings(this.shaped, cue.sit, beat, deep);
 
     if (cue.sit <= 0) {
       // In a turn the wing on the inside is drawn in a little and the one on the outside reaches.
@@ -288,7 +298,7 @@ export class Pilot {
     p.quat.multiply(nod.setFromAxisAngle(Z, this.heave * 0.045 * f.heave));
     p.neckPitch -= this.heave * 0.032 * f.heave;
 
-    p.jaw = Math.max(cue.fire, cue.charge * 0.45);
+    p.jaw = cue.jaw ? Math.max(cue.fire, cue.charge * 0.45, cue.jaw) : Math.max(cue.fire, cue.charge * 0.45);
     d.pose(p, ground);
     d.throat.set(d.kind.glow).multiplyScalar(cue.charge * 1.5 + cue.fire * 1.6);
     d.lit.set(d.kind.glow).multiplyScalar(cue.fire * 0.3);

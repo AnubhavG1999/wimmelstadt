@@ -24,6 +24,8 @@ export interface Flame {
   reach: number;
   /** How large its flakes are and how many it throws, against Drogon's: 1 unless this says otherwise. A great dragon's fire is a torrent. */
   size?: number;
+  /** How wide it spreads as it goes, against Drogon's lance: 1 unless this says otherwise. A great dragon's fire billows. */
+  spread?: number;
   /** The light it throws on the ground at night. */
   light: number;
 }
@@ -99,7 +101,7 @@ export class Fire {
       const core = pick < flame.cores, fleck = !core && pick < flame.cores + flame.flecks;
       // the core stays close to the middle of the lance; its edge spreads to 1.4 wide at the far end.
       // Black fire is black all through, and the red runs in it: its dark flakes spread as wide as the rest.
-      const spread = (core && !flame.dark ? 0.02 : 0.07) * speed, a = Math.random() * Math.PI * 2, r = Math.sqrt(Math.random());
+      const spread = (core && !flame.dark ? 0.02 : 0.07) * speed * (flame.spread ?? 1), a = Math.random() * Math.PI * 2, r = Math.sqrt(Math.random());
       const v = new THREE.Vector3().copy(dir).multiplyScalar(speed * (0.82 + Math.random() * 0.3))
         .addScaledVector(this.side, Math.cos(a) * r * spread).addScaledVector(this.up2, Math.sin(a) * r * spread);
       const back = Math.random() * dt;
