@@ -328,6 +328,8 @@ function build(k: Build): TileParts {
 
   // what stands between the things: people, trees along the avenues, autos at their stands, carts, boards over the roads
   parked.push(...life(k, heroSpots));
+  // three of the city's buses at the terminal north of the fort, their noses to the south
+  for (const x of [43.6, 47.3, 51]) parked.push({ x, y: 0.03, z: -106.9, heading: Math.PI / 2, type: 'city-bus' });
 
   return { routes: ROUTES, parked, heroSpots, kinds: KINDS };
 }

@@ -7,7 +7,7 @@
 // garden that belongs to a thing, water, and a place kept for a hero.
 
 import * as THREE from 'three';
-import { rng, type GeoBuilder } from '../../engine/geo';
+import { interior, rng, type GeoBuilder } from '../../engine/geo';
 import { area, rect } from '../../engine/ground';
 import { buildPath } from '../../engine/paths';
 import { figure, parasol, wheel } from '../../engine/parts';
@@ -210,6 +210,42 @@ function park(k: Build, places: Places): void {
   k.person(23.2, 79);
 }
 
+/**
+ * A bungalow of Lutyens' Delhi, between Connaught Place and the hexagon:
+ * white, one storey, a verandah on round columns towards its garden, a flat
+ * roof behind a parapet, a hedge round it and a white saloon in the drive. It
+ * is low, so that Agrasen ki Baoli beside it is seen.
+ */
+function bungalow(k: Build, places: Places): void {
+  const b = k.b, x0 = 21, z0 = -30, x1 = 30, z1 = -20.2, WHITE = 0xf4f1e8, TRIM = 0xe2dccb, HEDGE = 0x4f8a45, H = 3.3;
+  places.take(x0 - 0.5, z0 - 0.5, x1 + 0.5, z1 + 0.5);
+  area(k, rect(x0, z0, x1, z1), 0x86b85c);
+  // the house at the back of its garden: plain white walls with small windows, a cornice and a parapet
+  const hx0 = x0 + 0.9, hx1 = x1 - 0.9, hz0 = z0 + 0.5, hz1 = z0 + 4.7;
+  b.box(hx0, 0, hz0, hx1, H, hz1, WHITE, { win: { cell: 1.5, storey: H, lit: 0.5, kind: 4 }, seed: 0.3, faces: 'NEW' });
+  b.box(hx0, 0, hz0, hx1, H, hz1, WHITE, { faces: 'S' });
+  b.box(hx0 - 0.18, H, hz0 - 0.18, hx1 + 0.18, H + 0.28, hz1 + 0.18, TRIM, { faces: 'NESWTB' });
+  b.box(hx0 + 0.1, H + 0.28, hz0 + 0.1, hx1 - 0.1, H + 0.7, hz1 - 0.1, WHITE, { top: 0xcfc4ae });
+  // the verandah along its south side: a floor, six round columns, a flat roof, and shade behind them that is lamp-lit at night
+  const vz = hz1 + 1.5;
+  b.box(hx0, 0, hz1, hx1, 0.28, vz, TRIM);
+  b.box(hx0 + 0.3, 0.28, hz1, hx1 - 0.3, 2.6, hz1 + 0.05, 0x4f3a26, { win: interior(2.2), faces: 'S' });
+  for (let i = 0; i < 6; i++) b.cyl(hx0 + 0.3 + (i / 5) * (hx1 - hx0 - 0.6), vz - 0.25, 0.28, 2.6, 0.17, 0.14, 8, WHITE, { cap: false });
+  b.box(hx0 - 0.18, 2.6, hz1, hx1 + 0.18, 2.9, vz + 0.12, WHITE, { faces: 'ESWTB' });
+  // the hedge round the garden, open at the gate in the south-east corner, with a white pier either side of it
+  b.box(x0, 0, z0, x1, 0.75, z0 + 0.35, HEDGE);
+  b.box(x0, 0, z0 + 0.35, x0 + 0.35, 0.75, z1, HEDGE);
+  b.box(x1 - 0.35, 0, z0 + 0.35, x1, 0.75, z1 - 3.4, HEDGE);
+  b.box(x0 + 0.35, 0, z1 - 0.35, x1, 0.75, z1, HEDGE);
+  for (const z of [z1 - 3.4, z1 - 0.4]) b.box(x1 - 0.4, 0, z - 0.2, x1, 1.3, z + 0.2, WHITE, { top: TRIM });
+  // the drive across the front, of red gravel, and the saloon that waits on it
+  area(k, rect(x0 + 0.6, vz + 0.2, x1 - 0.35, z1 - 0.5), 0xc9906f, 0.03);
+  standingCar(k, x0 + 4.6, (vz + z1) / 2 - 0.05, 0, { body: 0xf4f1e8 });
+  k.tree(x1 - 1.3, vz + 0.4, 0.42);
+  k.lights.push({ x: (x0 + x1) / 2, z: vz + 1, r: 7, color: '#ffe2ae', k: 0.5 });
+  figure(b, x1 - 0.9, z1 - 1.9, 0, { coat: 0x4a5f3a, legs: 0x4a5f3a, hat: 0x4a5f3a, hatH: 0.16 });
+}
+
 /** White Ambassadors on Raisina Hill, and monkeys on its parapet. */
 function raisina(k: Build): void {
   const y = RAISINA.y;
@@ -239,6 +275,7 @@ export function life(k: Build, heroes: HeroSpot[]): ParkedSpot[] {
   wedding(k, places);
   raisina(k);
   park(k, places);
+  bungalow(k, places);
   // (a thing that is ground is not kept clear by its height: the baoli is kept clear by name)
   places.take(4, -30.5, 16, -23);
 

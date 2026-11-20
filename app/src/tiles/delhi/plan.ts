@@ -282,13 +282,12 @@ export const PLOTS: Plot[] = [
   lot('old-delhi', 'haveli', -24, -69, 10, 6, 2),
   // (nothing stands south of the kebab lane: it is seen across open ground from the road)
   // the bus terminal north of the fort
-  lot('old-delhi', 'shed', 30, -112, 16, 9, 1.5, 'S'),
+  lot('old-delhi', 'shed', 30, -112, 11, 9, 1.5, 'S'),
   // Karol Bagh, behind the accessory street
   lot('centre', 'bazaar', -72, -60, 4.5, 11, 3, 'S'),
   lot('centre', 'bazaar', -92, -72, 12, 10, 2, 'S'),
   lot('centre', 'bazaar', -78, -72, 10, 10, 3, 'S'),
   // between Connaught Place and the hexagon
-  // (one storey, and three east of where it first stood: it hid Agrasen ki Baoli's well end)
-  lot('centre', 'lutyens', 21, -30, 9, 8, 1),
+  // (east of Agrasen ki Baoli stands a bungalow, which life.ts builds: a house of two storeys there hid the baoli's well end)
   // (nothing is built north-east of the hexagon: a house there stood between the Auto Expo's turntable and the opening view)
 ];
