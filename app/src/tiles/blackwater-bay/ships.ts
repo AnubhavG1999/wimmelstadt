@@ -1,4 +1,4 @@
-// What lies on the water: the Velaryon fleet closing the Gullet, the Triarchy's galleys at anchor, galleys at the quays, fishing boats in the bay, and the Golden Wedding's mock sea fight.
+// What lies on the water: the Velaryon fleet at anchor across the Gullet, galleys and cogs at King's Landing's quays and off Hull and Spicetown, fishing boats in the bay, the ferry over the Rush, and ships under sail coming and going.
 //
 // A stub: its builder fills it in. See models.ts for the shape every region has.
 

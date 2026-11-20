@@ -510,7 +510,7 @@ export function lairAt(x: number, z: number): { id: string; home: Home; part: 's
   return null;
 }
 /** The dragons whose homes are lairs on the Dragonmont. */
-const LAIR_IDS: Record<string, true> = { sheepstealer: true, vermithor: true, silverwing: true, cannibal: true, meraxes: true, caraxes: true, meleys: true };
+export const LAIR_IDS: Record<string, true> = { sheepstealer: true, vermithor: true, silverwing: true, cannibal: true, meraxes: true, caraxes: true, meleys: true };
 
 /** How far a place is from the middle of the road at the Dragonmont's foot, and from its ring at the camp of the Sowing. */
 function fromFootRoad(x: number, z: number): number {
