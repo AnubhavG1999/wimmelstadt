@@ -125,14 +125,17 @@ Five on show, each open to the south-east: the turntable in the Auto Expo's hall
 
 On the roads a hero is best seen on Kartavya Path, on the flyovers, beside the river, on the Signature Bridge, on the east bank, and on Kaifi Azmi Marg in front of the school.
 
-## Screens for music
+## The screen for music
 
-Two, hung as ordinary signs of kind `screen`, which the engine fills with what is playing and with a picture of its own when nothing is. North America's gate tower has one: see `SIGNS` in its `plan.ts`. Nothing for the music is built in this folder.
+One, on the roof of Connaught Place's south-east block, where its hoardings stand in life. It faces the south-east, and it is not near a place of worship, a tomb or a memorial. It is hung as an ordinary sign of kind `screen`, which the engine fills with what is playing. North America's gate tower has one: see `SIGNS` in its `plan.ts`. Nothing for the music is built in this folder.
 
-- On the roof of Connaught Place's south-east block, where its hoardings stand in life.
-- On the front of Bharat Mandapam's hall, over the Auto Expo's forecourt.
+A second screen was planned on Bharat Mandapam's hall and is dropped: one is enough for a tile. The hall gets a painted board.
 
-Both face the south-east, and neither is near a place of worship, a tomb or a memorial.
+**Its own picture.** When nothing is playing, and for everyone who has not linked their music, the screen shows a picture the tile paints itself, so that picture is what most people see. The sign gets a `paint(ctx, s, w, h)` of its own, into 640 by 360 pixels. It draws the whole rectangle each time and keeps nothing between calls.
+
+Planned: the tailboard of a lorry. HORN OK PLEASE in the colours of truck art, in three panels, with lotus flowers and a painted pair of eyes, and under it फिर मिलेंगे, "we'll meet again", which lorries carry too. It is bold enough to read from across the tile, it belongs on a tile about cars, and it does not look like a display of what is playing. No brand and no logo is on it. The Hindi is checked in its own script before it is painted, like every other sign.
+
+The other idea, if the collector prefers it: दिल्ली दिलवालों की, "Delhi belongs to the big-hearted", round a heart.
 
 ## Sight lines
 
@@ -171,7 +174,7 @@ The main session is changing the engine while this tile is planned, and says whe
 - **`wimmel.fights('delhi')`** lists surfaces that lie in one plane. The tile must pass it.
 - **The view tilts up and down.** The tile is looked at from low angles as well as from above, so whatever is seen from below needs its underside: the flyovers, the Metro's viaduct, the bridge's deck, every canopy.
 - **Road markings are cleared wherever two streets overlap**, not only where they cross.
-- **The screens for music** work from then on.
+- **The screen for music** works from then on, and shows the tile's own picture when nothing is playing.
 
 ## Asked of the collector with the plan
 
@@ -181,3 +184,4 @@ The main session is changing the engine while this tile is planned, and says whe
 4. What is missing.
 5. Whether Hauz Khas may be turned half round.
 6. Whether the great statue of Hanuman at Jhandewalan should stand at Karol Bagh.
+7. Which picture the screen shows when nothing is playing: the lorry's tailboard, or the saying round a heart.
