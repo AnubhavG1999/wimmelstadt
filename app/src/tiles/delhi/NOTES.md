@@ -15,6 +15,7 @@ The research is in `docs/districts/research/`: `delhi-for-the-tile.md`, and the 
 | `axis.ts` | Rashtrapati Bhavan and the Jaipur Column, North and South Block, Vijay Chowk, Kartavya Path, India Gate, the canopy, the War Memorial |
 | `old-delhi.ts`, `bazaar.ts`, `centre.ts`, `east.ts`, `south.ts`, `south-west.ts`, `metro.ts` | One file for each quarter and one for the Metro. Each hands over its models by the id of the thing in the plan, its signs, the lines its movers follow, and whatever else it builds. |
 | `traffic.ts` | The kinds of traffic that are Delhi's own |
+| `flypast.ts` | Three fighter jets in the air, their round, and the smoke they trail in three colours |
 | `signs.ts` | What the shops say, the boards over the roads, and the screen with its own picture |
 | `life.ts` | People, trees along the avenues, autos at their stands, carts, a wedding, a quiet park, a bungalow, the boards' gantries: everything placed through one helper that refuses a lane, a lot, water and a hero's place |
 
@@ -131,6 +132,8 @@ The city's towers are roughly to one scale, about 3.2 metres to a unit. Delhi ha
 | Bharat Mandapam | | | 11 |
 | The canopy | 22 m | 7 | 8 |
 
+The jets fly at 33 on their pass down the axis and at 46 on their way back, over everything but the bridge's pylon, which is far to the north of their round.
+
 They stand in the order they do in life, and India Gate stays under the dome on Raisina Hill. The Qutub Minar, India Gate, the statue and the tombs are small landmarks and stand a little over their scale height, so that they can be recognised. A storey of an ordinary building is 3.4.
 
 ## Roads
@@ -165,6 +168,16 @@ Five on show. They are one list, `HERO_PLACES` in `plan.ts`, and the quarters' f
 Each is open to the south-east. None is at a place of worship, a tomb or a memorial.
 
 On the roads a hero is best seen on Kartavya Path, on the flyovers, beside the river, on the Signature Bridge, on the east bank, on Kaifi Azmi Marg in front of the school, and on the Buddh circuit's corner, which a hero may drive.
+
+## In the air
+
+Every built tile has something in the air, and Delhi's is the flypast: three fighter jets in a tight vic, which fly a round over the tile for ever and, every third time down Kartavya Path, trail saffron, white and green smoke from Raisina Hill over India Gate to the river. It is in `flypast.ts`.
+
+- **It is the picture that ends the Republic Day parade**, and the research note says to ask before anything of the parade is built. The collector was asked on 19 November 2026 and chose the jets from four ideas. Only the aircraft and their smoke are built. They carry no weapons, no squadron's badge and no number, and the pass has no date.
+- **The jets** are the tile's own shape and no one real type: a fighter in two greys, with a long dark nose, a low canopy of dark glass, swept wings, two engines with a short flame behind each, two fins that lean outwards, and the flag on both faces of each fin. They were a display team's red and white at first. The collector asked for grey with a small Indian flag on the tail, so that they look real, and then for a sleeker canopy. Each is about twelve and a half long, drawn 1.3 times that: a toy jet is about as long as two cars.
+- **The round** stays inside the board: low and straight down the axis from west to east at 33 high, a climbing turn to the right over the east bank, back west along the south of the tile at 46, and a turn down over the Ridge to line up again. A lap is about 480 long and they fly at 30, so it takes sixteen seconds. They lean into a turn as one body, by up to 60 degrees, so the outer wingman rides high and the inner one low.
+- **The smoke** is on by day only, on every third lap, while the leader is between x -66 and x 76 on the axis: saffron from the left wingman, white from the leader, green from the right, so that from where the tile is looked at the three lie in the flag's order. It is puffs of cotton wool, as the engine's own smoke is, in a class of the file's own: the engine's is grey and gone in a second, and this hangs for eight seconds and thins away. Whoever opens the tile sees the first pass within seconds.
+- **What it costs**: the three jets are one mesh of about 1,000 triangles, their flashing lamps a second, and the smoke a third that is drawn in one call however many puffs there are, 440 at most. Their wing lamps, their flames and the flags glow at night without a mesh of their own.
 
 ## The screen for music
 
@@ -204,6 +217,8 @@ All on 19 November 2026, on the built tile, alone on the board, in the order the
   | Europe | 34,600 | 438 | 99 | 4.0 to 5.3 ms | 4.3 to 5.1 ms | 780,000 | 141 |
   | Hong Kong | 44,800 | 521 | 71 | 5.6 to 6.6 ms | 5.8 to 6.3 ms (and one of 11.8) | 807,000 | 191 |
 
+  Measured again the same evening, with the jets, India Gate's inscription and the fort's battlements built, and with more heroes on the roads than before: Delhi 84,400 triangles standing still, a frame of 5.8 to 6.0 ms at 14 h and 4.4 to 5.0 at 21 h, 174 draw calls; Europe in the same minute 5.0 to 6.4 and 4.9 to 5.3, 164 draw calls. By day Delhi's frame is a little over Europe's, by night a little under.
+
   Delhi has about twice the triangles that stand still on the built tiles, which is the most the page allows, and its frame costs what Europe's does. Its own meshes are few: two trains, two boats, the ducks, three tables that turn, the kites and the pigeons.
 
 ## Liberties taken with the real place
@@ -224,6 +239,8 @@ All on 19 November 2026, on the built tile, alone on the board, in the order the
 - **The park south of the AIIMS flyover is a quiet one**, with a class at its exercises on mats: it lies beside the Lotus Temple's garden. Gully cricket is played in R. K. Puram's colony park.
 - **Left out for care**, as the research note's section 8 says: the Taj Mahal, the new Parliament and the Central Vista's new blocks, the old Parliament, the mosque at the Qutub Minar's foot, Rajghat, Nizamuddin's shrine, and any parade.
 
+**India Gate**, in `axis.ts`: what is cut on it is what is cut on the real one, on both faces: INDIA, with MCMXIV on its left and MCMXIX on its right, and suns on the cornice (Wikipedia's page on the gate). The letters are strokes in the stone and not a sign, which would not be lit as the stone round it is. The small arches through its two legs are open here; in life their lower part is closed, with a large ornament of stone over it. The posts and chains round its base, and the lamps on the ground, are as such a monument has them, and are not copied from a picture.
+
 **Old Delhi**, in `old-delhi.ts`:
 
 - The Lahori Gate is 5 from the north end of the fort's west wall and not in its middle: that is where Chandni Chowk meets the wall.
@@ -232,6 +249,7 @@ All on 19 November 2026, on the built tile, alone on the board, in the order the
 - The row of faiths is five equal plots in the order the street has them from the fort: Lal Mandir, Gauri Shankar, the Baptist church, Sis Ganj, Sunehri Masjid. Wikipedia's page on Chandni Chowk and Delhi Heritage Walks' route both give that order. Which side of the street each stands on was not found: all five stand on its south side, with their fronts to it.
 - Not confirmed by any source found: the colours of the Gauri Shankar temple and of the church, Kashmere Gate's detail, and that the Delhi Gate's two elephants face each other.
 - Bharat Mandapam hides the Delhi Gate's barbican from the opening view. The gate, its towers and both elephants are seen.
+- The fort's battlements come to a point, as a Mughal fort's do. The rows of tall blind arches along its west and north walls and along the river face are there to break those long faces, at the collector's wish for more detail on the walls: in life the walls are plainer, with courses of stone and slits.
 
 **The centre**, in `centre.ts`:
 
@@ -400,3 +418,9 @@ To the plan, on 19 November 2026:
 - **What is missing.** "I think we have a lot will tweak after".
 - **Hauz Khas turned half round.** "Sure".
 - **The statue of Hanuman.** "Sounds good".
+
+To the built tile, the same day:
+
+- **Something in the air.** "love it any suggestions for an aerial element of sorts?" He was offered the flypast, Delhi's black kites with a cut paper kite, an airliner on approach, and a flight of parakeets, and told that the flypast is of the parade, which the research note says to ask about. "I like the jets as an idea, make sure the jets look cool themselves".
+- **The jets' look.** "Can we make the fighter jets grey witha  small indian flag on tail so they look kinda realistic". Then, of the grey ones: "canopy a bit too bulbous, i like the color but maybe make it a bit more sleek on the jets".
+- **More detail.** "Also maybe we can give india gate and the wallks fo the red fort slgihtly more detail?"
