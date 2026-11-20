@@ -12,7 +12,7 @@ import { band, flat, walls, type P2 } from '../../engine/ground';
 import { makeWaterMaterial } from '../../engine/look/materials';
 import { carved, field, heightOn, type Bench, type Field } from '../../engine/terrain';
 import type { Build } from '../../engine/tile';
-import { DOME, F, LAKE, RIVER, TRENCH, WATER_DROP, inside, naturalAt, outOfTrench, smooth } from './plan';
+import { DOME, F, LAKE, RIVER, TRENCH, WATER_DROP, inside, naturalAt, outOfTrench, smooth, peakShare } from './plan';
 
 /** What the street material is told about a stretch of plain ground. */
 const GROUND: WinSpec = { cell: 0, storey: 1, lit: 0, kind: 1 };
@@ -24,6 +24,8 @@ export const MEADOW = 0x86a35a, MEADOW_DARK = 0x6f8f4c, SCRUB = 0x9a9a5c, BARE =
 export const SNOW = 0xeef2f6, SNOW_SHADE = 0xd6dee8, PAVING = 0xd8bfa2, MUD = 0x7a5a3e;
 /** The planet's ground near its edge, where it curves away: darker, as the far side of a globe is. */
 const LIMB_GREEN = 0x5f7d48, LIMB_RED = 0x8c4a2e;
+/** The peaks' bare rock, under their snow. */
+const ROCK = 0x7d6a62, ROCK_DARK = 0x5d4d48, ROCK_LIGHT = 0x9c897e, SNOW_BLUE = 0xc3d0e0;
 /** The canyon's strata, bottom to top. */
 export const STRATA = [0x9a4a2c, 0xc07a44, 0x7c3a26, 0xd39a62, 0xa85a34, 0xe0b27a, 0x8a4630];
 /** How thick a bed of the canyon's rock is. */
@@ -119,13 +121,21 @@ function noise(x: number, z: number): number {
 /** Where snow lies on the planet: the north-east of the plateau, and the peaks over the south-east of the flank. */
 export function snowAt(x: number, z: number, y: number): number {
   const ne = smooth(10, 50, x) * smooth(-80, -96, z);
-  const peaks = smooth(62, 78, x) * smooth(66, 80, z) * smooth(8, 14, y);
-  return Math.max(ne, peaks);
+  void y;
+  return Math.max(ne, smooth(0.34, 0.5, peakShare(x, z)));
 }
 
 /** The colour of a facet of the planet, by its height, how level it is, and where. */
 function colourAt(y: number, level: number, x: number, z: number): number {
   const n = noise(x * 0.07, z * 0.07), m = noise(x * 0.23 + 40, z * 0.23 - 17);
+  // a mountain: scree among the grass at its foot, bare rock on its flanks, snow from its shoulders up
+  const up = peakShare(x, z);
+  if (up > 0.05) {
+    const crisp = noise(x * 0.9 + 7, z * 0.9 - 3);
+    if (up > 0.4 + 0.12 * (crisp - 0.5)) return level > 0.8 ? SNOW : crisp > 0.5 ? SNOW_SHADE : SNOW_BLUE;
+    if (up > 0.13) return level > 0.82 ? ROCK_LIGHT : crisp > 0.5 ? ROCK : ROCK_DARK;
+    if (crisp > 0.62) return ROCK_LIGHT;
+  }
   // the canyon's wall and anything else steep: bands of rust and ochre
   // the planet's own steep edge, where it curves away to the board's edge: its landscape, darker towards the edge
   if (level < 0.8 && outOfTrench(x, z) > 18) {
@@ -209,12 +219,12 @@ function atmosphere(k: Build): void {
   for (let z = -113; z < 113; z += step) ring.push([104, z, 1, 0]);
   for (let x = 104; x > -104; x -= step) ring.push([x, 113, 0, 1]);
   for (let z = 113; z > -113; z -= step) ring.push([-104, z, -1, 0]);
-  const low = new THREE.Color(0xc4ecff), high = new THREE.Color(0x4f8fe8);
+  // white with a little blue in it: the material tints it, pale by day and a deep blue by night
   ring.forEach(([x, z, nx, nz]) => {
     // a little in from the edge, where the ground is still above the base
     const y0 = 0.05;
     pos.push(x, y0, z, x + nx * OUT * 0.4, H * 0.45, z + nz * OUT * 0.4, x + nx * OUT, H, z + nz * OUT);
-    col.push(low.r, low.g, low.b, high.r * 0.7, high.g * 0.7, high.b * 0.7, 0, 0, 0);
+    col.push(1, 1, 1, 1, 0.86, 0.93, 1, 0.5, 0.7, 0.85, 1, 0);
   });
   const n = ring.length;
   for (let i = 0; i < n; i++) {
@@ -223,16 +233,18 @@ function atmosphere(k: Build): void {
   }
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-  geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 4));
   geo.setIndex(idx);
   const mat = new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.4, depthWrite: false, side: THREE.DoubleSide, fog: false });
+  const DAY = new THREE.Color(0xe4f3ff), NIGHT = new THREE.Color(0x4f9cf0);
   const mesh = new THREE.Mesh(geo, mat);
   mesh.name = 'atmosphere';
   mesh.renderOrder = 2;
   k.group.add(mesh);
   k.each((_dt, _t, night) => {
-    // pale by day, as thin air is; a glow by night
-    mat.opacity = 0.32 + 0.5 * night;
+    // a pale haze by day, as thin air is; a blue glow by night
+    mat.opacity = 0.26 + 0.6 * night;
+    mat.color.copy(DAY).lerp(NIGHT, night);
     mat.blending = night > 0.5 ? THREE.AdditiveBlending : THREE.NormalBlending;
   });
 }

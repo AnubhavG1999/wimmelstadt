@@ -1305,9 +1305,13 @@ export function buildShow(k: Build): Sky {
   // the opening: the Reaper's squadron falls, the Sovereign walks to her shuttle, and Lorn marches on the south wall
   for (const id of ['reaper', 'shuttle', 'southWall']) { const d = defs.find((x) => x.id === id); if (d && free(d)) start(d); }
 
-  // the Rain that falls all the time, from the Pax and the Morning Star in turn, onto the ground outside the shield
-  let nextWave = 4, fromPax = true;
+  // The Rain never stops. A full wave falls from the Pax and the Morning Star in turn, and between the waves a few
+  // shells at a time, so that there is always fire somewhere in the sky. While the shield stands, the share of
+  // each wave that is aimed at the city strikes it and skids off; once Mustang has dropped it, the city is open.
+  let nextWave = 3, nextFew = 9, fromPax = true, seed = 742;
+  const rnd = (): number => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296;
   const outside: Zone[] = [LANDINGS.west, LANDINGS.east, LANDINGS.flank, LANDINGS.peaks];
+  const WAVE = 40, WAVE_EVERY = 17;
 
   let frame = 0;
   k.each((dt) => {
@@ -1318,11 +1322,18 @@ export function buildShow(k: Build): Sky {
     // the Rain
     if (rain && fleet) {
       nextWave -= dt;
+      nextFew -= dt;
       if (nextWave <= 0) {
         const ship = fromPax ? 'pax' : 'morningStar';
         fromPax = !fromPax;
-        const zones = rain.shield.isUp() ? outside : [...outside, LANDINGS.city];
-        nextWave = Math.max(28, rain.wave(() => fleet.tubes(ship), zones, 22) * 0.6);
+        rain.wave(() => fleet.tubes(ship), [...outside, LANDINGS.city], WAVE);
+        nextWave = WAVE_EVERY;
+        nextFew = 6 + rnd() * 2;
+      } else if (nextFew <= 0) {
+        const ship = rnd() < 0.5 ? 'pax' : 'morningStar';
+        const zones = [...outside, LANDINGS.city];
+        rain.wave(() => fleet.tubes(ship), [zones[Math.floor(rnd() * zones.length)]], 2 + Math.floor(rnd() * 4));
+        nextFew = 1.4 + rnd() * 2.2;
       }
       // the shield comes back up a while after Mustang has dropped it
       if (!rain.shield.isUp()) {
@@ -1390,6 +1401,8 @@ export function buildShow(k: Build): Sky {
       play: (id: string) => { const d = defs.find((x) => x.id === id); if (d) start(d); return d ? d.name : 'no such story'; },
       running: () => running.map((r) => `${r.def.id} ${r.t.toFixed(1)}`),
       stories: () => defs.map((d) => d.id),
+      /** Fires a wave from a ship's own tubes now: `rrShow.wave('pax', 40)`. */
+      wave: (ship: 'pax' | 'morningStar' = 'pax', n = WAVE) => (rain && fleet ? rain.wave(() => fleet.tubes(ship), [...outside, LANDINGS.city], n) : 0),
     };
   }
   return { fleet, rain, cast };

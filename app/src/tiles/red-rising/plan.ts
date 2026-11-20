@@ -107,10 +107,20 @@ export const smooth = (a: number, b: number, v: number): number => {
  * foot reaches.
  */
 export const PEAKS: { c: P2; h: number; r: number }[] = [
-  { c: [86, 92], h: 15, r: 11 },
-  { c: [95, 80], h: 10, r: 8 },
-  { c: [77, 104], h: 9, r: 8 },
+  { c: [86, 92], h: 25, r: 14 },
+  { c: [95, 80], h: 14, r: 8.5 },
+  { c: [77, 104], h: 12, r: 8.5 },
 ];
+
+/** On a peak, how far up it a place is: 0 at its foot and off the peaks, 1 at its summit. Snow lies from its shoulders up. */
+export function peakShare(x: number, z: number): number {
+  let s = 0;
+  for (const p of PEAKS) {
+    const d = Math.hypot(x - p.c[0], z - p.c[1]) / p.r;
+    if (d < 1) s = Math.max(s, Math.pow(1 - d, 1.25));
+  }
+  return s;
+}
 
 /**
  * The mine on the south flank: a tiered round pit like Lykos's Common (RR 2,
@@ -125,9 +135,10 @@ function peaksAt(x: number, z: number): number {
   for (const p of PEAKS) {
     const d = Math.hypot(x - p.c[0], z - p.c[1]) / p.r;
     if (d >= 1) continue;
-    // a ridge across each, so that it is a mountain and not a cone
+    // a ridge across each and crags down its sides, so that it is a mountain and not a cone
     const ridge = 0.85 + 0.15 * Math.cos(Math.atan2(z - p.c[1], x - p.c[0]) * 2 + p.c[0]);
-    y = Math.max(y, p.h * ridge * Math.pow(1 - d, 1.35));
+    const crag = 1 + 0.2 * Math.sin(x * 1.1 + p.c[0]) * Math.sin(z * 1.3 + p.c[1]) * Math.min(1, d * 3);
+    y = Math.max(y, p.h * ridge * crag * Math.pow(1 - d, 1.25));
   }
   return y;
 }
