@@ -69,7 +69,17 @@ Six (`HERO_SPOTS`): the Institute's marble square on the plateau; the landing pa
 
 ## The fleet
 
-See the head of `fleet.ts`. FLEET_NOTES
+`fleet.ts`. Eleven ships hang over Agea, each on a station of its own between 87 and 135 up, drifting and turning a little, laid so that no stage is lost behind a hull from the opening view:
+
+- **Darrow's**: the Pax, about 85 long, gunmetal with a red spine, the Rain's spitTubes in a grid on her port side (GS 22, 37; MS 45); the Morning Star, about 120, white with her shark-mouth bow, red scythes on both flanks and the sloppy crescent under her keel (MS 45, 57), her spitTubes in two rows to port; two Augustan destroyers; Victra's destroyer, its bay full of leechCraft (GS 38).
+- **The Bellona's**: the Warchild, about 70, in blue and silver with the heaviest guns in the sky (GS 38), and two consorts of the same family.
+- **The Rim's**, with the defenders: the Dustmaker, about 95 (LB 20), and the Charybdis, black with a three-headed dragon in light (IG 15).
+- **The Archimedes**, a corvette 6 long like a reared cobra's head (IG 8).
+- Sixteen dogfighters, three dropships, drones that rise from the depot, and under every hull its shadow on the land.
+
+Two stories are the fleet's own: the leeches on the Warchild, whose decks go dark one by one, and the Charybdis chasing the Archimedes through the fleet until the corvette slips away. `rrFleet.check()` flies every path whole, the stories too: nothing comes within 3 of anything built, the ground or the shield, and no two ships within 4 of each other.
+
+The colours of the Pax, Victra's destroyer and the Archimedes, the whole look of the Dustmaker, the Bellona hulls, the destroyers and every small craft are the tile's own drawing. The eagle on the Bellona flanks is the tile session's reading of that house's sign and is not in the research note: it is one painted shape per ship in `fleet.ts`, easy to take off.
 
 ## The Rain
 
@@ -116,7 +126,7 @@ The fleet flies above all of it: see its own heading.
 ## Liberties taken with the books
 
 - **Named characters**, at the collector's wish (above).
-- **Everyone at once.** Figures of different years stand in one battle: Alexandar grown (IG, DA) beside the boy he was in 742 (IG 45), Sefi and the Valkyrie (MS), Holiday and Thraxa (MS, IG), Lysander and Atalantia (DA), the Morning Star (MS on), the Archimedes (IG), the Rim's ships (IG, LB). Each stands with the side it fought on. Stories 9 and 10 are scenes from Morning Star played in this battle's places, and Cassius fights beside Darrow in story 9 and against him in the others, as he did in different books.
+- **Everyone at once.** Figures of different years stand in one battle: Alexandar grown (IG, DA) beside the boy he was in 742 (IG 45), Sefi and the Valkyrie (MS), Holiday and Thraxa (MS, IG), Lysander and Atalantia (DA), the Morning Star (MS on; she was taken at Ilium, MS 49, and was not Darrow's at the Lion's Rain), the Archimedes (IG), the Rim's ships (IG, LB). Each stands with the side it fought on. Stories 9 and 10 are scenes from Morning Star played in this battle's places, and Cassius fights beside Darrow in story 9 and against him in the others, as he did in different books.
 - **Where things stand**: the Institute's gate and square on the plateau above the canyon, not cut into its wall; Olympus floating over the canyon's east end, not 80 km up a side canyon; the shield's generators in a park on the city's east side.
 - **The river** comes over the canyon's rim in a fall and ends in a lake inside the city.
 - **The Reaper's squadron** comes down before the south wall and not on the snow-covered mountain of GS 38: the peaks stand in the tile's south-east corner as that mountain, but there is no ground on them for six shells to open and be seen, and the open ground before the wall is what the opening view looks straight down on.
@@ -137,14 +147,17 @@ On the tile as it stands, on a second development server with hot reload off:
 - `wimmel.fights('red-rising')` finds nothing.
 - **Sight**: by `wimmel.seen` from the opening view, every point of `SIGHT`, every place for a hero at its middle and both ends, and the middle of every stage are seen, but for the middle of the snow (Olympus) and of the shield park (a pylon), whose stories were moved to where they are seen. The plan's boxes hide about a sixth of the loop's lanes behind the North Gate and the north wall, and an eighth of the camp road behind the quarter and the South Gate.
 - **Traffic**, the show left out: three hours in steps of a tenth of a second, and from another start 130 minutes in steps of a twentieth. The nearest any two travellers come is 4.87; the least any follows another on its route is 6.3 on the gate route, between two gravBikes, which are 3.8 long, and 8.0 and more on the others; the longest any stands is 4.0 seconds, waiting its turn onto the loop at the apron, and it does not grow. All 25 were moving at the end of each run.
-- **The show**: its own check passes for all thirteen stories. Each ground story was looked at in pictures at its chief moments.
+- **The show**: its own check passes for all thirteen stories. Each ground story was looked at in pictures at its chief moments. Six minutes of the show run on raised no error and no warning; nine of the thirteen stories played in that time, and there were never more than 106 shells at once, of the 180 the Rain allows.
+- **The fleet**: `rrFleet.check()` flies every path for its whole lap and both of its stories: the nearest a ship comes to anything built, the ground or the shield is 4.5, to another ship 10.0 at its station and 5.2 in a story, and no stage is lost behind a hull from the opening view.
 - **Rain and snow**: rain by day and at night, snow by day and at dusk.
+- **Heroes**, by numbers alone, since no picture is taken of one: with the collector's fifteen on the tile, twelve of them driving among 37 travellers and the show playing, the nearest any two come is still 4.87, the longest stand is 3.7 seconds, a hero at its party trick, and nothing is said in the console. Four ground stories and one of the sky were seen playing at once.
+- **Not checked**: the frame rate on the iPhone, and how a hero looks standing on each of the six places.
 
 ## What it costs
 
-On the development server, the pane not in front and the canvas four pixels across, so a frame's numbers are the processor's: with everything, 5.7 to 6.5 ms a frame (168 draw calls, about 240,000 triangles drawn with shadows), of which the scripts are 1.3 ms. Blackwater Bay, measured the same way in the same tab, is 5.8 ms and 1.5 ms; North America 1.9 ms and 0.07 ms.
+On the development server, the pane not in front and the canvas four pixels across, so a frame's numbers are the processor's: with everything, 5.7 to 6.5 ms a frame (about 165 draw calls, 240,000 triangles drawn with shadows), of which the scripts are 1.3 ms. Blackwater Bay, measured the same way in the same tab, is 5.8 ms and 1.5 ms; North America 1.9 ms and 0.07 ms. The whole board of nine, measured the same way, is 16.2 ms a frame; the eight without this tile are 13.5 ms.
 
-About 78,000 triangles stand still: the quarter 15,500, the land 14,600, the canyon 11,100, the Citadel 9,500, the flank 8,800, the towers 8,600, the walls 7,700 and the roads 2,000. The Rain adds 20,000 to 27,000 with two waves on the ground and in the air, in a handful of draw calls. The cast is about 60 draw calls, a mesh for each kind of part: the first place to look if the whole board runs slowly.
+About 78,000 triangles stand still: the quarter 15,500, the land 14,600, the canyon 11,100, the Citadel 9,500, the flank 8,800, the towers 8,600, the walls 7,700 and the roads 2,000. The fleet moves about 30,000 more, and 37,000 at its peak. The Rain adds 20,000 to 27,000 with two waves on the ground and in the air, in a handful of draw calls. The cast is about 50 draw calls, a mesh for each kind of part, and writes only the figures that moved: its draw calls are the first place to look if the whole board runs slowly.
 
 ## What the collector may still turn
 
@@ -170,6 +183,7 @@ About 78,000 triangles stand still: the quarter 15,500, the land 14,600, the can
 `rr.aim(x, y, z, az, elev)` with `zoom` gives each; az 42 is the opening side. Let the show run half a minute first (`wimmel.advance(30)`), so that a wave is in the air.
 
 - The opening view, by day and by night. By night as a wave falls from the Morning Star is the picture of the tile.
+- The planet's curve with the fleet over it and the Rain falling, at dusk: `rr.aim(0, 30, -10, 42, 17)`, zoom 300, hour 18.2. Wait for a wave: `rrRain.state().flying` over 34, and three seconds more.
 - The Reaper's landing: `rrShow.only('reaper')`, body time 31; (1, 24, 69), zoom 52.
 - The Sovereign's shuttle: `rrShow.only('shuttle')`, body time 12 and 21; (-21, 28, 15), zoom 34.
 - The fight with Aja: `rrShow.only('aja')`, body time 27; the same view.
