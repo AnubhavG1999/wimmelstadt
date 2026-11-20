@@ -83,85 +83,90 @@ const westEnd: Paint = (ctx, _s, w, h) => {
   lettering(ctx, '7.30', w / 2, h - 34, 34, w - 30, '#ffffff');
 };
 
-const brolly: Paint = (ctx, _s, w, h) => {
-  ctx.fillStyle = '#f2c14e';
+// The big screen's own picture, shown when nothing is playing: the wartime
+// poster, which is long out of copyright, with driving in place of carrying on.
+// The poster is tall and the screen is wide, so a small car stands beside the
+// words, and the crown keeps its place above them.
+
+/** A crown from a few plain shapes: a band, five points with a pearl on each, and an orb and cross on the middle one. `w` is its width, (x, y) the middle of its foot. */
+const crown = (ctx: Ctx, x: number, y: number, w: number, color: string): void => {
+  const u = w / 10;
+  ctx.fillStyle = color;
+  ctx.fillRect(x - 5 * u, y - 1.6 * u, 10 * u, 1.6 * u);
+  // the points rise from the band, the middle one highest
+  ctx.beginPath();
+  ctx.moveTo(x - 5 * u, y - 1.6 * u);
+  const tips: [number, number][] = [[-4.6, 5.2], [-2.4, 4.0], [0, 6.0], [2.4, 4.0], [4.6, 5.2]];
+  const dips: [number, number][] = [[-3.5, 2.6], [-1.2, 2.8], [1.2, 2.8], [3.5, 2.6]];
+  tips.forEach(([tx, ty], i) => {
+    ctx.lineTo(x + tx * u, y - ty * u);
+    if (dips[i]) ctx.lineTo(x + dips[i][0] * u, y - dips[i][1] * u);
+  });
+  ctx.lineTo(x + 5 * u, y - 1.6 * u);
+  ctx.closePath();
+  ctx.fill();
+  for (const [tx, ty] of tips) {
+    ctx.beginPath(); ctx.arc(x + tx * u, y - ty * u, 0.55 * u, 0, Math.PI * 2); ctx.fill();
+  }
+  // the orb and the cross on top of the middle point
+  ctx.beginPath(); ctx.arc(x, y - 6.7 * u, 0.8 * u, 0, Math.PI * 2); ctx.fill();
+  ctx.fillRect(x - 0.22 * u, y - 8.9 * u, 0.44 * u, 1.6 * u);
+  ctx.fillRect(x - 0.7 * u, y - 8.4 * u, 1.4 * u, 0.44 * u);
+};
+
+/** A small rounded car in profile, nose to the right, in one colour, with its wheels and windows cut out in the ground's. `w` is its length and (x, y) the middle of where its wheels touch the road. */
+const carInProfile = (ctx: Ctx, x: number, y: number, w: number, color: string, ground: string): void => {
+  const u = w / 20, r = 2.1 * u;
+  ctx.fillStyle = color;
+  // the body, and the cabin on it
+  roundRect(ctx, x - 10 * u, y - 6.4 * u, 20 * u, 4.6 * u, 1.6 * u);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(x - 7.2 * u, y - 6.2 * u);
+  ctx.lineTo(x - 5.8 * u, y - 10.4 * u);
+  ctx.lineTo(x + 3.4 * u, y - 10.4 * u);
+  ctx.lineTo(x + 6.0 * u, y - 6.2 * u);
+  ctx.closePath();
+  ctx.fill();
+  // two windows, with a pillar between them
+  ctx.fillStyle = ground;
+  ctx.beginPath();
+  ctx.moveTo(x - 6.1 * u, y - 6.9 * u); ctx.lineTo(x - 5.1 * u, y - 9.6 * u); ctx.lineTo(x - 1.1 * u, y - 9.6 * u); ctx.lineTo(x - 1.1 * u, y - 6.9 * u);
+  ctx.closePath(); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(x - 0.1 * u, y - 6.9 * u); ctx.lineTo(x - 0.1 * u, y - 9.6 * u); ctx.lineTo(x + 2.9 * u, y - 9.6 * u); ctx.lineTo(x + 4.7 * u, y - 6.9 * u);
+  ctx.closePath(); ctx.fill();
+  // the wheels: a ring of the ground's colour round each, so they stand clear of the body
+  for (const dx of [-5.6, 5.6]) {
+    ctx.fillStyle = ground;
+    ctx.beginPath(); ctx.arc(x + dx * u, y - r, r + 0.7 * u, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.arc(x + dx * u, y - r, r, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = ground;
+    ctx.beginPath(); ctx.arc(x + dx * u, y - r, r * 0.4, 0, Math.PI * 2); ctx.fill();
+  }
+};
+
+const keepCalm: Paint = (ctx, _s, w, h) => {
+  const RED_GROUND = '#d7261e', WHITE = '#ffffff';
+  // the screen is laid out at 640 by 360 and scaled to whatever size it is given
+  const k = h / 360;
+  ctx.fillStyle = RED_GROUND;
   ctx.fillRect(0, 0, w, h);
-  // rain
-  ctx.strokeStyle = '#1c2f5e';
-  ctx.lineWidth = 3;
-  ctx.lineCap = 'round';
-  ctx.globalAlpha = 0.45;
-  for (let i = 0; i < 44; i++) {
-    const x = (i * 53) % w, y = (i * 97) % h;
-    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 6, y + 18); ctx.stroke();
-  }
-  ctx.globalAlpha = 1;
-  // an umbrella: the canopy with its scalloped edge, and the crook
-  const cx = w / 2, cy = 268, r = 70;
-  ctx.fillStyle = '#16171c';
-  ctx.beginPath(); ctx.arc(cx, cy, r, Math.PI, 0); ctx.closePath(); ctx.fill();
-  ctx.fillStyle = '#f2c14e';
-  for (let i = 0; i < 4; i++) {
-    ctx.beginPath(); ctx.arc(cx - r + r / 4 + (i * r) / 2, cy + 1, r / 4, Math.PI, 0); ctx.closePath(); ctx.fill();
-  }
-  ctx.strokeStyle = '#16171c';
-  ctx.lineWidth = 6;
-  ctx.beginPath(); ctx.moveTo(cx, cy - 66); ctx.lineTo(cx, cy + 76); ctx.arc(cx - 12, cy + 76, 12, 0, Math.PI); ctx.stroke();
-  lettering(ctx, 'BROLLY', w / 2, 66, 54, w - 20, '#16171c');
-  lettering(ctx, 'DAYS', w / 2, 124, 60, w - 24, '#1c2f5e');
-  lettering(ctx, 'RAIN OR SHINE', w / 2, h - 36, 22, w - 20, '#16171c');
-};
 
-const fizz: Paint = (ctx, _s, w, h) => {
-  fade(ctx, w, h, '#d6252f', '#96101c');
-  ctx.strokeStyle = '#ffffff';
-  ctx.lineWidth = 3;
-  ctx.globalAlpha = 0.5;
-  for (let i = 0; i < 26; i++) {
-    const x = (i * 71 + 17) % w, y = (i * 113 + 40) % h, r = 4 + (i % 5) * 3;
-    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.stroke();
-  }
-  ctx.globalAlpha = 1;
-  lettering(ctx, 'FIZZ', w / 2, 84, 78, w - 20, '#ffffff');
-  lettering(ctx, 'POP!', w / 2, 158, 60, w - 30, '#ffe36b');
-  // a bottle with a label
-  const cx = w / 2;
-  ctx.fillStyle = '#ffffff';
-  roundRect(ctx, cx - 30, 262, 60, 150, 16);
-  ctx.fill();
-  roundRect(ctx, cx - 12, 214, 24, 62, 8);
-  ctx.fill();
-  ctx.fillStyle = '#d6252f';
-  ctx.fillRect(cx - 30, 320, 60, 44);
-  lettering(ctx, 'FIZZ', cx, 343, 24, 52, '#ffffff');
-};
+  // the words, centred in the right-hand part, under the crown, one to a line, with AND smaller
+  const mid = w * 0.64, maxW = w * 0.6;
+  crown(ctx, mid, 62 * k, 74 * k, WHITE);
+  const words: [string, number, number][] = [['KEEP', 106, 54], ['CALM', 162, 54], ['AND', 206, 28], ['DRIVE', 250, 54], ['ON', 306, 54]];
+  for (const [word, y, size] of words) lettering(ctx, word, mid, y * k + size * k * 0.04, size * k, maxW, WHITE);
 
-const toyCars: Paint = (ctx, _s, w, h) => {
-  fade(ctx, w, h, '#1f55b5', '#0d2a6b');
-  lettering(ctx, 'TOY', w / 2, 66, 70, w - 24, '#ffd23f');
-  lettering(ctx, 'CARS', w / 2, 132, 70, w - 24, '#ffd23f');
-  // a little car, at speed
-  const y = 250;
-  ctx.strokeStyle = '#ffffff';
-  ctx.lineWidth = 4;
-  ctx.lineCap = 'round';
-  ctx.globalAlpha = 0.7;
-  for (const [x0, dy, l] of [[8, -22, 26], [4, -4, 20], [10, 14, 24]]) {
-    ctx.beginPath(); ctx.moveTo(x0, y + dy); ctx.lineTo(x0 + l, y + dy); ctx.stroke();
-  }
-  ctx.globalAlpha = 1;
-  ctx.fillStyle = '#ff7a1a';
-  ctx.beginPath(); ctx.moveTo(40, y + 20); ctx.lineTo(40, y - 2); ctx.lineTo(66, y - 8); ctx.lineTo(84, y - 34); ctx.lineTo(128, y - 34); ctx.lineTo(146, y - 8); ctx.lineTo(166, y - 2); ctx.lineTo(166, y + 20); ctx.closePath(); ctx.fill();
-  ctx.fillStyle = '#bfe6ff';
-  ctx.beginPath(); ctx.moveTo(74, y - 10); ctx.lineTo(88, y - 28); ctx.lineTo(124, y - 28); ctx.lineTo(136, y - 10); ctx.closePath(); ctx.fill();
-  for (const x of [70, 138]) {
-    ctx.fillStyle = '#16171c';
-    ctx.beginPath(); ctx.arc(x, y + 20, 15, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#e9e9e9';
-    ctx.beginPath(); ctx.arc(x, y + 20, 6, 0, Math.PI * 2); ctx.fill();
-  }
-  lettering(ctx, '1:64', w / 2, 346, 64, w - 24, '#ffffff');
-  lettering(ctx, 'COLLECT THEM', w / 2, h - 36, 22, w - 20, '#ffd23f');
+  // the car on the left, on a short white road line, as if it were driving on
+  const cx = w * 0.22, road = 236 * k;
+  carInProfile(ctx, cx, road, 172 * k, WHITE, RED_GROUND);
+  ctx.fillStyle = WHITE;
+  ctx.fillRect(cx - 104 * k, road + 6 * k, 208 * k, 6 * k);
+  // three lines behind it for speed, kept calm and short
+  for (const [dy, l] of [[-62, 26], [-44, 40], [-26, 26]]) ctx.fillRect(cx - 94 * k - l * k, road + dy * k, l * k, 5 * k);
 };
 
 /** Black and white squares, two rows deep: the band along the front of Ace Cafe. */
@@ -175,11 +180,13 @@ const chequer: Paint = (ctx, _s, w, h) => {
 
 const AD: [number, number] = [176, 448];
 const SCREENS: [string, Paint, string][] = [
-  ['ad-tea', teaTime, '#7fe0d0'], ['ad-show', westEnd, '#ff7ad0'], ['ad-brolly', brolly, '#ffd77a'], ['ad-fizz', fizz, '#ff7a7a'], ['ad-toys', toyCars, '#7fb0ff'],
+  ['ad-tea', teaTime, '#7fe0d0'], ['ad-show', westEnd, '#ff7ad0'],
 ];
 
 export const LONDON_SIGNS: SignDef[] = [
   ...SCREENS.map(([id, paint]): SignDef => ({ id, lines: [], color: '#ffffff', aspect: AD[0] / AD[1], size: AD, paint })),
+  // the tile's one big screen, for the music: it shows what is playing, and the poster when nothing is
+  { id: 'screen', lines: [], color: '#ffffff', aspect: 16 / 9, kind: 'screen', paint: keepCalm },
   { id: 'chequer', lines: [], color: '#ffffff', aspect: 49, size: [1960, 40], paint: chequer },
   // Ace Cafe London is a real cafe, open on the North Circular Road: its name, in plain lettering on a plain board
   { id: 'ace-cafe', lines: ['ACE CAFE LONDON'], color: '#f4f1e8', ink: '#b3202a', aspect: 9.4, kind: 'board', real: true },
@@ -502,7 +509,7 @@ export function buckinghamPalace(k: Build): void {
 
 /**
  * Piccadilly Circus: the fountain with the winged archer in the middle, and
- * the lights, a curved front of great screens that looks onto it.
+ * the lights, a front of great screens that looks onto it.
  */
 export function piccadillyCircus(k: Build): void {
   const b = k.b;
@@ -531,12 +538,23 @@ export function piccadillyCircus(k: Build): void {
   }
   k.lights.push({ x: cx, z: cz, r: 9, color: '#ffe9c4', k: 0.5 });
 
-  // --- the lights: five stretches of a front that curves round the west side of the circus, each with a screen ---
+  // --- the lights: a front round the west side of the circus. Its south end curves, in two stretches with a tall
+  // advertisement each; its north end, which faces the opening view, is one flat face that carries the big screen.
+  // A screen of 16 by 9 needs a flat wall as wide as three of the curve's stretches, so it takes the place of three.
   const RF = 14.6, back = -103.8, H = 18;
-  const front: P2[] = Array.from({ length: 6 }, (_, i): P2 => [cx + Math.cos(rad(135 + i * 18)) * RF, cz + Math.sin(rad(135 + i * 18)) * RF]);
-  const shape: P2[] = [...front, [back, front[5][1]], [back, front[0][1]]];
+  const front: P2[] = [135, 153, 171, 225].map((a): P2 => [cx + Math.cos(rad(a)) * RF, cz + Math.sin(rad(a)) * RF]);
+  const shape: P2[] = [...front, [back, front[3][1]], [back, front[0][1]]];
   walls(b, shape, 0, H, 0xe4dccb, { win: { cell: 2.25, storey: 4.5, lit: 0.4, kind: 2 }, seed: 0.61 });
   flat(b, shape, H, 0x6d6f76);
+  {
+    // the flat face runs from 171 to 225 degrees round the circus, and looks back across it to the south-east
+    const am = rad(198), nx = -Math.cos(am), nz = -Math.sin(am);
+    const r = RF * Math.cos(rad(27)), y = 11.2, sh = 7.0;
+    const x = cx - nx * r, z = cz - nz * r;
+    b.obox(x + nx * 0.05, y, z + nz * 0.05, (sh * 16) / 9 / 2 + 0.3, sh / 2 + 0.3, 0.05, am + Math.PI / 2, BLACK);
+    k.sign('screen', x + nx * 0.13, y, z + nz * 0.13, nx, nz, sh);
+    k.lights.push({ x: x + nx * 5, z: z + nz * 5, r: 11, color: '#ff8a7a', k: 0.6 });
+  }
   SCREENS.forEach(([id, , glow], i) => {
     const am = rad(135 + i * 18 + 9), nx = -Math.cos(am), nz = -Math.sin(am);
     const r = RF * Math.cos(rad(9));

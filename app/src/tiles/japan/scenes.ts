@@ -107,13 +107,25 @@ function shibuya(k: Build): void {
         k.sign(id, s.x1 + 0.13, y, mz, 1, 0, h);
       }
     };
-    screen('ad-neko', 'S', 25.6, 14.4, 0.54);
+    // Cat Cola's screen sits at the top of the face, so that the big screen below it has room
+    screen('ad-neko', 'S', 36.75, 9.4, 0.54);
     screen('ad-yume', 'S', 9.4, 5.7, 1.35);
     screen('ad-donut', 'E', 25, 11.7, 0.54);
     // a band of light between the screens, where the news runs
     b.box(s.x0 + 0.4, 14.6, s.z1, s.x1 - 0.4, 15.6, s.z1 + 0.08, 0xfff2c9, { win: interior(2.4), faces: 'S' });
     b.box(s.x1, 14.6, s.z0 + 0.4, s.x1 + 0.08, 15.6, s.z1 - 0.4, 0xfff2c9, { win: interior(2.4), faces: 'E' });
     k.lights.push({ x: mx, z: s.z1 + 6, r: 18, color: '#7fd8ff', k: 0.6 }, { x: s.x1 + 6, z: mz, r: 16, color: '#ff8ac8', k: 0.6 });
+
+    // The big screen, which shows what is playing. No wall at the crossing is
+    // wide enough for it alone, so it spans the south faces of this tower and of
+    // the pencil building beside it, which stand flush, as one screen over the
+    // crossing does in life. Its frame bridges the narrow gap between the two.
+    // (the pencil building is 32 high and its west side is 10 west of this tower's, as ORDINARY in plan.ts has it)
+    const BIG = 10.05, west = s.x0 - 10, bx = (west + s.x1) / 2, by = 25.8;
+    const bw = (BIG * 16) / 9 / 2 + 0.3, bh = BIG / 2 + 0.3;
+    b.box(bx - bw, by - bh, s.z1, bx + bw, by + bh, s.z1 + 0.1, 0x14141c, { faces: 'NESWTB' });
+    k.sign('screen', bx, by, s.z1 + 0.13, 0, 1, BIG);
+    k.lights.push({ x: bx - 3, z: s.z1 + 8, r: 20, color: '#ffb35c', k: 0.5 });
   }
   // the round-fronted tower: a drum of pale metal at the corner, with the shops behind it
   {

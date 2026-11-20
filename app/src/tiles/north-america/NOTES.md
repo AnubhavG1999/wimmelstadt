@@ -132,3 +132,5 @@ The businesses are invented: Big Block Motors, Loop Parking, Rocket Cola, Starli
 - Hot Wheels, Mini GT and Goodyear, on boards on three roofs.
 - Wrigley Field, on its marquee, and Route 66, on a shield over the arch.
 - The L's five stations: Addison, State/Lake, Forest Park, Roosevelt and Midway, which are stations of Chicago's own L.
+
+The big screen hangs on the Gate Tower at 53 high, 13.5 tall, on its south face over the boulevard and again on its north face. It shows what is playing on Spotify for whoever has linked an account, and otherwise its own picture: a fifties roadside advertisement for Rocket Cola, a bottle flying up a night sky as a rocket, with OUT OF THIS WORLD under the name. Rocket Cola is the tile's own invented cola, and none of the screen's words is anyone's real name.

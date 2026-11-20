@@ -112,6 +112,7 @@ Tokyo Tower is within a tenth of the scale. Kyoto Tower is a small landmark and 
 - Tatsumi and Daikoku are on one road here, with the Bay Bridge between them. In life the bridge is on Daikoku's other side. The real parking area is called Tatsumi No. 1; its sign here says only Tatsumi.
 - Kyoto and Tokyo are 90 units apart. The Shinkansen goes on past Kyoto in life; here its line ends under the hill.
 - The dragon is not a liberty with any place. The collector asked for one.
+- The big screen at the scramble spans the south faces of the tower of screens and the pencil building beside it, 10 high, from 20 to 31 up, because no wall at the crossing is wide enough for it alone. Cat Cola's screen moved up above it. It shows what is playing on Spotify, and otherwise its own picture: a giant calico cat peeking over the bottom edge at the street, as Tokyo's big-screen cat does, saying にゃー ("meow"), with ただいま休憩中 ("on a break right now") in the corner like a channel's caption. Those words are plain phrases and nobody's name.
 
 ## Real names on signs
 

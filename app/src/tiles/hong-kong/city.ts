@@ -276,6 +276,20 @@ export function buildCity(k: Build): TileParts {
   }
   extras(k);
 
+  // The big screen, which shows what is playing. It hangs on the east face of
+  // the tall block at the east end of Nathan Road's north side: the waterfront's
+  // faces look west over the harbour, away from the view the tile opens with,
+  // and this face looks towards it with nothing in front. The face is 17 long,
+  // so the screen's frame runs a little past each corner.
+  {
+    const o = BUILDINGS.find((e) => e.id === 'nathan-n3')!;
+    const H = 10, zc = (o.z0 + o.z1) / 2, yc = o.h - 0.6 - H / 2 - 0.3;
+    const hw = (H * 16) / 9 / 2 + 0.3, hh = H / 2 + 0.3;
+    b.box(o.x1, yc - hh, zc - hw, o.x1 + 0.1, yc + hh, zc + hw, 0x14141c, { faces: 'NESWTB' });
+    k.sign('screen', o.x1 + 0.13, yc, zc, 1, 0, H);
+    k.lights.push({ x: o.x1 + 6, z: zc, r: 18, color: '#ff3d9a', k: 0.55 });
+  }
+
   // the Convention Centre's link, over the shore road and the tram
   b.box(-45, 6.6, 8, -19, 10.2, 14, 0xdfe6ea, { faces: 'NESWTB', win: { cell: 2.6, storey: 3.6, lit: 0.6, kind: 1 } });
   // the breakwater of the typhoon shelter, and a few boats in it
