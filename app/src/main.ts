@@ -4,13 +4,19 @@
 import * as THREE from 'three';
 import { openCollection, sourceFor } from './collection';
 import { buildBoard } from './engine/board';
+import { BASE } from './engine/build';
 import { IsoRig } from './engine/camera';
+import { flatFights } from './engine/checks';
 import { sizeOutline } from './engine/hero';
 import { atmosphereAt, makeAtmo } from './engine/look/atmosphere';
 import { U } from './engine/look/materials';
 import { Post, makeBackdrop } from './engine/look/post';
 import { WEATHER_NAMES, Weather, type WeatherName } from './engine/look/weather';
+import type { Room } from './engine/room';
+import { TABLE } from './engine/table';
 import { PARTY_TRICKS } from './heroes';
+import { openMusic } from './music';
+import { musicOnScreens } from './music/screens';
 import { tilesFor } from './tiles';
 import { buildControls } from './ui/controls';
 
@@ -41,6 +47,7 @@ const opts = {
   outline: flag('outline', true),
   tilt: flag('tilt', true),
   drift: flag('drift', true),
+  room: flag('room', true),
   stats: flag('stats', false),
   hour: query.has('hour') ? num('hour', 12) : null,
 };
@@ -92,10 +99,38 @@ const collection = openCollection(sourceFor(query), (list) => {
   board.placeHeroes(list, PARTY_TRICKS, query.get('place'));
 });
 
+// What the listener's Spotify is playing goes on the big screens of the city,
+// once this device has been linked to an account: see src/music.
+const onScreens = musicOnScreens((now) => board.showPlaying(now));
+const music = openMusic(query, (m) => onScreens(m.track));
+onScreens(music.track);
+
 const rig = new IsoRig(board.bounds);
 rig.drift = opts.drift;
 rig.camera.layers.enable(1);
 rig.attach(canvas);
+// The collector's room, round the table: a desk whose top is an old map of
+// the world, and the room the desk stands in. It is fetched after the city,
+// so that the city never waits for it. ?room=0 leaves it out.
+let room: Room | null = null;
+/** Builds the room, or builds it again for a screen of another shape. Nothing, until the room's code has arrived. */
+let furnish = (): void => {};
+if (opts.room) {
+  void import('./engine/room').then(({ buildRoom }) => {
+    const places = board.tiles.map((t) => ({ name: t.def.name, x: t.x, z: t.z, place: t.def.place }));
+    furnish = () => {
+      if (room) {
+        scene.remove(room.group);
+        room.dispose();
+      }
+      room = buildRoom(board.table, BASE.bottom - TABLE.under, BASE.bottom + TABLE.lip, places, coarse, { aspect: rig.aspect, fit: rig.fitBoard });
+      scene.add(room.group);
+      // the view is kept inside the room from now on
+      rig.roam(room.desk, room.reach, room.hall);
+    };
+    furnish();
+  });
+}
 // A view can be given in the address: ?x=..&z=..&az=..&zoom=..
 const startView = query.has('az') || query.has('zoom') || query.has('x') || query.has('z');
 
@@ -141,10 +176,14 @@ function resize(): void {
   // a page that loads while hidden can report no size at all
   applySize(Math.max(2, window.innerWidth), Math.max(2, window.innerHeight));
   rig.resize(window.innerWidth, window.innerHeight);
+  // a screen of another shape may need the walls further off, for the whole board to be seen inside them
+  if (room && !room.fits(rig.aspect, rig.fitBoard)) furnish();
 }
 window.addEventListener('resize', resize);
 resize();
 if (startView) rig.set(num('x', 0), num('z', 4), num('az', 42), num('zoom', 250));
+// and so can a tilt, in degrees: ?elev=24
+if (query.has('elev')) rig.setTilt(THREE.MathUtils.degToRad(Math.min(89, Math.max(5, num('elev', 38)))));
 
 /** Half the width of the ground the shadows are drawn for now. */
 let shadowHalf = 0;
@@ -218,6 +257,10 @@ const controls = buildControls(document.getElementById('ui')!, {
   unlock: (pin) => collection.unlock(pin),
   // the heroes leave with the lock, and the plainest way to take them out of the city is to load the page afresh
   lock() { void collection.lock().then(() => location.reload()); },
+  music() {
+    if (music.state === 'connected') music.disconnect();
+    else if (music.state === 'disconnected') music.connect();
+  },
   touched: () => wake(),
 });
 
@@ -235,6 +278,7 @@ function showControls(): void {
     hero: following ? board.heroes[follow].name : '',
     heroes: board.heroes.length, following,
     lock: collection.state,
+    music: music.state,
     focus: FOCUS[focusMode].name, stats: showStats, turning: rig.drift,
   });
 }
@@ -249,7 +293,7 @@ window.addEventListener('keydown', (e) => {
   else if (k === 'f') nextHero();
   else if (k === 'w') weather.next();
   else if (k === 'b') focusMode = (focusMode + 1) % FOCUS.length;
-  else if (k === 'escape') { follow = -1; toBoard(); }
+  else if (k === 'escape') { follow = -1; toBoard(); rig.levelOut(); }
   else return;
   wake();
 });
@@ -349,6 +393,7 @@ function step(dt: number, now: number): void {
   }
   rig.update(dt, now);
   rig.camera.getWorldDirection(U.uViewDir.value);
+  room?.update(rig.az, rig.viewH, atmo.night, atmo.bgTop);
 }
 
 function draw(): void {
@@ -490,6 +535,8 @@ interface ShotOptions {
   heroes?: boolean;
   /** A plan: the picture is taken from straight above, with north at the top and nothing blurred. */
   plan?: boolean;
+  /** How steeply the picture looks down, in degrees. 38 unless this says otherwise. */
+  elev?: number;
 }
 
 /**
@@ -512,10 +559,11 @@ async function shot(name: string, o: ShotOptions = {}): Promise<string> {
   const now = performance.now();
   rig.lastInput = now;
   const view = { x: rig.target.x, z: rig.target.z, az: THREE.MathUtils.radToDeg(rig.az), viewH: rig.viewH };
-  const keepElev = rig.elev, keepFocus = focusMode;
+  const keepElev = rig.goal.elev, keepFocus = focusMode;
+  rig.setTilt(THREE.MathUtils.degToRad(o.elev ?? 38));
   if (o.plan) {
     // not quite straight down, so that the view still knows which way is north
-    rig.elev = 1.553;
+    rig.setTilt(1.553);
     focusMode = FOCUS.findIndex((f) => f.name === 'off');
   }
   rig.set(o.x ?? 0, o.z ?? 4, o.plan ? 0 : (o.az ?? 42), o.zoom ?? Math.max(268, 372 / (w / h)));
@@ -545,7 +593,7 @@ async function shot(name: string, o: ShotOptions = {}): Promise<string> {
   follow = keep;
   weather.choice = keepWeather;
   board.showHeroes(true);
-  rig.elev = keepElev;
+  rig.setTilt(keepElev);
   focusMode = keepFocus;
   resize();
   rig.set(view.x, view.z, view.az, view.viewH);
@@ -583,7 +631,8 @@ function seen(x: number, y: number, z: number): { seen: boolean; after?: number;
 // A handle for poking at the city from the console.
 Object.assign(window, {
   wimmel: {
-    opts, rig, renderer, atmo, board, weather, collection, bench, frame, shot, seen,
+    opts, rig, renderer, atmo, board, weather, collection, music, bench, frame, shot, seen,
+    get room() { return room; },
     setHour(h: number | null) { pinned = h; lapse = false; },
     /** Lets this many seconds pass at once, without drawing them: for looking at what happens later. */
     advance(seconds: number) {
@@ -591,6 +640,17 @@ Object.assign(window, {
       for (let i = 0; i < seconds * 60; i++) step(1 / 60, now);
     },
     setFollow(i: number) { follow = i; },
+    /**
+     * Flat surfaces that lie in one plane and overlap, which flicker as the view
+     * moves: on one tile, or on every tile. Each is given in its tile's own
+     * coordinates. See `flatFights` in engine/checks.ts. Development server only.
+     */
+    fights: import.meta.env.DEV ? (id?: string) => {
+      const rows = board.tiles.filter((t) => !id || t.def.id === id)
+        .flatMap((t) => flatFights(t.standing.group, new Set<THREE.Object3D>([t.vehicles.group])).map((f) => ({ tile: t.def.id, ...f })));
+      console.table(rows);
+      return rows;
+    } : undefined,
     info() { return { calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, fps, avgMs, cpuMs, hour, city: board.stats() }; },
   },
 });
