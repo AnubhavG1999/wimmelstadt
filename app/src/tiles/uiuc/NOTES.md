@@ -2,7 +2,7 @@
 
 What a later reader cannot see in the code.
 
-**Where it stands.** The plan was put to the collector on 19 November 2026. He answered the same day, and this is the plan with what he asked for worked in. The tile is blocked out: its ground, its streets, the railway's embankment with its two viaducts, its routes and its places for heroes are built, and every lot is a plain box with its name on a board until its model is built. Built so far: the Illini Union, and Gregory Place with Basil Thai and Manolo's. The rest of the lots are being built a file at a time (see "The models"). The research is in [docs/districts/research/uiuc.md](../../../../docs/districts/research/uiuc.md). Where this file and that note disagree, this file is the later: see "What the research note has wrong".
+**Where it stands.** The plan was put to the collector on 19 November 2026. He answered the same day, and this is the plan with what he asked for worked in. The tile is blocked out: its ground, its streets, the railway's embankment with its two viaducts, its routes and its places for heroes are built, and every lot is a plain box with its name on a board until its model is built. Built so far: the Illini Union, Gregory Place with Basil Thai and Manolo's, and the Six Pack. The rest of the lots are being built a file at a time (see "The models"). The research is in [docs/districts/research/uiuc.md](../../../../docs/districts/research/uiuc.md). Where this file and that note disagree, this file is the later: see "What the research note has wrong".
 
 ## Where things are
 
@@ -11,7 +11,7 @@ What a later reader cannot see in the code.
 - `checks.ts` looks at the routes and at the sight lines on every load of the development server, and says what it finds in the console.
 - `look.ts` is what the campus is made of: its brick, trim and roofs as colours, how its walls are glazed, and the small parts its buildings share (a dormer, a chimney, a column, steps, a weathervane). A storey on this tile is 2.9 high, and every model takes that from here.
 - `models.ts` gathers the files of models. Each file builds one group of lots and hands over its models by the id of their lot, the signs it hangs, and `extras` for whatever it builds that is not a lot. A lot no file has a model for is a box. A model is a function of its lot, so it moves with the plan.
-- `union.ts` builds the Illini Union, and `gregory-place.ts` Gregory Place and Manolo's. The other files of models are named for their part of the tile.
+- `union.ts` builds the Illini Union, `gregory-place.ts` Gregory Place and Manolo's, and `six-pack.ts` the halls of the Six Pack. The other files of models are named for their part of the tile.
 
 ## The models
 
@@ -22,6 +22,18 @@ Not checked against a picture: whether the Green Street porch has columns, and h
 **Gregory Place** (`gregory-place.ts`). A block of brick with a stone base, three storeys, a cornice and a flat roof behind a low wall. Its front on Gregory Street is four shops, each under an awning that says what is sold: KOREAN, GRILL and SUBS in dark cloth, and between them Basil Thai's, which is white and half as wide again, and reads BASIL THAI with "at Urbana" under it, as the collector describes it. The lettering is black: its real colour is not known. Two bays at the kerb lie in front: the hero's, before Basil Thai's door, and one south of it with a parked car. They lie south of where a street lamp stands at the kerb, which is why the second bay is not to the north. The head of the stairs stands at the south end of the roof, so that it hides nothing of Manolo's.
 
 **Manolo's** (`gregory-place.ts`). One storey of cream brick with a red band and a red awning, its door on the lane to its north. Its name is on a board on two posts over the west of its roof, turned to face the opening view, and no wider than 4.4, because the block of shops hides everything east of that. The name is on its awning too. What its front really looked like is not known: the collector is asked.
+
+**The Six Pack** (`six-pack.ts`). A storey in a hall of residence is 2.2, not the campus's 2.9, so that four storeys make a hall 9 high, and each hall's number of storeys is its height in the plan divided by that.
+
+- *Hopkins, Weston, Scott and Snyder*, the four that are left of the six, are built alike by one function: four ranges of brick round a courtyard, a band of stone at every floor, a flat roof, and a tower of stairs at the north-west and south-east corners. Each has its name over its door, and Hopkins and Scott, whose doors face west, have it on their south sides as well.
+- *Nugent* is a long block with two stacks of glass on each long side and a taller tower of stairs in buff brick at its west end.
+- *Ikenberry Dining* is glass from floor to roof on three sides under a white roof that sails out, with its kitchens in brick behind. Its door and its name are on Fourth Street.
+- *Bousfield* is an L of six storeys in orange brick with strips of dark metal, and a corner of glass, a little higher than the rest, where First Street meets Peabody Drive.
+- *Wassaja* is five storeys of deep red brick with a top storey of dark metal, fins of pale stone, and a stack of glass lounges at its south-east corner. Its door is on the south side, with its name over it. West of the door, along the walk, stand five baskets of weathered steel, each larger than the last as they near the door, cut through with a pattern and lit from inside at night.
+
+It is move-in day. The hero's place is the car's, on the lawn before the door. What came out of the car stands on the walk east of the door: boxes, a small fridge, a rug, two of the blue carts the halls lend out, a board that says MOVE-IN DAY, with balloons. Nothing stands on the car's place, south or east of it, or before the baskets.
+
+Not checked against a picture: what Wassaja Hall looks like (its brick, its storeys, where its door and its baskets are), and the colour of the old halls' brick. The collector is asked.
 
 ## How the tile lies
 
@@ -181,7 +193,7 @@ Seven, each open to the south-east. A hero on show faces east, south, or between
 | --- | --- |
 | `quad-day` | on the Quad's west walk in front of the Union, beside the car teams' stand. Its middle line is 2.5 south of the foot of the terrace's steps. |
 | `basil-thai` | in a bay at the kerb in front of Basil Thai's door, on Gregory Street, facing south |
-| `move-in` | on the lawn before Wassaja Hall's door, where cars are unloaded |
+| `move-in` | on the lawn before Wassaja Hall's door, where cars are unloaded. The opening view sees it from the ground up, through the gap between Bousfield and Scott. |
 | `tailgate-1`, `tailgate-2` | in lot E-14, among the pickups and tents |
 | `car-teams` | on the forecourt of the workshop, north of Green Street |
 | `deck-roof` | on the roof of the parking deck at Fourth and Pennsylvania |
@@ -232,7 +244,7 @@ Decided together, before anything is built. The city's scale is about 3.2 m to a
 | The stadium's stands, its press box, and the top of its video board | 34 m for the stands of 1923 | 10.5 | 14, 17 and 18.5 |
 | The Armory, at its crown | 30 m | 9 | 12 |
 | Foellinger's dome | not found | | 13 |
-| Bousfield Hall, of six storeys | not found | | 12.5 |
+| Bousfield Hall, of six storeys | not found | | 13.5 |
 | The Main Library, to its ridge | not found | | 13.5 |
 | Wassaja Hall | not found | | 11 |
 | The Siebel Center, of five storeys | not found | | 11 |
@@ -249,12 +261,12 @@ The heights in life are those the research found. State Farm Center is the one t
 
 Worked out from the plan with the test that `hiddenBy` in `engine/checks.ts` uses, for the foot and the middle of each thing, three points on each place for a hero, and a car's roof every four units along each lane.
 
-In sight: the foot of the Union's Quad front from end to end, its terrace, and both its cupolas; the foot of Basil Thai's shopfront and its awning; Wassaja Hall's south side from end to end, at its foot and half way up; Scott's and Snyder's south sides, Weston's and Snyder's east sides, Bousfield's south side and the dining hall; every place for a hero; the Siebel Center's south side from end to end; Roger Adams Laboratory's east side and the Chemical and Life Sciences Laboratory's east and south sides; the stadium's east columns, its south end and its screen; the saucer; the Armory and the band; Foellinger's dome; the west side of the Quad from Henry to Lincoln Hall; the Main Library's east front; the Morrow Plots; Krannert Center and its amphitheatre; Engineering Hall's front; KAMS, Legends and Murphy's Pub; the Red Lion's garden; Joe's sign; the Illini Hall site; the Transit Plaza; the Stock Pavilion; the grove and its cemetery; the Round Barns; the train, and both viaducts.
+In sight: the foot of the Union's Quad front from end to end, its terrace, and both its cupolas; the foot of Basil Thai's shopfront and its awning; Wassaja Hall's south side from end to end, from its foot up, with its door and its baskets, and the lawn before it; Scott's and Snyder's south sides, Weston's and Snyder's east sides, Bousfield's south side and the dining hall; every place for a hero; the Siebel Center's south side from end to end; Roger Adams Laboratory's east side and the Chemical and Life Sciences Laboratory's east and south sides; the stadium's east columns, its south end and its screen; the saucer; the Armory and the band; Foellinger's dome; the west side of the Quad from Henry to Lincoln Hall; the Main Library's east front; the Morrow Plots; Krannert Center and its amphitheatre; Engineering Hall's front; KAMS, Legends and Murphy's Pub; the Red Lion's garden; Joe's sign; the Illini Hall site; the Transit Plaza; the Stock Pavilion; the grove and its cemetery; the Round Barns; the train, and both viaducts.
 
 Hidden, and why it is left so:
 
 - **Alma Mater**, behind Altgeld Hall, which stands south of her in life too. She is seen from the north and the west, which is the way she faces.
-- **Wassaja Hall's east side**, behind Nugent Hall, which stands two units from it, and the south half of the lawn before it, behind Scott Hall. Its door and its baskets are on its south side for that reason: see "Liberties".
+- **Wassaja Hall's east side**, behind Nugent Hall, which stands two units from it, and the west end of the lawn before it, behind Bousfield Hall. Its door and its baskets are on its south side for that reason: see "Liberties".
 - **Hopkins Hall's walls**, behind Scott, Snyder and Weston, and Nugent's south side, behind Hopkins. Their roofs and courtyards are in sight.
 - **Manolo's walls**, behind Gregory Place. Its roof is in sight, and its name stands on a board above it.
 - **The south end of the Quad's lawn**, behind Foellinger, and its east edge, behind the buildings of the east side.
@@ -287,7 +299,7 @@ The near lane is the one on the camera's side of the buildings that hide it: the
 - **Peabody Drive and Pennsylvania Avenue are one street.** In life Pennsylvania Avenue lies about 80 m further south.
 - **Wright Street is for buses for its whole length**, and runs on south as Sixth Street. In life the two are a block apart, and only the block of Wright Street between John and Daniel is the Transit Plaza.
 - **Fourth Street ends at Green Street**, and so does First Street.
-- **The Six Pack is laid out round Wassaja Hall.** Wassaja stands in the group's north-west corner, as in life, and the ground south of it is kept open as a lawn, so that the opening view sees its south side over Scott Hall. In life Hopkins Hall stands on part of that ground: here it stands east of the lawn, south of Nugent. Wassaja's door and its baskets are on its south side, towards the lawn. Where the real door is has not been checked.
+- **The Six Pack is laid out round Wassaja Hall.** Wassaja stands in the group's north-west corner, as in life, and the ground south of it is kept open as a lawn, so that the opening view sees its south side. It sees it through the gap between Bousfield Hall and Scott Hall, which is 9 wide: Scott stands well east of Bousfield, as it does in life, and close to Snyder. In life Hopkins Hall stands on part of the lawn's ground: here it stands east of the lawn, south of Nugent. Wassaja's door and its baskets are on its south side, towards the lawn. Where the real door is has not been checked.
 - **A car on the lawn before Wassaja Hall.** It is move-in day.
 - **The Activities and Recreation Center**, between Peabody Drive and the stadium, is left out, and so are the halls along Fourth Street on the Six Pack's east side.
 - **The saucer's car parks** are a lot on either side of it. In life four lots stand round it, with their aisles slanted towards it, and drives that ring it.
@@ -313,7 +325,7 @@ The near lane is the one on the camera's side of the buildings that hide it: the
 
 ## Real names on signs
 
-On signs so far: ILLINI UNION, on both fronts of the Union; BASIL THAI, with "at Urbana" under it, on its awning; and MANOLO'S, with PIZZA & EMPANADAS under it, on its board and on its awning. The rest are the names the plan would use, each as plain lettering on a plain board, with what the research found on 19 November 2026. Each is checked again as its sign is written.
+On signs so far: the names of the Six Pack's seven halls and of the Ikenberry Dining Center, each over its door, as the research note gives them; ILLINI UNION, on both fronts of the Union; BASIL THAI, with "at Urbana" under it, on its awning; and MANOLO'S, with PIZZA & EMPANADAS under it, on its board and on its awning. The rest are the names the plan would use, each as plain lettering on a plain board, with what the research found on 19 November 2026. Each is checked again as its sign is written.
 
 | Name | Where | What confirmed it |
 | --- | --- | --- |

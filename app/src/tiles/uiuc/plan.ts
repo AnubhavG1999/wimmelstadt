@@ -231,8 +231,9 @@ L('nugent', 'Nugent Hall', -68, 15, -53, 23, 9.5);
 L('ikenberry-dining', 'Ikenberry Dining', -51, 15, -40, 23, 6);
 L('hopkins', 'Hopkins Hall', -63, 25, -53, 33, 9);
 L('weston', 'Weston Hall', -51, 25, -40, 33, 9);
-L('bousfield', 'Bousfield Hall', -83, 35, -72, 42, 12.5);
-L('scott', 'Scott Hall', -70, 35, -59, 42, 9);
+L('bousfield', 'Bousfield Hall', -83, 35, -72, 42, 13.5);
+// (Scott stands well east of Bousfield, as in life: the gap between them is what lets the opening view see the lawn)
+L('scott', 'Scott Hall', -63, 35, -52.5, 42, 9);
 L('snyder', 'Snyder Hall', -51, 35, -40, 42, 9);
 
 // --- south of Gregory Drive: Fourth to Sixth, and the South Quad ---
