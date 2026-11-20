@@ -2,7 +2,7 @@
 
 This file records what a later reader cannot see in the code.
 
-**Where the tile stands, on 19 November 2026:** every part of the land is built, the roads carry their travellers, three dragons fly, three ships sail and a kraken haunts the channel by the Hightower. The checks under "What was checked" have been run. What is left is the collector's tuning, under "Open, for the collector", and "For the next tile" is written as far as the work has got.
+**Where the tile stands.** Final: the collector called it so on 19 November 2026, in his words "It's final". Every part of the land is built, the roads carry their travellers, three dragons fly, three ships sail, and a kraken haunts the channel by the Hightower. `main` is merged in as it stood at `bd36a6f`, and every check under "What was checked" was run on the tile as it was called final. The tile is not on the board yet. Standing it there, and bringing the documents, the READMEs and the public pictures up to date, are the main session's to do when it merges the branch. The views to take the pictures from are under "Views for the pictures".
 
 ## Sources and rights
 
@@ -319,7 +319,9 @@ About 0.9 ms of Westeros's is the dragons. Before the merge the two were 5 and 3
 
 So a frame costs about what a built tile's does, but the triangles that stand still are 2.4 times North America's, where the page that says how to build a tile asks for about twice. They are spread thinly: King's Landing 11,400, the riverlands 11,300, the Reach 11,000, Winterfell 9,400, the Wall 8,500, the west 7,900, the open country 7,900, the stormlands 7,200, the holds 6,800, the Neck 6,750, the Vale 6,200, Dragonstone 5,300, the roads 1,600 and the land 1,100. No one lot is dear, so a trim would be a tenth off every part. It was not done: a frame is mostly the heroes' own triangles, and the saving could not be measured. It is the first thing to do if the whole board runs slowly.
 
-## Open, for the collector
+## What the collector may still turn
+
+The tile was called final with these as they stand. Each is one setting, or a small piece of work, if he ever wants it otherwise.
 
 - How big and how fast the dragons are. They are small at the size the whole tile is seen at, and that is the books' size beside a car.
 - How often the pass with fire comes: every circuit, every 38 seconds, or less often with a slow high wheel between.
@@ -350,6 +352,24 @@ Still wanted:
 
 Built in this folder and worth moving to the engine: the rays along lanes (they were run from the console and are not in the code), `space.ts`'s way of asking what ground is open and how tall a thing may be before a name board, the registry of name boards in `look.ts`, the ship in `ships.ts`, and from the regions' files `vault` and `doorway` (King's Landing), `palm` and `q4` (the stormlands), `face4` and `boat` (the riverlands), and `taper` and the clipped drawing of a field (Dragonstone).
 
+## Views for the pictures
+
+The public pictures are taken when the tile joins the board. These are the views the tile was judged by, as `wimmel.shot` takes them, on the development server, in clear weather. `az` and `elev` are in degrees, and where they are not given the view is the one the tile opens with, from 42 at 38. Take the dragons away with `westeros.off(true)` for every view but those of the dragons.
+
+| What | Taken with |
+| --- | --- |
+| The whole tile by day | `{ hour: 13, w: 2400, h: 1600 }` |
+| The whole tile by night | `{ hour: 21, w: 2400, h: 1600 }` |
+| Drogon on the Dragonmont's rim | `{ hour: 13, x: 85.7, z: 12.6, zoom: 52, w: 2400, h: 1600 }`, after `const s = westeros.split(); westeros.goto(s + 20)`, which stops the show with him braced on the rim. `westeros.hold(0, { x: 95.2, y: 30, z: 20.3, heading: 60, sit: 1 })` stands him there too, still |
+| King's Landing | `{ hour: 13, x: 34.9, z: 24.3, zoom: 78, w: 2400, h: 1600 }` |
+| Harrenhal and the tourney ground | `{ hour: 13, x: -26.6, z: 7.5, zoom: 70, w: 2400, h: 1600 }` |
+| Storm's End | `{ hour: 13, x: 55.1, z: 80.4, zoom: 50, w: 2400, h: 1600 }` |
+| Sunspear | `{ hour: 13, x: 33.6, z: 94.2, zoom: 56, w: 2400, h: 1600 }` |
+| The Wall, the stair and the cage | `{ hour: 13, x: 6.7, z: -119, az: 30, elev: 30, zoom: 62, w: 2400, h: 1600 }` |
+| The kraken | `{ hour: 13, x: -88.2, z: 66.1, zoom: 34, w: 2400, h: 1600 }`, while it is up: the mesh named `kraken` is visible, for about eleven seconds in every thirty |
+| The ships | `{ hour: 13, x: 84, z: 76, elev: 75, zoom: 96, w: 2400, h: 1600 }` |
+| The riverlands by night, with the fires by the wayside | `{ hour: 21, x: -10, z: -12, zoom: 70, w: 2400, h: 1600 }` |
+
 ## For the next tile
 
 - **Write the plan as numbers before anything is drawn, and stand every lot as a box.** The whole tile could be looked at, and its roads checked, before one castle was built. But the plan's faults only showed when the castles stood: a gate's lot a unit off its road, a river under a turning ring, two lots sharing ground, a fork on the foot of a ramp. Draw each lot's box, each ring and each river's width on one picture from above before building, and look at where they touch.
@@ -361,3 +381,4 @@ Built in this folder and worth moving to the engine: the rays along lanes (they 
 - **Check the lanes against what is built, not only against boxes.** And check the flat-surface fights while things move: two of this tile's moving shadows crossed only now and then.
 - **Count triangles from the first day**, part by part, in the console. This tile was at 100,000 before anybody added them up.
 - **When the pane is not in front, frames do not run by themselves** and times are rough. `wimmel.frame` runs them, and `wimmel.advance` lets time pass.
+- **Run the traffic again after every merge of `main`, and know what stands still.** Since the heroes were given party tricks, a hero stops on the road for a few seconds to do its trick: a check that counts what stands still finds it, and `positions()` says it is a hero. And take away whatever a tile moves of its own before the run, if it has nothing to do with the traffic: this tile's dragons made each step five times slower.
