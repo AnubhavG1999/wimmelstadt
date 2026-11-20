@@ -167,9 +167,22 @@ function build(k: Build): TileParts {
   verge(RING_PARTS.river);
   street(k, bankPath, { lanes: 2, width: 14, sidewalk: 1 });
   verge(RING_PARTS.bank);
-  // the Signature Bridge's deck, and its approaches
-  roadDeck(k, pathOf(RING_PARTS.bridge), 7, { thick: 0.9, wall: 0.9, lanes: 2, lift: 0.04, skirt: 1.6, step: 1.5 });
-  for (const x of [75.5, 82.5]) b.box(x - 0.8, -2.4, RING.bridgeZ - 5.5, x + 0.8, RING.deck - 0.9, RING.bridgeZ + 5.5, CONCRETE);
+  // The Signature Bridge's deck. Either approach is a bank of earth with the road on it: a ramp, and the turn onto the bridge at the deck's height.
+  const DECK = { thick: 0.9, wall: 0.9, lanes: 2, lift: 0.04, step: 1.5 };
+  for (const approach of [RING_PARTS.rise, RING_PARTS.fall]) roadDeck(k, pathOf(approach), 7, { ...DECK, skirt: 99 });
+  roadDeck(k, pathOf(RING_PARTS.span), 7, DECK);
+  {
+    const z0 = RING.bridgeZ - 6.9, z1 = RING.bridgeZ + 6.9, under = RING.deck - 0.9, bed = -2.4;
+    // an abutment where each approach ends, which closes the bank of earth off and stands in the water
+    const west = RING.x1 + 11.4, east = RING.x2 - 11.4;
+    b.box(WEST_BANK - 0.5, bed, z0, west, under, z1, CONCRETE, { faces: 'NESWT' });
+    b.box(east, bed, z0, EAST_BANK + 0.4, under, z1, CONCRETE, { faces: 'NESWT' });
+    // and two piers in the river between them
+    for (const u of [1 / 3, 2 / 3]) {
+      const x = west + (east - west) * u;
+      b.box(x - 0.8, bed, RING.bridgeZ - 5.5, x + 0.8, under, RING.bridgeZ + 5.5, CONCRETE);
+    }
+  }
   // the loops it turns round in: Dhaula Kuan's, and the one at Akshardham's gate
   for (const loopLane of [RING_LANES.near, RING_LANES.far]) street(k, pathOf(loopLane), { lanes: 1, width: 5.5, sidewalk: 1.2, zebras: false });
 

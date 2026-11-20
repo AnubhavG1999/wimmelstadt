@@ -41,6 +41,8 @@ export const RING = {
   z1: 74, x1: 60.5,
   /** Where it turns onto the Signature Bridge, how high the bridge's deck is, and the line it runs south along on the east bank. */
   bridgeZ: -100, deck: 2.4, x2: 96,
+  /** How long the ramp up to the bridge is, on either bank. */
+  climb: 14,
   /** Where the east bank's road ends, at Akshardham's gate. */
   endZ: -14,
   /** How wide the two turning loops are. */

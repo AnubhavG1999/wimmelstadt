@@ -45,11 +45,16 @@ const towards = (a: P2, b: P2, d: number): P2 => {
 // ---------------------------------------------------------------------------
 
 /**
- * The middle of the Ring Road's verge, drawn as with a pen, in four parts:
+ * The middle of the Ring Road's verge, drawn as with a pen, in six parts:
  * the south leg with its two flyovers, the stretch on the ground round the
- * corner and up beside the river, the bridge, and the east bank.
+ * corner and up beside the river, the way up onto the bridge, its span, the
+ * way down again, and the east bank.
+ *
+ * The road climbs to the bridge while it runs straight, and turns on the
+ * level: a deck that climbs round a bend is twisted, and every stretch of it
+ * is drawn with a line across the road.
  */
-function ringParts(): { fly: Piece[]; river: Piece[]; bridge: Piece[]; bank: Piece[] } {
+function ringParts(): { fly: Piece[]; river: Piece[]; rise: Piece[]; span: Piece[]; fall: Piece[]; bank: Piece[] } {
   const R = RING;
   const t = new Trace(R.x0, R.z, 0, 0);
   const cut = (): Piece[] => t.pieces.splice(0, t.pieces.length);
@@ -62,16 +67,22 @@ function ringParts(): { fly: Piece[]; river: Piece[]; bridge: Piece[]; bank: Pie
   up(); t.go(R.span); down(); // AIIMS, over Aurobindo Marg
   const fly = cut();
   // the swing south, the corner, and north beside the river
-  t.turn(45, 12).go(11.3).turn(-45, 12).goToX(R.x1 - 10).turn(-90, 10).goToZ(R.bridgeZ + 10);
+  t.turn(45, 12).go(11.3).turn(-45, 12).goToX(R.x1 - 10).turn(-90, 10).goToZ(R.bridgeZ + 10 + R.climb);
   const river = cut();
-  t.turn(90, 10, R.deck).goToX(R.x2 - 10).turn(90, 10, 0);
-  const bridge = cut();
+  const h = R.deck / (R.climb - 2);
+  // (each approach ends in a unit of straight road, so that its deck ends square to the span's)
+  t.go(2, h).go(R.climb - 4, R.deck - h).go(2, R.deck).turn(90, 10).go(1);
+  const rise = cut();
+  t.goToX(R.x2 - 11);
+  const span = cut();
+  t.go(1).turn(90, 10).go(2, R.deck - h).go(R.climb - 4, h).go(2, 0);
+  const fall = cut();
   t.goToZ(R.endZ);
-  return { fly, river, bridge, bank: cut() };
+  return { fly, river, rise, span, fall, bank: cut() };
 }
 
 export const RING_PARTS = ringParts();
-const RING_LINE: Piece[] = [...RING_PARTS.fly, ...RING_PARTS.river, ...RING_PARTS.bridge, ...RING_PARTS.bank];
+const RING_LINE: Piece[] = [...RING_PARTS.fly, ...RING_PARTS.river, ...RING_PARTS.rise, ...RING_PARTS.span, ...RING_PARTS.fall, ...RING_PARTS.bank];
 
 /** The lane out, the loop at Akshardham's gate, the lane home, and Dhaula Kuan's loop. */
 export const RING_LANES = (() => {
