@@ -240,6 +240,8 @@ Each is checked as it is written, and entered here with what confirmed it. A sho
 - **Traffic of a tile's own shape**: see "Roads".
 - **The screen for music** works, and shows the tile's own picture when nothing is playing. It is hung.
 
+`main` was merged in again the same evening at `15d4458` (the merge is `2682915`): a mend to how traffic takes turns where two routes share a lane. No route of Delhi shares a lane with another, and `vehicles.shared()` comes back empty.
+
 ## What the collector said
 
 To the plan, on 19 November 2026:

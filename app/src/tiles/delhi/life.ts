@@ -272,6 +272,9 @@ export function life(k: Build, heroes: HeroSpot[]): ParkedSpot[] {
       if (places.free(x, z, 0.3)) k.person(x, z, p.y);
     }
   }
+  // --- the lawn north-east of the hexagon: a few trees at its south end, well clear of the Auto Expo's turntable, and people ---
+  for (const [x, z, size] of [[48.6, -7.5, 0.6], [49.4, -1.2, 0.5], [46.4, -11.5, 0.52]]) if (places.free(x, z, 1)) k.tree(x, z, size);
+  scatter(6, 41, -22.5, 50.5, -6);
   // --- Connaught Place's park, and the forecourts round it ---
   scatter(8, CP[0] - CP_R.park + 1, CP[1] - CP_R.park + 1, CP[0] + CP_R.park - 1, CP[1] + CP_R.park - 1);
 
@@ -304,7 +307,8 @@ export function life(k: Build, heroes: HeroSpot[]): ParkedSpot[] {
   for (const [x, z] of [[-63, 66.5], [4.5, 20.5]]) if (places.free(x, z, 1.2)) canePress(k, x, z);
 
   // --- boards over the roads: the way each faces is the way its traffic comes from ---
-  gantry(k, 'road-kashmere-gate', 60.5, 34, 0, 1, 9.2);
+  // (this one stands north of the rally's line of cars: at z 34 its west post stood before the hero's place there)
+  gantry(k, 'road-kashmere-gate', 60.5, 17, 0, 1, 9.2);
   gantry(k, 'road-ring-road', 60.5, -46, 0, -1, 9.2);
   gantry(k, 'road-aiims', 25.2, 59.3, 1, 0, 9.4);
   gantry(k, 'road-dhaula-kuan', -28, 59, 1, 0, 9.4);

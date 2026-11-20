@@ -96,6 +96,8 @@ function build(k: Build): TileParts {
   area(k, rect(lawns.x, AXIS_Z + 7, lawns.x + lawns.w, lawns.z + lawns.d), LAWN);
   for (const z of [AXIS_Z - 12, AXIS_Z + 12]) area(k, rect(lawns.x + 2, z - 1.25, lawns.x + lawns.w - 2, z + 1.25), 0x7fa6a0, 0.05);
   area(k, oval(CP[0], CP[1], CP_R.park, CP_R.park, 28), LAWN);
+  // a lawn north-east of the hexagon, between it and the Ring Road: kept low, because the Auto Expo's turntable is seen across it
+  area(k, [[36.9, -20.5], [36.9, -23], [51, -23], [51, 3.9]], LAWN);
   // the lawns inside India Gate's hexagon
   area(k, [0, 1, 2, 3, 4, 5].map((i) => hexCorner(i, HEX_LANES[0] - 4.5)), LAWN);
   // the gardens and forecourts that things stand in
