@@ -20,15 +20,16 @@
 // banners and the Dragonkeepers. The books give no colours for its stone or
 // its dome, nor which way the doors face: those are this tile's.
 
-import { interior, type V3 } from '../../engine/geo';
+import * as THREE from 'three';
+import { interior, rng, type V3 } from '../../engine/geo';
 import { area, rect } from '../../engine/ground';
 import { archway, lathe, tri } from '../../engine/parts';
 import { gable } from '../../engine/shapes';
 import type { SignDef } from '../../engine/signs';
 import type { Build } from '../../engine/tile';
-import { BRONZE, BRONZE_DARK, DARK, STONE, banner, brazier, doorway, fire, keeper, nameBoard, nameSign } from './look';
+import { BRONZE, BRONZE_DARK, DARK, STONE, banner, brazier, clipped, doorway, fire, keeper, mixed, mottle, nameBoard, nameSign, scaled } from './look';
 import type { Model } from './models';
-import { HERO_SPOTS, KEEPERS, RHAENYS, lotOf, type Lot, type P2 } from './plan';
+import { HERO_SPOTS, KEEPERS, RHAENYS, TURNS, lotOf, type Lot, type P2 } from './plan';
 import { CLIMB, roadY } from './roads';
 
 const R = RHAENYS, [CX, CZ] = R.c;
@@ -272,10 +273,33 @@ function terrace(k: Build): void {
     fire(k, x, R.y + 2.95, z, 0.24, 0);
   }
   for (const [x, z] of [[-89, -30], [-29, -30], [-89, -10], [-29, -10]] as P2[]) k.lights.push({ x, z, r: 13, color: '#ffcf8a', k: 0.45 });
-  // great iron rings set in the aprons' paving, where dragons were chained
-  for (const [x, z] of [[-92, -24], [-86, -40], [-36, -22], [-24, -40]] as P2[]) {
+  // great iron rings set in the aprons' paving, where dragons were chained, each with its chain laid out across the flags
+  for (const [x, z, a] of RINGS) {
     k.b.cyl(x, z, R.y, R.y + 0.12, 0.9, 0.9, 10, 0x55585e, { cap: false });
     k.b.cyl(x, z, R.y, R.y + 0.12, 0.65, 0.65, 10, 0x55585e, { cap: 0x6a6d72 });
+    chain(k, x + Math.cos(a) * 0.9, z + Math.sin(a) * 0.9, a, 11, (x * 7 + z * 3) % 2 > 1 ? 0.07 : -0.07);
+  }
+  // braziers round the forecourt and the front, clear of the doors and the way to them
+  for (const [x, z] of BRAZIERS) brazier(k, x, z, R.y);
+}
+
+/** The rings: where each is, and which way its chain is laid. */
+const RINGS: [number, number, number][] = [
+  [-92, -24, 0.4], [-84, -34, -2.6], [-95, -13, 0.2], [-36, -22, 2.9], [-20, -30, 2.2], [-22, -13, 3.3],
+];
+/** The braziers on the terrace: round the forecourt, before the drum either side of the doors, and on the aprons' edges. */
+const BRAZIERS: P2[] = [[-88, -7.5], [-33, -9.5], [-77, -15], [-43, -15], [-74, -21.5], [-46, -21.5]];
+
+/** A heavy chain lying on the flags, from `(x, z)` outward on a bearing, curving a little as it goes: links flat and upright by turns. */
+function chain(k: Build, x: number, z: number, a: number, links: number, bend: number): void {
+  let px = x, pz = z, yaw = a;
+  for (let i = 0; i < links; i++) {
+    const cx = px + Math.cos(yaw) * 0.19, cz = pz + Math.sin(yaw) * 0.19;
+    if (i % 2) k.b.obox(cx, R.y + 0.115, cz, 0.21, 0.105, 0.035, yaw, 0x4e5157);
+    else k.b.obox(cx, R.y + 0.045, cz, 0.21, 0.035, 0.105, yaw, 0x5b5e64);
+    px += Math.cos(yaw) * 0.36;
+    pz += Math.sin(yaw) * 0.36;
+    yaw += bend;
   }
 }
 
@@ -298,6 +322,95 @@ function climb(k: Build): void {
     }
   }
   k.lights.push({ x: cx, z: (z0 + z1) / 2, r: 11, color: '#ffcf8a', k: 0.45 });
+}
+
+
+// ---------------------------------------------------------------------------
+// The terrace's floor: flagstones in courses, the way to the doors, and soot
+// ---------------------------------------------------------------------------
+
+/** The flagstones: how long each is along its course, and how deep a course is. */
+const FLAG = { len: 2.4, deep: 1.6 };
+/** The flags' own stone, the darker stone of the way to the doors, and soot. */
+const FLAG_STONE = 0xbfb29b, WAY_STONE = 0x948877, SOOT = 0x37322e;
+/** The bronze doors' threshold, on the drum's south face. */
+const DOORS_Z = CZ + R.drum;
+/** Half the width of the way of darker stone from the head of the Street of the Sisters to the doors. */
+const WAY_HALF = 3.2;
+/** Old scorch on the aprons, where dragons have come down: its middle and how far it reaches. */
+const MARKS: [number, number, number][] = [[-88, -18, 4.2], [-28, -21, 4.6], [-91, -30, 2.8], [-23, -9, 3]];
+
+/**
+ * How scorched the terrace is at a place, from 0 clean towards black: a ring
+ * of soot round the landing circle on the forecourt, outside its paving; a fan
+ * of it before the doors, where a dragon lies with its head out and breathes;
+ * and old marks on the aprons. `wob` mottles it flag by flag.
+ */
+function scorchAt(x: number, z: number, wob: number): number {
+  const t = TURNS.forecourt, out = Math.hypot(x - t.c[0], z - t.c[1]) - (t.r + 2.6);
+  let s = out > 0 ? Math.max(0, 1 - out / 4.5) * 0.62 : 0;
+  const ahead = Math.max(0, z - DOORS_Z);
+  if (z > DOORS_Z - 1 && ahead < 13) s = Math.max(s, (1 - ahead / 13) * Math.max(0, 1 - Math.abs(x - CX) / (4.5 + ahead * 0.5)) * 0.8);
+  for (const [mx, mz, mr] of MARKS) {
+    const d = Math.hypot(x - mx, z - mz) / mr;
+    if (d < 1) s = Math.max(s, (1 - d * d) * 0.55);
+  }
+  return Math.min(0.82, s * (0.5 + 0.9 * wob));
+}
+
+/** One flag, or the part of one the terrace has, laid level at the terrace's height: each of its triangles takes the colour `colorAt` gives at its middle. */
+function lay(k: Build, pts: P2[], colorAt: (x: number, z: number) => number): void {
+  const p = pts.filter((v, i) => {
+    const w = pts[(i + pts.length - 1) % pts.length];
+    return Math.hypot(v[0] - w[0], v[1] - w[1]) > 1e-6;
+  });
+  if (p.length < 3) return;
+  let area = 0;
+  for (let i = 0; i < p.length; i++) area += p[i][0] * p[(i + 1) % p.length][1] - p[(i + 1) % p.length][0] * p[i][1];
+  if (Math.abs(area) < 2e-4) return;
+  for (const [a, b, c] of THREE.ShapeUtils.triangulateShape(p.map((v) => new THREE.Vector2(v[0], v[1])), [])) {
+    const color = colorAt((p[a][0] + p[b][0] + p[c][0]) / 3, (p[a][1] + p[b][1] + p[c][1]) / 3);
+    k.b.up([p[a][0], R.y, p[a][1]], [p[b][0], R.y, p[b][1]], [p[c][0], R.y, p[c][1]], color);
+  }
+}
+
+/**
+ * The terrace's floor, in place of one slab: flagstones laid in courses with
+ * their joints broken, each its own tone of the pit's stone and every other
+ * course a shade darker; a way of darker stone from where the Street of the
+ * Sisters comes up to the bronze doors; and soot round the landing circle,
+ * before the doors and in old marks on the aprons. Each flag is one colour,
+ * so nothing lies on anything else. Under the drum, where nothing shows, no
+ * flag is laid but in the doors' passage.
+ */
+function floor(k: Build): void {
+  const poly = R.terrace, r = rng(7129), ringN = TURNS.forecourt.c[1] - TURNS.forecourt.r - 2.6;
+  let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+  for (const [x, z] of poly) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); }
+  const hidden = (x: number, z: number): boolean => Math.hypot(x - CX, z - CZ) < R.drum - 0.4 && !(Math.abs(x - CX) < 7 && z > CZ + 8);
+  for (let j = 0; z0 + j * FLAG.deep < z1 - 1e-6; j++) {
+    const za = z0 + j * FLAG.deep, zb = Math.min(z1, za + FLAG.deep), course = j % 2 ? 0.945 : 1;
+    const wayRow = (za + zb) / 2 > DOORS_Z - 1 && (za + zb) / 2 < ringN;
+    for (let xa = x0 - (j % 2) * FLAG.len * 0.5; xa < x1 - 1e-6; xa += FLAG.len) {
+      const xb = xa + FLAG.len, wob = r();
+      if (hidden(xa, za) && hidden(xb, za) && hidden(xa, zb) && hidden(xb, zb)) continue;
+      const flag = clipped(poly, xa, za, xb, zb);
+      if (flag.length < 3) continue;
+      // a flag the way's edge crosses is cut there, so that the way runs straight
+      const cuts = wayRow ? [xa, ...[CX - WAY_HALF, CX + WAY_HALF].filter((c) => c > xa + 1e-6 && c < xb - 1e-6), xb] : [xa, xb];
+      for (let i = 0; i + 1 < cuts.length; i++) {
+        const part = cuts.length > 2 ? clipped(flag, cuts[i], za, cuts[i + 1], zb) : flag;
+        if (part.length < 3) continue;
+        const cx = (cuts[i] + cuts[i + 1]) / 2, way = wayRow && Math.abs(cx - CX) < WAY_HALF;
+        const stone = scaled(way ? WAY_STONE : FLAG_STONE, course * (0.93 + wob * 0.1));
+        // the soot is ragged at its edge: each triangle of a flag takes it as it lies at its own middle
+        lay(k, part, (tx, tz) => {
+          const s = scorchAt(tx, tz, mottle(tx, tz));
+          return s > 0.02 ? mixed(stone, SOOT, s) : stone;
+        });
+      }
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -354,7 +467,15 @@ function larder(k: Build): void {
   for (const [x, z] of [[x0 + 2, z1 + 3.2], [x0 + 6.5, z1 + 3.6]] as P2[]) {
     b.box(x - 1.3, R.y + 0.6, z - 0.8, x + 1.3, R.y + 1.4, z + 0.8, 0x6e5238);
     for (const s of [-1, 1]) b.cyl(x, z + s * 0.9, R.y, R.y + 1.1, 0.55, 0.55, 8, 0x4a3826, { cap: 0x3a2c1e });
+    // the meat for the dragons: sides of beef with their fat, and a sheep, dressed
+    for (const [dx, yaw] of [[-0.62, 0.08], [0.55, -0.12]] as P2[]) b.obox(x + dx, R.y + 1.62, z - 0.18, 0.5, 0.22, 0.34, yaw, 0x8e3b2f, { top: 0xd9c4a6 });
+    b.obox(x + 0.05, R.y + 1.66, z + 0.45, 0.62, 0.2, 0.22, 0.05, 0xd8b6a0, { top: 0xe6d2bf });
   }
+  // the butcher at his block between the carts, and a keeper's tally board
+  const bx = x0 + 4.3, bz = z1 + 2.2;
+  b.cyl(bx, bz, R.y, R.y + 0.85, 0.42, 0.42, 8, 0x6b4a30, { cap: 0x9a7a5a });
+  b.obox(bx, R.y + 0.9, bz, 0.3, 0.05, 0.16, 0.6, 0x8e3b2f);
+  k.person(bx - 0.9, bz + 0.2, R.y);
   // a fold of hurdles beside it, with sheep in it
   const fx0 = l.x0 + 0.5, fx1 = l.x0 + 9, fz0 = l.z1 + 3, fz1 = l.z1 + 11;
   for (const [a, c] of [[[fx0, fz0], [fx1, fz0]], [[fx1, fz0], [fx1, fz1]], [[fx1, fz1], [fx0, fz1]], [[fx0, fz1], [fx0, fz0]]] as [P2, P2][]) {
@@ -400,7 +521,7 @@ function life(k: Build): void {
   // the Dragonkeepers at their posts: the doors, the open vault, the terrace's edge
   for (const s of KEEPERS.slice(0, 7)) keeper(k.b, s.x, s.z, s.y, s.facing);
   // folk on the forecourt come to see the dragons, kept well back from the doors
-  for (const [x, z] of [[-70.5, -6.5], [-69.6, -8.2], [-50.4, -4.3], [-49.5, -5.7], [-75.5, -12], [-45, -15.5]] as P2[]) k.person(x, z, R.y);
+  for (const [x, z] of [[-70.5, -6.5], [-69.6, -8.2], [-50.4, -4.3], [-49.5, -5.7], [-75.5, -12], [-48.5, -17]] as P2[]) k.person(x, z, R.y);
 }
 
 // ---------------------------------------------------------------------------
@@ -419,6 +540,7 @@ export const COVERS: string[] = ['dp-crown', 'dp-apron-w', 'dp-apron-e', 'dp-fro
 export const SIGNS: SignDef[] = [nameSign('dragonpit-name', 'The Dragonpit')];
 
 export function extras(k: Build): void {
+  floor(k);
   vaults(k);
   terrace(k);
   climb(k);

@@ -65,7 +65,15 @@ const SCREE = [0x353133, 0x3d393a, 0x2f2c2e, 0x45403e, 0x292628, 0x3a3637];
 /** The rock round a cave's mouth: blackened with soot at its edge, scorched above it, and the mountain's own beyond. */
 const SOOT_RIM = 0x1a1718, BROW = [0x232123, 0x2b282a, 0x1f1d1f, 0x2f2c2f], HOOD = [0x2f2c2f, 0x383537, 0x262427, 0x343133];
 /** The dark inside a cave, which is faintly warm by night, and its floor. */
-const INSIDE = 0x16110f, INSIDE_WARM = 0x22100a, FLOOR_IN = 0x1d1816;
+const INSIDE = 0x1a100c, INSIDE_WARM = 0x22100a, FLOOR_IN = 0x1d1816;
+/**
+ * How brightly each part of the fire in the mountain glows by night, as the engine's `interior`: the colours stay as dark as
+ * they are by day, and only the night shows the ember light. The light map that lights the streets fades with height,
+ * so the mountain's light is its own rock's.
+ */
+const EMBER = { sides: 6, back: 14, floor: 5, throat: 10, crater: 14 };
+/** The crater's floor: dark and warm, glowing red by night under Meraxes. */
+const CRATER_FLOOR = 0x24120c;
 /** Canvas, hide and wattle. */
 const CANVAS = 0xd9ccaa, CANVAS_RED = 0x9c5a44, CANVAS_DUN = 0xb9a27a, HIDE = 0x7a5e44, WATTLE = 0x9b8257, WATTLE_TOP = 0x8a7249;
 const EARTH = 0x6b6052, FLEECE = 0xefebe1, SHEEP_DARK = 0x2b2626, SKIN = 0xd9b08c;
@@ -434,7 +442,11 @@ function drawMountain(b: GeoBuilder, f: Field, regions: Region[], o: Look): void
     if (ny < 0) { nx = -nx; ny = -ny; nz = -nz; }
     const n: V3 = [nx / nl, ny / nl, nz / nl];
     const mx = (p[0] + q[0] + r[0]) / 3, mz = (p[2] + q[2] + r[2]) / 3;
-    const color = rockColor((p[1] + q[1] + r[1]) / 3, n[1], mx, mz, o), opts: QuadOpts = {};
+    // the crater's floor and its inner rim glow by night, less as the rim falls away, so that a red ring shows round
+    // Meraxes lying over it; everything else is the mountain's rock
+    const avg = (p[1] + q[1] + r[1]) / 3, rim = (avg - (DRAGONMONT.crater - 1.6)) / 1.6;
+    const crater = rim > 0 && Math.hypot(mx - DRAGONMONT.summit[0], mz - DRAGONMONT.summit[1]) < 7;
+    const color = crater ? CRATER_FLOOR : rockColor(avg, n[1], mx, mz, o), opts: QuadOpts = crater ? { win: interior(EMBER.crater * Math.min(1, 0.35 + rim)) } : {};
     if (near.length === 0) {
       if (!low) face3(b, p, q, r, n, color, opts);
       return;
@@ -507,7 +519,7 @@ function drawMountain(b: GeoBuilder, f: Field, regions: Region[], o: Look): void
 
   const level = (poly: P2[], g: Region): void => {
     // a shelf is ash, all of one colour or nearly, and the floor of a mouth is dark
-    const color = g.kind === 'shelf' ? (g.lair.id.length % 2 ? SHELF : SHELF_ALT) : FLOOR_IN, opts: QuadOpts = g.kind === 'shelf' ? {} : { win: interior(0.5) };
+    const color = g.kind === 'shelf' ? (g.lair.id.length % 2 ? SHELF : SHELF_ALT) : FLOOR_IN, opts: QuadOpts = g.kind === 'shelf' ? {} : { win: interior(EMBER.floor) };
     for (let i = 1; i + 1 < poly.length; i++) b.up([poly[0][0], g.y, poly[0][1]], [poly[i][0], g.y, poly[i][1]], [poly[i + 1][0], g.y, poly[i + 1][1]], color, opts);
   };
 
@@ -767,7 +779,13 @@ function vent(k: Build, v: Vent, lairs: Lair[], puffers: Puffer[], r: () => numb
   let lowest = Infinity;
   const centre = heightOn(f, v.x, v.z);
   for (let i = 0; i < 8; i++) lowest = Math.min(lowest, heightOn(f, v.x + Math.cos(i * 0.785) * R, v.z + Math.sin(i * 0.785) * R));
-  b.cyl(v.x, v.z, lowest - 0.25, centre + h, R, R * 0.6, 7, ROCK.dark, { cap: INSIDE, phase: r() * 3 });
+  const ph = r() * 3, lip = centre + h, rt = R * 0.6;
+  b.cyl(v.x, v.z, lowest - 0.25, lip, R, rt, 7, ROCK.dark, { cap: false, phase: ph });
+  // its throat, dark by day and glowing by night
+  for (let i = 0; i < 7; i++) {
+    const a0 = ph + (i / 7) * Math.PI * 2, a1 = ph + ((i + 1) / 7) * Math.PI * 2;
+    b.up([v.x, lip, v.z], [v.x + Math.cos(a0) * rt, lip, v.z + Math.sin(a0) * rt], [v.x + Math.cos(a1) * rt, lip, v.z + Math.sin(a1) * rt], INSIDE_WARM, { win: interior(EMBER.throat) });
+  }
   for (let i = 0; i < (v.big ? 5 : 3); i++) {
     const a = r() * Math.PI * 2, d = R + 0.25 + r() * 0.4;
     rock(b, v.x + Math.cos(a) * d, v.z + Math.sin(a) * d, 0.28 + r() * 0.2, 0.22 + r() * 0.15, Math.min(cap, 0.3 + r() * 0.35), a, r, ROCK.char, ROCK.dark);
@@ -834,6 +852,17 @@ function crags(k: Build, lairs: Lair[], taken: Taken): void {
     const s = 0.3 + r() * 0.45;
     rock(b, x, z, s, s * (0.7 + r() * 0.4), Math.min(capAt(lairs, x, z), s * (0.9 + r() * 0.6)), r() * 6.3, r, r() > 0.5 ? ROCK.char : ROCK.dark, ROCK.grey);
     scree++;
+  }
+  // boulders and scree strewn over the ash round the mountain's foot, thinning outward: rock the mountain has shed,
+  // none higher than about 1, so that nothing on the flat stands where a dragon comes low
+  let strewn = 0;
+  for (let tries = 0; tries < 900 && strewn < 70; tries++) {
+    const [x, z] = onMountain(0.98 + Math.pow(r(), 1.6) * 0.42);
+    if (!open(x, z, 0.8) || atLair(lairs, x, z, 1.5) || offRoads(x, z) < 5.5 || underOthers(x, z, 1) || taken.some((t) => Math.hypot(x - t.x, z - t.z) < t.r + 0.4)) continue;
+    const big = r() < 0.22, sz = big ? 0.7 + r() * 0.6 : 0.2 + r() * 0.3;
+    rock(b, x, z, sz, sz * (0.65 + r() * 0.4), (big ? 0.55 : 0.75) * sz * (0.8 + r() * 0.5), r() * 6.3, r, r() > 0.45 ? ROCK.char : ROCK.dark, ROCK.grey);
+    taken.push({ x, z, r: sz + 0.2 });
+    strewn++;
   }
 }
 
@@ -959,7 +988,7 @@ function mouth(k: Build, l: Lair, puffers: Puffer[]): void {
     const dv = (out[i][0] + out[i + 1][0]) / 2, dy = (out[i][1] + out[i + 1][1]) / 2;
     const mv = (edge[i][1] + edge[i + 1][1]) / 2, my = (edge[i][2] + edge[i + 1][2]) / 2;
     // the dark of its sides and roof going in, faintly warm by night
-    facet4(b, W(edge[i]), W(edge[i + 1]), W(dark[i + 1]), W(dark[i]), towards(0.3, -mv, y0 + 0.4 * H - my), INSIDE, { win: interior(0.7) });
+    facet4(b, W(edge[i]), W(edge[i + 1]), W(dark[i + 1]), W(dark[i]), towards(0.3, -mv, y0 + 0.4 * H - my), INSIDE, { win: interior(EMBER.sides) });
     // the soot round its edge
     facet4(b, W(edge[i]), W(edge[i + 1]), W(soot[i + 1]), W(soot[i]), towards(1, dv * 0.4, dy * 0.4), SOOT_RIM);
     // the rock round that, scorched, the brow over it jutting out
@@ -971,7 +1000,7 @@ function mouth(k: Build, l: Lair, puffers: Puffer[]): void {
   }
   // the dark at the back of it, faintly warm by night, closing it behind
   const mid = W([uIn + 0.03, 0, y0 - 0.06 * H]);
-  for (let i = 0; i + 1 < N; i++) facet3(b, mid, W(dark[i]), W(dark[i + 1]), towards(1, 0, 0), INSIDE_WARM, { win: interior(2.2) });
+  for (let i = 0; i + 1 < N; i++) facet3(b, mid, W(dark[i]), W(dark[i + 1]), towards(1, 0, 0), INSIDE_WARM, { win: interior(EMBER.back) });
 
   let top = y0, wide = 0, deepest = u0;
   for (const p of [...brow, ...lid, ...ridge]) {

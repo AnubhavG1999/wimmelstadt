@@ -244,3 +244,45 @@ export function nameSign(id: string, text: string): SignDef {
   const aspect = Math.max(2.4, text.length * 0.62);
   return { id, lines: [text.toUpperCase()], color: '#e9dcc0', ink: '#2b2118', aspect, kind: 'board', size: [Math.round(aspect * 52), 52] };
 }
+
+// ---------------------------------------------------------------------------
+// Ground laid in pieces: colours, mottling and clipping
+// ---------------------------------------------------------------------------
+
+/** A colour with each channel scaled, and two colours mixed. */
+export function scaled(c: number, f: number): number {
+  const ch = (v: number): number => Math.max(0, Math.min(255, Math.round(v * f)));
+  return (ch((c >> 16) & 255) << 16) | (ch((c >> 8) & 255) << 8) | ch(c & 255);
+}
+export function mixed(a: number, b: number, t: number): number {
+  const ch = (sh: number): number => Math.round(((a >> sh) & 255) + (((b >> sh) & 255) - ((a >> sh) & 255)) * t);
+  return (ch(16) << 16) | (ch(8) << 8) | ch(0);
+}
+
+/** A hash of a place, from 0 to 1, for mottling. */
+export const mottle = (x: number, z: number): number => {
+  const h = Math.sin(x * 12.9898 + z * 78.233) * 43758.5453;
+  return h - Math.floor(h);
+};
+
+/** The part of an outline inside a rectangle, by Sutherland and Hodgman's clipping: fewer than three corners if none. */
+export function clipped(poly: P2[], x0: number, z0: number, x1: number, z1: number): P2[] {
+  const clip = (pts: P2[], d: (p: P2) => number): P2[] => {
+    const res: P2[] = [];
+    for (let i = 0; i < pts.length; i++) {
+      const a = pts[i], c = pts[(i + 1) % pts.length], da = d(a), dc = d(c);
+      if (da >= 0) res.push(a);
+      if (da >= 0 !== dc >= 0) {
+        const t = da / (da - dc);
+        res.push([a[0] + (c[0] - a[0]) * t, a[1] + (c[1] - a[1]) * t]);
+      }
+    }
+    return res;
+  };
+  let out = clip(poly, (p) => p[0] - x0);
+  if (out.length > 2) out = clip(out, (p) => x1 - p[0]);
+  if (out.length > 2) out = clip(out, (p) => p[1] - z0);
+  if (out.length > 2) out = clip(out, (p) => z1 - p[1]);
+  return out;
+}
+
