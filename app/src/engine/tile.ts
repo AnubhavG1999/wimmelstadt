@@ -121,6 +121,8 @@ export interface Build {
   tree(x: number, z: number, size: number, tall?: boolean, y?: number): void;
   /** Stands a figure on the ground, or on whatever is at height `y`. */
   person(x: number, z: number, y?: number): void;
+  /** Every figure that stands on the tile so far, and where: for what the tile's people do, such as take pictures of a hero. */
+  readonly people: readonly { x: number; y: number; z: number }[];
   /** Stands a street lamp whose arm points along (cos yaw, sin yaw). */
   lamp(x: number, z: number, yaw: number, y?: number): void;
   /** Random numbers that are the same on every load, so the tile is too. */
