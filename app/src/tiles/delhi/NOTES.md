@@ -10,7 +10,13 @@ The research is in `docs/districts/research/`: `delhi-for-the-tile.md`, and the 
 | --- | --- |
 | `plan.ts` | The tile as numbers: the river, the lines the roads run along, the list of things, the ground each is given, the plots of ordinary buildings |
 | `roads.ts` | The streets as they are laid, and the loops the traffic drives |
-| `index.ts` | The ground, the river, Raisina Hill, the streets, the flyovers, the bridge's deck, the Metro's viaduct, the ordinary buildings, and a plain box with its name for every thing that has no model yet |
+| `index.ts` | The ground, the river, Raisina Hill, the streets, the flyovers, the bridge's deck, the ordinary buildings, and a plain box with its name for every thing that has no model yet |
+| `mughal.ts` | The parts every landmark is made of: a dome, a chhatri, an arch that is a dark opening, a row of arches, an arched way through a wall, a minaret, battlements, steps, the flag |
+| `axis.ts` | Rashtrapati Bhavan and the Jaipur Column, North and South Block, Vijay Chowk, Kartavya Path, India Gate, the canopy, the War Memorial |
+| `old-delhi.ts`, `bazaar.ts`, `centre.ts`, `east.ts`, `south.ts`, `south-west.ts`, `metro.ts` | One file for each quarter and one for the Metro. Each hands over its models by the id of the thing in the plan, its signs, the lines its movers follow, and whatever else it builds. |
+| `traffic.ts` | The kinds of traffic that are Delhi's own |
+| `signs.ts` | What the shops say, the boards over the roads, and the screen with its own picture |
+| `life.ts` | People, trees along the avenues, autos at their stands, carts, a wedding, the boards' gantries: everything placed through one helper that refuses a lane, a lot, water and a hero's place |
 
 ## How the tile lies
 
@@ -136,10 +142,12 @@ Traffic keeps left. No road crosses another on the level, and no lane is shared.
 - **`shanti-path`** runs from below South Block under the Moti Bagh flyover to R. K. Puram and along Kaifi Azmi Marg to the school's gate, where the buses turn.
 - **`connaught-place`** runs from Karol Bagh to the Outer Circle, round its north half, east and then north up Netaji Subhash Marg past Jama Masjid and the Red Fort to Kashmere Gate, and back round the south half. **`inner-circle`** is the Inner Circle.
 - **`buddh`** is the circuit's corner on the east bank: a hero may drive it.
-- **Chandni Chowk and the lanes of Old Delhi** carry no motor traffic: cycle rickshaws and autos go on lines of their own.
+- **`chandni-chowk`** is cycle rickshaws only, east along the north half of the paved street and back west along the south half. No hero may take it. The lanes of Old Delhi carry nothing that drives.
 - **The Metro** runs on its viaduct along the Ring Road's verge, over both flyovers, and on across the Yamuna to a station on the east bank.
 
-How many vehicles each carries, reckoned as the page for tile builders says: the Ring Road 16 (a lap takes about 55 seconds, and its loops pass 0.65 a second: 26 would be the limit), the long drive 10 (limit 15), Shanti Path 6 (limit 9), Connaught Place's road 10 (limit 15). 51 vehicles in all so far.
+How many vehicles each carries, reckoned as the page for tile builders says: the Ring Road 20 (a lap takes about 55 seconds, and its loops pass 0.65 a second: 26 would be the limit), the long drive 12 (limit 15), Shanti Path 7 (limit 9), Connaught Place's road 12 (limit 15), the hexagon's inner lane 5, the Inner Circle 3, Chandni Chowk 5 and the circuit 2. 66 vehicles in all.
+
+**Traffic of the tile's own.** Every vehicle on the tile but the circuit's is one of ten kinds in `traffic.ts`, made with the engine's hook for it: an auto-rickshaw in green and yellow, a cycle rickshaw with its puller, a scooter with its rider, a city bus in green, red, orange or blue, a school's bus in yellow or in white, the white saloon of Lutyens' Delhi, a lorry in the colours of truck art, and the city's ordinary cars: a saloon, a small hatchback and a small van, mostly white and silver. A route's `paint` repaints every kind on it, the autos and the buses too, so no route here has one, and that is why the ordinary cars are kinds of the tile's own. None carries a maker's name or badge. Nothing in a shape moves: wheels do not turn and nobody pedals. Shanti Path carries the school's buses to the gate, the long drive the white saloons, the Ring Road the buses and the lorries.
 
 ## Places for heroes
 
@@ -157,10 +165,11 @@ Planned: the tailboard of a lorry. HORN OK PLEASE in the colours of truck art, i
 
 ## Checks
 
-On the blockout, 19 November 2026:
+On the blockout, 19 November 2026, and again as the tile grew:
 
 - **Roads.** `checkRoads` on every load: no road crosses another on the level, and none runs through anything built. `clearOfStreets` is asked about every plot and every thing's box.
-- **Traffic.** Twenty minutes in steps of a twentieth of a second: 51 vehicles, none standing still, no vehicle nearer than 13.1 to the next on its own route, no lane shared. The nearest two at one height were 4.99 apart, in the two lanes of the road through Connaught Place. The nearest two of all were 4.4 apart: one on the AIIMS flyover and one passing under it.
+- **Traffic.** Twenty minutes in steps of a twentieth of a second. On the blockout: 51 vehicles, none standing still, no vehicle nearer than 13.1 to the next on its own route, no lane shared, the nearest two at one height 4.99 apart, in the two lanes of the road through Connaught Place. The nearest two of all were 4.4 apart: one on the AIIMS flyover and one passing under it. With the tile's own kinds, after the merge: 66 vehicles, none standing still, none nearer than 9.8 to the next on its route (two cycle rickshaws, which are short), the nearest two at one height 4.91 apart, in the two lanes of Shanti Path, and no lane shared.
+- **Flicker.** `wimmel.fights('delhi')` came back empty on 19 November 2026 with the axis, the roads and the Metro's first tracks standing. It is asked again as each quarter is taken in.
 - **Sight lines.** `hiddenBy` on the plan, for 73 points: every place for a hero, the middle of every road worth watching, and the foot or the middle of every landmark. 65 are seen from the opening view. Not seen: the far side of Connaught Place's Outer Circle, behind its own blocks; the south half of Chandni Chowk behind its own south side, and a stretch of the north half behind the row of faiths; the foot of Jama Masjid's south steps behind the kebab lane; the foot of the statue of Hanuman behind Karol Bagh's shops; and the south edge of Bangla Sahib's tank behind Raisina Hill.
 
 ## Liberties taken with the real place
@@ -207,15 +216,15 @@ Each is checked as it is written, and entered here with what confirmed it. A sho
 
 **Still to be entered**: every real name the quarters' files hang, as each file is taken in.
 
-## When `main` is merged
+## Since `main` was merged
 
-The main session is changing the engine while this tile is built, and says when to merge. What that merge brings, and what the tile then owes:
+`main` was merged in on 19 November 2026 at `f8e38c9` (the merge is `2ec85bb`), while the quarters were being built. What it brought, and what the tile did with it:
 
-- **The tile's place in the world.** The `TileDef` gets `place: { lon: 77.2, lat: 28.6 }`, for its pin in the map the table stands on.
-- **`wimmel.fights('delhi')`** lists surfaces that lie in one plane. The tile must pass it.
-- **The view tilts up and down.** The tile is looked at from low angles as well as from above, so whatever is seen from below needs its underside: the flyovers, the Metro's viaduct, the bridge's deck, every canopy.
-- **Road markings are cleared wherever two streets overlap**, not only where they cross.
-- **The screen for music** works from then on, and shows the tile's own picture when nothing is playing.
+- **The tile's place in the world.** The `TileDef` has `place: { lon: 77.2, lat: 28.6 }`, for its pin in the map the table stands on.
+- **`wimmel.fights('delhi')`** lists surfaces that lie in one plane, and has to come back empty. It found three kinds in what stood then, all mended: the verge under the flyovers lay on the two streets that pass under them, the pavilions of the two Blocks ended flush with their eaves, and the streets that meet the hexagon ran on across its inner kerb.
+- **The view tilts up and down.** The tile is looked at from low angles as well as from above, so whatever is seen from below needs its underside: the flyovers, the Metro's viaduct, the bridge's deck, every canopy. Still to be looked at once everything is built.
+- **Traffic of a tile's own shape**: see "Roads".
+- **The screen for music** works, and shows the tile's own picture when nothing is playing. It is not hung yet.
 
 ## What the collector said
 
