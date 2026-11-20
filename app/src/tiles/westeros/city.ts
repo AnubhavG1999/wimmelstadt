@@ -9,6 +9,7 @@ import { checkRoads, type Solid } from '../../engine/checks';
 import type { Build, TileParts } from '../../engine/tile';
 import { buildCountry } from './country';
 import { buildDragons } from './dragons';
+import { buildKraken } from './kraken';
 import { buildLand } from './land';
 import { BOARDS } from './look';
 import type { Model } from './models';
@@ -97,6 +98,7 @@ export function buildWesteros(k: Build): TileParts {
       console.error('Westeros: the open country failed.', e);
     }
     buildShips(k);
+    buildKraken(k);
   }
   if (import.meta.env.DEV && !bare) {
     const all = [...cost.values()].reduce((s, n) => s + n, 0);
