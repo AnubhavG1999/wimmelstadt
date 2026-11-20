@@ -10,6 +10,8 @@ export const uiuc: TileDef = {
   name: 'Urbana-Champaign',
   // the dialling code, not a date
   seed: 217,
+  // the campus, in the middle of Illinois
+  place: { lon: -88.2, lat: 40.1 },
   signs: SIGNS,
   build: buildCity,
 };

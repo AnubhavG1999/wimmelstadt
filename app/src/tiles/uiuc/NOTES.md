@@ -2,7 +2,7 @@
 
 What a later reader cannot see in the code.
 
-**Where it stands.** Every lot has its model: nothing on the tile is a box any more. The plan was put to the collector on 19 November 2026. He answered the same day, and this is the plan with what he asked for worked in. The tile is blocked out: its ground, its streets, the railway's embankment with its two viaducts, its routes and its places for heroes are built, and every lot is a plain box with its name on a board until its model is built. Built so far: the Illini Union, Gregory Place with Basil Thai and Manolo's, the Six Pack, the blocks between Fourth Street and Wright Street, both rows of the Main Quad with Foellinger Auditorium, the stadium with the saucer, the engineering campus, both sides of Green Street, the houses and flats west of Fourth Street, the south campus, the Urbana side, Quad Day on the Quad, the trees, the screen on the stadium's board, the scenes on the ground, and what moves on a line of its own: the train, a tractor and a crop duster. The rest of the lots are being built a file at a time (see "The models"). The research is in [docs/districts/research/uiuc.md](../../../../docs/districts/research/uiuc.md). Where this file and that note disagree, this file is the later: see "What the research note has wrong".
+**Where it stands.** Built, and waiting for the collector to call it final. The plan was put to him on 19 November 2026 and he answered the same day. Every one of the 85 lots has its model, `main` is merged in, and the checks have been run (see "The checks"). What he has not yet said: whether Wassaja Hall, the Siebel Center, Manolo's front, the lettering on Basil Thai's awning and the Union's Green Street porch are right, each of which was built without a source that shows it. The research is in [docs/districts/research/uiuc.md](../../../../docs/districts/research/uiuc.md). Where this file and that note disagree, this file is the later: see "What the research note has wrong".
 
 ## Where things are
 
@@ -227,19 +227,19 @@ Two walks stand in for streets east of the Quad: Mathews Avenue, between the Qua
 
 ## The things on the tile
 
-Numbered so that the count can be checked. None is built.
+Numbered so that the count can be checked. All 47 are built.
 
 The Quad:
 
-1. The Illini Union, the tile's centrepiece: red brick, with the glazed cupola over the Quad and the open one, with its clock and bell, over Green Street; a terrace on its Quad side with small tables under blue umbrellas, and no columns; and its circle drive on Green Street.
-2. The Main Quad: the lawn, its walks from corner to corner, squirrels, and the tables of Quad Day along the walks, with the car teams' stand.
+1. The Illini Union, the tile's centrepiece: red brick, with the glazed cupola over the Quad and the open one, with its clock and bell, over Green Street; a terrace on its Quad side with small tables under blue umbrellas, and no columns; and a porch of four columns on Green Street.
+2. The Main Quad on Quad Day: the lawn, two rows of stalls across an aisle, a banner, a crowd, and the car teams' table.
 3. Alma Mater, on her plaza at Green and Wright, facing north-west towards the crossing.
 4. Altgeld Hall and its bell tower.
-5. Foellinger Auditorium, with the lights in its copper dome.
+5. Foellinger Auditorium, under its dark dome with ribs of green copper and lamps set in it.
 6. The Quad's west side: the Henry Administration Building, the English Building, Lincoln Hall and Gregory Hall.
 7. The Quad's east side: Harker Hall, the Natural History Building, Noyes Laboratory, Davenport Hall and Smith Memorial Hall.
 8. The chemistry laboratories behind Noyes: Roger Adams Laboratory and the Chemical and Life Sciences Laboratory.
-9. The Main Library, and the fenced plaza beside it where the old library under the ground is being rebuilt.
+9. The Main Library, and the plaza beside it.
 10. The Morrow Plots, in corn, with the Observatory beside them.
 
 North of Green Street:
@@ -248,24 +248,24 @@ North of Green Street:
 12. The Bardeen Quad, with Boneyard Creek, its footbridges, and the bronze man on his bench with a laptop.
 13. Grainger Engineering Library.
 14. The Siebel Center for Computer Science.
-15. The car teams' workshop, with a formula car, a solar car and an off-road buggy on its forecourt.
+15. The car teams' workshop, with a solar car and a formula car on its forecourt.
 
 Campustown:
 
-16. Green Street's north side: KAMS, Legends and Murphy's Pub, with shops between.
+16. Green Street's north side: KAMS, Legends and Murphy's Pub, with shops between, and on its south side two more rows of shops and a bar.
 17. The Red Lion and its beer garden.
 18. Joe's Brewery.
 19. The towers: 309 Green and HERE Champaign facing each other across Green Street, Burnham 310 behind, and the Tower at Third.
-20. Wright Street, for buses only, with the Transit Plaza's shelters and a bus with a joint in its middle at the stop.
+20. Wright Street, for buses only, paved in brick where the buses slow, with a shelter on each side.
 21. The Illini Union Bookstore, and the parking deck at Sixth and John behind it.
-22. The Illini Hall site: a hole, a tower crane and diggers.
+22. The Illini Hall site: a frame of steel going up, a tower crane and a digger.
 23. Washington Park, which students call Frat Park: a sand court for volleyball, with houses with white columns beside it.
 24. The Armory, under its barrel roof, with the Ice Arena beside it.
 25. The Marching Illini, forming up outside the Armory before the game.
 
 The railway:
 
-26. The railway on its embankment, Illinois Terminal, and a train that runs the length of the tile and back.
+26. The railway on its embankment, Illinois Terminal with its clock tower, the platform, two buses in their bays, and a train that runs the length of the tile and back.
 27. The two viaducts, where Green Street and Kirby Avenue go under the railway.
 
 The south-west:
@@ -274,10 +274,10 @@ The south-west:
 29. The Six Pack's four halls of 1958 to 1961: Hopkins, Scott, Snyder and Weston, each round a courtyard.
 30. Nugent Hall, Bousfield Hall and the Ikenberry Dining Center.
 31. Gies Memorial Stadium: its two rows of columns, its press box, and its video board over the south end, which is the tile's screen.
-32. Grange Grove: tents, the drumline, and the statue at the stadium's west gate.
+32. Grange Grove: tents, tables, grills and a crowd.
 33. The parking deck at Fourth and Pennsylvania, across the street from the stadium.
 34. State Farm Center, the saucer.
-35. The tailgate in lot E-14, beside the saucer: pickups, tents, grills that smoke.
+35. The tailgate in lot E-14, beside the saucer: parked vehicles, a tent, a grill, and a game of bags.
 
 Urbana:
 
@@ -296,14 +296,14 @@ The south campus:
 The south edge:
 
 44. Illinois Field, the baseball diamond, and the practice fields beside it.
-45. A field of corn at harvest: a combine in the corn, and a tractor with a wagon on the farm lane.
+45. A field of corn at harvest: a combine at the edge of what stands, and a tractor with a wagon on the track round the field.
 46. The three Round Barns.
 
 In the air:
 
-47. An aeroplane towing a banner round the stadium, and a skein of geese.
+47. A crop duster towing a banner with the chant on it round the stadium.
 
-Besides these: a grove south of Pennsylvania Avenue, with a small cemetery in it (see "Care"). And between the things stand ordinary buildings: shops along Green Street, a tower of flats, Sherman Hall, Illini Tower, Bromley Hall, blocks of flats, Huff Hall, the Krannert Art Museum, David Kinley Hall, the business school, and laboratories north of Krannert Center.
+Besides these: a grove south of Pennsylvania Avenue, with a small cemetery in it (see "Care"). And between the things stand ordinary buildings: shops along Green Street, a tower of flats, Sherman Hall, Illini Tower, Bromley Hall, blocks of flats, Huff Hall, the Krannert Art Museum, David Kinley Hall, the Business Instructional Facility, and laboratories north of Krannert Center. Each of these has a model of its own too: the tile has no plain boxes.
 
 ## Roads
 
@@ -314,13 +314,13 @@ Traffic keeps right. The ground is flat, so nothing here is raised but the railw
 - **A street that only buses use.** Wright Street, from Green Street to Gregory Drive. One bus loop comes down its west lane and another goes up its east lane, and both slow to a walk at the Transit Plaza: a stretch of a route can have a speed of its own. The buses are the engine's plain bus in white.
 - **Two viaducts under the railway.** The Illinois Central raised its line through Champaign in 1924, and Green Street and Kirby Avenue are two of the streets that pass under it. Here each runs on west under the embankment, and the outer loop turns round out of sight beneath it. The train goes over while the traffic goes under.
 - **A car park that is part of the road.** Lot E-14 has an aisle of its own that goes round its row of bays, and a route that drives it, among the tailgaters. It touches no street.
-- **A farm lane** that no route uses, for the tractor and its wagon.
+- **A track round the corn** that no route uses, for the tractor and its wagon.
 
-What moves on a line of its own: the train, the tractor and its wagon, the combine, the aeroplane and the geese.
+What moves on a line of its own: the train, the tractor and its wagon, and the crop duster. The combine stands at the edge of the corn.
 
-Thirteen routes and 45 vehicles in the blockout. The counts are budgeted as the page for tile builders says: with corners of radius 4 a lane takes 0.42 vehicles a second, and the busiest lane here, Green Street's south lane east of Wright, is planned at 0.41. The turn under the railway has a radius of 2.5 and takes 0.29, and the outer loop brings it 0.24.
+Thirteen routes and 45 vehicles. The counts are budgeted as the page for tile builders says: with corners of radius 4 a lane takes 0.42 vehicles a second, and the busiest lane here, Green Street's south lane east of Wright, is at 0.41. The turn under the railway has a radius of 2.5 and takes 0.29, and the outer loop brings it 0.24.
 
-**The traffic check, on the blockout.** With the engine as it is on `main` at `ec1328a`, the tile fails it: over three runs the traffic locked for good after 4, 40 and 124 simulated minutes, each time at a place where a block's loop joins a lane of the loop round the campus. The cause is in the engine and is under "For the engine". With the mend described there tried in a working copy, more than four simulated hours ran with nothing standing longer than 8.4 seconds, nothing nearer than 5.0 to anything else, and every route's vehicles at least 8.6 apart. The mend is not this tile's to make: it was put back, and the main session was told.
+**The traffic check.** On the blockout, with the engine as it was on `main` at `ec1328a`, the tile failed it: over three runs the traffic locked for good after 4, 40 and 124 simulated minutes, each time at a place where a block's loop joins a lane of the loop round the campus. The cause was in the engine. The main session mended it there, in `15d4458`, and with that merged in the tile passes: see "The checks".
 
 Where a hero is best seen on the road, by the sums below: on Kirby Avenue and on Gregory Street, where every unit of both lanes is in sight, on Peabody Drive, on Green Street's far lane, and on First Street's far lane.
 
@@ -354,20 +354,20 @@ One board shows what the collector is playing: the stadium's video board. It is 
 
 It carries no name, no letter I and no mark of the university's, and no brand. The stadium is a memorial, so the board is a plain scoreboard in good spirits and makes no joke.
 
-## When `main` is merged
+## The merge
 
-Told by the main session on 19 November 2026, and not on `main` yet. Until the word comes to merge, the plan only leaves room.
+`main` was merged in on 19 November 2026, at `15d4458`, once every lot was built. Nothing conflicted.
 
-- The `TileDef` gets `place: { lon: -88.2, lat: 40.1 }`, for the tile's pin in the map of the world that the table stands on.
-- `wimmel.fights('uiuc')` lists surfaces that lie in one plane, and the tile has to pass it.
-- The view tilts up and down, so the tile is looked at from low down as well as from above. What is seen from below gets built: the undersides of the two railway bridges, of canopies and of the stadium's upper decks, and the backs of boards. The sums under "What the opening view sees" are for the view the tile opens with, and say nothing of a low one.
-- The engine clears road markings wherever two streets overlap, not only where they cross.
+- The `TileDef` has `place: { lon: -88.2, lat: 40.1 }`, for the tile's pin on the map of the world that the table stands on.
+- `wimmel.fights('uiuc')` comes back empty.
+- The view tilts from 14 to 80 degrees. From 14 to 16 degrees the tile was looked at over the Union from both fronts, Basil Thai from the street, the Six Pack, the stadium and its parking deck, the Green Street viaduct from the east, and up Fourth Street by night. Nothing is open from below: the builders were asked for undersides from the start, and the awnings, canopies, porch roofs, decks and the bridges have them.
+- The engine's mend for two vehicles at a merge is in (see "For the engine"), and the traffic check passes with it.
 
 ## How high things stand
 
-Decided together, before anything is built. The city's scale is about 3.2 m to a unit. Nothing here is tall: the tallest tower is 82 m, a fifth of the Sears Tower. The towers stand a little over the city's scale, the campus's own landmarks about half over, and its low halls at about twice, since at the city's scale a hall of four storeys would be lower than a car is long. Everything with a known height stands in the order it does in life, but for the saucer.
+Decided together, before anything was built, and kept, but for what is said under "Liberties". The city's scale is about 3.2 m to a unit. Nothing here is tall: the tallest tower is 82 m, a fifth of the Sears Tower. The towers stand a little over the city's scale, the campus's own landmarks about half over, and its low halls at about twice, since at the city's scale a hall of four storeys would be lower than a car is long. Everything with a known height stands in the order it does in life, but for the saucer.
 
-| | In life | At the city's scale | Planned |
+| | In life | At the city's scale | Here |
 | --- | --- | --- | --- |
 | 309 Green | 82 m | 26 | 29 |
 | HERE Champaign | 81 m | 25 | 28.5 |
@@ -379,14 +379,15 @@ Decided together, before anything is built. The city's scale is about 3.2 m to a
 | Altgeld Hall's tower | 40 m | 12.5 | 18.5 |
 | Oglesby and Trelease halls | 40 m, from one database | 12.5 | 18 |
 | Sherman Hall | 39 m | 12 | 17.5 |
-| The Illini Union, to the top of its cupolas | not found | | 18, and 20 with the vanes |
+| The Illini Union, to the top of its cupolas | not found | | 18, and 20.3 with the vanes |
 | The stadium's stands, its press box, and the top of its video board | 34 m for the stands of 1923 | 10.5 | 14, 17 and 18.5 |
 | The Armory, at its crown | 30 m | 9 | 12 |
 | Foellinger's dome | not found | | 13 |
 | Bousfield Hall, of six storeys | not found | | 13.5 |
 | The Main Library, to its ridge | not found | | 13.5 |
 | Wassaja Hall | not found | | 11 |
-| The Siebel Center, of five storeys | not found | | 11 |
+| The Siebel Center | not found | | 11 |
+| Illinois Terminal, and its clock tower | not found | | 12 and 15.3 |
 | The parking decks, of four levels | not found | | 11 |
 | Roger Adams Laboratory | not found | | 10 |
 | Hopkins, Scott, Snyder and Weston halls, of four storeys | about 14 m | 4.5 | 9 |
@@ -398,31 +399,35 @@ The heights in life are those the research found. State Farm Center is the one t
 
 ## What the opening view sees
 
-Worked out from the plan with the test that `hiddenBy` in `engine/checks.ts` uses, for the foot and the middle of each thing, three points on each place for a hero, and a car's roof every four units along each lane.
+Worked out twice. First from the plan, with the test that `hiddenBy` in `engine/checks.ts` uses: that still runs on every load, for the 32 places in `MUST_SEE`. Then, on 19 November 2026, measured on the built tile with `wimmel.seen`, which says whether anything built stands between a place and the view, and does not count people, trees or vehicles: five places along the south side of every lot and five along its east side, 0.6 out from the lot, at 0.5 and 1.6 above the ground and at half the lot's height; a grid of places on every lawn and car park; and a car's roof, 1.6 up, every four units along each lane. What follows is the second.
 
-In sight: the foot of the Union's Quad front from end to end, its terrace, and both its cupolas; the foot of Basil Thai's shopfront and its awning; Wassaja Hall's south side from end to end, from its foot up, with its door and its baskets, and the lawn before it; Scott's and Snyder's south sides, Weston's and Snyder's east sides, Bousfield's south side and the dining hall; every place for a hero; the Siebel Center's south side from end to end; Roger Adams Laboratory's east side and the Chemical and Life Sciences Laboratory's east and south sides; the stadium's east columns, its south end and its screen; the saucer; the Armory and the band; Foellinger's dome; the west side of the Quad from Henry to Lincoln Hall; the Main Library's east front; the Morrow Plots; Krannert Center and its amphitheatre; Engineering Hall's front; KAMS, Legends and Murphy's Pub; the Red Lion's garden; Joe's sign; the Illini Hall site; the Transit Plaza; the Stock Pavilion; the grove and its cemetery; the Round Barns; the train, and both viaducts.
+In sight from the foot up: the Union's Quad front from end to end, its terrace, and both its cupolas; Basil Thai's shopfront and its awning; Wassaja Hall's south side from end to end, behind nothing but its own baskets and the canopy over its door; Scott's, Snyder's and Bousfield's south sides, Weston's and Snyder's east sides, and the dining hall's east side; every place for a hero; the Siebel Center's south side from end to end; Roger Adams Laboratory's east side, and the Chemical and Life Sciences Laboratory's south side and most of its east; the stadium's east columns, its south end and its screen; the saucer and both its car parks; the Armory's south and east sides, and the band; Foellinger's front and its dome; the west side of the Quad from Henry to Lincoln Hall, and the west two thirds of its lawn, with Quad Day on it; most of the Main Library's east front; the Morrow Plots' south edge, and the Observatory; Krannert Center's east side, its three theatres, and the west of its amphitheatre; Engineering Hall's front; KAMS, Legends and Murphy's Pub; the Red Lion, and the north-west of its garden; Joe's name on its east wall and on the board over its roof; the Illini Hall site; the west side of the Transit Plaza; the Stock Pavilion and its cattle; the grove and its cemetery; the Round Barns; the tailgate's lot, Illinois Field and the practice fields; the track along the whole embankment, and both viaducts.
 
 Hidden, and why it is left so:
 
 - **Alma Mater**, behind Altgeld Hall, which stands south of her in life too. She is seen from the north and the west, which is the way she faces.
-- **Wassaja Hall's east side**, behind Nugent Hall, which stands two units from it, and the west end of the lawn before it, behind Bousfield Hall. Its door and its baskets are on its south side for that reason: see "Liberties".
-- **Hopkins Hall's walls**, behind Scott, Snyder and Weston, and Nugent's south side, behind Hopkins. Their roofs and courtyards are in sight.
+- **Wassaja Hall's east side**, behind Nugent Hall, which stands two units from it. Of the lawn before it, the opening view sees a wedge: the hall's full width at its wall, narrowing to the south, with Bousfield Hall before its south-west and Hopkins Hall before its east end. The hall's door and its baskets are on its south side for that reason: see "Liberties".
+- **Hopkins Hall's walls**, behind Scott, Snyder and Weston; Nugent's south side, behind Hopkins; and the dining hall's south side, behind Weston. Their roofs and courtyards are in sight.
 - **Manolo's walls**, behind Gregory Place. Its roof is in sight, and its name stands on a board above it.
-- **The south end of the Quad's lawn**, behind Foellinger, and its east edge, behind the buildings of the east side.
+- **The south end of the Quad's lawn**, behind Foellinger, and its east third, behind the buildings of the east side. Of Noyes Laboratory and the Natural History Building only the roofs are in sight: their fronts are to the Quad, away from the view, and the chemistry laboratories stand before their backs.
 - **The stadium's field and Grange Grove**, behind the stands.
-- **The Bardeen Quad**, behind Engineering Hall, and the Ice Arena's south side, behind the Armory.
+- **The Bardeen Quad and Boneyard Creek**, behind Engineering Hall and the north side of Green Street, and the Ice Arena's south side, behind the Armory.
+- **Joe's front**, which faces west to Fourth Street, and the south of its garden, behind the bookstore. Its name is on its east wall and over its roof for that reason.
+- **The deck at Sixth and John**, behind the bookstore and Illini Tower, the foot of Illini Tower itself, behind Sherman Hall and the Ice Arena, and Gregory Hall's south side, behind the Main Library.
+- **The east side of the Transit Plaza**, with its shelter, behind Altgeld Hall and the Henry Administration Building.
+- **The foot of Burnham 310 and the shops west of HERE Champaign**, behind the towers on Green Street.
 
 Lanes, as the share of each in which a car's roof is in sight:
 
 | | Near lane | Far lane |
 | --- | --- | --- |
-| Green Street | 74% | 87% |
-| Gregory Drive | 53% | 96% |
-| Peabody Drive | 57% | 100% |
-| Kirby Avenue | 100% | 100% |
-| First Street | 63% | 100% |
-| Fourth Street | 51% | 90% |
-| Wright Street | 24% | 100% |
+| Green Street | 71% | 88% |
+| Gregory Drive | 59% | 96% |
+| Peabody Drive | 67% | 96% |
+| Kirby Avenue | 98% | 98% |
+| First Street | 73% | 96% |
+| Fourth Street | 49% | 89% |
+| Wright Street | 40% | 100% |
 | Gregory Street | 100% | 100% |
 
 The near lane is the one on the camera's side of the buildings that hide it: the south lane of a street that runs east and west, the east lane of one that runs north and south.
@@ -521,11 +526,59 @@ Found on 19 November 2026, after the note was written. The note is left as it wa
 - Vehicles are not allowed on the Quad at Quad Day, by its rules for 2026.
 - The Alma Mater faces north-west, towards the crossing of Green and Wright. The Union is red brick, and its porch on the Quad has no columns.
 
+## The checks
+
+Run on 19 November 2026, after the merge, with every lot built.
+
+- **Type check and build** pass. The build warns that its main piece is 1,418 kB, where `vite.config.ts` sets 1,200 as the size to warn at: this tile's source is 633 kB, three times Europe's, because ten builders each wrote their own small parts.
+- **The console** says nothing from the tile but its own three lines: no route crosses another, all 32 places that must be seen are in sight, and 90 trees are planted.
+- **Flicker.** `wimmel.fights('uiuc')` is empty.
+- **Traffic.** Three starts, in steps of a tenth of a second: 281, 245 and 125 simulated minutes. No lock in any. Once under way, no two vehicles came nearer than 5.0, which is two lanes of one street. The longest any vehicle stood was 10.5 seconds, on `grove` at the corner of Pennsylvania Avenue and Gregory Street, where it waits to join Gregory Street's lane, and it did not grow. The least room along a route was 8.6. All 38 records of shared lanes come in pairs. One thing at the start: a hero put on `grove` stood 3.5 behind a vehicle of `campus` in the lane the two routes share, and they parted within seconds.
+- **Places for heroes.** For each of the seven, `wimmel.seen` was asked about the middle of the car and its two ends, half a unit and 1.6 above the ground, from the opening view: all seen. So are the foot of the Union's Quad front from end to end, its umbrellas, Basil Thai's shopfront, Manolo's board, and Wassaja's door and baskets.
+- **Weather.** Looked at in rain by night and in snow by day.
+- **Cost.** With the tile alone on the board, in the same minute as North America alone: by day 5.3, 3.7 and 3.2 ms a frame against 4.8, 3.2 and 3.0, and by night 3.6, 3.6 and 3.4 against 4.2, 4.0 and 3.4. It draws 92 calls where North America draws 126.
+- **What stands still:** 68,093 triangles, 149 signs, 407 glows, 90 trees and 816 people, of whom about 280 are the stadium's crowd. 45 vehicles drive and 15 are parked.
+
 ## For the engine
 
-Found while blocking the tile out, on 19 November 2026, against `main` at `ec1328a`.
+- **Mended on `main`, in `15d4458`: two vehicles at a merge could each wait for the other, for ever.** This tile's roads found it: its loops share a lane in 19 places. Each route had its own record of a lane it shares, and the two records of one stretch differed by up to a unit. Vehicles of plain traffic that started in one place on a shared lane are mended by the same commit.
+- **A hero can still start close behind another route's vehicle** on a lane the two share: 3.5 apart in one start here. They part within seconds.
+- **`checkRoads` takes a shared lane for a crossing.** It reports any two routes that come within 2.9 of each other, and two routes in one lane are 0 apart. This tile shares lanes on purpose, so it has a check of its own in `checks.ts`: `roadFaults` finds two routes whose lines cross at more than about 25 degrees, and two that meet head-on in one lane, and leaves alone a lane that two routes drive the same way. The main session means to take it into the engine when the tile is brought in.
+- **A bus cannot stop.** The buses slow to a walk where Wright Street is paved in brick, on a stretch of their route with a speed of its own, and that stands in for a stop.
+- **`station` builds a platform on columns**, for a line on a trestle. A platform on an embankment is a slab, a roof on posts and a board, built here in `moving.ts`.
+- **`train` turns a train end for end where its line ends.** That is right for a train that is alike from both ends, as this one is, with a locomotive at each. A train with one locomotive would have to turn out of sight.
+- **A sign cannot lie on a slope or move.** Basil Thai's lettering is on the awning's valance, not its cloth. The lettering on the crop duster's banner is built as shapes, stroke by stroke, on both faces.
+- **Refusing a place that stands before something the opening view is to see**: `hides` and `clear` in `planting.ts`. Every tree and every stall's canopy goes through it. It would serve any tile.
+- **A file for each group of models, gathered in one place** (`models.ts`, `ModelFile` in `plan.ts`), with a model that fails caught and said in the console: what let ten builders work in one folder at once without touching one another's files.
+- **People stand.** A stadium's crowd stands on its rows.
 
-- **Two vehicles at a merge can each wait for the other, for ever.** Each route keeps its own record of a lane it shares with another (`Share` in `vehicles.ts`), and the two records of one stretch differ by about half a unit in where it starts, because `findShares` matches points a unit apart. So one vehicle reckons its own room before the lane as a little more than nothing while the other reckons it as a little less, and takes it for one that can no longer stop. When both stand waiting within half a unit of their waiting places, each decides that the other goes first. North America's `garage-run` goes through the same code. What held in a trial: making the two records agree straight after `findShares`, by copying one route's `a0`, `b0` and `len` into the other's record of the same stretch.
-- **`checkRoads` takes a shared lane for a crossing.** It reports any two routes that come within 2.9 of each other, and two routes in one lane are 0 apart. This tile shares lanes on purpose, so it has a check of its own in `checks.ts`: `roadFaults` finds two routes whose lines cross at more than about 25 degrees, and two that meet head-on in one lane, and leaves alone a lane that two routes drive the same way.
-- **Vehicles start without regard to the lanes they share.** Each route's vehicles are spread along it, and two from different routes can start in one place and sort themselves out in the first second. On this tile's blockout the nearest two at the start are 2.9 apart. The counts are looked at again when the tile is done, so that none starts inside another.
-- **A bus cannot stop.** The buses slow to a walk at the Transit Plaza, on a stretch of their route with a speed of its own, and that stands in for a stop.
+## For the next tile
+
+What building this one taught.
+
+**Building with several builders at once**
+
+- Ten Opus builders built 80 of the 85 lots, each in one file of its own, in two waves of five. Each took 14 to 33 minutes. What made that work: a stub for every file and one registry that gathers them, written before any builder started, so that no builder touches a shared file; one brief that every builder reads first, which says what the tile is, what to read and in what order, how its one file is found by the registry, the bar, the rules of building, care and names, how to check its own work in a tab of its own, what it must not touch, and what to report; a task that names each lot, what it is, what it must keep clear, and a number of triangles for each; and the centrepiece built first by the session itself, as the worked example.
+- Say plainly in each task that what you write about a building's looks is from memory, and ask the builder to look it up and correct you. Nearly every builder came back with something the task had wrong: the Siebel Center is brick below and glass above under pitched roofs, Foellinger's dome is not green, Smith Memorial Hall's front faces east, the Observatory is buff brick, Brothers has moved. A builder who is told the description is certain will build the mistake.
+- Builders need the page in a tab of their own, and the browser pane holds only about eight tabs. Tell each builder to close its tab when it is done, or the second wave cannot open one.
+- With several builders on one development server, every edit by any of them loads every tab afresh, and a picture in flight is cut off. One picture to a call, after waiting for `wimmel.board.tiles`, gets through.
+- Look at every file yourself before keeping it, from two sides by day and by night. None of the ten had to be sent back, but two things only showed once the files stood together (see below).
+- Ten builders wrote ten copies of the same small parts: an arch, a name board, a bench. The tile's source is three times the size of Europe's for it. Put the parts they will all want into the shared file before the first wave, not after.
+
+**Sight lines**
+
+- The plan's sums use each lot's height, and a roof rises above it. The Natural History Building's north gable stood exactly before the east end of the Union's terrace, and the plan's check said all was in sight. After every batch, ask `wimmel.seen` about the foot of the centrepiece and of each must-have, not only about the plan.
+- `wimmel.seen` answers for the view as it was last drawn. While the browser pane is hidden nothing is drawn between pictures, so it answers for wherever the last picture was taken from. Load the page afresh, or take a picture from the opening view, before asking it.
+- Ask it about the whole tile once everything stands, and not only about the must-haves: five places along the south and the east side of every lot, a grid on every lawn, a car's roof along every lane. It takes ten seconds, and it found that the plan's list of what is in sight had three things in it that are not: the east side of the Transit Plaza, the dining hall's south side, and half of the lawn before Wassaja Hall.
+- When a place for a hero is seen only over a roof, look for the real layout before lowering anything. Scott Hall stood next to Bousfield in the first plan and hid Wassaja's lawn. In life it stands well east of Bousfield, and putting it there opened a gap that shows the lawn from the ground up.
+- Whatever is scattered late (trees, canopies) goes through one function that knows the roads, the lots, the heroes' places and the sight lines. It refused only two places of ninety-two here, because the rows were laid out with the sight lines in mind, but it is what makes that safe.
+- A thing in the air is seen further north-west than it is, by about 0.9 of its height each way. Lay out a flight path by where it will be seen, and check both that and where it really is.
+
+**Small things that cost time**
+
+- `lampsAlong` stands a lamp wherever its count falls. One stood in a parking bay at the kerb, through a parked car. Lay out bays at a kerb after the lamps, and look.
+- Two parked vehicles in the plan stood one inside the other for a whole stage, because no picture showed that car park from near. Check the parked spots against each other with numbers.
+- Halls of residence and towers need a storey of their own. At the campus's 2.9 a hall of four storeys is 11.6 high, not 9, and a tower of twenty-four is 70.
+- A long script on the command line gets mangled. Write it to a file and run the file.
+- The tool that reads the page's console filters by a plain piece of text, not by a pattern: `a|b` finds nothing, and a warning was missed that way.
+- Parasols, people and tables have to be to one scale with each other. The first umbrellas on the Union's terrace were lower than the people beside them.
