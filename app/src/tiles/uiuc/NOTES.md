@@ -97,10 +97,10 @@ The south-west:
 
 26. The Six Pack's four halls of 1958 to 1961: Hopkins, Scott, Snyder and Weston, each round a courtyard.
 27. The halls built round them, Nugent, Wassaja with its baskets lit from inside, and Bousfield; the Ikenberry Dining Center; and cars being unloaded on Peabody Drive.
-28. Gies Memorial Stadium: its two rows of columns, its press box, and its video board over the south end, which is one of the tile's two screens.
+28. Gies Memorial Stadium: its two rows of columns, its press box, and its video board over the south end, which is the tile's screen.
 29. Grange Grove: tents, the drumline, and the statue at the stadium's west gate.
 30. The parking deck at Fourth and Pennsylvania, across the street from the stadium.
-31. State Farm Center, the saucer, with its board on Kirby Avenue, which is the other screen.
+31. State Farm Center, the saucer.
 32. The tailgate in lot E-14, beside the saucer: pickups, tents, grills that smoke.
 
 Urbana:
@@ -158,16 +158,22 @@ Seven, each open to the south-east. A hero on show faces east, south, or between
 | `car-teams` | on the forecourt of the workshop, north of Green Street |
 | `deck-roof` | on the roof of the parking deck at Fourth and Pennsylvania |
 
-## Screens
+## The screen
 
-Two boards show what the collector is playing. Each is an ordinary sign of the engine's kind `screen`, as North America's on its gate tower is, and the engine fills it: the tile builds nothing for the music.
+One board shows what the collector is playing: the stadium's video board. It is an ordinary sign of the engine's kind `screen`, as North America's on its gate tower is, and the engine fills it when a track is playing. The tile builds nothing for the music. One screen to a tile is the collector's rule, and a second only where it earns its place: the saucer has none.
 
-| Where | Size | Faces |
-| --- | --- | --- |
-| The stadium's video board, on a frame over the south end, its top at about 16.5 | 12 wide and 6.75 high | north to the field, and south to Kirby Avenue and the tailgate |
-| The saucer's board, on a post where its east car park meets Kirby Avenue, its top at about 8.5 | 8 wide and 4.5 high | south-east and north-west |
+- **Where.** On a frame over the stadium's south end, 16 wide and 9 high, from 9.5 up to 18.5, which makes it the highest thing on the stadium. The real board of 2026 is about 17,000 square feet, and 16 by 9 units is about that at the city's scale.
+- **Its faces.** North to the field, and south to Kirby Avenue and the tailgate, which is the face the opening view sees.
+- **By the sums.** Its south face is in sight from end to end and from foot to top. What it newly hides is all inside the stadium: part of the field, and the lower rows of the west stand.
 
-Both are in sight from the opening view by the sums, from end to end. The stadium's board hides nothing that was in sight before. The saucer's board hides a few units of Kirby Avenue's near lane behind it.
+**What it shows when nothing is playing.** Most people will see this, so it is a picture of its own: the `screen` sign gets a `paint(ctx, s, w, h)` that draws the whole of its 640 by 360 pixels each time it is called and keeps nothing between calls. It is a scoreboard before kick-off, and nothing on it looks like a display of what is playing:
+
+- a navy board with a row of orange lamps round its edge;
+- GAME DAY across the top in orange block letters, large enough to read from across the tile;
+- under it HOME and GUESTS, each with a 0, either side of a clock that stands at 0:00, with 1ST below the clock;
+- along the bottom a row of small drawn corn cobs and footballs.
+
+It carries no name, no letter I and no mark of the university's, and no brand. The stadium is a memorial, so the board is a plain scoreboard in good spirits and makes no joke.
 
 ## When `main` is merged
 
@@ -195,7 +201,7 @@ Decided together, before anything is built. The city's scale is about 3.2 m to a
 | Oglesby and Trelease halls | 40 m, from one database | 12.5 | 18 |
 | Sherman Hall | 39 m | 12 | 17.5 |
 | The Illini Union, to the top of its cupolas | not found | | 18, and 20 with the vanes |
-| The stadium's stands, and its press box | 34 m for the stands of 1923 | 10.5 | 14 and 17 |
+| The stadium's stands, its press box, and the top of its video board | 34 m for the stands of 1923 | 10.5 | 14, 17 and 18.5 |
 | The Armory, at its crown | 30 m | 9 | 12 |
 | Foellinger's dome | not found | | 13 |
 | Bousfield Hall, of six storeys | not found | | 12.5 |
