@@ -447,7 +447,7 @@ export const LENGTH: Record<string, number> = {
 export const HOMES: Record<string, Home> = {
   balerion: { x: R.c[0], z: R.c[1], y: R.dome - 0.6, facing: 45, where: "the crown of the Dragonpit's dome" },
   vhagar: { x: 2, z: -14, y: 3, facing: 70, where: 'a low dark rock in the bay' },
-  dreamfyre: { x: R.c[0], z: R.c[1] + R.drum + 1.5, y: R.y, facing: 90, where: 'in the bronze doors, her tail in the dark of the pit' },
+  dreamfyre: { x: R.c[0], z: R.c[1] + R.drum + 18, y: R.y, facing: 90, where: 'on the forecourt before the bronze doors, her tail laid back through them into the dark of the pit' },
   caraxes: { x: -22.5, z: 48.5, y: 30, facing: 0, where: "the flat top of the Red Keep's great tower, his tail laid west over Maegor's Holdfast" },
   meleys: { x: 30, z: 80, y: 16, facing: 180, where: "High Tide's roofs, facing the river's mouth" },
   // on the Dragonmont: Meraxes on the summit as it is (where lair(90, 42, 80) puts her: the slope there is 41.9), and four lairs round the mountain at 20

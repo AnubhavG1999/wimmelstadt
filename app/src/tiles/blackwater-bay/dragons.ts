@@ -83,18 +83,21 @@ interface Home { x: number; y: number; z: number; facing: number; leave: number 
  * it is down (1 clockwise seen from above, -1 the other), so that its tail sweeps over open slope; and whether its home
  * is the Dragonpit's dome, above whose roof it is held as it leaves and comes down.
  */
-const WAYS: Record<Key, { leave?: number; arrive: number; approach?: number; cliff?: boolean; hold?: number; round?: 1 | -1; dome?: boolean }> = {
+const WAYS: Record<Key, { leave?: number; arrive: number; approach?: number; steep?: number; climb?: number; cliff?: boolean; hold?: number; round?: 1 | -1; dome?: boolean }> = {
   balerion: { arrive: 135, approach: 18, dome: true },
-  // she rests looking out over the bay towards Driftmark, and turns north to leave over the open water
-  vhagar: { leave: 270, arrive: 90, approach: 13 },
-  // she turns in the doors to leave over the terrace, clear of the houses below the forecourt
-  dreamfyre: { leave: 45, arrive: 225, approach: 26 },
+  // she rests looking out over the bay towards Driftmark, and turns north to leave over the open water, climbing steeply
+  // to be over the city's wall
+  vhagar: { leave: 270, arrive: 90, approach: 13, climb: 2.2 },
+  // she rests on the forecourt before the bronze doors, her tail laid back through them, and turns there to leave over
+  // the terrace, clear of the houses below it; she comes home from the south, steeply up over the terrace's wall, and
+  // turns round with her tail swinging west, away from the gatehouse and the place for a hero
+  dreamfyre: { leave: 45, arrive: 270, approach: 16, steep: 4, round: 1, climb: 2 },
   // he comes down onto his tower from the north, and turns to face the river's mouth
-  caraxes: { arrive: 90, approach: 14 },
+  caraxes: { arrive: 90, approach: 14, climb: 1.5 },
   // she comes down onto High Tide from the north, over Driftmark, and turns to face the river's mouth
   meleys: { arrive: 90 },
   // on the summit, above every ledge, she springs up and opens her wings at once, and comes down onto it with them open
-  meraxes: { arrive: 280, approach: 20 },
+  meraxes: { arrive: 280, approach: 20, climb: 1.4 },
   // he comes down from due south and turns round on his ledge with his tail out over the east flank, away from
   // Silverwing's ledge beside him to the west
   vermithor: { arrive: 270, cliff: true, round: -1 },
@@ -198,7 +201,7 @@ const P = (x: number, y: number, z: number, v: number): Waypoint => [x, y, z, v]
  * Out of a home: a short run along the way it leaves by, pushing up and climbing hard; or, off a ledge, a drop with
  * its wings drawn in and a run out low before it climbs. The first place is only for the direction.
  */
-function outOf(h: Home, L: number, cruise: number, cliff: boolean): Waypoint[] {
+function outOf(h: Home, L: number, cruise: number, cliff: boolean, climb = 1): Waypoint[] {
   const r = Math.min(L, 24), f = h.leave * RAD, dx = Math.cos(f), dz = Math.sin(f);
   if (cliff) {
     return [
@@ -212,8 +215,8 @@ function outOf(h: Home, L: number, cruise: number, cliff: boolean): Waypoint[] {
   return [
     P(h.x - dx * 3, h.y, h.z - dz * 3, 2),
     P(h.x, h.y, h.z, 2.5),
-    P(h.x + dx * 0.7 * r, h.y + 0.22 * r, h.z + dz * 0.7 * r, 9),
-    P(h.x + dx * 1.6 * r, h.y + 0.75 * r, h.z + dz * 1.6 * r, cruise * 0.65),
+    P(h.x + dx * 0.7 * r, h.y + 0.22 * r * climb, h.z + dz * 0.7 * r, 9),
+    P(h.x + dx * 1.6 * r, h.y + 0.75 * r * climb, h.z + dz * 1.6 * r, cruise * 0.65),
   ];
 }
 
@@ -249,7 +252,7 @@ function part(
   o: { marks?: Record<string, number>; perch?: { at: number; seconds: number; half?: boolean }; beatsOut?: number; mantle?: number } = {},
 ): { part: Part; at: (mark: string) => number } {
   const h = H[key], kind = KIND[key], L = kind.length, cruise = CRUISE[key], ways = WAYS[key], cliff = ways.cliff === true;
-  const head = outOf(h, L, cruise, cliff), tail = into(h, ways.approach ?? Math.min(L, 22), cruise, ways.arrive);
+  const head = outOf(h, L, cruise, cliff, ways.climb ?? 1), tail = into(h, ways.approach ?? Math.min(L, 22), cruise, ways.arrive, ways.steep ?? 1);
   const way = [...head, ...route, ...tail], first = head.length;
   const hold = o.perch ? { at: first + o.perch.at, seconds: o.perch.seconds } : undefined;
   const track = new Track(way, false, 1, 1, hold);
@@ -260,7 +263,7 @@ function part(
   const touch = 1.2 + track.duration;
   p.perches.push({ tA: -Infinity, tD: 1.2, y: h.y });
   // off a ledge it beats only once its wings are open
-  const beat = kind.flight.beat, n = o.beatsOut ?? 3, b0 = cliff ? (ways.hold ?? 1.6) + 1.0 : 0.9;
+  const beat = kind.flight.beat, n = o.beatsOut ?? 3, b0 = cliff ? (ways.hold ?? 1.6) + 1.0 : 1.3;
   p.events.push({ kind: 'beats', t0: b0, t1: b0 + n * beat, n });
   if (o.perch) {
     const tA = when(first + o.perch.at), tD = tA + o.perch.seconds;
@@ -327,29 +330,46 @@ function placeOf(p: Part, H: Record<Key, Home>, t: number, out: THREE.Vector3): 
   return out;
 }
 
-/** How high a dragon's body stands above what it stands on, at its most, by its kind. */
+/** How high a dragon's body stands above what it stands on, at its most, by its kind; and its build. */
 const STAND: Partial<Record<Key, number>> = {};
-const DOME_AT = new THREE.Vector3();
+const BUILD: Partial<Record<Key, ReturnType<typeof measure>>> = {};
+const DOME_AT = new THREE.Vector3(), TAIL_AT = new THREE.Vector3();
 
 /**
- * How far a dragon whose home is the dome is carried above its line as it leaves and as it comes home, without
- * turning it. Its line runs at the crown's height, the pilot lifts it to its standing height only while it settles or
- * pushes off, and its long tail trails back over the roof behind it; so within a tail's length of the dome its body
- * is kept above the crown by its standing height and a share of its length, less what its landing lifts it by.
+ * How far a dragon is carried above its line as it leaves and as it comes home, without turning it. Its line runs at
+ * the height of its perch, and the pilot lifts it to its standing height only while it settles or pushes off, so in
+ * between it would sink into what it stood on. For its first and last few seconds its body is kept its standing height
+ * above whatever is under it, less what its landing lifts it by; and one whose home is the dome, with its long tail
+ * trailing back over the roof, is kept above the crown by a share of its length more, within a tail's length of it.
  */
-function domeLift(p: Part, H: Record<Key, Home>, t: number, cue: Cue): number {
-  const start = p.perches[0].tD, end = p.perches[p.perches.length - 1].tA;
-  const when = Math.max(1 - smooth((t - start - 12) / 3), smooth((t - (end - 13)) / 3));
+function liftOf(p: Part, H: Record<Key, Home>, t: number, cue: Cue): number {
+  // off a ledge and onto it a dragon drops on purpose, its tail in its cave under the rock
+  if (p.cliff) return 0;
+  const start = p.perches[0].tD, end = p.perches[p.perches.length - 1].tA, dome = WAYS[p.key].dome === true;
+  const when = dome
+    ? Math.max(1 - smooth((t - start - 12) / 3), smooth((t - (end - 13)) / 3))
+    : Math.max(1 - smooth((t - start - 4) / 2), smooth((t - (end - 6)) / 2));
   if (when <= 0) return 0;
   placeOf(p, H, t, DOME_AT);
-  const near = 1 - smooth((Math.hypot(DOME_AT.x - RHAENYS.c[0], DOME_AT.z - RHAENYS.c[1]) - 40) / 18);
-  if (near <= 0) return 0;
-  const kind = KIND[p.key], m = measure(kind.shape), L = kind.length;
+  const kind = KIND[p.key], L = kind.length, m = (BUILD[p.key] ??= measure(kind.shape));
   const stand = (STAND[p.key] ??= Math.max(stance(0, m).root, stance(1, m).root) * L);
   const land = Math.min(1, cue.sit * 2), down = Math.max(0, cue.sit * 2 - 1);
   const body = DOME_AT.y + stance(down, m).root * L * land;
-  const least = RHAENYS.capY + 2 + (stand + 0.16 * L) * (1 - land), gap = body - least, k = 1.2;
-  return (when * near * (Math.sqrt(gap * gap + k * k) - gap)) / 2;
+  // its wings beat below it as it goes, so a third of its length more than its standing height
+  let least = groundAt(DOME_AT.x, DOME_AT.z) + (stand + 1 + 0.32 * L) * (1 - land) - 1.5 * land;
+  // and its tail trails back over what it left, which may stand higher than what is under its body
+  placeOf(p, H, t - 0.6, TAIL_AT);
+  const back = Math.hypot(DOME_AT.x - TAIL_AT.x, DOME_AT.z - TAIL_AT.z);
+  if (back > 0.5) {
+    const s = (0.45 * L) / back, tx = DOME_AT.x + (TAIL_AT.x - DOME_AT.x) * s, tz = DOME_AT.z + (TAIL_AT.z - DOME_AT.z) * s;
+    least = Math.max(least, groundAt(tx, tz) + (0.2 * L + 1) * (1 - land) - 1.5 * land);
+  }
+  if (dome) {
+    const near = 1 - smooth((Math.hypot(DOME_AT.x - RHAENYS.c[0], DOME_AT.z - RHAENYS.c[1]) - 40) / 18);
+    least = Math.max(least, RHAENYS.capY + 2 + (stand + 0.16 * L) * (1 - land) - 100 * (1 - near));
+  }
+  const gap = body - least, k = 1.2;
+  return (when * (Math.sqrt(gap * gap + k * k) - gap)) / 2;
 }
 
 /** What a dragon is told to do, `t` into its part. */
@@ -427,7 +447,8 @@ function moments(H: Record<Key, Home>): Moment[] {
   // doors, twice round the dome under Balerion, her silver crest catching the light, and back in.
   {
     const circles = ring(dx + 4, dz, 34, 40, 70, 76, 30, -2, 30);
-    const route: Waypoint[] = [P(-24, 31, 2, 24), P(-20, 48, -16, 28), ...circles, P(-30, 48, 2, 26), P(-4, 32, 20, 24)];
+    // she comes home down the west side of the Red Keep and up over the terrace's wall from the south
+    const route: Waypoint[] = [P(-24, 31, 2, 24), P(-20, 48, -16, 28), ...circles, P(-30, 48, 2, 26), P(-34, 42, 24, 24), P(-58, 36, 54, 22)];
     const d = part('dreamfyre', H, route, { marks: { round: 2 } });
     d.part.events.push({ kind: 'look', t0: d.at('round'), t1: d.at('round') + 9, n: -0.45 });
     list.push(finish('dome', 'Dreamfyre comes out of the bronze doors and flies twice round the dome', ['city'], 1.2, [d.part]));
@@ -645,6 +666,10 @@ export function buildDragons(k: Build): void {
   const rand = (): number => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
   // the first few are chosen, so that whoever opens the tile sees dragons in the air at once
   const opening = ['black-dread', 'fleet', 'sheep', 'hunt', 'dome'];
+  /** When each last took off or came home. */
+  const flewAt = KEYS.map(() => 0);
+  /** How long a moment's dragons have all been home. */
+  const waited = (m: Moment): number => Math.min(...m.parts.map((p) => clock - flewAt[index.get(p.key)!]));
 
   /** Whether a moment may start: its dragons are all home, none of its sky is in use, and no more than three would be up. */
   const free = (m: Moment): boolean => {
@@ -655,7 +680,10 @@ export function buildDragons(k: Build): void {
   };
   const start = (m: Moment): void => {
     playing.push({ m, start: clock });
-    for (const p of m.parts) flying[index.get(p.key)!] = { part: p, start: clock };
+    for (const p of m.parts) {
+      flying[index.get(p.key)!] = { part: p, start: clock };
+      flewAt[index.get(p.key)!] = clock;
+    }
     last = m.id;
   };
 
@@ -683,9 +711,18 @@ export function buildDragons(k: Build): void {
         const m = byId.get(opening[0]);
         if (m && free(m)) { pick = m; opening.shift(); }
       } else {
-        const ready = all.filter((m) => m.id !== last && free(m));
-        let r = rand() * ready.reduce((s, m) => s + m.weight, 0);
-        for (const m of ready) { r -= m.weight; if (r <= 0) { pick = m; break; } }
+        // fair to every dragon: a moment is the likelier the longer its dragons have all been home, and one whose
+        // dragons have all waited three minutes goes next, as soon as its sky is free, with nothing let in before it
+        const due = all.filter((m) => m.id !== last && waited(m) > 180).sort((a, b) => waited(b) - waited(a))[0];
+        if (due && free(due)) pick = due;
+        else {
+          // while one is due and its sky is taken, others go only where they take neither its sky nor its dragons
+          const clear = (m: Moment): boolean => !due || (!m.sky.some((s) => due.sky.includes(s)) && !m.parts.some((p) => due.parts.some((q) => q.key === p.key)));
+          const ready = all.filter((m) => m.id !== last && free(m) && clear(m));
+          const odds = (m: Moment): number => m.weight * (0.35 + Math.min(2, waited(m) / 90));
+          let r = rand() * ready.reduce((s, m) => s + odds(m), 0);
+          for (const m of ready) { r -= odds(m); if (r <= 0) { pick = m; break; } }
+        }
       }
       if (pick) { start(pick); gap = 4 + rand() * 8; }
       else gap = 1;
@@ -700,6 +737,7 @@ export function buildDragons(k: Build): void {
           flying[i] = null;
           turnFrom[i] = f.part.arrive;
           turnAt[i] = clock;
+          flewAt[i] = clock;
         } else if (t < f.part.wait) {
           // still at home: turning on its perch to the way it leaves by
           const h = H[key], hd = held[i], p = f.part;
@@ -713,7 +751,7 @@ export function buildDragons(k: Build): void {
         } else {
           const p = f.part;
           cueOf(p, t, pilot.cue);
-          if (WAYS[key].dome) pilot.cue.lift = domeLift(p, H, t, pilot.cue);
+          pilot.cue.lift = liftOf(p, H, t, pilot.cue);
           pilot.fly((tt, out) => placeOf(p, H, tt - f.start, out), clock, time, dt, () => floorFor(p, t), groundAt);
           const cue = pilot.cue;
           if (cue.fire > 0) {
@@ -831,6 +869,8 @@ export function buildDragons(k: Build): void {
       where: (key: Key): number[] => pilots[index.get(key)!].pose.pos.toArray().map((v) => Math.round(v * 10) / 10),
       /** How high the Dragonmont's rock stands at a place, ribs and all, for leaving out of a check what lies inside it. */
       rock: (x: number, z: number): number => mountBuilt(x, z),
+      /** How high what a dragon would stand on is at a place: the show's own ground, roofs, rock, the dome and all. */
+      ground: (x: number, z: number): number => groundAt(x, z),
       /** Where a moment's dragon is, `t` into the moment: for aiming pictures. */
       at: (id: string, key: Key, t: number): number[] => {
         const m = byId.get(id)!, p = m.parts.find((q) => q.key === key)!;
