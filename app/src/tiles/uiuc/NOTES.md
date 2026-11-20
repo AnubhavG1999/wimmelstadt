@@ -2,7 +2,13 @@
 
 What a later reader cannot see in the code.
 
-**Where it stands.** The plan was put to the collector on 19 November 2026. He answered the same day, and this is the plan with what he asked for worked in. Nothing is built yet. The research is in [docs/districts/research/uiuc.md](../../../../docs/districts/research/uiuc.md). Where this file and that note disagree, this file is the later: see "What the research note has wrong".
+**Where it stands.** The plan was put to the collector on 19 November 2026. He answered the same day, and this is the plan with what he asked for worked in. The tile is blocked out: its ground, its streets, the railway's embankment with its two viaducts, its routes and its places for heroes are built, and every lot is a plain box with its name on a board. No model is built yet. The research is in [docs/districts/research/uiuc.md](../../../../docs/districts/research/uiuc.md). Where this file and that note disagree, this file is the later: see "What the research note has wrong".
+
+## Where things are
+
+- `plan.ts` is the tile as data: the streets as middle lines, the ground between them, the lawns and car parks, every lot as a rectangle with a height, the routes, the parked vehicles, the places for heroes, and the places the opening view must see. Nothing in it draws.
+- `city.ts` builds the ground, the streets and the embankment, and whatever stands on each lot: its model, once that is entered in `MODELS`, and until then a box.
+- `checks.ts` looks at the routes and at the sight lines on every load of the development server, and says what it finds in the console.
 
 ## How the tile lies
 
@@ -143,12 +149,14 @@ Traffic keeps right. The ground is flat, so nothing here is raised but the railw
 - **Loops inside loops.** Every lane lies next to one block and is driven clockwise round it. A loop round several blocks together uses the same lanes where its edge is theirs, shares them, and goes straight on where they turn off. Two loops never cross as long as, of any two, one lies inside the other or they lie apart: that is the rule the routes are chosen by. The thirteen routes planned were tried against each other from their corners, and none crosses another.
 - **A street that only buses use.** Wright Street, from Green Street to Gregory Drive. One bus loop comes down its west lane and another goes up its east lane, and both slow to a walk at the Transit Plaza: a stretch of a route can have a speed of its own. The buses are the engine's plain bus in white.
 - **Two viaducts under the railway.** The Illinois Central raised its line through Champaign in 1924, and Green Street and Kirby Avenue are two of the streets that pass under it. Here each runs on west under the embankment, and the outer loop turns round out of sight beneath it. The train goes over while the traffic goes under.
-- **A car park that is part of the road.** A second form of the outer loop leaves Kirby Avenue, goes down one aisle of lot E-14 among the tailgaters and up the next, and joins Kirby Avenue again.
+- **A car park that is part of the road.** Lot E-14 has an aisle of its own that goes round its row of bays, and a route that drives it, among the tailgaters. It touches no street.
 - **A farm lane** that no route uses, for the tractor and its wagon.
 
 What moves on a line of its own: the train, the tractor and its wagon, the combine, the aeroplane and the geese.
 
-About 54 vehicles on the thirteen routes, before tuning. With corners of radius 4, a lane can take 0.42 vehicles a second, and four lanes are planned at a little more than that: the counts come down, or those corners are made wider, when the routes are written.
+Thirteen routes and 45 vehicles in the blockout. The counts are budgeted as the page for tile builders says: with corners of radius 4 a lane takes 0.42 vehicles a second, and the busiest lane here, Green Street's south lane east of Wright, is planned at 0.41. The turn under the railway has a radius of 2.5 and takes 0.29, and the outer loop brings it 0.24.
+
+**The traffic check, on the blockout.** With the engine as it is on `main` at `ec1328a`, the tile fails it: over three runs the traffic locked for good after 4, 40 and 124 simulated minutes, each time at a place where a block's loop joins a lane of the loop round the campus. The cause is in the engine and is under "For the engine". With the mend described there tried in a working copy, more than four simulated hours ran with nothing standing longer than 8.4 seconds, nothing nearer than 5.0 to anything else, and every route's vehicles at least 8.6 apart. The mend is not this tile's to make: it was put back, and the main session was told.
 
 Where a hero is best seen on the road, by the sums below: on Kirby Avenue and on Gregory Street, where every unit of both lanes is in sight, on Peabody Drive, on Green Street's far lane, and on First Street's far lane.
 
@@ -327,4 +335,9 @@ Found on 19 November 2026, after the note was written. The note is left as it wa
 
 ## For the engine
 
-Nothing yet.
+Found while blocking the tile out, on 19 November 2026, against `main` at `ec1328a`.
+
+- **Two vehicles at a merge can each wait for the other, for ever.** Each route keeps its own record of a lane it shares with another (`Share` in `vehicles.ts`), and the two records of one stretch differ by about half a unit in where it starts, because `findShares` matches points a unit apart. So one vehicle reckons its own room before the lane as a little more than nothing while the other reckons it as a little less, and takes it for one that can no longer stop. When both stand waiting within half a unit of their waiting places, each decides that the other goes first. North America's `garage-run` goes through the same code. What held in a trial: making the two records agree straight after `findShares`, by copying one route's `a0`, `b0` and `len` into the other's record of the same stretch.
+- **`checkRoads` takes a shared lane for a crossing.** It reports any two routes that come within 2.9 of each other, and two routes in one lane are 0 apart. This tile shares lanes on purpose, so it has a check of its own in `checks.ts`: `roadFaults` finds two routes whose lines cross at more than about 25 degrees, and two that meet head-on in one lane, and leaves alone a lane that two routes drive the same way.
+- **Vehicles start without regard to the lanes they share.** Each route's vehicles are spread along it, and two from different routes can start in one place and sort themselves out in the first second. On this tile's blockout the nearest two at the start are 2.9 apart. The counts are looked at again when the tile is done, so that none starts inside another.
+- **A bus cannot stop.** The buses slow to a walk at the Transit Plaza, on a stretch of their route with a speed of its own, and that stands in for a stop.
