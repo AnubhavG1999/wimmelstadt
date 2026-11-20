@@ -17,11 +17,12 @@
 //
 // Here: the curtains, with six of the seven drums at their corners and along
 // them, and the seventh, the tallest, at the south-east corner, flat on top
-// inside its crenels, where Caraxes perches; the gate on the south between two
+// inside a low parapet, where Caraxes perches; the gate on the south between two
 // drums, behind its barbican, with its square on a terrace of the hill; the
 // throne room along the west wall, its great doors on the gate's yard; the
 // outer yard on the north, with stables and a well; the Holdfast in the
-// south-east with its four turrets, its moat and its drawbridge. The hill is
+// south-east with its four turrets, its flat roof under Caraxes's tail, its
+// moat and its drawbridge. The hill is
 // squared off on the south and the west into a terrace held up by buttressed
 // walls, with a bastion at the south-east; its north-east and east are a sheer
 // face of rock down to the bay, with a parapet along its edge and a stair down
@@ -35,7 +36,7 @@
 import { interior, rng, type GeoBuilder, type V3, type WinSpec } from '../../engine/geo';
 import { area, flat, rect } from '../../engine/ground';
 import { archway, figure, roundel, tri, wheel, type Dress } from '../../engine/parts';
-import { face3, gable, hip, slab } from '../../engine/shapes';
+import { face3, gable, slab } from '../../engine/shapes';
 import type { SignDef } from '../../engine/signs';
 import { field, heightOn } from '../../engine/terrain';
 import type { Build } from '../../engine/tile';
@@ -701,25 +702,28 @@ function yard(k: Build): void {
 // Maegor's Holdfast
 // ---------------------------------------------------------------------------
 
+/**
+ * Caraxes's tail lies over it from his tower, at the lot's top: so its roof is
+ * flat, of lead, a little below that, and its battlements and turrets end at
+ * the lot's top, with nothing standing on them.
+ */
 function holdfast(k: Build, l: Lot): void {
-  const b = k.b, K = KEEP, M = MOAT, walk = l.top - 2.7, storey = walk / 7;
+  const b = k.b, K = KEEP, M = MOAT, walk = l.top - 0.7, storey = walk / 7;
   // the dry moat: its floor, and its walls up to the yard, but where the curtain and the great tower are
   flat(b, rect(M.x0, M.z0, M.x1, M.z1), MOAT_Y, MOAT_FLOOR);
   const ez = GT.z - GT.r - 0.3;
   b.quad([M.x0, MOAT_Y, M.z1], [M.x0, MOAT_Y, M.z0], [M.x0, YARD, M.z0], [M.x0, YARD, M.z1], [1, 0, 0], MASONRY_DARK);
   b.quad([M.x0, MOAT_Y, M.z0], [M.x1, MOAT_Y, M.z0], [M.x1, YARD, M.z0], [M.x0, YARD, M.z0], [0, 0, 1], MASONRY_DARK);
   b.quad([M.x1, MOAT_Y, M.z0], [M.x1, MOAT_Y, ez], [M.x1, YARD, ez], [M.x1, YARD, M.z0], [-1, 0, 0], MASONRY_DARK);
-  // the keep: a plinth in the moat, its walls with their rows of windows, a corbel table and battlements, and a roof of slate inside them
+  // the keep: a plinth in the moat, its walls with their rows of windows, a corbel table and battlements, and a flat roof of lead inside them
   b.box(K.x0 - 0.15, MOAT_Y - 0.1, K.z0 - 0.15, K.x1 + 0.15, YARD + 0.4, K.z1 + 0.15, SHADE, { faces: 'NESWT' });
   b.box(K.x0, YARD + 0.4, K.z0, K.x1, walk, K.z1, RED, { win: { ...LOOPS_CLOSE, storey }, seed: 0.73, faces: 'NESW' });
   b.box(K.x0 - 0.04, storey * 5 - 0.12, K.z0 - 0.04, K.x1 + 0.04, storey * 5 + 0.08, K.z1 + 0.04, SHADE, { faces: 'NESWTB' });
-  b.box(K.x0 - 0.15, walk - 0.4, K.z0 - 0.15, K.x1 + 0.15, walk, K.z1 + 0.15, SHADE, { faces: 'NESWTB' });
-  crenels(b, K.x0 - 0.15, K.z0 - 0.15, K.x1 + 0.15, K.z1 + 0.15, walk, RED, SHADE, 'NESW', 0.8, 0.36, 1.3);
-  hip(b, K.x0 + 0.85, K.z0 + 0.85, K.x1 - 0.85, K.z1 - 0.85, walk + 0.02, l.top - 0.1 - walk, ROOF.slate, 0.12);
+  b.box(K.x0 - 0.15, walk - 0.4, K.z0 - 0.15, K.x1 + 0.15, walk, K.z1 + 0.15, SHADE, { faces: 'NESWTB', top: LEAD });
+  crenels(b, K.x0 - 0.15, K.z0 - 0.15, K.x1 + 0.15, K.z1 + 0.15, walk, RED, SHADE, 'NESW', l.top - walk, 0.36, 1.3);
   // a drum at each corner of it
   const corners: P2[] = [[K.x0 + 0.3, K.z0 + 0.3], [K.x1 - 0.3, K.z0 + 0.3], [K.x0 + 0.3, K.z1 - 0.3], [K.x1 - 0.3, K.z1 - 0.3]];
   corners.forEach(([x, z], i) => turret(b, x, z, 0.95, MOAT_Y - 0.1, l.top, 0.2 + i * 0.11));
-  banner(b, corners[0][0], corners[0][1], l.top - 0.75, 'targaryen', 3.4);
   // tall arched windows on its south side, high up, for its great chamber
   for (const dx of [-1, 0, 1]) arched(b, (K.x0 + K.x1) / 2 + dx, K.z1, 0, 1, 0.68, storey * 5 + 0.5, storey * 6 - 0.55, GLASS, 1.4);
   // the drawbridge, let down over the moat to its door on the north, and the Kingsguard who keep it
@@ -732,7 +736,6 @@ function holdfast(k: Build, l: Lot): void {
     figure(b, dx + s * 1.05, M.z0 - 0.75, YARD, KINGSGUARD);
     fire(k, dx + s * 1.0, YARD + 2.1, dz - 0.2, 0.17, s > 0 ? 6 : 0);
   }
-  for (const [x, z] of [[K.x0 + 1.4, K.z0 + 0.35], [K.x1 - 1.6, K.z1 - 0.35]]) k.person(x, z, walk);
 }
 
 // ---------------------------------------------------------------------------
@@ -742,28 +745,24 @@ function holdfast(k: Build, l: Lot): void {
 /**
  * The tallest of the seven, at the south-east corner, the first thing the
  * opening view sees: a drum on a battered foot, rows of windows, two string
- * courses, corbels, and on top a flat roof of lead inside a parapet of iron
- * with crenels, at the lot's top and nothing above it, where Caraxes perches.
+ * courses, corbels, and on top a flat roof of lead exactly at the lot's top,
+ * five across, where Caraxes perches, with only a low parapet of iron round it.
  */
 function greatTower(k: Build, l: Lot): void {
-  const b = k.b, { x, z, r } = GT, sides = 12, top = l.top;
-  const roof = top - 0.8, sill = roof + 0.35, corbel = roof - 0.4, R = r + 0.1, Ri = R - 0.3;
+  const b = k.b, { x, z, r } = GT, sides = 12, roof = l.top;
+  const sill = roof + 0.35, corbel = roof - 0.4, R = r + 0.1, Ri = R - 0.3;
   const storey = corbel / Math.round(corbel / 3.6), y0 = under(x, z, r + 0.3) - 0.4;
   b.cyl(x, z, y0, Y + 1.2, r + 0.3, r, sides, RED, { cap: false, seed: 0.83 });
   b.cyl(x, z, Y + 1.2, corbel, r, r, sides, RED, { win: { ...LOOPS_CLOSE, storey, lit: 0.5 }, seed: 0.83, cap: false });
   for (const y of [storey * 4, storey * 6]) b.cyl(x, z, y - 0.1, y + 0.1, r + 0.08, r + 0.08, sides, SHADE, { cap: false });
   b.cyl(x, z, corbel, roof, r, R, sides, SHADE, { cap: LEAD });
-  // the parapet: its outer face, its inner face, its top, and merlons on every other side
+  // the parapet, low: its outer face, its inner face and its top
   b.cyl(x, z, roof, sill, R, R, sides, IRON, { cap: false });
   const ph = Math.PI / sides, at = (rr: number, i: number, y: number): V3 => [x + Math.cos(ph + (i / sides) * Math.PI * 2) * rr, y, z + Math.sin(ph + (i / sides) * Math.PI * 2) * rr];
   for (let i = 0; i < sides; i++) {
     const m = ph + ((i + 0.5) / sides) * Math.PI * 2;
     b.quad(at(Ri, i, roof), at(Ri, i + 1, roof), at(Ri, i + 1, sill), at(Ri, i, sill), [-Math.cos(m), 0, -Math.sin(m)], IRON_DARK);
     b.quad(at(Ri, i, sill), at(Ri, i + 1, sill), at(R, i + 1, sill), at(R, i, sill), [0, 1, 0], IRON);
-  }
-  for (let i = 0; i < sides; i += 2) {
-    const m = ph + ((i + 0.5) / sides) * Math.PI * 2, w = R * Math.sin(Math.PI / sides) * 0.85;
-    b.obox(x + Math.cos(m) * (R - 0.15), (sill + top) / 2, z + Math.sin(m) * (R - 0.15), 0.15, (top - sill) / 2, w, m, IRON, { top: IRON_DARK });
   }
   k.lights.push({ x: x + 3, z: z + 3, r: 10, color: '#ffcf8a', k: 0.4 });
 }
