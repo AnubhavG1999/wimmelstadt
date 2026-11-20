@@ -79,6 +79,8 @@ export interface DragonShape {
   breadth?: number;
   /** How long its horns and the spikes of its frill are. */
   horns?: number;
+  /** How far its horns curl up like a bull's: 0 swept straight back from the brow, 1 out to the sides and then up and forward at their tips. */
+  hornCurl?: number;
   /** How tall the plates along its spine stand: a crest of spines is 2 or more. */
   crest?: number;
   /** How large the spade at the end of its tail is. */
@@ -205,7 +207,7 @@ export interface Measures {
   upper: number; fore: number; arm: number; fingers: number[]; fan: number[];
   /** Half its full span, from the middle of its back to a wing tip. */
   halfSpan: number;
-  horns: number; crest: number; fin: number; fangs: number; ragged: number; scars: number;
+  horns: number; hornCurl: number; crest: number; fin: number; fangs: number; ragged: number; scars: number;
 }
 
 /** A kind's measures, from its shape. Without one they are exactly the three's. */
@@ -229,7 +231,7 @@ export function measure(shape: DragonShape = {}): Measures {
     fingers: FINGERS.map((f, i) => f * reach * (i === 0 ? 1 : Math.sqrt(breadth))),
     fan: FAN.map((a) => a * breadth),
     halfSpan: HALF_SPAN * reach,
-    horns: shape.horns ?? 1, crest: shape.crest ?? 1, fin: shape.fin ?? 1, fangs: shape.fangs ?? 0, ragged: shape.ragged ?? 0, scars: shape.scars ?? 0,
+    horns: shape.horns ?? 1, hornCurl: shape.hornCurl ?? 0, crest: shape.crest ?? 1, fin: shape.fin ?? 1, fangs: shape.fangs ?? 0, ragged: shape.ragged ?? 0, scars: shape.scars ?? 0,
   };
 }
 /** Westeros's three's measures, which every kind without a shape of its own has. */
@@ -411,7 +413,21 @@ function headShape(k: DragonKind, m: Measures): Shape {
     // two horns from the brow, in line with the head, as long as its kind's
     const longer = (a: V3, e: V3): V3 => (m.horns === 1 ? e : [a[0] + (e[0] - a[0]) * m.horns, a[1] + (e[1] - a[1]) * m.horns, a[2] + (e[2] - a[2]) * m.horns]);
     const thick = Math.sqrt(m.horns);
-    b.beam([0.006, 0.025, s * 0.013], longer([0.006, 0.025, s * 0.013], [-0.072, 0.04, s * 0.025]), 0.0068 * thick, 0.0009, k.horn);
+    const root: V3 = [0.006, 0.025, s * 0.013];
+    if (m.hornCurl > 0) {
+      // out to the side and back a little, then up, and at the tip forward and in, as a bull's: four bars, each thinner
+      // than the last, part of the way from the straight horn's line to that curl by how far its kind's curl
+      const c = m.hornCurl, straight: V3 = [-0.078, 0.015, 0.012];
+      const curled: V3[] = [[-0.016, 0.004, 0.018], [-0.03, 0.017, 0.033], [-0.032, 0.04, 0.036], [-0.014, 0.06, 0.027]];
+      const radii = [0.0095, 0.0078, 0.006, 0.0038, 0.0011];
+      let from = root;
+      curled.forEach((q, i) => {
+        const f = (i + 1) / curled.length;
+        const to = longer(root, [root[0] + straight[0] * f * (1 - c) + q[0] * c, root[1] + straight[1] * f * (1 - c) + q[1] * c, root[2] + s * (straight[2] * f * (1 - c) + q[2] * c)]);
+        b.beam(from, to, radii[i] * thick, radii[i + 1] * thick, k.horn);
+        from = to;
+      });
+    } else b.beam(root, longer(root, [-0.072, 0.04, s * 0.025]), 0.0068 * thick, 0.0009, k.horn);
     // a frill of three spikes behind the jaw
     for (let i = 0; i < 3; i++) {
       const y = 0.01 - i * 0.0095;

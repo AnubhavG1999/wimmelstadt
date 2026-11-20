@@ -113,7 +113,8 @@ export const CANNIBAL: DragonKind = {
   name: 'The Cannibal', length: 24, body: 0x161517, belly: 0x201e22, streak: 0x29272b, horn: 0x2e2b2e, bone: 0x1b191c,
   skin: [0x1f1d21, 0x151316], claw: 0x070608, eye: 0x40ff4a, mouth: 0x2a1414, glow: 0xffb84a, scar: 0x6e6a74, tooth: 0x2a2630,
   flame: { core: [1.0, 0.78, 0.3], edge: [0.9, 0.36, 0.06], fleck: [0.5, 0.9, 0.2], flecks: 0.12, cores: 0.38, reach: 16, size: 1.4, spread: 1.7, light: 0xffa030 },
-  shape: { heft: 1.1, tail: 1.1, bulk: 0.9, throat: 0.95, reach: 1.05, horns: 1.3, crest: 1.5, fangs: 0.22, scars: 1, ragged: 0.45 },
+  // his horns curl up like a bull's, as the reference chart of the great dragons' heads draws them (the books say nothing of them)
+  shape: { heft: 1.1, tail: 1.1, bulk: 0.9, throat: 0.95, reach: 1.05, horns: 1.3, hornCurl: 1, crest: 1.5, fangs: 0.22, scars: 1, ragged: 0.45 },
   // restless and quick to turn, forever looking about him, as a hunter of his own kind
   flight: { beat: 0.85, answer: 7.5, bank: 80, glide: 0.8, stroke: 1.1, rock: 1.4, look: 2.2, sway: 1.3, swayRate: 1.2, snake: 0.3 },
 };
