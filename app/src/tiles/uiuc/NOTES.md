@@ -2,7 +2,7 @@
 
 What a later reader cannot see in the code.
 
-**Where it stands.** Built, and waiting for the collector to call it final. The plan was put to him on 19 November 2026 and he answered the same day. Every one of the 85 lots has its model, `main` is merged in, and the checks have been run (see "The checks"). What he has not yet said: whether Wassaja Hall, the Siebel Center, Manolo's front, the lettering on Basil Thai's awning and the Union's Green Street porch are right, each of which was built without a source that shows it. The research is in [docs/districts/research/uiuc.md](../../../../docs/districts/research/uiuc.md). Where this file and that note disagree, this file is the later: see "What the research note has wrong".
+**Where it stands.** Built, and waiting for the collector to call it final. The plan was put to him on 19 November 2026 and he answered the same day. Every one of the 85 lots has its model, `main` is merged in, and the checks have been run (see "The checks"). He looked at the finished tile the same evening, found it right, and asked for one thing more: the blue boards that stand before the university's buildings. They are in, and he has not seen them yet. The research is in [docs/districts/research/uiuc.md](../../../../docs/districts/research/uiuc.md). Where this file and that note disagree, this file is the later: see "What the research note has wrong".
 
 ## Where things are
 
@@ -13,6 +13,7 @@ What a later reader cannot see in the code.
 - `models.ts` gathers the files of models. Each file builds one group of lots and hands over its models by the id of their lot, the signs it hangs, and `extras` for whatever it builds that is not a lot. A lot no file has a model for is a box. A model is a function of its lot, so it moves with the plan.
 - `planting.ts` is built last: Quad Day on the Main Quad, and the tile's trees and garden lamps, each put down through a function that refuses a road, a lot, a hero's place, and any place that would stand before something the opening view is to see.
 - `scenes.ts` holds the screen and the small scenes on the ground between the lots, and `moving.ts` what moves on a line of its own.
+- `boards.ts` stands a blue board with its name before each of the university's buildings. It comes after the planting, which knows nothing of the boards.
 - `union.ts` builds the Illini Union, `gregory-place.ts` Gregory Place and Manolo's, and `six-pack.ts` the halls of the Six Pack. The other files of models are named for their part of the tile.
 
 ## The models
@@ -97,6 +98,16 @@ Not checked against a picture: what Wassaja Hall looks like (its brick, its stor
 - *The Round Barns.* Three, alike but not the same: white walls of twelve sides on a concrete base, arched roofs of grey-green shingle, and a red door under a hay door on the south. One has its silo coming up through the top of its roof, one a cupola and a silo beside it, and one a cupola and a wing. Round them: a white fence with a gate half open, three cows, bales of hay, and a board that says ROUND BARNS.
 
 Not confirmed by any source found: Roger Adams Laboratory's materials and storeys; the Pennsylvania Avenue halls' layout and brick; Oglesby's and Trelease's brick and the pattern of their sides; the Round Barns' colours, and which of the three in life stands where; which of Busey and Evans is the western one (Busey is, here).
+
+**The university's boards** (`boards.ts`). The collector asked for them on 19 November 2026: on the campus a dark blue board with white lettering stands before every building, and they make the university's buildings known at a glance. Here there are 47, one before each of 46 buildings and a second for the Union.
+
+- *The board.* 3 wide and 2.06 high on two short legs, 2.44 to its top, which is about as high as the figures beside it. A dark frame, and the same face on both sides, so that it reads from wherever the view is turned. The face is painted by the tile: dark blue, a strip along the top with a plain square of orange, a fine rule and `University of Illinois` in small letters, and under it the building's name in white, in capitals and small letters, on one to three lines. In life the university's mark stands where the orange square is. It is a logo and is not drawn: see "Care".
+- *Where each stands* was not typed in by eye. It was found on the built tile, in the page's console: every triangle that is built was sorted into bins on the ground, so that the height of whatever stands at a place could be asked for, and the places of the figures, the lamps and the trees were read from their batches. For each building the search then went along its front, on a side the opening view sees where there is one, and took the place nearest the middle that is free: nothing built in it or in the walk just behind it, no figure, lamp or tree at it, the kerb at least 0.3 off, no place for a hero within 6, nothing the opening view is to see behind it, and the board itself in sight. Each place is kept in `boards.ts` as a side of its lot, how far along and how far out, so that a board moves with its building.
+- *Seen from the opening view:* 42 of the 47, asked of the boards as built with `wimmel.seen`. The five that are not stand where their building's front is: the Natural History Building's and Noyes Laboratory's on the edge of the Quad's lawn, across the walk from their doors, Hopkins Hall's on the lawn before Wassaja, Nugent Hall's on Gregory Drive, and the Union's second on Green Street beside its porch.
+- *The Union's* first board stands at its east side, towards Harker Hall. Before its Quad front there is no place for one: at the terrace's west end is the place for a hero, in the middle the steps, and the east end is the one corner of the Quad that the Natural History Building hides from the opening view.
+- *Wassaja Hall's* stands out on its lawn, 6.5 before the wall and well west of the door, where the opening view sees it through the gap between Bousfield and Scott and it hides neither the baskets nor a hero.
+- *Bousfield's, Scott's and Snyder's* stand on the sidewalk of Peabody Drive, since those halls reach the edge of their block, and Oglesby Hall's stands at the tower's south-west corner, beside the canopy over its door.
+- *Without one:* the stadium, the saucer and Illinois Field, the McFarland bell tower, the greenhouses, the Round Barns and the car teams' workshop, and everything that is not the university's.
 
 **West of Fourth Street** (`houses.ts`, built by an Opus builder and looked at from four sides by day and from two by night).
 
@@ -227,7 +238,7 @@ Two walks stand in for streets east of the Quad: Mathews Avenue, between the Qua
 
 ## The things on the tile
 
-Numbered so that the count can be checked. All 47 are built.
+Numbered so that the count can be checked. All 48 are built.
 
 The Quad:
 
@@ -302,6 +313,10 @@ The south edge:
 In the air:
 
 47. A crop duster towing a banner with the chant on it round the stadium.
+
+All over the campus:
+
+48. The university's blue boards: one before each of its buildings, with the building's name in white.
 
 Besides these: a grove south of Pennsylvania Avenue, with a small cemetery in it (see "Care"). And between the things stand ordinary buildings: shops along Green Street, a tower of flats, Sherman Hall, Illini Tower, Bromley Hall, blocks of flats, Huff Hall, the Krannert Art Museum, David Kinley Hall, the Business Instructional Facility, and laboratories north of Krannert Center. Each of these has a model of its own too: the tile has no plain boxes.
 
@@ -462,6 +477,7 @@ The near lane is the one on the camera's side of the buildings that hide it: the
 - **Krannert Center's amphitheatre opens south.** In life it is on the west front, before the Great Hall's lobby windows. Here it is at the south-west of the terrace, where the opening view sees it, and the Great Hall's glass looks over it. Its lamp towers and its banners stand higher than the terrace, which is the lot's own height.
 - **The Chemical and Life Sciences Laboratory has four storeys.** In life it has five.
 - **Busey-Evans has no patio on its south side.** Its lot ends half a unit from the sidewalk. The porch between the two halls stands in for it.
+- **The university's boards are larger than life**, about half as large again beside the figures, so that a name can be read, and at night they are lit, as every sign on the tile is. In life they are not. They carry the building's name alone, without the line for its college and its address.
 - **Storeys on the Quad.** The English Building and Lincoln Hall have four storeys in life and three here, at the heights the plan gives them, and the English Building's colonnade is three storeys high in life. Henry Administration's storeys are 2.6, so that its three stand 8 high. Its addition of 1964 is left out, and so are Smith Hall's backstage wings of 1985 and Foellinger's additions at the back.
 - **The stadium.** Its columns are 26 a side, not 100. The plaques to the dead of the Second World War and of Korea on its north and south sides are left out. Its seats are full, and the crowd stands.
 - **The towers' storeys.** Illini Tower has 17 floors in life and shows 16 rows of windows. The bookstore is four storeys above the ground with a fifth set back, as its builder's page and a university page between them say.
@@ -477,12 +493,13 @@ The near lane is the one on the camera's side of the buildings that hide it: the
 - Wassaja Hall is named for the university's first Native American graduate, and its baskets are about his journey home. It is drawn as it stands.
 - The cemetery in the grove is small, as the collector asked: lawn, trees and plain stones, with no lettering, and nothing stands, drives or is staged in it.
 - Left out altogether: the university's block I, its seal and its wordmarks, every athletic mark, and the former mascot in any form. The chant on the crop duster's banner is the one thing of the kind on the tile, and the collector asked for it: it is plain lettering, and its capital I is one bare upright stroke with no serifs, which is not the mark. No protest, no flag of a cause and no slogan is drawn.
+- The university's boards carry no mark. Where its block I stands on a board in life there is a plain square of orange, and `University of Illinois` is in plain lettering, not its wordmark. The collector described the boards with the mark on them and asked for something like them: the square is this session's reading of that, by the rule that no logo is drawn, and it is his to change.
 - The saucer carries no name: its name is an insurer's.
 - The tile's seed is 217, the dialling code. It is not a date.
 
 ## Real names on signs
 
-On signs so far: KRANNERT CENTER FOR THE PERFORMING ARTS, ROGER ADAMS LABORATORY, CHEMICAL AND LIFE SCIENCES LABORATORY, BUSEY HALL, EVANS HALL, PENNSYLVANIA AVENUE RESIDENCE HALLS, OGLESBY HALL and TRELEASE HALL, each as the university writes it, and ROUND BARNS (since May 2026 the barns' full name is the Leah J. Wightman Round Barns); MAIN LIBRARY, STOCK PAVILION, ACES LIBRARY INFORMATION & ALUMNI CENTER (the university writes "and"), MUMFORD HALL, DAVID KINLEY HALL, BUSINESS INSTRUCTIONAL FACILITY, and MORROW PLOTS with 1876 under it; HUFF HALL, KRANNERT ART MUSEUM, and BROMLEY HALL, a private hall that the university's list of certified housing has under that name at 910 S. Third Street; ILLINOIS TERMINAL; KAMS, twice; LEGENDS, with BAR & GRILL on its awning, as its listings write its name; MURPHY'S PUB, and MURPHY'S on its hung sign; CHOPSTIX; RED LION and JOE'S BREWERY, each twice; CRACKED and MIA ZA'S, each twice; 309 GREEN and THE TOWER AT THIRD, each over its door and high on its east face; ENGINEERING HALL, GRAINGER ENGINEERING LIBRARY, THOMAS M. SIEBEL CENTER FOR COMPUTER SCIENCE, EVERITT LABORATORY and TALBOT LABORATORY, each on its building; CHAMPAIGN-URBANA, the name of the railway's station, on the platform; ALTGELD HALL, HENRY ADMINISTRATION BUILDING, ENGLISH BUILDING, LINCOLN HALL and GREGORY HALL, each over its door on the Quad; FOELLINGER AUDITORIUM, HARKER HALL, NATURAL HISTORY BUILDING, NOYES LABORATORY, DAVENPORT HALL, SMITH MEMORIAL HALL (the university's full name for it is Tina Weedon Smith Memorial Hall) and ASTRONOMICAL OBSERVATORY, each where the opening view can read it; GIES MEMORIAL STADIUM (so named on 9 September 2025) on the stadium's south wall, and ILLINOIS FIELD on its grandstand; ARMORY, ICE ARENA, SHERMAN HALL, ILLINI TOWER and ILLINI UNION BOOKSTORE, each on its building (Illini Tower is a private hall: its own leasing pages and the university's list of certified housing have it under that name for 2026 to 2027), and a P on the parking deck; the names of the Six Pack's seven halls and of the Ikenberry Dining Center, each over its door, as the research note gives them; ILLINI UNION, on both fronts of the Union; BASIL THAI, with "at Urbana" under it, on its awning; and MANOLO'S, with PIZZA & EMPANADAS under it, on its board and on its awning. The rest are the names the plan would use, each as plain lettering on a plain board, with what the research found on 19 November 2026. Each is checked again as its sign is written.
+On signs so far: KRANNERT CENTER FOR THE PERFORMING ARTS, ROGER ADAMS LABORATORY, CHEMICAL AND LIFE SCIENCES LABORATORY, BUSEY HALL, EVANS HALL, PENNSYLVANIA AVENUE RESIDENCE HALLS, OGLESBY HALL and TRELEASE HALL, each as the university writes it, and ROUND BARNS (since May 2026 the barns' full name is the Leah J. Wightman Round Barns); MAIN LIBRARY, STOCK PAVILION, ACES LIBRARY INFORMATION & ALUMNI CENTER (the university writes "and"), MUMFORD HALL, DAVID KINLEY HALL, BUSINESS INSTRUCTIONAL FACILITY, and MORROW PLOTS with 1876 under it; HUFF HALL, KRANNERT ART MUSEUM, and BROMLEY HALL, a private hall that the university's list of certified housing has under that name at 910 S. Third Street; ILLINOIS TERMINAL; KAMS, twice; LEGENDS, with BAR & GRILL on its awning, as its listings write its name; MURPHY'S PUB, and MURPHY'S on its hung sign; CHOPSTIX; RED LION and JOE'S BREWERY, each twice; CRACKED and MIA ZA'S, each twice; 309 GREEN and THE TOWER AT THIRD, each over its door and high on its east face; ENGINEERING HALL, GRAINGER ENGINEERING LIBRARY, THOMAS M. SIEBEL CENTER FOR COMPUTER SCIENCE, EVERITT LABORATORY and TALBOT LABORATORY, each on its building; CHAMPAIGN-URBANA, the name of the railway's station, on the platform; ALTGELD HALL, HENRY ADMINISTRATION BUILDING, ENGLISH BUILDING, LINCOLN HALL and GREGORY HALL, each over its door on the Quad; FOELLINGER AUDITORIUM, HARKER HALL, NATURAL HISTORY BUILDING, NOYES LABORATORY, DAVENPORT HALL, SMITH MEMORIAL HALL (the university's full name for it is Tina Weedon Smith Memorial Hall) and ASTRONOMICAL OBSERVATORY, each where the opening view can read it; GIES MEMORIAL STADIUM (so named on 9 September 2025) on the stadium's south wall, and ILLINOIS FIELD on its grandstand; ARMORY, ICE ARENA, SHERMAN HALL, ILLINI TOWER and ILLINI UNION BOOKSTORE, each on its building (Illini Tower is a private hall: its own leasing pages and the university's list of certified housing have it under that name for 2026 to 2027), and a P on the parking deck; the names of the Six Pack's seven halls and of the Ikenberry Dining Center, each over its door, as the research note gives them; ILLINI UNION, on both fronts of the Union; BASIL THAI, with "at Urbana" under it, on its awning; and MANOLO'S, with PIZZA & EMPANADAS under it, on its board and on its awning. On the university's boards: the names of 46 of its buildings, each as it is on that building's own sign here, in capitals and small letters, and `University of Illinois` in small letters on each. The ACES library's board has its name as the university writes it, ACES Library, Information and Alumni Center. The rest are the names the plan would use, each as plain lettering on a plain board, with what the research found on 19 November 2026. Each is checked again as its sign is written.
 
 | Name | Where | What confirmed it |
 | --- | --- | --- |
@@ -537,7 +554,8 @@ Run on 19 November 2026, after the merge, with every lot built.
 - **Places for heroes.** For each of the seven, `wimmel.seen` was asked about the middle of the car and its two ends, half a unit and 1.6 above the ground, from the opening view: all seen. So are the foot of the Union's Quad front from end to end, its umbrellas, Basil Thai's shopfront, Manolo's board, and Wassaja's door and baskets.
 - **Weather.** Looked at in rain by night and in snow by day.
 - **Cost.** With the tile alone on the board, in the same minute as North America alone: by day 5.3, 3.7 and 3.2 ms a frame against 4.8, 3.2 and 3.0, and by night 3.6, 3.6 and 3.4 against 4.2, 4.0 and 3.4. It draws 92 calls where North America draws 126.
-- **What stands still:** 68,093 triangles, 149 signs, 407 glows, 90 trees and 816 people, of whom about 280 are the stadium's crowd. 45 vehicles drive and 15 are parked.
+- **What stands still:** 69,409 triangles, 243 signs, 407 glows, 90 trees and 816 people, of whom about 280 are the stadium's crowd. 45 vehicles drive and 15 are parked.
+- **With the boards in**, the same evening: type check and build pass, the build's main piece is 1,423 kB, the console has no warning from the tile, `wimmel.fights('uiuc')` is empty, and every place for a hero and every place the planting guards is still seen. The tile's sheet of signs is now two squares, 2,048 by 4,096: it was full to within 73 rows before them. A frame costs 4.4, 4.0 and 3.8 ms by day and 4.6, 4.8 and 4.4 by night, against North America's 4.8, 4.4 and 3.6 and 4.6, 4.2 and 5.0 in the same minute, each with eleven heroes on it. No route was touched, so the traffic was not run again.
 
 ## For the engine
 
@@ -550,6 +568,8 @@ Run on 19 November 2026, after the merge, with every lot built.
 - **A sign cannot lie on a slope or move.** Basil Thai's lettering is on the awning's valance, not its cloth. The lettering on the crop duster's banner is built as shapes, stroke by stroke, on both faces.
 - **Refusing a place that stands before something the opening view is to see**: `hides` and `clear` in `planting.ts`. Every tree and every stall's canopy goes through it. It would serve any tile.
 - **A file for each group of models, gathered in one place** (`models.ts`, `ModelFile` in `plan.ts`), with a model that fails caught and said in the console: what let ten builders work in one folder at once without touching one another's files.
+- **A sheet of signs holds about 150 on one square.** This tile's went to two with the boards, which the engine allows. A tile with many small signs of one kind could do with a sign that is drawn once and lettered many times.
+- **Asking what stands at a place.** The boards were placed with a height map made in the page's console from the built triangles, and with the places of the figures, lamps and trees read from their batches (see "The models"). `wimmel` could give both: the height of what is built at (x, z), and what of the batches stands within a distance of it.
 - **People stand.** A stadium's crowd stands on its rows.
 
 ## For the next tile
@@ -573,6 +593,13 @@ What building this one taught.
 - When a place for a hero is seen only over a roof, look for the real layout before lowering anything. Scott Hall stood next to Bousfield in the first plan and hid Wassaja's lawn. In life it stands well east of Bousfield, and putting it there opened a gap that shows the lawn from the ground up.
 - Whatever is scattered late (trees, canopies) goes through one function that knows the roads, the lots, the heroes' places and the sight lines. It refused only two places of ninety-two here, because the rows were laid out with the sight lines in mind, but it is what makes that safe.
 - A thing in the air is seen further north-west than it is, by about 0.9 of its height each way. Lay out a flight path by where it will be seen, and check both that and where it really is.
+
+**Placing small things on a tile that is built**
+
+- When something small has to go before every building after the buildings are built, do not type places in by eye and look. Measure the built tile once in the page's console: sort every built triangle into bins on the ground, so that the height of what stands at any place can be asked for in no time, and read where the figures, the lamps and the trees stand from their batches. Then search for each place by rule. 47 boards were placed that way in three passes of ten seconds, and none stood in steps, a figure or a tree when the pictures were taken.
+- Looked at from above, the eaves of a roof overhang the foot of its wall by a third of a unit, and a search that takes whatever is over a place for something standing at it finds no free place against any wall. Count only what is lower than the thing being placed, and what is further out than eaves reach.
+- A free place is not yet a good one. The first search put a board at the foot of a flight of steps, which was free. The rule that mended it: nothing built in the walk just behind the board.
+- Keep each place as a side of its lot, how far along and how far out, not as a point on the board.
 
 **Small things that cost time**
 

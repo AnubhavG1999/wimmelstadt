@@ -7,6 +7,7 @@
 
 import type { SignDef } from '../../engine/signs';
 import type { Build } from '../../engine/tile';
+import * as boards from './boards';
 import * as campustown from './campustown';
 import * as east from './east';
 import * as engineering from './engineering';
@@ -41,8 +42,10 @@ const FILES: Record<string, ModelFile> = {
   'six-pack': sixPack,
   scenes,
   moving,
-  // (last, because it plants round everything else)
+  // (last of what is built, because it plants round everything else)
   planting,
+  // (after the planting, which knows nothing of them: each board's place was found among the trees as they stand)
+  boards,
 };
 
 export const MODELS: Record<string, Model> = {};
