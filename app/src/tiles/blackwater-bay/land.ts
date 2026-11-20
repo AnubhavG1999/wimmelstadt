@@ -160,9 +160,11 @@ function terraceWalls(k: Build): void {
 
 /** The sandbar east of the causeway: a level top, and a skirt that slopes down into the sands all round. */
 function sandbar(k: Build): void {
-  const b = SANDBAR, N = 24;
+  const b = SANDBAR, N = 32;
+  // a rounded oblong: the square roots make its sides straighter than an oval's
+  const out = (c: number): number => Math.sign(c) * Math.sqrt(Math.abs(c));
   const ring = (f: number, y: number): V3[] =>
-    Array.from({ length: N }, (_, i): V3 => [b.x + Math.cos((i / N) * Math.PI * 2) * b.rx * f, y, b.z + Math.sin((i / N) * Math.PI * 2) * b.rz * f]);
+    Array.from({ length: N }, (_, i): V3 => [b.x + out(Math.cos((i / N) * Math.PI * 2)) * b.rx * f, y, b.z + out(Math.sin((i / N) * Math.PI * 2)) * b.rz * f]);
   const top = ring(b.level, b.top), foot = ring(1, SANDS_Y - 0.01);
   for (let i = 0; i < N; i++) k.b.up([b.x, b.top, b.z], top[i], top[(i + 1) % N], SAND);
   for (let i = 0; i < N; i++) {

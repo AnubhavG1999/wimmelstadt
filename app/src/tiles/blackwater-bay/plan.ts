@@ -81,12 +81,22 @@ export const SANDS_Y = -0.35;
 /** The causeway's bank over the sands: a low dyke of stone under the road to High Tide, which the tide covers at high water. Its sides, and its top's height. */
 export const DYKE = { x0: 29.4, x1: 38.6, z0: 63, z1: 72, top: -0.03 };
 
-/** A bar of sand east of the causeway that the tide leaves dry, where a hero may stand: its middle, its half-lengths, how far out its top is level (as a share of them), and how high it is. */
-export const SANDBAR = { x: 47, z: 68, rx: 5, rz: 3.2, level: 0.68, top: 0.16 };
+/**
+ * A bar of sand east of the causeway that the tide leaves dry, where a hero may
+ * stand: its middle, its half-lengths, how far out its top is level (as a share
+ * of them), and how high it is. It is a rounded oblong, so that its top holds a
+ * car eight long with room round it.
+ */
+export const SANDBAR = { x: 45.5, z: 68.35, rx: 6, rz: 3.3, level: 0.78, top: 0.16 };
+
+/** How far out a place is on the sandbar: 0 in its middle, 1 at its foot. */
+export function sandbarOut(x: number, z: number): number {
+  return Math.pow(Math.pow((x - SANDBAR.x) / SANDBAR.rx, 4) + Math.pow((z - SANDBAR.z) / SANDBAR.rz, 4), 0.25);
+}
 
 /** How high the sandbar is at a place, or null off it. */
 export function sandbarAt(x: number, z: number): number | null {
-  const b = SANDBAR, d = Math.hypot((x - b.x) / b.rx, (z - b.z) / b.rz);
+  const b = SANDBAR, d = sandbarOut(x, z);
   if (d >= 1) return null;
   return d <= b.level ? b.top : b.top + ((SANDS_Y - b.top) * (d - b.level)) / (1 - b.level);
 }
@@ -393,7 +403,7 @@ export const TURNS = {
 export const HERO_SPOTS: { id: string; x: number; z: number; y: number; heading: number; where: string }[] = [
   { id: 'vault', x: -52, z: 7.2, y: 0.04, heading: Math.PI / 2, where: 'an open vault of the Dragonpit, its iron door swung back in the forecourt wall, beside the top of the climb' },
   { id: 'forecourt', x: -46.5, z: -10, y: R.y + 0.04, heading: Math.PI / 4, where: "the Dragonpit's forecourt, before the bronze doors where Dreamfyre rests, under Balerion on the dome" },
-  { id: 'causeway', x: 47, z: 67.8, y: SANDBAR.top + 0.04, heading: 0.3, where: 'on a bar of sand beside the causeway to High Tide, as on a beach at low water, and an island of its own at high water' },
+  { id: 'causeway', x: SANDBAR.x, z: SANDBAR.z, y: SANDBAR.top + 0.04, heading: 0, where: 'on a bar of sand beside the causeway to High Tide, as on a beach at low water, and an island of its own at high water' },
   { id: 'slip', x: 79.5, z: 45, y: 0.04, heading: 0, where: 'a slipway at the shipyards, facing east like a ship about to be launched' },
   { id: 'pier', x: 70.5, z: 13, y: 0.04, heading: Math.PI / 2, where: "Dragonstone's stone pier, by the old inn" },
   { id: 'quay', x: 56, z: 62.8, y: 0.04, heading: 0, where: "Spicetown's quay, among the bales from the east" },
