@@ -622,7 +622,7 @@ export const SIGHT: { id: string; x: number; y: number; z: number }[] = [
   { id: 'the climb', x: -60, y: 4.6, z: 14 },
   { id: 'the foot of the climb', x: -60, y: 1.6, z: 30 },
   { id: 'the Street of the Sisters by the River Gate', x: -60, y: 1.6, z: 50 },
-  { id: "the Red Keep's gate", x: -30, y: AEGON.y + 2, z: 53.5 },
+  { id: "the Red Keep's gate", x: -35.45, y: AEGON.y + 2, z: 54 },
   { id: 'the quays', x: -60, y: 1.6, z: 67 },
   { id: "the drovers' pen", x: -28, y: 1.6, z: -92 },
   { id: "Rook's Rest's gate", x: 34, y: 1.6, z: -99 },

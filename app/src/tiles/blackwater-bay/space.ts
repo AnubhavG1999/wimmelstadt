@@ -12,6 +12,7 @@ export const KEPT: { what: string; x0: number; z0: number; x1: number; z1: numbe
   { what: "the square at the terrace's east foot", x0: -42, z0: -4, x1: -15.5, z1: 7 },
   { what: "the square at the terrace's west foot", x0: -99.5, z0: -4, x1: -76, z1: 4 },
   { what: "the houses on Visenya's Hill's slopes", x0: -98.5, z0: 13.5, x1: -71.5, z1: 46.5 },
+  { what: "Aegon's High Hill as built, with its cliff, terraces and stairs", x0: -46.5, z0: 24, x1: -12, z1: 58.5 },
   { what: "King's Landing's quays", x0: -99.5, z0: 60, x1: -14, z1: 74 },
   { what: 'the camp of the Sowing', ...SOWING },
   { what: "Aegon's strand", x0: -21, z0: 60, x1: -12, z1: 74 },
