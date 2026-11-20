@@ -183,7 +183,7 @@ export function buildKraken(k: Build): void {
     if (mode === 'wave') turned += dt * 0.22;
 
     // --- the shape under the water ---
-    const c = Math.cos(yaw), sn = Math.sin(yaw), y = WATER_LEVEL + 0.03, gather = smooth(up);
+    const c = Math.cos(yaw), sn = Math.sin(yaw), y = WATER_LEVEL + 0.03;
     let n = 0;
     const put = (lx: number, lz: number): void => { sp[n++] = here.x + lx * c - lz * sn; sp[n++] = y; sp[n++] = here.z + lx * sn + lz * c; };
     const tri = (ax: number, az: number, bx: number, bz: number, cx: number, cz: number): void => { put(ax, az); put(bx, bz); put(cx, cz); };
@@ -193,8 +193,8 @@ export function buildKraken(k: Build): void {
     tri(3.4 * B, w, 0, w * 0.78, 0, -w * 0.78);
     tri(3.4 * B, w, 0, -w * 0.78, 3.4 * B, -w);
     tri(5.4 * B, 0, 4.2 * B, 2.1 * B, 4.2 * B, -2.1 * B);
-    // the arms: drawn in as it comes up, because then they are out of the water
-    const reach = 7.2 * SIZE * (1 - 0.8 * gather);
+    // the arms: drawn in as it comes up, because then they are on their way out of the water
+    const reach = 7.2 * SIZE * (1 - 0.8 * smooth(up * 2.2));
     for (let a = 0; a < ARMS; a++) {
       const base = (a - (ARMS - 1) / 2) * 0.24 * SIZE, long = isLong(a) ? 1.3 : 1;
       let px = 0, pz = base, pw = 0.2;
@@ -207,7 +207,11 @@ export function buildKraken(k: Build): void {
       }
     }
     shapePos.needsUpdate = true;
-    shapeMat.opacity = 0.42 - 0.34 * deep;
+    // The shape is the beast while it is under the water. As it comes up the shape gathers and is gone by the
+    // time its head is out, and it comes back as the last arm goes down: or a body would still lie in the water,
+    // pointing the way it had been going, under the beast that stands in it.
+    shapeMat.opacity = (0.42 - 0.34 * deep) * (1 - smooth(up * 2.2));
+    shape.visible = shapeMat.opacity > 0.005;
 
     // --- the beast itself, while any of it is out of the water ---
     beast.visible = up > 0;
