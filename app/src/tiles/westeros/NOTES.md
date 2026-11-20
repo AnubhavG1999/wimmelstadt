@@ -131,12 +131,15 @@ On the roads a hero is seen best on the causeway, on the Twins' bridge, along th
 
 ## What is playing
 
-Every tile is to have one or two boards that show what is playing: the cover, the title and the artist. The engine does all of it, through a sign of kind `screen`, and shows the sign's own picture when nothing plays. It is the one modern thing on this tile, so it is given to the two places in Westeros where music belongs:
+Every tile has one board that shows what is playing: the cover, the title and the artist. The engine does all of it, through a sign of kind `screen`. It is the one modern thing on this tile.
 
-- **The mummers' stage at the tourney ground.** The players' wagon stands beside a small stage, and the stage's painted backcloth is the board, about 11 wide and 6 high, facing the opening view.
-- **The singer's board at the Inn at the Crossroads.** A painted board on two posts in the yard, about 8 wide and 4.5 high, of the kind that says who sings tonight.
+**The herald's board at the tourney ground.** A painted board on a timber frame at the east end of the royal stand, about 11 wide and 6 high, facing the opening view. A tourney has a herald, and the meet has its bill.
 
-Both are hung as ordinary `screen` signs once `main` has the engine's part. Nothing for it is built in this folder.
+When nothing plays, the board shows its own picture, and that is what most people see. So it is a bill a herald would paint, bold enough to read from across the tile, in the books' own words and this tile's own drawing, and nothing like a display of what is playing. The tile gives the sign a `paint` of its own for it. Planned: **"WINTER IS COMING"**, the Starks' words, over a grey direwolf's head, with "fit your winter wheels" beneath and "the wheelwright, Winter Town" as the one who paid for it. It is an advertisement, as the boards of the built tiles are, and the wink at toy cars is the wheels. The other bill thought of: "TOURNEY TODAY: joust, melee, archery. All horsepower welcome", with crossed lances and a row of shields.
+
+A second board, a singer's board in the yard of the Inn at the Crossroads, is left out unless it earns its place.
+
+The board is hung as an ordinary `screen` sign once `main` has the engine's part. Nothing else for it is built in this folder.
 
 ## The tile's place in the world
 
@@ -227,7 +230,7 @@ Both are done again on the plan as it is written, and then on what is built.
 - Which side traffic keeps to. Planned: the left.
 - The winks at toy cars: the tourney ground as a meet, the rally stage, the inn's yard, the toll at the Twins.
 - How often the pass with fire comes: every circuit, about every 40 seconds, or about once a minute with a slow high wheel between.
-- Where the two boards that show what is playing go. Planned: the mummers' stage at the tourney ground and the singer's board at the inn.
+- The board that shows what is playing, and its own picture when nothing plays. Planned: the herald's board at the tourney ground, painted with "WINTER IS COMING: fit your winter wheels".
 
 ## Coming from the engine, to allow for
 
@@ -236,4 +239,5 @@ Not on `main` yet on 19 November 2026. The tile merges `main` when it is told to
 - The view tilts from 14 degrees to 80. Castles and dragons are seen from the side and from below, so nothing is left open underneath or behind.
 - `wimmel.fights('westeros')` lists surfaces that lie in one plane. The tile must pass it.
 - The engine clears road markings wherever two streets overlap, not only where they cross.
-- The `screen` sign shows what is playing, and `place` on the `TileDef` puts the tile on the desk's map.
+- The `screen` sign shows what is playing, and calls the sign's own `paint(ctx, s, w, h)` whenever nothing is: into 640 by 360 pixels, the whole rectangle each time, keeping no state.
+- `place` on the `TileDef` puts the tile on the desk's map.
