@@ -312,6 +312,30 @@ export const HERO_SPOTS: { id: string; x: number; z: number; y: number; heading:
 ];
 
 // ---------------------------------------------------------------------------
+// The stages of the stories
+// ---------------------------------------------------------------------------
+//
+// Where the cast act out their stories (show.ts). A stage's ground is kept
+// clear for them: nothing that a figure would walk through stands on it, and
+// nothing taller than a person stands between it and the view the tile opens
+// with, but what the stage's own story needs and the builder is asked for.
+// `y` is the height of the stage's ground.
+
+export const STAGES: Record<string, { x0: number; z0: number; x1: number; z1: number; y: number; what: string }> = {
+  banks: { x0: 4, z0: -47, x1: 18, z1: -37, y: F, what: 'the mud banks inside the grates, where the group comes up out of the river (story 2)' },
+  postern: { x0: -30, z0: -46, x1: -14, z1: -36, y: F, what: 'inside the postern, where its doors swing open and the infantry march in (story 3)' },
+  wallWalk: { x0: -30, z0: -51, x1: 25, z1: -48, y: F + 10, what: "the north wall's walk, from the postern to the grates: Cassius watches here, Ragnar fights the Wind Knight on the postern's tower (stories 2, 3)" },
+  park: { x0: 58, z0: -42, x1: 84, z1: -10, y: F, what: 'the lawn among the four pylons, where Mustang sets her charges (story 5)' },
+  pads: { x0: -30, z0: 2, x1: -12, z1: 26, y: F + 6, what: "the landing pads: the Sovereign's shuttle and its three decoys, her guard, the fights round Aja (stories 6, 9)" },
+  outside: { x0: -24, z0: 63, x1: 34, z1: 76, y: 0, what: "the flank outside the south wall, where Lorn's force charges and falls back (story 7); its ground is the flank's" },
+  southWalk: { x0: -24, z0: 59, x1: 34, z1: 62, y: F + 8, what: "the south wall's walk, where the defenders stand and Lorn comes over (story 7)" },
+  terrace: { x0: -46, z0: 38, x1: -36, z1: 52, y: F + 5, what: "the Citadel's terrace, where Lorn and Darrow spar and a boy sits on the steps (story 8)" },
+  snow: { x0: 34, z0: -100, x1: 70, z1: -88, y: 0, what: 'the snow on the plateau, where Ragnar and Aja duel and the griffins land (story 10); its ground is the plateau\'s' },
+  howl: { x0: -46, z0: -26, x1: -37, z1: -17, y: F + 40, what: "tower 6's roof, flat and open, where the Howlers drop in and howl (story 12)" },
+  perch: { x0: -80, z0: -40, x1: -68, z1: -28, y: F + 66, what: "tower 1's roof, where the Jackal watches" },
+};
+
+// ---------------------------------------------------------------------------
 // The sky
 // ---------------------------------------------------------------------------
 

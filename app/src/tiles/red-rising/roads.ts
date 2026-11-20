@@ -17,6 +17,7 @@ import type { Bench } from '../../engine/terrain';
 import type { Build, Route } from '../../engine/tile';
 import { setBenches } from './land';
 import { F, HAIRPIN_Y, LANE, LOOP, ROADS, TURNS, naturalAt, outOfTrench, type P2 } from './plan';
+import { KINDS } from './traffic';
 
 /** Half a road's width: two lanes. */
 const HALF = LANE;
@@ -211,9 +212,11 @@ export function buildRoads(k: Build): Route[] {
  */
 function routesOf(): Route[] {
   const L = lanes();
-  const types = ['van', 'pickup', 'bus'];
-  const paint = [0x6b6f63, 0x7a7466, 0x8a2f24, 0x5d6158];
-  const route = (id: string, speed: number, count: number): Route => ({ id, segs: segsOf(L[id], true), speed, count, types, paint });
+  // the column's own kinds once they are built; until then plain vans and lorries in the Augustan colours
+  const own = KINDS.length > 0;
+  const types = own ? KINDS.map((kind) => kind.name) : ['van', 'pickup', 'bus'];
+  const paint = own ? undefined : [0x6b6f63, 0x7a7466, 0x8a2f24, 0x5d6158];
+  const route = (id: string, speed: number, count: number): Route => ({ id, segs: segsOf(L[id], true), speed, count, types, ...(paint ? { paint } : {}) });
   return [route('loopCw', 11, 8), route('loopCcw', 11, 5), route('gate', 10, 6), route('south', 10, 6)];
 }
 

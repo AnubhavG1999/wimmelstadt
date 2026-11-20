@@ -5,6 +5,7 @@
 
 import type { TileDef } from '../../engine/tile';
 import { buildIronRain } from './city';
+import { buildShow } from './show';
 import { SIGNS } from './signs';
 
 /**
@@ -26,7 +27,12 @@ export const ironRain: TileDef = {
   seed: 742,
   signs: SIGNS,
   place: { lon: -166, lat: 34.2, land: MARS, words: 'Mars' },
-  build: buildIronRain,
+  build: (k) => {
+    const parts = buildIronRain(k);
+    // what moves over the tile and on it, once everything that stands still is built
+    buildShow(k);
+    return parts;
+  },
 };
 
 // the default export is what puts a tile on the board: see ../index.ts

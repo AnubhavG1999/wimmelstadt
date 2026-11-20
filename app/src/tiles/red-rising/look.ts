@@ -6,7 +6,7 @@
 // spires, and low dense blocks of the lowColors to the south. The canyon's walls
 // are banded rust and ochre; the planet is terraformed, green and white.
 
-import type { V3 } from '../../engine/geo';
+import type { GeoBuilder, V3, WinSpec } from '../../engine/geo';
 import type { SignDef } from '../../engine/signs';
 import type { Build } from '../../engine/tile';
 
@@ -29,6 +29,75 @@ export const AUGUSTUS_RED = 0xa3241f, AUGUSTUS_GOLD = 0xe0b23c, BELLONA_BLUE = 0
 
 /** The pools of light at night: warm in the old city and the Citadel, cold and blue among the towers. */
 export const WARM = '#ffcf8a', COLD = '#9ad0ff', AMBER = '#ffb45a';
+
+// ---------------------------------------------------------------------------
+// Windows
+// ---------------------------------------------------------------------------
+//
+// A wall given `win` gets rows of windows that light up at night. Rows are
+// counted from y = 0, so a wall with windows ends a whole number of storeys
+// above y = 0: the city's floor is at 20, which is four storeys of 5 and five of 4.
+
+/** A tower's wall of glass, in storeys of 4: the jewelled blades by night. */
+export const GLASS_WIN: WinSpec = { cell: 1.6, storey: 4, lit: 1.0, kind: 1 };
+/** An office's rows of windows, in storeys of 4. */
+export const OFFICE_WIN: WinSpec = { cell: 2.2, storey: 4, lit: 0.85, kind: 0 };
+/** The lowColor blocks' small windows above their shopfronts, in storeys of 4. */
+export const LOW_WIN: WinSpec = { cell: 2.4, storey: 4, lit: 0.9, kind: 2 };
+/** The Citadel's tall slits, in storeys of 5. */
+export const CITADEL_WIN: WinSpec = { cell: 2.6, storey: 5, lit: 0.8, kind: 6 };
+
+// ---------------------------------------------------------------------------
+// Parts every builder wants
+// ---------------------------------------------------------------------------
+
+/**
+ * The lion of House Augustus as a statue, sitting upright on a plinth, facing
+ * `yaw` (radians: 0 east, a quarter turn south): its haunches, chest, mane,
+ * head and forelegs as blocks, `s` its size (1 is a lion about 3 tall on a
+ * plinth of 1.2). Gold by default.
+ */
+export function lion(b: GeoBuilder, x: number, z: number, y: number, s = 1, yaw = Math.PI / 2, color = GOLD, plinth = STONE_DARK): void {
+  b.moved(x, y, z, yaw, () => {
+    b.box(-1.1 * s, 0, -0.7 * s, 1.1 * s, 1.2 * s, 0.7 * s, plinth);
+    const y0 = 1.2 * s;
+    // haunches and body, sitting
+    b.box(-0.9 * s, y0, -0.45 * s, 0.1 * s, y0 + 0.8 * s, 0.45 * s, color);
+    // the chest, upright
+    b.box(-0.2 * s, y0, -0.4 * s, 0.45 * s, y0 + 1.45 * s, 0.4 * s, color);
+    // the mane, broader than the head, and the head with its muzzle forward
+    b.box(-0.05 * s, y0 + 1.15 * s, -0.55 * s, 0.6 * s, y0 + 1.95 * s, 0.55 * s, color);
+    b.box(0.35 * s, y0 + 1.3 * s, -0.3 * s, 0.95 * s, y0 + 1.8 * s, 0.3 * s, color);
+    // the forelegs, straight down to the paws
+    for (const side of [-1, 1]) b.box(0.2 * s, y0, side * 0.3 * s - 0.12 * s, 0.5 * s, y0 + 1.1 * s, side * 0.3 * s + 0.12 * s, color);
+    // the tail curled round the haunch
+    b.box(-0.95 * s, y0, 0.35 * s, -0.2 * s, y0 + 0.18 * s, 0.6 * s, color);
+  });
+}
+
+/** The Society's pyramid, as an emblem standing on its base: `s` across. */
+export function pyramid(b: GeoBuilder, x: number, y: number, z: number, s: number, color = GOLD): void {
+  b.cyl(x, z, y, y + s * 0.8, s * 0.707, 0.01, 4, color, { phase: Math.PI / 4 });
+}
+
+/** A long banner hung from a crossbar on a pole: the colour of a house, with a stripe of a second colour down its middle. Faces `yaw`. */
+export function banner(b: GeoBuilder, x: number, z: number, y: number, h: number, color: number, stripe: number, yaw = Math.PI / 4): void {
+  b.cyl(x, z, y, y + h, 0.09, 0.09, 6, IRON);
+  b.moved(x, y, z, yaw, () => {
+    b.box(-0.08, h - 0.2, -0.75, 0.08, h - 0.08, 0.75, IRON);
+    b.box(0.1, h * 0.35, -0.65, 0.16, h - 0.2, 0.65, color, { faces: 'NESWTB' });
+    b.box(0.16, h * 0.4, -0.18, 0.2, h - 0.3, 0.18, stripe, { faces: 'NESWTB' });
+  });
+}
+
+/** A low parapet along a line of corners, `h` tall and `t` thick, standing on height `y`. */
+export function parapet(b: GeoBuilder, pts: [number, number][], y: number, h: number, t: number, color: number): void {
+  for (let i = 0; i + 1 < pts.length; i++) {
+    const [ax, az] = pts[i], [bx, bz] = pts[i + 1], len = Math.hypot(bx - ax, bz - az);
+    if (len < 1e-3) continue;
+    b.obox((ax + bx) / 2, y + h / 2, (az + bz) / 2, len / 2 + t / 2, h / 2, t / 2, Math.atan2(bz - az, bx - ax), color, { faces: 'NESWTB' });
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Name boards

@@ -17,7 +17,7 @@ import { HERO_SPOTS, LOTS, type Lot } from './plan';
 import { REGIONS } from './regions';
 import { buildRoads, cutRoads } from './roads';
 import { checkSight } from './sight';
-import { skyBlockout } from './sky-blockout';
+import { KINDS } from './traffic';
 
 /** Lots that a road runs through: while they are boxes, a tower at each corner and nothing between. */
 const HOLLOW = new Set(['north-gate', 'south-gate']);
@@ -81,8 +81,6 @@ export function buildIronRain(k: Build): TileParts {
       console.error(`The Iron Rain: what ${name} builds besides its lots failed.`, e);
     }
   }
-  // the fleet and the Rain, where they will be, until they are built
-  skyBlockout(k);
   // the screen, until the towers' builder hangs it: on the south face of the tower that carries it
   if (!models.has('tower-4')) {
     const t = LOTS.find((l) => l.id === 'tower-4')!;
@@ -102,7 +100,7 @@ export function buildIronRain(k: Build): TileParts {
     const faults = [...roadFaults(routes), ...throughSolids(routes, solids)];
     if (faults.length > 0) console.warn(`The Iron Rain: roads:\n  ${faults.join('\n  ')}`);
     else console.info('The Iron Rain: no route crosses another, none meets another head-on, and none runs through anything built.');
-    const lanes = checkLanes('The Iron Rain', routes, k.b, { people: k.people });
+    const lanes = checkLanes('The Iron Rain', routes, k.b, { kinds: KINDS, people: k.people });
     checkSight();
     // For the console: pictures with `wimmel.shot`, which leaves the heroes out. rr.fourViews(name, x, y, z, r)
     // takes a thing from two opposite sides by day and by night; rr.close(name, { ...rr.aim(x, y, z, az, elev), zoom }, part)
@@ -114,5 +112,6 @@ export function buildIronRain(k: Build): TileParts {
     routes,
     parked: [],
     heroSpots: HERO_SPOTS.map((s) => ({ id: s.id, x: s.x, y: s.y, z: s.z, heading: s.heading })),
+    kinds: KINDS,
   };
 }
