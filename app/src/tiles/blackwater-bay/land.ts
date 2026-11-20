@@ -80,13 +80,13 @@ export function buildLand(k: Build): void {
     drawField(k.b, f, { color: (y, level) => (level > 0.93 ? (y > h.y - 0.1 ? PAVING : 0xb8ae96) : STONE_DARK), cut: STONE_DARK, edges: '' });
   }
 
-  // the Dragonmont as built: its natural shape, a level shelf before each lair, the rock over each cave, and the road at its foot cut in
+  // the Dragonmont as built: its natural shape, a level shelf before each lair, and the road at its foot cut in.
+  // Its heights are worked out here, for whatever stands on it; dragonmont.ts draws it.
   const M = DRAGONMONT;
   MOUNT = field(M.summit[0] - M.reach.w, M.summit[1] - M.reach.n, M.summit[0] + M.reach.e, M.summit[1] + M.reach.s, 1.2, (x, z) => {
     const y = mountBuilt(x, z);
     return y > 0 ? y + 0.01 : 0;
   });
-  drawField(k.b, MOUNT, { color: (y, level) => (y > M.top - 3 ? 0x3a3532 : level > 0.8 ? ASH : ROCK), cut: ROCK, edges: '' });
 }
 
 /**

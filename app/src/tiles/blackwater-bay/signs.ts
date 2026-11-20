@@ -7,6 +7,7 @@ import type { SignDef } from '../../engine/signs';
 import { paintGiveWay } from './give-way';
 import { nameSign } from './look';
 import { LOTS } from './plan';
+import { REGIONS } from './regions';
 
 /**
  * The one board that shows what is playing: at the top of the climb to the
@@ -23,4 +24,4 @@ const NAMES = [...new Set(LOTS.filter((l) => l.name).map((l) => l.name))];
 /** The ten's names, in the order of `LENGTH` in plan.ts. */
 export const DRAGON_NAMES = ['Balerion', 'Vhagar', 'Meraxes', 'Vermithor', 'The Cannibal', 'Silverwing', 'Caraxes', 'Dreamfyre', 'Meleys', 'Sheepstealer'];
 
-export const SIGNS: SignDef[] = [GIVE_WAY, ...[...NAMES, ...DRAGON_NAMES].map((n) => nameSign(boardOf(n), n))];
+export const SIGNS: SignDef[] = [GIVE_WAY, ...[...NAMES, ...DRAGON_NAMES].map((n) => nameSign(boardOf(n), n)), ...Object.values(REGIONS).flatMap((r) => r.SIGNS)];
