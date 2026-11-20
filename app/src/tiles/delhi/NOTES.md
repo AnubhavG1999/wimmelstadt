@@ -190,8 +190,9 @@ Each is checked as it is written, and entered here with what confirmed it. A sho
 | मसाले | spices | Hindi Wikipedia's list of Indian spices, भारतीय मसालों की सूची |
 | जलेबी | jalebi | the same list of sweets |
 | पंचर | puncture repair | two listings of puncture shops under that word: पंचर बनाने की दुकान, पंचर दुकान (explurger.com) |
-| टायर, ऑटो पार्ट्स | tyres, auto parts | the usual spelling of the two loan words. Not confirmed by a source read in full: to be looked at again before the tile is final. |
-| पतंग | kites | the ordinary Hindi word. Not confirmed by a source: to be looked at again. |
+| टायर | tyres | the title of Hindi Wikipedia's page on the tyre, टायर |
+| ऑटो पार्ट्स | auto parts | the usual spelling of the loan words. Not confirmed by a source read in full: to be looked at again before the tile is final. |
+| पतंग | kites | the title of Hindi Wikipedia's page on the kite, पतंग |
 
 **Names of places**, on the green boards over the roads in `signs.ts`. Names of places are safe on road and Metro boards:
 
@@ -200,7 +201,7 @@ Each is checked as it is written, and entered here with what confirmed it. A sho
 | चांदनी चौक, कश्मीरी गेट | the Hindi pages of a Metro route finder (yometro.com) for the stations of those names, which also write लाल किला and जामा मस्जिद |
 | कर्तव्य पथ, इंडिया गेट, कनॉट प्लेस | a report in Hindi by DNA India on Kartavya Path opening to the public |
 | मोती बाग, धौला कुआँ, एम्स | the titles of Hindi Wikipedia's pages for the three places. Its page on Moti Bagh also says that Shanti Path crosses the Ring Road there, which is how this tile has it. |
-| रिंग रोड, करोल बाग | Hindi Wikipedia's page on Dhaula Kuan writes रिंग मार्ग and करोल बाग. रिंग रोड is what boards say. To be looked at again. |
+| रिंग रोड, करोल बाग | Hindi Wikipedia's page on Dhaula Kuan writes करोल बाग, and its page on the Pink Line calls that line the रिंग रोड line. |
 
 **On the screen**: HORN OK PLEASE is what lorries all over India carry on their tailboards, and फिर मिलेंगे ("we'll meet again") is, by The Patriot's piece "Messages on the highway", a very common message on lorries in Hindi. Neither is anybody's name. A food festival in Delhi trades as Horn OK Please: the screen has nothing of its lettering or its look.
 
