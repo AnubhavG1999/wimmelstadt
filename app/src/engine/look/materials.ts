@@ -239,8 +239,9 @@ export function makeCityMaterial(look: TileLook): THREE.MeshToonMaterial {
             float lit = step(1.0 - litProb, r1);
             float pickc = hash21(id * 0.71 + seed * 5.0);
             vec3 wcol = mix(vec3(1.0, 0.58, 0.24), vec3(1.0, 0.8, 0.5), r2);
-            if (pickc > 0.76) wcol = vec3(0.42, 0.78, 1.0);
-            if (pickc > 0.94) wcol = vec3(1.0, 0.32, 0.68);
+            // a loop is lit by a torch or a fire, never by a cool lamp
+            if (pickc > 0.76 && !loopSlit) wcol = vec3(0.42, 0.78, 1.0);
+            if (pickc > 0.94 && !loopSlit) wcol = vec3(1.0, 0.32, 0.68);
             wmEmis = wcol * win * lit * uNight * (0.5 + 0.9 * r2);
           }
         } else if (kind > 4.5 && kind < 5.5) {
