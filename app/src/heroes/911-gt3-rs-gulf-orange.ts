@@ -4,10 +4,11 @@
 // straight and standing up as an airbrake when the driver is on the brakes.
 // So that is its party trick. At speed the tips of its wing draw two white
 // ribbons through the air. And it brakes later than anything else in the city:
-// nose on the road, tail in the air, sparks off its splitter, and its brake
-// discs glowing dull red and then orange as they are worked harder. It wants
-// room to brake into, so close behind someone it drops back and comes again.
-// Standing on show its discs can be seen cooling.
+// nose on the road, tail in the air, and sparks off its splitter. It wants room
+// to brake into, so close behind someone it drops back and comes again.
+//
+// Its brake discs glowed as well, at first. The glow stood out from the wheels
+// as a ring of light and took the eye off the car, so it was taken out.
 
 import type { PartyTrick } from '../engine/tricks';
 
@@ -15,14 +16,13 @@ import type { PartyTrick } from '../engine/tricks';
 const WING = 1.9;
 
 export const gt3rs: PartyTrick = {
-  about: 'Its wing draws two white ribbons through the air at speed, and it brakes later than anything: nose down, tail up, sparks off its splitter and its discs glowing.',
+  about: 'Its wing draws two white ribbons through the air at speed, and it brakes later than anything: nose down, tail up and sparks off its splitter.',
 
   start() {
     let braking = false;
     let hard = 0; // how long it has been on the brakes this time
     let eased = 0; // how long it has been off them
     let was = 0; // how fast it was going a frame ago
-    let heat = 0; // how hot its discs are, from 0 to 1
     let back = 0; // seconds it still hangs back to open up some road
     let pitch = 0;
 
@@ -43,24 +43,16 @@ export const gt3rs: PartyTrick = {
         if (braking) {
           hard += d.dt;
           nose = -0.15;
-          heat = Math.min(1, heat + d.dt * 1.9);
           // its splitter touches the road as its nose goes down
           if (hard < 0.45) fx.sparks(0.7, 'nose');
           eased = slowing < 3 ? eased + d.dt : 0;
           if (eased > 0.12 || d.speed < 1) braking = false;
-        } else {
-          heat = Math.max(0, heat - d.dt * 0.16);
+        } else if (d.speed > 13 && d.speed > d.cruise * 0.9) {
           // the faster it goes, the more its wing has to do
-          if (d.speed > 13 && d.speed > d.cruise * 0.9) fx.streaks(Math.min(1, (d.speed - 10) / 16), 0xffffff, WING);
+          fx.streaks(Math.min(1, (d.speed - 10) / 16), 0xffffff, WING);
         }
-        if (heat > 0.05) fx.glow(heat);
         pitch += (nose - pitch) * Math.min(1, d.dt * 12);
         return { speed, accel: 17 };
-      },
-
-      idle(dt, _time, fx) {
-        heat = Math.max(0, heat - dt * 0.04);
-        if (heat > 0.05) fx.glow(heat);
       },
     };
   },
