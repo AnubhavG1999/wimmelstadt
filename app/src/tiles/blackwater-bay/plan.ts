@@ -477,8 +477,10 @@ export function rockAt(x: number, z: number): number {
  * chest to `front` ahead of it and `half` to each side; and the cave behind
  * it, from the shelf's back to `cave` behind the chest, `caveHalf` to each
  * side and `roof` high over the shelf, dark inside. The cave's floor is at the
- * shelf's height all the way in, and the mountain is raised over it, so that
- * a dragon's body and tail lie in the rock.
+ * shelf's height all the way in, so that a dragon's body and tail lie in the
+ * rock where the slope stands higher than the cave's roof. Where it does not,
+ * the Dragonmont's builder carries rock back over the cave's first part
+ * (`dragonmont.ts`); `mountBuilt` itself raises nothing over a cave.
  */
 export const LAIR = { back: 0.2, front: 0.12, half: 0.17, cave: 0.82, caveHalf: 0.09, roof: 0.2 };
 
