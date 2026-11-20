@@ -28,6 +28,7 @@ import {
   banner, brazier, fire, nameBoard, nameSign, squareTower, weirwood,
 } from './look';
 import type { Model } from './models';
+import { buildOthers, standing } from './others';
 import { TURNS, WALL, lotOf, type Lot, type P2 } from './plan';
 
 // ---------------------------------------------------------------------------
@@ -827,7 +828,7 @@ function grove(): P2[] {
 }
 
 function beyond(k: Build): void {
-  const [cx, cz] = TURNS.wall.c, ring = TURNS.wall.r + (4 + 1.2) / 2, small = grove();
+  const [cx, cz] = TURNS.wall.c, ring = TURNS.wall.r + (4 + 1.2) / 2, small = grove(), band = standing();
   weirwood(k, cx, cz, 0, 0.8);
   for (const [x, z] of small) weirwood(k, x, z, 0, 0.45);
   const r = rng(7517);
@@ -840,6 +841,8 @@ function beyond(k: Build): void {
       if (Math.abs(tx - W.gateX) < 4 + 3 && tz > cz) continue; // the road from the ring to the gate
       if (Math.hypot(tx - cx, tz - cz) < ring + 3) continue;
       if (small.some(([gx, gz]) => Math.hypot(tx - gx, tz - gz) < 2.4)) continue;
+      // nor where its crown, which reaches 1.13 out for every unit of its size, would touch one of the Others or their wights
+      if (band.some(([bx, bz]) => Math.hypot(tx - bx, tz - bz) < 1.13 * size + 0.4)) continue;
       if (gap < 0.1) continue;
       k.tree(tx, tz, size, true, y);
     }
@@ -879,4 +882,6 @@ export function extras(k: Build): void {
   // the castle's name, before its south-east side, where the opening view reads it
   nameBoard(k, 'wall-castle-black', 41.6, -77.4, 0, undefined, 1.1);
   beyond(k);
+  // and before the gate's north mouth, where the view the tile opens with never looks, the Others wait
+  buildOthers(k);
 }
