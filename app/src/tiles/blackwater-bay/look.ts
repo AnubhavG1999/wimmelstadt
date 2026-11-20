@@ -58,10 +58,10 @@ export const HOUSE: Record<string, number[]> = {
 // Light behind stone
 // ---------------------------------------------------------------------------
 
-/** Arrow loops and small windows, far apart: for curtain walls and keeps. They glow at night. */
-export const LOOPS: WinSpec = { cell: 2.4, storey: 4.2, lit: 0.3, kind: 4 };
+/** Arrow loops, far apart: narrow slits, dark by day and glowing at night (the engine's kind 7). For curtain walls and keeps. */
+export const LOOPS: WinSpec = { cell: 2.4, storey: 4.2, lit: 0.3, kind: 7 };
 /** The same, closer together: for a hall or a tower that is lived in. */
-export const LOOPS_CLOSE: WinSpec = { cell: 1.6, storey: 3.4, lit: 0.42, kind: 4 };
+export const LOOPS_CLOSE: WinSpec = { cell: 1.6, storey: 3.4, lit: 0.42, kind: 7 };
 /** Tall narrow lights: for a sept, a great hall, a tower's stair. */
 export const LANCETS: WinSpec = { cell: 1.5, storey: 5.2, lit: 0.4, kind: 6 };
 /** The windows of a town house: small panes, most of them lit. A storey of a house is 3. */
@@ -117,13 +117,30 @@ export interface TowerOpts {
   seed?: number;
 }
 
+/**
+ * A ring that faces down, from radius `r0` out to `r1` at height `y`, with its
+ * corners where `cyl` and `lathe` put theirs: the underside of a tower's flared
+ * top or of a cone's eave, which is seen from low across the table.
+ */
+export function underRing(b: GeoBuilder, x: number, z: number, y: number, r0: number, r1: number, sides: number, color: number): void {
+  const p = (r: number, a: number): V3 => [x + Math.cos(a) * r, y, z + Math.sin(a) * r];
+  for (let i = 0; i < sides; i++) {
+    const a0 = Math.PI / sides + (i / sides) * Math.PI * 2, a1 = a0 + (Math.PI * 2) / sides;
+    // wound so that it faces down
+    b.tri(p(r0, a0), p(r1, a0), p(r1, a1), [0, -1, 0], color);
+    if (r0 > 1e-3) b.tri(p(r0, a0), p(r1, a1), p(r0, a1), [0, -1, 0], color);
+  }
+}
+
 /** A round tower from `y0` to `top`: a shaft with loops, a top that flares a little, and battlements or a cone. */
 export function roundTower(b: GeoBuilder, x: number, z: number, r: number, top: number, color: number, o: TowerOpts = {}): void {
   const y0 = o.y0 ?? 0, sides = o.sides ?? 10, shade = o.shade ?? color, flare = o.flare ?? 0.22;
   b.cyl(x, z, y0, top - 1, r, r, sides, color, { win: o.win ?? LOOPS, seed: o.seed ?? x * 0.13 + z * 0.07, cap: false });
   b.cyl(x, z, top - 1, top, r + flare, r + flare, sides, color, { cap: shade });
+  underRing(b, x, z, top - 1, r, r + flare, sides, shade);
   if (o.cone) {
     lathe(b, x, z, [[r + flare + 0.25, top], [(r + flare) * 0.55, top + o.cone.h * 0.55], [0.05, top + o.cone.h]], sides, o.cone.color);
+    underRing(b, x, z, top, r + flare, r + flare + 0.25, sides, o.cone.color);
     return;
   }
   // merlons round the edge, on every other side
