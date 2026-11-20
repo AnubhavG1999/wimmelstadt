@@ -128,7 +128,7 @@ The real names are names of roads and places, and what a real thing says on itse
 
 ## For the engine
 
-On 19 November 2026 the main session moved three of these into the engine as they were, and this tile uses them from there: `lines.ts`, `dragon.ts` and `props.ts` are now in `app/src/engine/` under the same names. `terrain.ts` stays here, because it shapes Fuji and Kyoto's hill from this tile's own plan. Where these notes say that one of the three is in this folder, read it with that in mind.
+On 19 November 2026 the main session moved three of these into the engine as they were, and this tile uses them from there: `lines.ts`, `dragon.ts` and `props.ts` are now in `app/src/engine/` under the same names. `terrain.ts` stays here, because it shapes Fuji and Kyoto's hill from this tile's own plan. Where these notes say that one of the three is in this folder, read it with that in mind. On 20 November 2026 the engine's `dragon.ts` was renamed `eastern-dragon.ts`, to stand apart from the winged dragons' kit in `engine/dragons/`.
 
 Built in this folder, and worth moving:
 

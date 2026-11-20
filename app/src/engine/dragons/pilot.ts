@@ -70,7 +70,7 @@ export interface PilotOptions {
 
 /** A dragon's manner of flight with every setting given: what its kind leaves out is as Westeros's three fly. */
 function manner(f: DragonFlight): Required<DragonFlight> {
-  return { beat: f.beat, answer: f.answer, bank: f.bank ?? 78, glide: f.glide ?? 1, stroke: f.stroke ?? 1, heave: f.heave ?? 1, rock: f.rock ?? 1, look: f.look ?? 1 };
+  return { beat: f.beat, answer: f.answer, bank: f.bank ?? 78, glide: f.glide ?? 1, stroke: f.stroke ?? 1, heave: f.heave ?? 1, rock: f.rock ?? 1, look: f.look ?? 1, sway: f.sway ?? 1, swayRate: f.swayRate ?? 1, snake: f.snake ?? 0 };
 }
 
 const blankWing = (): WingPose => ({ sweep: 0, lift: 0, hand: 0, fan: 1, tip: 0 });
@@ -129,8 +129,9 @@ export class Pilot {
     const p = this.pose;
     const flying = formAt(speed);
     const form = sit <= 0 ? flying : sit < 0.5 ? blendForm(flying, FLARE, sit * 2) : blendForm(FLARE, FOLDED, (sit - 0.5) * 2);
-    wingPose(form, sit > 0.5 ? 0 : beat, p.right, deep);
-    wingPose(form, sit > 0.5 ? 0 : beat, p.left, deep);
+    const m = this.dragon.measures;
+    wingPose(form, sit > 0.5 ? 0 : beat, p.right, deep, m);
+    wingPose(form, sit > 0.5 ? 0 : beat, p.left, deep, m);
   }
 
   /**
@@ -140,7 +141,7 @@ export class Pilot {
   hold(h: Held, time: number, ground: (x: number, z: number) => number): void {
     const d = this.dragon, p = this.pose, sit = h.sit ?? 0;
     // how far its feet are down, and how far it has come down onto its wing claws
-    const land = Math.min(1, sit * 2), down = Math.max(0, sit * 2 - 1), stn = stance(down);
+    const land = Math.min(1, sit * 2), down = Math.max(0, sit * 2 - 1), stn = stance(down, d.measures);
     p.pos.set(h.x, h.y + stn.root * d.kind.length * land, h.z);
     // heading, then nose up, then bank to its right; as it lands, it stands as a landing dragon stands
     p.quat.setFromEuler(euler.set((h.bank ?? 0) * RAD * (1 - land), -(h.heading ?? 0) * RAD, (h.pitch ?? 0) * RAD * (1 - land) + stn.pitch * land, 'YZX'));
@@ -208,7 +209,7 @@ export class Pilot {
     // The place it lands on is the ground under its feet, so the root of its neck is carried that much above its line.
     const land = Math.min(1, cue.sit * 2), down = Math.max(0, cue.sit * 2 - 1);
     if (cue.sit > 0) {
-      const heading = Math.atan2(fwd.z, fwd.x), stn = stance(down);
+      const heading = Math.atan2(fwd.z, fwd.x), stn = stance(down, d.measures);
       perch.setFromEuler(euler.set(0, -heading, stn.pitch * land, 'YZX'));
       p.quat.slerp(perch, land);
       p.pos.y += stn.root * d.kind.length * land;
