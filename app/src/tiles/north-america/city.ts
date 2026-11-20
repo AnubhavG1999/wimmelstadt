@@ -300,7 +300,8 @@ export function buildCity(k: Build): TileParts {
       const drive: Seg = { t: 'poly', pts: [[x, c.helixA.cz + 9], [x, blockRect('A3').z1 + 3]], y: 0, r: 0 };
       ribbon(buildPath([drive], false), 2.6, { thick: 0, wall: 0, lanes: 1, lift: 0.045, structure: false });
       const seg: Seg = { t: 'poly', pts: [[x, c.helixA.cz], [x, c.z1 - 0.2]], y: c.roofY, r: 0 };
-      ribbon(buildPath([seg], false), 2.6, { thick: 0.6, wall: 0.9, lanes: 1 });
+      // (a hair above the roof it runs on to)
+      ribbon(buildPath([seg], false), 2.6, { thick: 0.6, wall: 0.9, lanes: 1, lift: 0.03 });
     }
     lights.push({ x: c.x1 + 3, z: (c.rowN + c.rowS) / 2, r: 12, color: '#cfe8ff', k: 0.4 });
     signs.add('carpark', (c.x0 + c.x1) / 2, c.roofY + 2.6, c.z0 - 0.12, 'N', 2.6);

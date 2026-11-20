@@ -83,7 +83,8 @@ export function buildWangan(k: Build): void {
   // the ramp's columns keep out of the street that crosses under it; the first bridge hangs from its tower
   piers(WANGAN_NORTH.slice(1, 4), 4, 13, (x, z) => Math.abs(x - TOKYO.mid) > 8 && z < SHORE.arm.z - 2);
   // on Daikoku: down the east side, through the parking area, up the west side
-  deck(DAIKOKU_RING, WANGAN.slip, { lanes: 1, skirt: 2.4, step: 1.5, wall: 0.7, thick: 0.7 });
+  // (the slip roads lie a hair above the roads they leave and join: in one plane the two would flicker)
+  deck(DAIKOKU_RING, WANGAN.slip, { lanes: 1, lift: 0.06, skirt: 2.4, step: 1.5, wall: 0.7, thick: 0.7 });
   piers(DAIKOKU_RING, WANGAN.slip, 11, undefined, 0.7);
   deck(DAIKOKU_BYPASS, WANGAN.slip, { lanes: 1, lift: 0.08, wall: 0.7, thick: 0.7 });
   // the bypass's columns stand clear of the rest house and of the bays
@@ -92,7 +93,7 @@ export function buildWangan(k: Build): void {
   lamps(DAIKOKU_BYPASS, WANGAN.slip, 11);
   // the Bay Bridge, and the loop at Tatsumi
   deck(WANGAN_WEST, WANGAN.half);
-  deck(TATSUMI_LOOP, WANGAN.slip, { lanes: 1, wall: 0.7, thick: 0.7 });
+  deck(TATSUMI_LOOP, WANGAN.slip, { lanes: 1, lift: 0.06, wall: 0.7, thick: 0.7 });
   piers(TATSUMI_LOOP, WANGAN.slip, 9, undefined, 0.7);
   piers(WANGAN_WEST.slice(1), 5, 8, (x) => x < SHORE.pier.x1 - 1);
   lamps(WANGAN_WEST, WANGAN.half);
