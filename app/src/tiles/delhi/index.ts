@@ -26,6 +26,7 @@ import * as oldDelhi from './old-delhi';
 import * as south from './south';
 import * as southWest from './south-west';
 import { FLYOVERS, RAISINA_HUMP, RING_LANES, RING_PARTS, ROUTES, STREETS } from './roads';
+import { ROAD_SIGNS, SCREEN, SHOPS } from './signs';
 
 /** The models that are built, by the id of the thing in the plan. A thing without one is a plain box with its name. */
 const QUARTERS = [oldDelhi, bazaar, centre, east, south, southWest, metro];
@@ -38,18 +39,10 @@ const BOX: Record<Quarter, number> = { 'old-delhi': 0xc98a6b, centre: 0xe6dcc6, 
 // Signs
 // ---------------------------------------------------------------------------
 
-const shop = (id: string, text: string, color: string, ink: string): SignDef => ({ id, lines: [text], color, ink, aspect: Math.max(2.4, text.length * 0.62), kind: 'board' });
-
-/** What is over the shopfronts. All of these say what is sold, and none says whose shop it is. */
-const SHOPS: SignDef[] = [
-  shop('sweets', 'SWEETS', '#b3202a', '#fbe9b7'), shop('chaat', 'CHAAT', '#f2c14e', '#5e1a1a'), shop('tea', 'TEA STALL', '#1f5d48', '#f4f1e8'),
-  shop('sarees', 'SAREES', '#7a1f5e', '#fbe9b7'), shop('spices', 'SPICES', '#c8742a', '#fff6e0'), shop('tyres', 'TYRES', '#1b1b20', '#f2c14e'),
-];
-
 /** A board for each thing that is still a plain box, with its name on it. */
 const BOARDS: SignDef[] = THINGS.map((t) => ({ id: `board-${t.id}`, lines: [t.name], color: '#fbf6e6', ink: '#2a1d14', aspect: Math.max(2.6, t.name.length * 0.6), kind: 'board' }));
 
-const SIGNS: SignDef[] = [...SHOPS, ...BOARDS, ...QUARTERS.flatMap((q) => q.SIGNS)];
+const SIGNS: SignDef[] = [...Object.values(SHOPS).flat(), ...ROAD_SIGNS, SCREEN, ...BOARDS, ...QUARTERS.flatMap((q) => q.SIGNS)];
 
 /** A plot with the quarter it stands in. */
 type Sited = Lot & { quarter: Quarter };
@@ -65,7 +58,7 @@ const RULES: BuildingRules<Sited> = {
   },
   roofs: [0xb8ad9a, 0xa89e8c, 0xc4b9a6],
   hip: () => ({ colors: [0xb5654a, 0xa85a44] }),
-  pool: () => ({ fascia: SHOPS.map((s) => s.id), blade: [], billboard: [] }),
+  pool: (l) => ({ fascia: SHOPS[l.quarter].map((s) => s.id), blade: [], billboard: [] }),
   neon: ['#ffd9a0'],
 };
 
