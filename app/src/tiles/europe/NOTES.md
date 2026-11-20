@@ -127,7 +127,7 @@ What was raised, and why. The rule about one scale was written after this tile w
 - **Tower Bridge is squeezed.** The Thames is 20 wide here, so the towers stand closer together than they are tall. Its lifting span stays down.
 - **Parliament is its river front.** Westminster Hall and the courts behind it are not there.
 - **The Union Flag flies over the Victoria Tower and over the palace.**
-- **Piccadilly Circus stands where Trafalgar Square would**, at the end of the street from Westminster Bridge. Its lights are five screens on a curved front, and what they advertise is invented: tea, a show, umbrellas, a fizzy drink and toy cars.
+- **Piccadilly Circus stands where Trafalgar Square would**, at the end of the street from Westminster Bridge. Its lights are a front round the west side of the circus: two tall advertisements on its curved south end, for tea and a show, both invented, and on its flat north end, which faces the opening view, the tile's one big screen, 7 high and 12.4 wide at 11.2 above the street. The screen shows what is playing on Spotify for whoever has linked an account, and otherwise its own picture: the wartime poster, with a crown over KEEP CALM AND DRIVE ON and a small car beside the words. The poster is long out of copyright, and none of its words is anyone's name. A screen of 16 by 9 needs a flat wall three of the curve's stretches wide, so it took the place of three advertisements, for umbrellas, a fizzy drink and toy cars.
 - **Ace Cafe is in central London**, at the end of a road from Piccadilly Circus. The real one is on the North Circular, miles out.
 - **The Tower of London has lost its north-west corner**, where Tower Hill's circus comes close. The round turret of the White Tower is on the corner where it shows, and the moat and the outer wall are left out.
 - **St Paul's west front looks south**, and the church is short for its height, so that the dome keeps its size.
@@ -177,7 +177,7 @@ Two businesses, both checked on 19 November 2026, and both as plain lettering on
 
 Two towns, as their road signs, black on white: **MARANELLO** and **SANT'AGATA BOLOGNESE**.
 
-Everything else is generic or invented: THE RED LION, TEA ROOMS, FISH & CHIPS, BOOKS; CAFÉ, BOULANGERIE, TABAC, FLEURS, BRASSERIE, MÉTRO; GELATERIA, TRATTORIA, BAR, PIZZERIA, FARMACIA; and the five screens of Piccadilly Circus, TEA TIME, WEST END LIVE, BROLLY DAYS, FIZZ POP! and TOY CARS 1:64. Hamleys was thought of for London and is not used.
+Everything else is generic or invented: THE RED LION, TEA ROOMS, FISH & CHIPS, BOOKS; CAFÉ, BOULANGERIE, TABAC, FLEURS, BRASSERIE, MÉTRO; GELATERIA, TRATTORIA, BAR, PIZZERIA, FARMACIA; the two advertisements of Piccadilly Circus, TEA TIME and WEST END LIVE; and KEEP CALM AND DRIVE ON on its big screen. Hamleys was thought of for London and is not used.
 
 ## What it costs
 
@@ -218,7 +218,7 @@ Built in this folder, and of use to any tile:
 - **`air.ts`** and **`water.ts`**: Concorde, the balloon, and the boats, each a mesh of its own moved by `k.each`, as the engine's helicopter is.
 - **A shape cut off at the edge of the board**, `onBoard` in `index.ts`, for a hill or a lawn that is laid out at an angle and runs off the tile.
 - **A beam of light**, in `champDeMars`: two long triangles in a material that adds to what is behind it, faded in with the night.
-- **A picture a sign paints for itself**, with `paint` and `size` on a `SignDef`: the screens of Piccadilly Circus, and Ace Cafe's band of black and white squares, which is one sign 30 long instead of a hundred small boxes.
+- **A picture a sign paints for itself**, with `paint` and `size` on a `SignDef`: the advertisements and the big screen of Piccadilly Circus, and Ace Cafe's band of black and white squares, which is one sign 30 long instead of a hundred small boxes.
 - **A picture from straight above.** `wimmel.rig.elev = 1.553` in the console, then `wimmel.shot(..., { az: 0 })` with `?tilt=0` in the address, gives a plan of the tile with north at the top. It was the most useful thing there was for laying out roads. Set `elev` back afterwards.
 
 Missed:

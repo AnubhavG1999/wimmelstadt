@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { rng } from './geo';
 import { buildPath, type Path } from './paths';
-import type { Build, HeroSpot, ParkedSpot, Route, TrafficType } from './tile';
+import type { Build, HeroSpot, ParkedSpot, Route, TrafficKind, TrafficType } from './tile';
 import { Flames, Smoke } from './effects';
 import type { PartyTrick, TrickFx, TrickRun } from './tricks';
 
@@ -63,7 +63,45 @@ function lampsFor(nose: number, tail: number, yHead: number, yTail: number, wid:
   return out;
 }
 
-interface VType { name: string; geo: THREE.BufferGeometry; len: number; wid: number; wb: number; colors: number[] }
+interface VType { name: string; geo: THREE.BufferGeometry; len: number; wid: number; wb: number; colors: number[]; lamps?: boolean }
+
+// ---------------------------------------------------------------------------
+// Traffic of a tile's own
+// ---------------------------------------------------------------------------
+//
+// A tile can bring kinds of traffic of its own shape (`TrafficKind` in
+// tile.ts): a rider, a cart, an auto-rickshaw. A kind's shape is made of the
+// same parts as the plain cars are, with the pieces below, so that it is
+// drawn by the same material, in one batch for the whole kind:
+//
+//   const cart: TrafficKind = {
+//     name: 'cart', len: 6, wid: 2.8, colors: [0x8a6a44, 0x6b5136], lamps: false,
+//     geo: shapeFrom([
+//       shapePart(boxAt(3.6, 0.9, 2.6, -1, 1.4, 0), PART.paint, 0xffffff),   // takes one of `colors`
+//       shapePart(boxAt(1.8, 1.5, 0.7, 2, 1.3, 0), PART.trim, 0x5a4636),     // keeps its own colour
+//       ...wheelsFor(0.9, 2.8, [-1]),
+//     ]),
+//   };
+//
+// The shape has its nose along +x, stands on y = 0 and has its middle over
+// (0, 0). Paint is given in white and takes the colour picked for each one;
+// every other part keeps the colour it is given. `head` and `tail` are lamps:
+// they light up at night, and a kind that has none says `lamps: false`, so
+// that it throws no beam on the road either.
+
+/** The parts a shape is made of. Only `paint` takes the colour picked for each vehicle; `head` and `tail` light up at night. */
+export const PART = { paint: PAINT, glass: GLASS, trim: TRIM, head: HEAD, tail: TAIL, hub: HUB } as const;
+/** A piece of a shape as one of its parts, in a colour. Paint is given in white. */
+export const shapePart = part;
+/** A side profile, as corners with x along the vehicle and y up, pushed out to a width. */
+export const sideProfile = extrude;
+/** A box so long, so high and so wide, with its middle at a place. */
+export const boxAt = box;
+export { wheelsFor, lampsFor };
+/** One shape from its pieces. */
+export function shapeFrom(pieces: THREE.BufferGeometry[]): THREE.BufferGeometry {
+  return mergeGeometries(pieces)!;
+}
 
 const TRAFFIC_COLORS = [0xd9d4cc, 0x9aa3ad, 0x5b6b7a, 0x2e3440, 0xb5483a, 0x4f7a6b, 0x3f6fa3, 0xd1b25a, 0xf2f0ea, 0x8b5e83, 0x6d8f9b];
 
@@ -212,6 +250,8 @@ interface Veh {
   held: number;
   len: number; wid: number; wb: number;
   type: number; inst: number; // traffic: which batch and which slot in it
+  /** Whether it throws a beam ahead at night. */
+  lamps: boolean;
   hero: Hero | null;
   heading: number; turn: number; lit: boolean;
   fx: number; // slot among the moving vehicles, or -1
@@ -350,10 +390,17 @@ const HERO_ROOM = 40;
 /** How much room a spot counts for, next to a road's length, when a hero is put somewhere at random. */
 const SPOT_ROOM = 80;
 
-export function buildVehicles(k: Build, routes: Route[], parked: ParkedSpot[], heroSpots: HeroSpot[]): Vehicles {
+export function buildVehicles(k: Build, routes: Route[], parked: ParkedSpot[], heroSpots: HeroSpot[], kinds: TrafficKind[] = []): Vehicles {
   const group = new THREE.Group();
   const rand = rng(8675309);
-  const types = trafficTypes();
+  // the plain kinds first, always in the same order, and then the tile's own
+  const types: VType[] = [...trafficTypes(), ...kinds.map((q): VType => ({ ...q, wb: q.wb ?? q.len * 0.6 }))];
+  /** Which of the kinds a name means. A name nobody knows is said out loud, and a plain sedan stands in for it. */
+  const kindOf = (name: string): number => {
+    const i = types.findIndex((t) => t.name === name);
+    if (i < 0) console.warn(`There is no kind of traffic called "${name}" on this tile. The plain kinds are ${TYPE_NAMES.join(', ')}; a tile's own are handed over as \`kinds\`.`);
+    return Math.max(0, i);
+  };
 
   // --- who drives where ---
   const vehs: Veh[] = [];
@@ -364,14 +411,14 @@ export function buildVehicles(k: Build, routes: Route[], parked: ParkedSpot[], h
   const paints = new Map<Veh, number[]>();
 
   const blank = (): Veh => ({
-    id: serial++, path: null, s: 0, v: 0, vmax: 0, pace: 1, held: 0, len: 7, wid: 3, wb: 4.4, type: -1, inst: -1, hero: null,
+    id: serial++, path: null, s: 0, v: 0, vmax: 0, pace: 1, held: 0, len: 7, wid: 3, wb: 4.4, type: -1, inst: -1, hero: null, lamps: true,
     heading: 0, turn: 0, lit: false, fx: -1, shadow: -1, phase: rand() * 10, pos: new THREE.Vector3(),
   });
 
   for (const def of routes) {
     const path = buildPath(def.segs, true, def.hump);
     const list: Veh[] = [];
-    const pool = (def.types ?? TYPE_NAMES).map((t) => TYPE_NAMES.indexOf(t));
+    const pool = (def.types ?? TYPE_NAMES).map(kindOf);
     for (let i = 0; i < def.count; i++) {
       const v = blank();
       v.path = path;
@@ -382,6 +429,7 @@ export function buildVehicles(k: Build, routes: Route[], parked: ParkedSpot[], h
       v.type = pool[Math.floor(rand() * pool.length)];
       const t = types[v.type];
       v.len = t.len; v.wid = t.wid; v.wb = t.wb;
+      v.lamps = t.lamps !== false;
       if (def.paint && def.paint.length > 0) paints.set(v, def.paint);
       v.fx = movingCount++;
       list.push(v);
@@ -397,7 +445,8 @@ export function buildVehicles(k: Build, routes: Route[], parked: ParkedSpot[], h
     v.heading = spot.heading;
     v.turn = spot.turn ?? 0;
     v.lit = spot.lit === true;
-    v.type = rand() < 0.55 ? 0 : rand() < 0.75 ? 1 : rand() < 0.5 ? 2 : 3;
+    // the kind the spot asks for, or else one of the plain cars
+    v.type = spot.type !== undefined ? kindOf(spot.type) : rand() < 0.55 ? 0 : rand() < 0.75 ? 1 : rand() < 0.5 ? 2 : 3;
     const t = types[v.type];
     v.len = t.len; v.wid = t.wid; v.wb = t.wb;
     vehs.push(v);
@@ -539,7 +588,7 @@ export function buildVehicles(k: Build, routes: Route[], parked: ParkedSpot[], h
     sz.copy(right).multiplyScalar(v.wid + 3.8);
     p2.copy(pos).addScaledVector(fwd, v.len / 2 + 6.3).addScaledVector(up, 0.09);
     m4.makeBasis(sx, up, sz).setPosition(p2);
-    pools.setMatrixAt(v.fx, m4);
+    pools.setMatrixAt(v.fx, v.lamps ? m4 : NOTHING);
     // the spray behind, longer the faster it goes
     const quick = Math.min(1, v.v / 14);
     const l = (2.6 + 2.8 * quick) * (0.85 + 0.15 * Math.sin(time * 9 + v.phase)) * (quick > 0.25 ? 1 : 0);

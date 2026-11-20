@@ -37,9 +37,14 @@ export interface SignDef {
 /** Where a sign sits on the sheet. v runs downwards, as on the canvas. */
 export interface SignRect { u0: number; u1: number; vTop: number; vBottom: number; aspect: number; color: string }
 
+/** What a screen shows: a title, who it is by, and its cover as a picture that is already loaded, if it has one. */
+export interface Playing { title: string; artist: string; cover: CanvasImageSource | null }
+
 export interface SignAtlas {
   texture: THREE.CanvasTexture;
   rects: Map<string, SignRect>;
+  /** Shows what is playing on every screen of the sheet, or their own pictures again if `now` is null. */
+  showPlaying(now: Playing | null): void;
 }
 
 const SIZE = 2048;
@@ -169,11 +174,8 @@ function drawP(ctx: CanvasRenderingContext2D, w: number, h: number): void {
   ctx.fillText('P', w / 2, h / 2 + h * 0.04);
 }
 
-function drawScreen(ctx: CanvasRenderingContext2D, s: SignDef, w: number, h: number): void {
-  // a stand-in for the screen that will later show what Spotify is playing
-  ctx.fillStyle = '#07070d';
-  ctx.fillRect(0, 0, w, h);
-  const cover = h - 64;
+/** The stand-in's own picture in the square of a screen: a cover of the screen's own invented song. */
+function drawScreenPicture(ctx: CanvasRenderingContext2D, cover: number): void {
   const g = ctx.createLinearGradient(32, 32, 32, 32 + cover);
   g.addColorStop(0, '#2a1a6e');
   g.addColorStop(0.55, '#ff3d9a');
@@ -192,6 +194,14 @@ function drawScreen(ctx: CanvasRenderingContext2D, s: SignDef, w: number, h: num
   ctx.moveTo(32 + cover * 0.5, 32 + cover * 0.56); ctx.lineTo(32 + cover * 0.12, 32 + cover);
   ctx.moveTo(32 + cover * 0.5, 32 + cover * 0.56); ctx.lineTo(32 + cover * 0.88, 32 + cover);
   ctx.stroke();
+}
+
+function drawScreen(ctx: CanvasRenderingContext2D, s: SignDef, w: number, h: number): void {
+  // a stand-in, shown when nothing is playing
+  ctx.fillStyle = '#07070d';
+  ctx.fillRect(0, 0, w, h);
+  const cover = h - 64;
+  drawScreenPicture(ctx, cover);
 
   const tx = 32 + cover + 30;
   ctx.textAlign = 'left';
@@ -215,6 +225,110 @@ function drawScreen(ctx: CanvasRenderingContext2D, s: SignDef, w: number, h: num
   ctx.fillRect(tx, 284, w - tx - 36, 8);
   ctx.fillStyle = '#ff3d9a';
   ctx.fillRect(tx, 284, (w - tx - 36) * 0.42, 8);
+}
+
+// A title can be in any script, so its lettering falls back from Latin through
+// the other scripts the city knows, and only then to whatever the device has.
+const ANY = [EN, JAPANESE, CHINESE, DEVANAGARI].map((f) => f.replace(/,\s*sans-serif\s*$/, '')).join(', ') + ', sans-serif';
+
+/** The size, between `size` and `floor`, at which the text is no wider than maxW, or the floor if it is wider even there. The font is left set to it. */
+function shrink(ctx: CanvasRenderingContext2D, text: string, family: string, size: number, floor: number, maxW: number, weight: string): number {
+  const s = Math.max(floor, fit(ctx, text, family, size, maxW, weight));
+  ctx.font = `${weight} ${s}px ${family}`;
+  return s;
+}
+
+/** The text cut short with an ellipsis, if it has to be, to be no wider than maxW in the font that is set. */
+function cut(ctx: CanvasRenderingContext2D, text: string, maxW: number): string {
+  if (ctx.measureText(text).width <= maxW) return text;
+  const chars = characters(text);
+  while (chars.length > 0) {
+    chars.pop();
+    const t = chars.join('').trimEnd() + '…';
+    if (ctx.measureText(t).width <= maxW) return t;
+  }
+  return '';
+}
+
+/** As much of the text from its start as fits in maxW: whole words if it has spaces between them, otherwise whole characters. */
+function firstLine(ctx: CanvasRenderingContext2D, text: string, maxW: number): string {
+  let line = '';
+  for (const word of text.match(/\S+\s*/g) ?? []) {
+    if (ctx.measureText((line + word).trimEnd()).width > maxW) break;
+    line += word;
+  }
+  if (line) return line;
+  // a first word too long for the line, or a script written without spaces
+  for (const ch of characters(text)) {
+    if (ctx.measureText(line + ch).width > maxW) break;
+    line += ch;
+  }
+  return line;
+}
+
+/** Draws a whole picture as large as it goes in a square, in the middle of it. */
+function drawCover(ctx: CanvasRenderingContext2D, img: CanvasImageSource, x: number, y: number, size: number): void {
+  let iw = size, ih = size;
+  if (img instanceof HTMLImageElement) [iw, ih] = [img.naturalWidth, img.naturalHeight];
+  else if ('width' in img && typeof img.width === 'number' && typeof img.height === 'number') [iw, ih] = [img.width, img.height];
+  if (!(iw > 0 && ih > 0)) [iw, ih] = [size, size];
+  const k = Math.min(size / iw, size / ih);
+  const dw = iw * k, dh = ih * k;
+  ctx.drawImage(img, x + (size - dw) / 2, y + (size - dh) / 2, dw, dh);
+}
+
+/** A screen showing what is playing: the stand-in's layout, with the cover in its square. */
+function drawPlaying(ctx: CanvasRenderingContext2D, w: number, h: number, now: Playing): void {
+  ctx.fillStyle = '#07070d';
+  ctx.fillRect(0, 0, w, h);
+  const cover = h - 64;
+  if (now.cover) drawCover(ctx, now.cover, 32, 32, cover);
+  else drawScreenPicture(ctx, cover);
+
+  // the lettering is laid out as on the stand-in, which is 360 high, and scaled to this screen's height
+  const k = h / 360;
+  const tx = 32 + cover + 30, tw = w - tx - 28;
+  if (tw <= 0) return;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = '#35e0ff';
+  shrink(ctx, 'NOW PLAYING', EN, 24 * k, 1, tw, '900');
+  ctx.fillText('NOW PLAYING', tx, 84 * k);
+
+  // the title on one line if it fits large enough, and otherwise on two, with the second cut short if it has to be
+  ctx.fillStyle = '#ffffff';
+  const title = now.title.trim();
+  const one = shrink(ctx, title, ANY, 46 * k, 34 * k, tw, '900');
+  let artistY = 222 * k;
+  if (ctx.measureText(title).width <= tw) {
+    ctx.fillText(title, tx, 162 * k);
+  } else {
+    // sized so that the whole title would about fill both lines
+    let size = shrink(ctx, title, ANY, Math.min(one, 40 * k), 30 * k, tw * 2, '900');
+    let first = firstLine(ctx, title, tw);
+    // words do not break where that sum would have them: go smaller until the rest fits its line too, down to the floor
+    while (size > 30 * k && ctx.measureText(title.slice(first.length).trim()).width > tw) {
+      size = Math.max(30 * k, size - 2 * k);
+      ctx.font = `900 ${size}px ${ANY}`;
+      first = firstLine(ctx, title, tw);
+    }
+    ctx.fillText(first.trimEnd(), tx, 150 * k);
+    ctx.fillText(cut(ctx, title.slice(first.length).trim(), tw), tx, 198 * k);
+    artistY = 246 * k;
+  }
+
+  ctx.fillStyle = '#ff9ccb';
+  shrink(ctx, now.artist, ANY, 26 * k, 20 * k, tw, '700');
+  ctx.fillText(cut(ctx, now.artist, tw), tx, artistY);
+}
+
+/** Draws one sign in its place, which the context has been moved to and clipped to. */
+function paintSign(ctx: CanvasRenderingContext2D, s: SignDef, w: number, h: number): void {
+  if (s.paint) s.paint(ctx, s, w, h);
+  else if (s.kind === 'screen') drawScreen(ctx, s, w, h);
+  else if (s.kind === 'p') drawP(ctx, w, h);
+  else if (s.kind === 'box' || s.kind === 'board') drawBox(ctx, s, w, h);
+  else drawNeon(ctx, s, w, h);
 }
 
 export function buildSignAtlas(signs: SignDef[]): SignAtlas {
@@ -247,21 +361,25 @@ export function buildSignAtlas(signs: SignDef[]): SignAtlas {
   ctx.fillStyle = '#000';
   ctx.fillRect(0, 0, SIZE, HEIGHT);
 
-  const rects = new Map<string, SignRect>();
-  for (const { s, size, x, y } of items) {
-    const [w, h] = size;
+  /** Draws a sign, or something else in its place, in its rectangle of the sheet and nowhere else. */
+  const within = (x: number, y: number, w: number, h: number, draw: () => void): void => {
     ctx.save();
     ctx.translate(x, y);
     ctx.beginPath();
     ctx.rect(0, 0, w, h);
     ctx.clip();
-    if (s.paint) s.paint(ctx, s, w, h);
-    else if (s.kind === 'screen') drawScreen(ctx, s, w, h);
-    else if (s.kind === 'p') drawP(ctx, w, h);
-    else if (s.kind === 'box' || s.kind === 'board') drawBox(ctx, s, w, h);
-    else drawNeon(ctx, s, w, h);
+    draw();
     ctx.restore();
+  };
+
+  const rects = new Map<string, SignRect>();
+  // the screens, and where each is on the sheet in pixels, so that they can be painted again
+  const screens: { s: SignDef; x: number; y: number; w: number; h: number }[] = [];
+  for (const { s, size, x, y } of items) {
+    const [w, h] = size;
+    within(x, y, w, h, () => paintSign(ctx, s, w, h));
     rects.set(s.id, { u0: x / SIZE, u1: (x + w) / SIZE, vTop: y / HEIGHT, vBottom: (y + h) / HEIGHT, aspect: w / h, color: s.color });
+    if (s.kind === 'screen') screens.push({ s, x, y, w, h });
   }
 
   const texture = new THREE.CanvasTexture(cv);
@@ -269,7 +387,21 @@ export function buildSignAtlas(signs: SignDef[]): SignAtlas {
   texture.flipY = false;
   texture.anisotropy = 8;
   texture.needsUpdate = true;
-  return { texture, rects };
+
+  const showPlaying = (now: Playing | null): void => {
+    if (screens.length === 0) return;
+    for (const { s, x, y, w, h } of screens) {
+      within(x, y, w, h, () => {
+        // the sheet's own black first, so that a screen's own picture comes back exactly as it was first drawn
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, w, h);
+        if (now) drawPlaying(ctx, w, h, now);
+        else paintSign(ctx, s, w, h);
+      });
+    }
+    texture.needsUpdate = true;
+  };
+  return { texture, rects, showPlaying };
 }
 
 // ---------------------------------------------------------------------------

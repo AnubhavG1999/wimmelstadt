@@ -418,7 +418,8 @@ export const BUILDINGS: Ordinary[] = [
   // Nathan Road: the north side is tall and bright, and the south side is low, so that the road can be seen
   ord('nathan-n1', 76, -34, 80.7, -17, 24, 'neon', { faces: 'SW' }),
   ord('nathan-n2', 81.1, -34, 85.6, -17, 18, 'neon', { faces: 'S' }),
-  ord('nathan-n3', 86, -34, 91, -17, 26, 'neon', { faces: 'SE' }),
+  // its east face is kept clear of shop signs for the big screen, which city.ts hangs there
+  ord('nathan-n3', 86, -34, 91, -17, 26, 'neon', { faces: 'S' }),
   ord('jordan-1', 76, -44.6, 84, -36.4, 14, 'tonglau', { faces: 'N', roof: 'tank' }),
   ord('jordan-2', 85.6, -44.6, 94, -36.4, 16, 'estate', { roof: 'units' }),
   ord('nathan-s1', 77, 11, 80.8, 23, 11, 'neon', { faces: 'N' }),

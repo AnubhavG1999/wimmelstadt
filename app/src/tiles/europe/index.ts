@@ -122,7 +122,8 @@ function riverShape(): P2[] {
 /** A flat bridge: a slab from bank to bank under the street, piers in the water and a low wall along each side. */
 function slabBridge(k: Build, x0: number, z0: number, x1: number, z1: number, alongX: boolean, piers: number): void {
   const deep = -(WATER_DROP + 0.6);
-  k.b.box(x0, -1.1, z0, x1, 0, z1, STONE, { faces: 'NESWTB' });
+  // its top is a hair under the ground's level, so that where it reaches in over a bank the two do not lie in one plane
+  k.b.box(x0, -1.1, z0, x1, -0.01, z1, STONE, { faces: 'NESWTB' });
   for (let i = 1; i <= piers; i++) {
     const t = i / (piers + 1);
     if (alongX) {
@@ -360,6 +361,7 @@ function build(k: Build): TileParts {
   return { routes: ROUTES, parked, heroSpots };
 }
 
-export const europe: TileDef = { id: 'europe', name: 'Europe', seed: 20261119, signs: SIGNS, build };
+// (its pin stands at Paris, the middle one of its three quarters)
+export const europe: TileDef = { id: 'europe', name: 'Europe', seed: 20261119, place: { lon: 2.35, lat: 48.86 }, signs: SIGNS, build };
 
 export default europe;

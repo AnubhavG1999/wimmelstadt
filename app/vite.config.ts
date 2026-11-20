@@ -210,7 +210,14 @@ export default defineConfig({
   // One port, and no other if it is taken, so that a preview always knows where
   // the app is. A second copy of the app, such as one in a worktree, is given
   // its own: npm run dev -- --port 5191
-  server: { port: 5187, strictPort: true },
+  //
+  // It listens on 127.0.0.1 and nowhere else. Left to itself it listens on
+  // whatever "localhost" comes to first on the machine, which on some is the
+  // IPv6 loopback alone. Spotify takes a loopback address as a redirect
+  // address only if it is written as a number, so the link to Spotify is made
+  // at http://127.0.0.1:<port>/, and the server has to be there. A browser
+  // that is asked for localhost finds it there as well.
+  server: { host: '127.0.0.1', port: 5187, strictPort: true },
   build: {
     target: 'es2022',
     chunkSizeWarningLimit: 1200,

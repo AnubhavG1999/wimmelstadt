@@ -5,7 +5,7 @@
 // each was checked.
 
 import type { SignPool } from '../../engine/buildings';
-import { CHINESE, EN, glowText, lighten, type SignDef } from '../../engine/signs';
+import { CHINESE, EN, fit, glowText, lighten, type SignDef } from '../../engine/signs';
 
 /** A painted board: lettering of one colour on a ground of another. */
 const board = (id: string, lines: string[], color: string, ink: string, aspect: number, more: Partial<SignDef> = {}): SignDef =>
@@ -119,7 +119,91 @@ function artScreen(ctx: CanvasRenderingContext2D, _s: SignDef, w: number, h: num
   ctx.globalAlpha = 1;
 }
 
+/**
+ * What the big screen on Nathan Road shows when no music plays: yum cha drawn
+ * in neon on black, a bamboo steamer seen from the side with three dumplings in
+ * it and steam rising, beside the words for yum cha and "taking a break". Each
+ * line is a tube: a wide soft halo, and a bright thin core of the same colour.
+ * It draws the whole screen every time.
+ */
+function yumCha(ctx: CanvasRenderingContext2D, _s: SignDef, w: number, h: number): void {
+  const PINK = '#ff3d9a', CYAN = '#35e0ff', YELLOW = '#ffd23f';
+  ctx.fillStyle = '#07070d';
+  ctx.fillRect(0, 0, w, h);
+  const k = h / 360;
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  const tube = (shape: () => void, color: string, wide = 9): void => {
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 22 * k;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = wide * k;
+    shape(); ctx.stroke();
+    shape(); ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = lighten(color, 0.72);
+    ctx.lineWidth = wide * 0.38 * k;
+    shape(); ctx.stroke();
+  };
+
+  // the steamer: its rim as an ellipse, its sides, the curve of its bottom, and two bands of weave
+  const cx = w * 0.29, rimY = h * 0.55, rx = w * 0.22, ry = h * 0.06, botY = h * 0.88;
+  // the dumplings first, so that the front of the rim passes over their feet
+  for (const dx of [-0.6, 0, 0.6]) {
+    const x = cx + dx * rx, r = rx * 0.29, base = rimY + ry * 0.35;
+    tube(() => {
+      ctx.beginPath();
+      ctx.moveTo(x - r, base);
+      ctx.bezierCurveTo(x - r, base - r * 1.15, x - r * 0.25, base - r * 1.3, x, base - r * 1.35);
+      ctx.bezierCurveTo(x + r * 0.25, base - r * 1.3, x + r, base - r * 1.15, x + r, base);
+      // the pleats, gathered at the top
+      ctx.moveTo(x - r * 0.35, base - r * 1.05);
+      ctx.lineTo(x, base - r * 1.35);
+      ctx.lineTo(x + r * 0.35, base - r * 1.05);
+    }, PINK, 11);
+  }
+  tube(() => {
+    ctx.beginPath();
+    ctx.ellipse(cx, rimY, rx, ry, 0, 0, Math.PI * 2);
+    ctx.moveTo(cx - rx, rimY);
+    ctx.lineTo(cx - rx * 0.94, botY);
+    ctx.ellipse(cx, botY, rx * 0.94, ry, 0, Math.PI, 0, true);
+    ctx.lineTo(cx + rx, rimY);
+  }, YELLOW, 10);
+  for (const t of [0.36, 0.68]) {
+    const y = rimY + (botY - rimY) * t, r = rx * (1 - 0.06 * t);
+    tube(() => {
+      ctx.beginPath();
+      ctx.ellipse(cx, y, r, ry, 0, Math.PI * 0.08, Math.PI * 0.92);
+    }, YELLOW, 6);
+  }
+
+  // three wisps of steam rising from the dumplings, each a long wave that thins out at its top
+  for (const dx of [-0.6, 0, 0.6]) {
+    const x = cx + dx * rx, y0 = h * 0.33, y1 = h * 0.06, s = rx * 0.16, d = (y0 - y1) / 2;
+    tube(() => {
+      ctx.beginPath();
+      ctx.moveTo(x, y0);
+      ctx.bezierCurveTo(x - s * 1.6, y0 - d * 0.35, x - s * 1.6, y0 - d * 0.65, x, y0 - d);
+      ctx.bezierCurveTo(x + s * 1.6, y0 - d * 1.35, x + s * 1.6, y0 - d * 1.65, x + s * 0.3, y1);
+    }, CYAN, 9);
+  }
+
+  // the words: yum cha, large, and "taking a break" under them
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const tx = w * 0.75;
+  const big = fit(ctx, '飲茶', CHINESE, h * 0.42, w * 0.42);
+  ctx.font = `900 ${big}px ${CHINESE}`;
+  glowText(ctx, '飲茶', tx, h * 0.4, PINK, big);
+  const small = fit(ctx, '休息一下', CHINESE, h * 0.15, w * 0.4);
+  ctx.font = `900 ${small}px ${CHINESE}`;
+  glowText(ctx, '休息一下', tx, h * 0.77, YELLOW, small);
+}
+
 export const SIGNS: SignDef[] = [
+  // the big screen, which shows what is playing; its own picture is yum cha in neon
+  { id: 'screen', lines: ['飲茶', '休息一下'], color: '#ff3d9a', aspect: 16 / 9, kind: 'screen', paint: yumCha, font: CHINESE },
   // the names of real places and businesses, each checked, each plain lettering on a plain board
   board('star-ferry', ['天星小輪', 'STAR FERRY'], '#f2efe6', '#1f5a3e', 3.2, { real: true }),
   board('peak-tram', ['山頂纜車', 'PEAK TRAM'], '#1d5a3c', '#f2e6c4', 2.9, { real: true }),

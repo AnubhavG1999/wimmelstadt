@@ -95,7 +95,8 @@ export function buildJapan(k: Build): TileParts {
   // a road on a bench of its own, with a wall wherever the ground falls away below it
   roadDeck(k, path(PASS_LINE), PASS.width, { thick: 0.6, wall: 0.55, lanes: 2, lift: 0.06, skirt: 999, step: 1.5 });
   // the lookout at its top: the loop the road turns round in, and a yard that looks out over the tile
-  roadDeck(k, path(LOOKOUT_LOOP), 3.3, { thick: 0.6, wall: 0.5, lanes: 1, lift: 0.06, skirt: 999, step: 1 });
+  // (a hair above the pass, which it leaves and joins again: in one plane the two would flicker)
+  roadDeck(k, path(LOOKOUT_LOOP), 3.3, { thick: 0.6, wall: 0.5, lanes: 1, lift: 0.07, skirt: 999, step: 1 });
   {
     const y = LOOKOUT_YARD, ux = S2 * y.half, uz = -S2 * y.half, ax = S2 * y.deep, az = S2 * y.deep;
     area(k, [[y.x - ux - ax, y.z - uz - az], [y.x + ux - ax, y.z + uz - az], [y.x + ux + ax, y.z + uz + az], [y.x - ux + ax, y.z - uz + az]], 0x5a5c62, PASS.y1);

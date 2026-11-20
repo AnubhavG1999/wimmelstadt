@@ -5,10 +5,13 @@
 import * as THREE from 'three';
 import { GeoBuilder } from './geo';
 import { toon } from './look/materials';
+import { roomToon } from './room/look';
 import type { Rect } from './tile';
 
-/** How far the felt reaches beyond the outermost bases, how wide the wooden edge round it is, and how far the edge stands above the felt. */
-const FELT = 24, EDGE = 11, LIP = 3.2;
+/** How far the felt reaches beyond the outermost bases, and how wide the wooden edge round it is. */
+const FELT = 24, EDGE = 11;
+/** How far the wooden edge stands above the height the bases rest at, and how far the table reaches below it. Its underside is what it stands on: the desk. */
+export const TABLE = { lip: 3.2, under: 7 };
 // quiet colours: the table is there to set the tiles off, not to be looked at
 const BAIZE = 0x234539, WOOD = 0x6a4830, WOOD_TOP = 0x7d563a, WOOD_DARK = 0x513622;
 
@@ -24,7 +27,7 @@ export function buildTable(bases: Rect, y: number): { mesh: THREE.Mesh; rect: Re
   // the felt, a hair below the bases so that the two never share a surface
   b.box(f.x0, y - 6, f.z0, f.x1, y - 0.02, f.z1, BAIZE, { faces: 'T' });
   // the wooden edge round it: a lighter top, and darker inner faces where the felt meets it
-  const top = y + LIP, bottom = y - 7;
+  const top = y + TABLE.lip, bottom = y - TABLE.under;
   b.box(t.x0, bottom, t.z0, t.x1, top, f.z0, WOOD, { top: WOOD_TOP, faces: 'NEWT' });
   b.box(t.x0, bottom, f.z1, t.x1, top, t.z1, WOOD, { top: WOOD_TOP, faces: 'SEWT' });
   b.box(t.x0, bottom, f.z0, f.x0, top, f.z1, WOOD, { top: WOOD_TOP, faces: 'WT' });
@@ -35,7 +38,8 @@ export function buildTable(bases: Rect, y: number): { mesh: THREE.Mesh; rect: Re
   b.box(f.x1, y - 0.02, f.z0, f.x1 + 0.01, top, f.z1, WOOD_DARK, { faces: 'W' });
   // and its underside, for when the view looks along the table's edge
   b.box(t.x0, bottom, t.z0, t.x1, bottom + 0.01, t.z1, WOOD_DARK, { faces: 'B' });
-  const mesh = new THREE.Mesh(b.build(), toon());
+  // (the room's own material, so that the lamps on the desk light the felt as they light the map)
+  const mesh = new THREE.Mesh(b.build(), roomToon());
   mesh.receiveShadow = true;
   mesh.layers.set(1); // layer 1 is left out of the mirror image used for wet streets
   return { mesh, rect: t };
