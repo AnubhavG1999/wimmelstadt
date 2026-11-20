@@ -75,6 +75,11 @@ export const SIGNS: SignDef[] = [
   // Joe's: neon over its door, and its name painted large on the brick of its east wall
   neon('campustown-joes', "JOE'S BREWERY", '#ffcf5a', 380, true),
   plain('campustown-joes-wall', "JOE'S BREWERY", '#8a3e2e', '#f3e6c8'),
+  // the yard of food trucks behind the Red Lion's garden: its name, and what each truck sells
+  neon('campustown-food-trucks', 'FOOD TRUCKS', '#7ff0a8', 320),
+  cloth('campustown-truck-waffles', 'WAFFLES', '#c9861c'),
+  cloth('campustown-truck-bbq', 'BBQ', '#7a2f22'),
+  cloth('campustown-truck-dumplings', 'DUMPLINGS', '#2f5d8a'),
 ];
 
 /** A board on a wall that faces (nx, nz): a thin box proud of the wall, and the sign 0.03 in front of it. */
@@ -639,6 +644,66 @@ function joes(k: Build, l: LotDef): void {
   k.lights.push({ x: (gx0 + gx1) / 2, z: cz, r: 8, color: '#ffd9a0', k: 0.65 });
 }
 
+/**
+ * A food truck, its kitchen along x with its cab at the east end, its hatch and
+ * its board on the south side, where the opening view and the queue are.
+ */
+function truck(k: Build, cx: number, cz: number, body: number, trim: number, id: string): void {
+  const b = k.b, L = 2.7, W = 1.15, H = 3.05, s = cz + W;
+  b.box(cx - L, 0.32, cz - W + 0.1, cx + L, 0.5, cz + W - 0.1, DARK, { faces: 'NESW' });
+  b.box(cx - L, 0.5, cz - W, cx + L - 1.5, H, cz + W, body, { top: 0xd8d4cc });
+  b.box(cx + L - 1.6, 0.5, cz - W + 0.05, cx + L, 2.05, cz + W - 0.05, body, { top: 0xd8d4cc });
+  b.box(cx + L, 1.2, cz - W + 0.25, cx + L + 0.04, 1.9, cz + W - 0.25, 0x2c3a46, { faces: 'E' });
+  for (const x of [cx - L + 0.85, cx + L - 0.75]) for (const z of [cz - W + 0.02, cz + W - 0.3]) b.box(x - 0.36, 0, z, x + 0.36, 0.62, z + 0.28, DARK);
+  // the hatch, lit from inside, with a counter under it and an awning over it
+  b.box(cx - 2.2, 1.2, s, cx + 0.2, 2.1, s + 0.04, 0x3a2a20, { faces: 'S', win: interior(1.8) });
+  b.box(cx - 2.25, 1.1, s, cx + 0.25, 1.17, s + 0.32, trim, { faces: 'NESWTB' });
+  b.box(cx - 2.35, 2.22, s, cx + 0.35, 2.3, s + 0.8, trim, { faces: 'NESWTB' });
+  plate(k, id, cx - 1.0, 2.7, s, 0, 1, 0.42, 1.9, trim);
+  unit(k, cx - 1.6, cz, H, 0.9, 0.7, 0.5);
+  k.lights.push({ x: cx - 1.0, z: s + 2.2, r: 6, color: '#ffd59a', k: 0.5 });
+  // the queue at its hatch
+  k.person(cx - 1.4, s + 1.15);
+  k.person(cx - 0.6, s + 1.9);
+  k.person(cx + 0.3, s + 2.6);
+}
+
+/**
+ * The yard behind the Red Lion's garden, on open ground that the opening view
+ * sees: three food trucks in a row, their hatches to the south, picnic tables
+ * before them under strings of lamps, and the yard's name on a board. Nothing
+ * in it stands higher than 3.4, so the garden and its sign stay in sight over it.
+ */
+function truckYard(k: Build): void {
+  const b = k.b, x0 = -80, x1 = -56.5, z0 = -65.6, z1 = -55.6, y = 0.027;
+  area(k, rect(x0, z0, x1, z1), 0x6a6c70, y);
+  // a white line round it, and between the trucks' pitches
+  for (const [a, c, d, e] of [[x0 + 0.3, z0 + 0.3, x1 - 0.3, z0 + 0.42], [x0 + 0.3, z1 - 0.42, x1 - 0.3, z1 - 0.3], [x0 + 0.3, z0 + 0.42, x0 + 0.42, z1 - 0.42], [x1 - 0.42, z0 + 0.42, x1 - 0.3, z1 - 0.42]]) {
+    b.box(a, y, c, d, y + 0.012, e, 0xe9e6dd, { faces: 'T' });
+  }
+  const cz = -63.4;
+  truck(k, -75.5, cz, 0xf2c14e, 0x7a4a1c, 'campustown-truck-waffles');
+  truck(k, -68.8, cz, 0xb8432a, 0x2a2d33, 'campustown-truck-bbq');
+  truck(k, -62.1, cz, 0x3f8fb0, 0xe9e6dd, 'campustown-truck-dumplings');
+  // picnic tables in a row before them, with people at them
+  for (const x of [-77, -71.5, -66, -60.5]) {
+    picnic(k, x, -58.4, y);
+    k.person(x - 0.5, -57.2, y);
+    k.person(x + 0.6, -59.6, y);
+  }
+  // three poles along the south side, and lamps strung from each truck's roof to them
+  const poles = [-78.6, -67.2, -57.6], PH = 3.35, pz = z1 - 0.7;
+  for (const x of poles) b.box(x - 0.07, y, pz - 0.07, x + 0.07, PH, pz + 0.07, POLE, { faces: 'NESW' });
+  for (const [tx, p] of [[-75.5, 0], [-75.5, 1], [-68.8, 0], [-68.8, 2], [-62.1, 1], [-62.1, 2]]) {
+    lampString(k, [tx - 1.0, 3.0, cz + 1.2], [poles[p], PH - 0.05, pz], 8);
+  }
+  // the yard's name on a board on two posts at its south side, facing the opening view
+  const sx = -74.0, sz = z1 - 0.25;
+  for (const x of [sx - 1.9, sx + 1.9]) b.box(x - 0.08, y, sz - 0.18, x + 0.08, 2.75, sz - 0.02, FRAME, { faces: 'NESW' });
+  plate(k, 'campustown-food-trucks', sx, 3.05, sz - 0.12, 0, 1, 0.62, 3.6, 0x15151c);
+  k.lights.push({ x: -68, z: -58.5, r: 10, color: '#ffd9a0', k: 0.55 });
+}
+
 export const MODELS: Record<string, Model> = {
   'red-lion': redLion,
   'shops-s1': shopsS1,
@@ -649,7 +714,8 @@ export const MODELS: Record<string, Model> = {
   joes,
 };
 
-/** The Red Lion's beer garden. */
+/** The Red Lion's beer garden, and the yard of food trucks behind it. */
 export function extras(k: Build): void {
   beerGarden(k);
+  truckYard(k);
 }
