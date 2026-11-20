@@ -559,6 +559,9 @@ function sheepShape(): THREE.BufferGeometry {
   return b.build();
 }
 
+/** The giants with room about their homes to rise and spread their wings now and then. */
+const STRETCH: Partial<Record<Key, true>> = { balerion: true, vhagar: true, caraxes: true };
+
 /** Where the fold's own sheep stands, the one Sheepstealer takes. */
 const FOLD = { x: FLOCK[0][0], z: FLOCK[0][1] };
 
@@ -590,13 +593,15 @@ export function buildDragons(k: Build): void {
   const turnFrom = KEYS.map((key) => H[key].facing), turnAt = KEYS.map(() => -1e9);
   /** At home: when it next yawns or roars, and when it last did. */
   const nextYawn = KEYS.map((_, i) => 5 + i * 3.7), yawnAt = KEYS.map(() => -1e9);
+  /** At home: when it next rises and spreads its wings, and when it last began to; for those with room about them. */
+  const nextStretch = KEYS.map((_, i) => 20 + i * 11), stretchAt = KEYS.map(() => -1e9);
   const held: Held[] = KEYS.map((key) => ({ x: H[key].x, y: H[key].y, z: H[key].z, heading: H[key].facing, sit: 1, speed: 18 }));
 
   let clock = 0, gap = 1.2, last = '', hushed = false;
   let seed = 4021;
   const rand = (): number => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
   // the first few are chosen, so that whoever opens the tile sees dragons in the air at once
-  const opening = ['dome', 'hunt', 'sheep', 'black-dread'];
+  const opening = ['black-dread', 'fleet', 'sheep', 'hunt', 'dome'];
 
   /** Whether a moment may start: its dragons are all home, none of its sky is in use, and no more than three would be up. */
   const free = (m: Moment): boolean => {
@@ -658,6 +663,8 @@ export function buildDragons(k: Build): void {
           hd.heading = h.facing + diff * smooth((t - (p.wait - p.turn)) / Math.max(0.01, p.turn - 0.2));
           hd.look = 0;
           hd.jaw = 0;
+          hd.sit = 1;
+          hd.beat = 0;
           pilot.hold(hd, time, groundAt);
         } else {
           const p = f.part;
@@ -665,8 +672,10 @@ export function buildDragons(k: Build): void {
           pilot.fly((tt, out) => placeOf(p, H, tt - f.start, out), clock, time, dt, () => floorFor(p, t), groundAt);
           const cue = pilot.cue;
           if (cue.fire > 0) {
+            // at night the lance lights the water under its middle, if it is low enough over it to
             const flame = KIND[key].flame, gx = d.mouth.x + d.mouthDir.x * flame.reach * 0.6, gz = d.mouth.z + d.mouthDir.z * flame.reach * 0.6;
-            fire.breathe(i, d.mouth, d.mouthDir, pilot.vel, flame, cue.fire, dt, isWater(gx, gz) ? groundAt(gx, gz) : null);
+            const gy = d.mouth.y + d.mouthDir.y * flame.reach * 0.6, under = isWater(gx, gz) ? groundAt(gx, gz) : null;
+            fire.breathe(i, d.mouth, d.mouthDir, pilot.vel, flame, cue.fire, dt, under !== null && gy - under < 30 ? under : null);
           }
           if (key === 'sheepstealer' && sheepTaken < 0 && p.events.some((e) => e.kind === 'grab' && t >= (e.t0 + e.t1) / 2)) sheepTaken = clock;
         }
@@ -694,6 +703,21 @@ export function buildDragons(k: Build): void {
         if (clock > nextYawn[i]) { yawnAt[i] = clock; nextYawn[i] = clock + 14 + rand() * 30; }
         const y = (clock - yawnAt[i]) / 2.2;
         hd.jaw = y > 0 && y < 1 ? Math.min(1, y / 0.3, (1 - y) / 0.3) * (key === 'cannibal' || key === 'caraxes' || key === 'balerion' ? 1 : 0.7) : 0;
+        // A giant with room about it rises now and then, spreads its wings, beats them once and roars, and settles
+        // again: never while another flies near, and it folds them at once if one comes.
+        hd.sit = 1;
+        hd.beat = 0;
+        if (STRETCH[key]) {
+          if (clock > nextStretch[i] && near > 100 && clock - turnAt[i] > 8) { stretchAt[i] = clock; nextStretch[i] = clock + 40 + rand() * 50; }
+          const st = (clock - stretchAt[i]) / 6;
+          if (st > 0 && st < 1) {
+            if (near < 75) stretchAt[i] = Math.min(stretchAt[i], clock - 6 * 0.75);
+            hd.sit = 1 - 0.5 * smooth(Math.min(st / 0.2, (1 - st) / 0.25, 1));
+            if (st > 0.36 && st < 0.6) hd.beat = (st - 0.36) / 0.24;
+            const roar = (st - 0.3) / 0.32;
+            if (roar > 0 && roar < 1) hd.jaw = Math.max(hd.jaw, Math.min(1, roar / 0.2, (1 - roar) / 0.3));
+          }
+        }
         pilot.hold(hd, time, groundAt);
       }
       const ribbon = pilot.ribbons(dt, !flying[i]);
@@ -713,10 +737,11 @@ export function buildDragons(k: Build): void {
       sheep.quaternion.copy(sp.pose.quat);
       sheep.visible = true;
     } else if (sheepTaken >= 0) {
-      // laid before his cave, and after a while gone; and another put out in the fold, as one was for him every morning
+      // laid on his shelf under his chin, and after a while gone; and another put out in the fold, as one was for him
+      // every morning
       if (sheepDown < 0) sheepDown = clock;
       const h = H.sheepstealer, f = h.facing * RAD;
-      sheep.position.set(h.x + Math.cos(f) * 6.5, h.y + 0.6, h.z + Math.sin(f) * 6.5);
+      sheep.position.set(h.x + Math.cos(f) * 2.2, h.y + 0.5, h.z + Math.sin(f) * 2.2);
       sheep.rotation.set(0, -f, Math.PI / 2);
       sheep.visible = clock - sheepDown < 20;
       if (clock - sheepDown > 36) { sheepTaken = -1; sheepDown = -1; }

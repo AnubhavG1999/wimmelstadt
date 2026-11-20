@@ -294,7 +294,7 @@ export const LOTS: Lot[] = [
 
   // ======================= Dragonstone =======================
   lot('ds-castle', 'Dragonstone', 32, -12, 50, 8, 14),
-  lot('stone-drum', 'Stone Drum', 38, -5, 44, 1, 22, true),
+  lot('stone-drum', 'Stone Drum', 32, -3.5, 37, 1.5, 22, true),
   lot('windwyrm', 'Windwyrm', 33, -11, 37, -7, 24, true),
   lot('sea-dragon', 'Sea Dragon Tower', 33, 3, 37, 7, 18, true),
   lot('ds-town-n', 'Town', 52, -10, 70, -5, 6),
