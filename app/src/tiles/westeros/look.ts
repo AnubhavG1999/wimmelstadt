@@ -177,6 +177,28 @@ export function brazier(k: Build, x: number, z: number, y = 0): void {
 }
 
 /**
+ * A weirwood: a white trunk with a face cut in it, white limbs, and leaves the
+ * red of blood. `size` 1 is a heart tree, about 7 high. The face looks towards
+ * the view the tile opens with.
+ */
+export function weirwood(k: Build, x: number, z: number, y = 0, size = 1): void {
+  const b = k.b, s = size;
+  b.cyl(x, z, y, y + 3.4 * s, 0.62 * s, 0.4 * s, 7, WEIRWOOD.bark, { cap: false });
+  // three limbs that reach out and up
+  for (let i = 0; i < 3; i++) {
+    const a = 0.7 + (i / 3) * Math.PI * 2;
+    b.beam([x, y + 2.6 * s, z], [x + Math.cos(a) * 1.7 * s, y + 4.3 * s, z + Math.sin(a) * 1.7 * s], 0.26 * s, 0.14 * s, WEIRWOOD.bark);
+    lathe(b, x + Math.cos(a) * 1.9 * s, z + Math.sin(a) * 1.9 * s, [[0.1 * s, y + 3.5 * s], [1.25 * s, y + 4.1 * s], [1.45 * s, y + 4.9 * s], [0.8 * s, y + 5.7 * s], [0.05 * s, y + 6.0 * s]], 6, i === 1 ? 0xb52a22 : WEIRWOOD.leaf);
+  }
+  lathe(b, x, z, [[0.2 * s, y + 3.3 * s], [1.9 * s, y + 4.3 * s], [2.2 * s, y + 5.4 * s], [1.3 * s, y + 6.6 * s], [0.05 * s, y + 7.1 * s]], 7, WEIRWOOD.leaf);
+  // the face: two eyes and a mouth, the red of the sap that runs from them
+  const fx = 0.669, fz = 0.743, ax = -fz, az = fx, out = 0.56 * s;
+  for (const [u, v, w, h] of [[-0.17, 2.0, 0.09, 0.13], [0.17, 2.0, 0.09, 0.13], [0, 1.55, 0.2, 0.08]]) {
+    b.obox(x + fx * out + ax * u * s, y + v * s, z + fz * out + az * u * s, w * s, h * s, 0.05 * s, Math.atan2(az, ax), 0x7a1512);
+  }
+}
+
+/**
  * The board that says what a place is called: a painted board between two
  * posts, facing the view the tile opens with unless told otherwise. `id` is a
  * sign in the file's own `SIGNS`, made with `nameSign`.

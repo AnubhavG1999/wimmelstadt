@@ -82,7 +82,8 @@ export function buildWesteros(k: Build): TileParts {
 
   return {
     routes,
-    parked: [],
+    // on the bare stage one of each kind of traveller stands in a row, to be looked at
+    parked: bare ? WAYFARERS.map((w, i) => ({ x: -42 + i * 13, y: 0, z: 30, heading: 0, type: w.name })) : [],
     heroSpots: bare ? [] : HERO_SPOTS.map((s) => ({ id: s.id, x: s.x, y: 0.03, z: s.z, heading: s.heading })),
     kinds: WAYFARERS,
   };
