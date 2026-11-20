@@ -9,7 +9,7 @@
 import * as THREE from 'three';
 import { rng } from '../../engine/geo';
 import type { Build } from '../../engine/tile';
-import { checkFlight } from './clearance';
+import { CLEAR, checkFlight, nearest, reachOf } from './clearance';
 import { aim, close, fourViews, frames, look, sheet } from './debug';
 import { DROGON, Dragon, FLARE, FOLDED, RHAEGAL, VISERION, blendForm, formAt, stance, wingPose, type Pose, type WingPose } from './dragon';
 import { DROGON_FLAME, Fire, RHAEGAL_FLAME, VISERION_FLAME } from './fire';
@@ -23,6 +23,8 @@ const RAD = Math.PI / 180;
 const UP = new THREE.Vector3(0, 1, 0), Z = new THREE.Vector3(0, 0, 1);
 /** How long one beat of the wings takes, for each of the three: the black one's are the slowest, because he is the largest. */
 const BEAT = [0.74, 0.65, 0.61];
+/** How quickly each answers a turn with its bank: each in its own time, so that the three do not tilt as one. */
+const ANSWER = [6, 4.6, 7.4];
 
 /** A dragon held still, for looking at it: where, which way it heads, and how it is posed. */
 export interface Held {
@@ -84,7 +86,13 @@ export function buildDragons(k: Build): void {
   for (const d of dragons) k.group.add(d.mesh, d.shadow);
   k.group.add(fire.mesh, fire.pools, trails.mesh);
 
-  const show = new Show(SHOW);
+  // near anything built they hold their slots closely: each strays no further than it could and still keep clear,
+  // measured as the check of their clearance measures it, and with a little more for how a drift tips its wings
+  const TIP = 1.3;
+  const show = new Show(SHOW, (who, p, v, a) => {
+    const reach = reachOf(who, p, v, a);
+    return reach.length > 0 ? Math.min(...reach.map((q) => nearest(q).d)) - CLEAR - TIP : 0;
+  });
   const held: (Held | null)[] = [null, null, null];
   const state = dragons.map((_, i): State => ({
     pose: { pos: new THREE.Vector3(), quat: new THREE.Quaternion(), speed: 30, time: 0, neckYaw: 0, neckPitch: 0, arch: 0, right: blankWing(), left: blankWing(), jaw: 0, legs: 0, fin: 0, sit: 0, brace: 0, floor: 0 },
@@ -164,7 +172,9 @@ export function buildDragons(k: Build): void {
     }
     // the bank: into the turn, by how hard it turns at its speed, and never more than 78 degrees
     const want = flat > 0.1 ? THREE.MathUtils.clamp(Math.atan2(acc.dot(level), 13) * Math.min(1, flat * 1.6), -78 * RAD, 78 * RAD) : 0;
-    st.bank += (want - st.bank) * ease(dt, 6);
+    // each answers a turn at its own pace, and rocks a little on the air even where it flies straight
+    const rock = 0.035 * Math.sin(clock * (0.9 + 0.23 * i) + 2.1 * i);
+    st.bank += (want + rock - st.bank) * ease(dt, ANSWER[i]);
     const tilt = st.bank + cue.roll;
     up.crossVectors(st.right, fwd).normalize();
     right.copy(st.right).multiplyScalar(Math.cos(tilt)).addScaledVector(up, -Math.sin(tilt));
@@ -198,8 +208,10 @@ export function buildDragons(k: Build): void {
     const pitch = THREE.MathUtils.clamp(Math.asin(THREE.MathUtils.clamp(ahead.dot(up), -1, 1)) * 0.6, -0.3, 0.3);
     st.neckYaw += (yaw * (1 - p.sit) - st.neckYaw) * ease(dt, 5);
     st.neckPitch += (pitch * (1 - p.sit) - st.neckPitch) * ease(dt, 5);
-    p.neckYaw = st.neckYaw + p.sit * 0.5 * Math.sin(time * 0.5 + i);
-    p.neckPitch = st.neckPitch;
+    // and now and then it looks about, each on its own, but not while its throat glows to breathe fire
+    const about = (1 - p.sit) * (1 - cue.charge);
+    p.neckYaw = st.neckYaw + p.sit * 0.5 * Math.sin(time * 0.5 + i) + about * (0.13 * Math.sin(clock * (0.61 + 0.11 * i) + 1.9 * i) + 0.05 * Math.sin(clock * 1.37 + 0.7 * i));
+    p.neckPitch = st.neckPitch + about * 0.06 * Math.sin(clock * (0.43 + 0.09 * i) + 2.6 * i);
     p.fin = st.bank / 4;
 
     // Its wings: shaped by its speed, with a little lag, and beaten as a great bird beats them. It beats when

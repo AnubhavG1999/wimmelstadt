@@ -12,9 +12,11 @@
 //
 // The jet is the tile's own shape and no one real type: a fighter in two
 // greys, with a long dark nose, a low canopy, swept wings, two engines and two
-// fins that lean outwards. All three are one mesh, which is moved as one body,
-// so that in a turn the outer wingman rides high and the inner one low, as a
-// formation does.
+// fins that lean outwards. Each of the three flies on his own: the wingmen
+// follow the leader's line, each holds his place loosely and on a rhythm of his
+// own, and each leans into a turn at his own pace, so that they read as three
+// pilots and not one shape. In a turn the outer wingman rides high and the
+// inner one low, as a formation does.
 
 import * as THREE from 'three';
 import { GeoBuilder, interior, type QuadOpts, type V3 } from '../../engine/geo';
@@ -171,21 +173,38 @@ function jet(b: GeoBuilder): void {
   }
 }
 
-/** Where each of the three flies, from the leader's middle: [back, to the right]. */
+/** Where each of the three flies, from the leader's middle: [back, to the right], before the jets are drawn larger. */
 const VIC: [number, number][] = [[0, 0], [-5.9, -4.7], [-5.9, 4.7]];
 /** The colour each trails, in the order of `VIC`: the leader, the left wingman, the right. */
 const SMOKE = [WHITE, SAFFRON, GREEN];
+/**
+ * How far each strays from his place at most, in units: [back, out, up].
+ * Three pilots in a vic do not hold their places as one body: each drifts back
+ * and closes up again, wider and in again, and up and down a little, slowly
+ * and on a rhythm of his own. The collector asked for this: three flying with
+ * each other, not three sharing one mind.
+ *
+ * Each strays only to where the vic is more open, never to where it is
+ * tighter: a wingman wider and further back than his place, the leader a
+ * little ahead of his and to either side. So being loose never brings two
+ * nearer each other than the vic itself does. Up and down they stray both
+ * ways, since all three hold the same height.
+ */
+const STRAY: V3[] = [[0.5, 0.3, 0.25], [2.0, 1.2, 0.5], [1.8, 1.25, 0.55]];
+/** How quickly each answers a turn with his lean, and where in the strobe's beat his own lamp flashes. */
+const ANSWER = [3, 2.5, 3.6], BLINK = [0, 0.43, 0.87];
 
-function formation(): THREE.BufferGeometry {
+/** One jet. */
+function one(): THREE.BufferGeometry {
   const b = new GeoBuilder();
-  for (const [x, z] of VIC) b.moved(x, 0, z, 0, () => jet(b));
+  jet(b);
   return b.build();
 }
 
-/** The white lamps that flash under the three, as one shape. */
-function strobes(): THREE.BufferGeometry {
+/** The white lamp that flashes under a jet. */
+function strobe(): THREE.BufferGeometry {
   const b = new GeoBuilder();
-  for (const [x, z] of VIC) b.box(x - 0.7, -0.78, z - 0.13, x - 0.44, -0.6, z + 0.13, 0xffffff, { faces: 'NESWTB' });
+  b.box(-0.7, -0.78, -0.13, -0.44, -0.6, 0.13, 0xffffff, { faces: 'NESWTB' });
   return b.build();
 }
 
@@ -289,17 +308,23 @@ const SCALE = 1.3;
 
 /** The three jets, their lamps and their smoke, flying their round over the tile. */
 export function flypast(k: Build): void {
-  const craft = new THREE.Group();
-  craft.name = 'flypast';
-  craft.matrixAutoUpdate = false;
-  const jets = new THREE.Mesh(formation(), k.mat.city());
-  jets.frustumCulled = false;
-  craft.add(jets);
-  const flash = new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false });
-  const lamps = new THREE.Mesh(strobes(), flash);
-  lamps.frustumCulled = false;
-  craft.add(lamps);
-  k.group.add(craft);
+  // Each jet is a group of his own. The leader's is named `flypast`, and its place is where the flight is.
+  const shape = one(), lampShape = strobe(), paint = k.mat.city();
+  const flashes: THREE.MeshBasicMaterial[] = [];
+  const planes = VIC.map((_, i) => {
+    const plane = new THREE.Group();
+    plane.name = i === 0 ? 'flypast' : i === 1 ? 'flypast left' : 'flypast right';
+    plane.matrixAutoUpdate = false;
+    const body = new THREE.Mesh(shape, paint);
+    body.frustumCulled = false;
+    const flash = new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false });
+    flashes.push(flash);
+    const lamp = new THREE.Mesh(lampShape, flash);
+    lamp.frustumCulled = false;
+    plane.add(body, lamp);
+    k.group.add(plane);
+    return plane;
+  });
 
   const trails = new Trails(k.mat.prop({ vertexColors: false, color: 0xffffff }), 440);
   k.group.add(trails.mesh);
@@ -309,47 +334,64 @@ export function flypast(k: Build): void {
   const total = curve.getLength();
 
   // They begin in the turn over the Ridge, on a round with smoke, so that whoever opens the tile sees the pass soon.
-  let dist = total * 0.93, lap = -1, yaw = 0, lean = 0, clock = 0, first = true, smoking = false;
+  let dist = total * 0.93, lap = -1, clock = 0, first = true, smoking = false;
+  const yaw = VIC.map(() => 0), lean = VIC.map(() => 0);
   const pos = new THREE.Vector3(), dir = new THREE.Vector3();
   const fwd = new THREE.Vector3(), up = new THREE.Vector3(), right = new THREE.Vector3(), side = new THREE.Vector3();
   const UP = new THREE.Vector3(0, 1, 0), grow = new THREE.Vector3(SCALE, SCALE, SCALE);
   const tails = VIC.map(() => new THREE.Vector3()), was = VIC.map(() => new THREE.Vector3()), owed = VIC.map(() => 0), at = new THREE.Vector3();
+  /** Where the leader is and which way he points: the smoke goes by him. */
+  const lead = new THREE.Vector3(), leadFwd = new THREE.Vector3();
+  const wave = (period: number, phase: number): number => Math.sin((Math.PI * 2 * clock) / period + phase);
 
   k.each((dt, _time, night) => {
     clock += dt;
     dist += SPEED * dt;
     while (dist >= total) { dist -= total; lap++; }
-    const u = dist / total;
-    curve.getPointAt(u, pos);
-    curve.getTangentAt(u, dir);
-    const next = Math.atan2(dir.z, dir.x);
-    let d = (next - yaw) % (Math.PI * 2);
-    if (d > Math.PI) d -= Math.PI * 2;
-    if (d < -Math.PI) d += Math.PI * 2;
-    // They lean into a turn together, the more the faster they are turning. A frame in which no time passes leaves the
-    // lean as it was, and a jump in time levels them.
+    // A frame in which no time passes leaves each lean as it was, and a jump in time levels them.
     const steady = !first && dt > 0 && dt < 0.25;
-    if (steady) lean += (THREE.MathUtils.clamp((d / dt) * 1.25, -1.05, 1.05) - lean) * (1 - Math.exp(-dt * 3));
-    else if (first || dt >= 0.25) lean = 0;
-    yaw = next;
+    VIC.forEach(([x, z], i) => {
+      // each follows the leader's line, as far behind him as his place is, and strays from his place a little, only ever
+      // to where the vic is more open: the leader ahead and to either side, a wingman back and outwards
+      const [b, r, u] = STRAY[i];
+      const fall = (1 + 0.6 * wave(8.3 + 1.9 * i, 1.1 * i) + 0.4 * wave(3.9 + 0.7 * i, 2 + i)) / 2;
+      const wide = 0.6 * wave(6.7 + 1.3 * i, 0.6 + i) + 0.4 * wave(2.9 + 0.5 * i, 1.7 * i);
+      const back = -x * SCALE + b * (i === 0 ? -fall : fall);
+      const aside = z * SCALE + r * (i === 0 ? wide : Math.sign(z) * (1 + wide) / 2);
+      const rise = u * (0.6 * wave(7.3 - 0.9 * i, 2.3 * i) + 0.4 * wave(3.3 + 0.4 * i, 0.9 + i));
+      const s = (((dist - back) % total) + total) % total;
+      curve.getPointAt(s / total, pos);
+      curve.getTangentAt(s / total, dir);
+      const next = Math.atan2(dir.z, dir.x);
+      let d = (next - yaw[i]) % (Math.PI * 2);
+      if (d > Math.PI) d -= Math.PI * 2;
+      if (d < -Math.PI) d += Math.PI * 2;
+      // each leans into a turn by how fast he is turning, at his own pace, and rocks a little on the air
+      const rock = 0.025 * Math.sin(clock * (1.1 + 0.3 * i) + 1.7 * i);
+      if (steady) lean[i] += (THREE.MathUtils.clamp((d / dt) * 1.25, -1.05, 1.05) + rock - lean[i]) * (1 - Math.exp(-dt * ANSWER[i]));
+      else if (first || dt >= 0.25) lean[i] = 0;
+      yaw[i] = next;
 
-    fwd.copy(dir).normalize();
-    side.crossVectors(fwd, UP).normalize();
-    up.crossVectors(side, fwd).normalize();
-    right.copy(side).multiplyScalar(Math.cos(lean)).addScaledVector(up, -Math.sin(lean));
-    up.multiplyScalar(Math.cos(lean)).addScaledVector(side, Math.sin(lean));
-    craft.matrix.makeBasis(fwd, up, right).scale(grow).setPosition(pos);
-    craft.matrixWorldNeedsUpdate = true;
-
-    // the lamps under them flash together, and show most at night
-    flash.color.setScalar((clock % 1.3 < 0.1 ? 1 : 0.06) * (0.9 + 3.2 * night));
+      fwd.copy(dir).normalize();
+      side.crossVectors(fwd, UP).normalize();
+      up.crossVectors(side, fwd).normalize();
+      right.copy(side).multiplyScalar(Math.cos(lean[i])).addScaledVector(up, -Math.sin(lean[i]));
+      up.multiplyScalar(Math.cos(lean[i])).addScaledVector(side, Math.sin(lean[i]));
+      // his place beside the line is across his own wings, so in a turn the outer wingman rides high and the inner one low
+      pos.addScaledVector(right, aside).addScaledVector(up, rise);
+      planes[i].matrix.makeBasis(fwd, up, right).scale(grow).setPosition(pos);
+      planes[i].matrixWorldNeedsUpdate = true;
+      if (i === 0) { lead.copy(pos); leadFwd.copy(fwd); }
+      // his lamp flashes on his own beat, and shows most at night
+      flashes[i].color.setScalar(((clock + BLINK[i]) % 1.3 < 0.1 ? 1 : 0.06) * (0.9 + 3.2 * night));
+    });
 
     // Smoke, by day, on every third round, while they are straight and level over the axis. Each jet leaves its puffs
     // where its pipe has been since the frame before.
     if (dt > 0) {
-      const on = steady && night < 0.55 && lap % SMOKE_ON.every === 0 && fwd.x > 0.97 && pos.x > SMOKE_ON.x0 && pos.x < SMOKE_ON.x1;
-      VIC.forEach(([x, z], i) => {
-        tails[i].set(x - 6.3, 0.05, z).applyMatrix4(craft.matrix);
+      const on = steady && night < 0.55 && lap % SMOKE_ON.every === 0 && leadFwd.x > 0.97 && lead.x > SMOKE_ON.x0 && lead.x < SMOKE_ON.x1;
+      VIC.forEach((_, i) => {
+        tails[i].set(-6.3, 0.05, 0).applyMatrix4(planes[i].matrix);
         if (on && smoking) {
           const gap = tails[i].distanceTo(was[i]);
           let along = STEP - owed[i];

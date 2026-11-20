@@ -4,7 +4,10 @@
 // It flies both kinds of circuit in tenths of a second, lays each dragon's
 // wing across its line of flight, swept by its speed and banked by its turn,
 // and measures from the wing, the nose and the tail to every lot in the plan.
-// It speaks in the console, on the development server only.
+// It speaks in the console, on the development server only. Where a dragon
+// reaches, and how far that is from the nearest thing built, is also what the
+// dragons go by as they fly: near what stands on the tile they hold their
+// slots closely.
 
 import * as THREE from 'three';
 import { DROGON, HALF_SPAN, RHAEGAL, VISERION, formAt } from './dragon';
@@ -43,42 +46,53 @@ export function nearest(p: THREE.Vector3): { d: number; id: string } {
   return { d, id };
 }
 
+const UP = new THREE.Vector3(0, 1, 0);
+const KINDS = [DROGON, RHAEGAL, VISERION];
+
+/**
+ * Where a dragon reaches at a place, going at `v` and turning at `a`: five places across its wing, laid across its
+ * line of flight, swept by its speed and banked by its turn, and its nose and the tip of its tail. Where it climbs
+ * straight up any way across may be its wing's, and two are tried. Nothing where it is all but still.
+ */
+export function reachOf(who: number, here: THREE.Vector3, v: THREE.Vector3, a: THREE.Vector3): THREE.Vector3[] {
+  const L = KINDS[who].length, speed = v.length();
+  if (speed < 0.5) return [];
+  const fwd = v.clone().normalize();
+  // level right, or any direction across it where it climbs straight up: both are tried there
+  const steep = Math.abs(fwd.y) > 0.92;
+  const rights = steep ? [new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 0, 1)] : [new THREE.Vector3().crossVectors(fwd, UP).normalize()];
+  const pts: THREE.Vector3[] = [];
+  for (const r of rights) {
+    const bank = steep ? 0 : Math.max(-1.36, Math.min(1.36, Math.atan2(a.dot(r), 13)));
+    const up = new THREE.Vector3().crossVectors(r, fwd).normalize();
+    // banked to its right, its right wing drops
+    const wing = r.clone().multiplyScalar(Math.cos(bank)).addScaledVector(up, -Math.sin(bank));
+    const half = formAt(speed).span * HALF_SPAN * L;
+    for (const s of [-1, -0.5, 0, 0.5, 1]) pts.push(here.clone().addScaledVector(wing, half * s));
+    pts.push(here.clone().addScaledVector(fwd, 0.34 * L), here.clone().addScaledVector(fwd, -0.66 * L));
+  }
+  return pts;
+}
+
 /** Flies the show against the plan, and says in the console how near the dragons come to what. */
 export function checkFlight(show: Show): { id: string; d: number; who: string; at: number[]; split: boolean }[] {
-  const kinds = [DROGON, RHAEGAL, VISERION];
   const worst = new Map<string, { id: string; d: number; who: string; at: number[]; split: boolean }>();
-  const v = new THREE.Vector3(), a = new THREE.Vector3(), right = new THREE.Vector3(), up = new THREE.Vector3(), wing = new THREE.Vector3(), p = new THREE.Vector3(), fwd = new THREE.Vector3();
-  const UP = new THREE.Vector3(0, 1, 0);
+  const v = new THREE.Vector3(), a = new THREE.Vector3();
   for (const split of [false, true]) {
-    const all = show.sampled(split, 0.1);
+    // four circuits of each, so that the dragons are seen strayed every way from their slots
+    const all = show.sampled(split, 0.1, 4);
     for (let who = 0; who < 3; who++) {
-      const line = all.filter((s) => s.who === who), L = kinds[who].length;
+      const line = all.filter((s) => s.who === who);
       for (let i = 2; i + 2 < line.length; i++) {
         const here = line[i].p;
         // where one comes down to land and sits, it is meant to be near what it lands on
         if (split && show.landing(who, line[i].t)) continue;
         v.subVectors(line[i + 1].p, line[i - 1].p).multiplyScalar(1 / 0.2);
         a.copy(line[i + 2].p).add(line[i - 2].p).addScaledVector(here, -2).multiplyScalar(1 / 0.04);
-        const speed = v.length();
-        if (speed < 0.5) continue;
-        fwd.copy(v).normalize();
-        // level right, or any direction across it where it climbs straight up: both are tried there
-        const steep = Math.abs(fwd.y) > 0.92;
-        const rights = steep ? [right.set(1, 0, 0).clone(), right.set(0, 0, 1).clone()] : [right.crossVectors(fwd, UP).normalize().clone()];
-        for (const r of rights) {
-          const bank = steep ? 0 : Math.max(-1.36, Math.min(1.36, Math.atan2(a.dot(r), 13)));
-          up.crossVectors(r, fwd).normalize();
-          // banked to its right, its right wing drops
-          wing.copy(r).multiplyScalar(Math.cos(bank)).addScaledVector(up, -Math.sin(bank));
-          const half = formAt(speed).span * HALF_SPAN * L;
-          const pts: THREE.Vector3[] = [];
-          for (const s of [-1, -0.5, 0, 0.5, 1]) pts.push(p.copy(here).addScaledVector(wing, half * s).clone());
-          pts.push(p.copy(here).addScaledVector(fwd, 0.34 * L).clone(), p.copy(here).addScaledVector(fwd, -0.66 * L).clone());
-          for (const q of pts) {
-            const n = nearest(q);
-            const had = worst.get(n.id);
-            if (!had || had.d > n.d) worst.set(n.id, { id: n.id, d: n.d, who: kinds[who].name, at: [Math.round(here.x), Math.round(here.y), Math.round(here.z)], split });
-          }
+        for (const q of reachOf(who, here, v, a)) {
+          const n = nearest(q);
+          const had = worst.get(n.id);
+          if (!had || had.d > n.d) worst.set(n.id, { id: n.id, d: n.d, who: KINDS[who].name, at: [Math.round(here.x), Math.round(here.y), Math.round(here.z)], split });
         }
       }
     }

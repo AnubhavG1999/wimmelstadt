@@ -220,6 +220,51 @@ function slotAt(keys: FormationKey[], who: number, s: number, lap: number): Slot
   return slot;
 }
 
+/**
+ * How far each strays from its slot at most, in units: [out from the leader's
+ * line, back, up]. Three that fly together do not hold their places as one
+ * body. Each drifts wider and in again, falls back and closes up again, and
+ * rises and sinks, slowly and on a rhythm of its own. The collector asked for
+ * this: three dragons flying with each other, not three sharing one mind.
+ *
+ * Each strays only to where the formation is more open, never to where it is
+ * tighter: the leader a little ahead of his line, the other two a little wider
+ * and further back than their slots, and Viserion, where he flies behind
+ * Rhaegal, falls back with him as well as on his own. Up and down they stray
+ * both ways, since all three hold the same height. Where the formation itself
+ * brings two close, as it does in a tight turn, and where the line passes near
+ * anything built, they hold their slots closely, as fliers do (see
+ * `Show.freedom`). So being loose never brings two nearer each other, or
+ * nearer to what stands on the tile, than the formation itself does.
+ */
+const STRAY: [number, number, number][] = [[0.5, 1.0, 0.5], [1.6, 2.6, 1.2], [1.5, 2.4, 1.3]];
+/**
+ * Where a dragon is in each of its three slow drifts at the show's time `time`, each from -1 to 1: out, back and up.
+ * The same at the same time, so that a picture can be taken again.
+ */
+function waves(who: number, time: number): [number, number, number] {
+  const wave = (period: number, phase: number): number => Math.sin((Math.PI * 2 * time) / period + phase);
+  return [
+    0.65 * wave(9.1 + 1.7 * who, 1.3 * who) + 0.35 * wave(3.7 + 0.6 * who, 2.1 + who),
+    0.6 * wave(12.7 - 1.3 * who, 0.7 + who) + 0.4 * wave(5.3 + 0.9 * who, 1.9 * who),
+    0.6 * wave(7.9 + 1.1 * who, 2.6 * who) + 0.4 * wave(4.1 - 0.4 * who, 0.4 + who),
+  ];
+}
+/**
+ * The furthest each can stray from its slot, as the drifts add up and with a
+ * half again for how a turn spreads a place that is held to one side of the
+ * line: Viserion's is the most, since he falls back with Rhaegal as well.
+ */
+const MOST = STRAY.map(([r, b, u], who) => 1.5 * Math.hypot(r, b + (who === 2 ? STRAY[1][1] : 0), u));
+/** How finely the freedom to stray is worked out along the circuit, in seconds; and for how long before and after a tight place each holds its slot closely, and how long it takes to ease between. */
+const FREE = { step: 0.1, hold: 1.0, ease: 1.0 };
+
+/** How far a dragon has fallen back from its slot by its own drift at a time. The leader only goes ahead of his line, so his is 0 or below. */
+function fallOf(who: number, time: number): number {
+  const open = (1 + waves(who, time)[1]) / 2;
+  return (who === 0 ? -open : open) * STRAY[who][1];
+}
+
 // ---------------------------------------------------------------------------
 // The show
 // ---------------------------------------------------------------------------
@@ -282,14 +327,24 @@ export class Show {
   private perch: { who: number; t0: number; t1: number } | null = null;
   private seed = 20261119;
   private readonly plan: ShowPlan;
+  /**
+   * How far a dragon could move from a place, going at `v` and turning at `a`, and still keep clear of everything
+   * built on the tile, which the tile gives: near what stands there the dragons hold their slots closely, and never
+   * stray further than that.
+   */
+  private readonly room: (who: number, p: THREE.Vector3, v: THREE.Vector3, a: THREE.Vector3) => number;
+  /** How freely each may stray from its slot along the leader's circuit, `FREE.step` apart: see `freedom`. */
+  private readonly freeAlong: Float32Array[];
 
-  constructor(plan: ShowPlan) {
+  constructor(plan: ShowPlan, room: (who: number, p: THREE.Vector3, v: THREE.Vector3, a: THREE.Vector3) => number = () => Infinity) {
     this.plan = plan;
+    this.room = room;
     this.main = new Track(plan.circuit, true);
     const m = this.main;
     this.keys = plan.keys.map((k) => ({ s: m.wayS[k.at], form: k.form, over: k.over })).sort((a, b) => a.s - b.s);
     this.tTop = m.tAt(m.wayS[plan.top]);
     this.tRejoin = m.tAt(m.wayS[plan.rejoin]);
+    this.freeAlong = this.workOutFreedom();
 
     // --- what each does alone: from where it is at the top, to its slot where they meet again ---
     const a = new THREE.Vector3(), b = new THREE.Vector3();
@@ -328,8 +383,8 @@ export class Show {
     for (let who = 0; who < 3; who++) {
       // the low pass: one short burst each, a third of a second apart, the leader first
       this.display.push({ who, kind: 'fire', t0: tPass + 0.34 * who, t1: tPass + 0.34 * who + 0.42 });
-      // the pull-up: all three beat together, three times
-      this.display.push({ who, kind: 'beats', t0: tPull, t1: tPull + 2.4, n: 3 });
+      // the pull-up: three beats each, one a moment after another, as three animals beat and not one
+      this.display.push({ who, kind: 'beats', t0: tPull + 0.17 * who, t1: tPull + 0.17 * who + 2.4, n: 3 });
       // the climb: one long lance of flame straight up
       this.display.push({ who, kind: 'fire', t0: tLance + 0.06 * who, t1: tLance + 2.0 });
     }
@@ -376,24 +431,101 @@ export class Show {
 
   private readonly q = new THREE.Vector3();
   private readonly rt = new THREE.Vector3();
+  private readonly free: [number, number, number] = [1, 1, 1];
 
-  /** Where a dragon is at a time on the leader's circuit, holding its slot beside it. */
-  private inFormation(who: number, t: number, out: THREE.Vector3): THREE.Vector3 {
+  /**
+   * How freely each may stray from its slot along the leader's circuit, from 0 to 1, worked out once. Where the
+   * formation itself brings two within 10 of each other, as a tight turn does, they hold their slots more closely,
+   * and within 7 exactly; and where its slot passes near anything built, a dragon strays no further than it could
+   * and still keep clear of it. Each begins to hold its slot closely `FREE.hold` seconds before such a place and
+   * keeps to it as long after, easing in and out over `FREE.ease`, so that it never changes in a snap. In open
+   * air they are loose.
+   */
+  private workOutFreedom(): Float32Array[] {
+    // the circuit in steps of a tenth of a second or a little less, so that it comes round exactly
+    const D = this.main.duration, n = Math.ceil(D / FREE.step), step = D / n, at = (i: number): number => ((i % n) + n) % n;
+    const P = [0, 1, 2].map((k) => Array.from({ length: n }, (_, i) => this.inFormation(k, i * step, new THREE.Vector3())));
+    const raw = [0, 1, 2].map(() => new Float32Array(n));
+    const clamp = (x: number): number => Math.min(1, Math.max(0, x));
+    const v = new THREE.Vector3(), a = new THREE.Vector3();
+    for (let i = 0; i < n; i++) {
+      const d01 = P[0][i].distanceTo(P[1][i]), d02 = P[0][i].distanceTo(P[2][i]), d12 = P[1][i].distanceTo(P[2][i]);
+      const near = [Math.min(d01, d02), Math.min(d01, d12), Math.min(d02, d12)];
+      for (let k = 0; k < 3; k++) {
+        // how fast it goes and how it turns there, as the check of its clearance works them out
+        const p = P[k];
+        v.subVectors(p[at(i + 1)], p[at(i - 1)]).multiplyScalar(1 / (2 * step));
+        a.copy(p[at(i + 2)]).add(p[at(i - 2)]).addScaledVector(p[i], -2).multiplyScalar(1 / (4 * step * step));
+        raw[k][i] = Math.min(clamp((near[k] - 7) / 3), clamp(this.room(k, p[i], v, a) / MOST[k]));
+      }
+    }
+    // the least within a while either side, then eased: never more than it was anywhere near
+    const w = Math.round(FREE.hold / FREE.step), e = Math.round(FREE.ease / FREE.step);
+    return raw.map((r) => {
+      const low = new Float32Array(n), out = new Float32Array(n);
+      for (let i = 0; i < n; i++) {
+        let v = 1;
+        for (let j = -w; j <= w; j++) v = Math.min(v, r[(((i + j) % n) + n) % n]);
+        low[i] = v;
+      }
+      for (let i = 0; i < n; i++) {
+        let v = 0;
+        for (let j = -e; j <= e; j++) v += low[(((i + j) % n) + n) % n];
+        out[i] = v / (2 * e + 1);
+      }
+      return out;
+    });
+  }
+
+  /** How freely each may stray from its slot `t` into the leader's circuit, from 0 to 1. */
+  private freedom(t: number): [number, number, number] {
+    const n = this.freeAlong[0].length, x = ((((t * n) / this.main.duration) % n) + n) % n, i = Math.floor(x), f = x - i, j = (i + 1) % n;
+    for (let k = 0; k < 3; k++) this.free[k] = this.freeAlong[k][i] + (this.freeAlong[k][j] - this.freeAlong[k][i]) * f;
+    return this.free;
+  }
+
+  /**
+   * Where a dragon is at a time on the leader's circuit, holding its slot beside it. With `stray` above 0 it holds
+   * the slot loosely, as `STRAY` says, at the show's time `time`: in full at 1.
+   */
+  private inFormation(who: number, t: number, out: THREE.Vector3, time = 0, stray = 0): THREE.Vector3 {
     const m = this.main, s = m.sAt(t);
-    const [right, back, up] = slotAt(this.keys, who, s, m.length);
+    let [right, back, up] = slotAt(this.keys, who, s, m.length);
+    if (stray > 0) {
+      const free = this.freedom(t), own = stray * free[who];
+      const [wide, , rise] = waves(who, time), [r, , u] = STRAY[who];
+      // out from the line: the leader either way, the others only outwards, and less as they come near to crossing it
+      const outward = who === 0 ? wide : ((1 + wide) / 2) * Math.max(-1, Math.min(1, right / 3));
+      let fall = own * fallOf(who, time);
+      // Viserion falls back with Rhaegal too, by as much as Rhaegal does and as he flies behind him
+      if (who === 2) fall += stray * free[1] * fallOf(1, time) * smooth((back - slotAt(this.keys, 1, s, m.length)[1]) / 6);
+      right += own * r * outward;
+      back += fall;
+      up += own * u * rise;
+    }
     m.point(s - back, out);
     if (right !== 0) out.addScaledVector(m.rightAt(s - back, this.rt), right);
     out.y += up;
     return out;
   }
 
+  /**
+   * Where a dragon is `t` into a circuit, a split or not, at the show's time `time`. In formation it holds its
+   * slot loosely. It holds it exactly where the three part at the top of a split and where they meet again, so
+   * that its own way starts and ends where it is.
+   */
+  private place(who: number, t: number, split: boolean, time: number, out: THREE.Vector3): THREE.Vector3 {
+    if (!split) return this.inFormation(who, t, out, time, 1);
+    if (t <= this.tTop) return this.inFormation(who, t, out, time, smooth((this.tTop - t) / 2.5));
+    const solo = this.solos[who], after = t - this.tTop;
+    if (after >= solo.duration) return this.inFormation(who, this.tRejoin + (after - solo.duration), out, time, smooth((after - solo.duration) / 2.5));
+    return solo.point(solo.sAt(after), out);
+  }
+
   /** Where a dragon is at a time. */
   pos(who: number, time: number, out: THREE.Vector3): THREE.Vector3 {
-    const c = this.cycleAt(Math.max(0, time)), t = Math.max(0, time) - c.start;
-    if (!c.split || t <= this.tTop) return this.inFormation(who, t, out);
-    const solo = this.solos[who], after = t - this.tTop;
-    if (after >= solo.duration) return this.inFormation(who, this.tRejoin + (after - solo.duration), out);
-    return solo.point(solo.sAt(after), out);
+    const T = Math.max(0, time), c = this.cycleAt(T);
+    return this.place(who, T - c.start, c.split, T, out);
   }
 
   /** What a dragon is told to do at a time. */
@@ -453,16 +585,15 @@ export class Show {
   }
 
   /** For checking: every place a dragon is at, a tenth of a second apart, through one circuit of each kind. */
-  sampled(split: boolean, step = 0.1): { who: number; t: number; p: THREE.Vector3 }[] {
+  sampled(split: boolean, step = 0.1, laps = 1): { who: number; t: number; p: THREE.Vector3 }[] {
     const out: { who: number; t: number; p: THREE.Vector3 }[] = [];
     const duration = split ? this.tTop + this.apart + (this.main.duration - this.tRejoin) : this.main.duration;
-    const local = (who: number, t: number, into: THREE.Vector3): THREE.Vector3 => {
-      if (!split || t <= this.tTop) return this.inFormation(who, t, into);
-      const solo = this.solos[who], after = t - this.tTop;
-      if (after >= solo.duration) return this.inFormation(who, this.tRejoin + (after - solo.duration), into);
-      return solo.point(solo.sAt(after), into);
-    };
-    for (let who = 0; who < 3; who++) for (let t = 0; t < duration; t += step) out.push({ who, t, p: local(who, t, new THREE.Vector3()) });
+    // several circuits one after another, so that each dragon is seen strayed every way from its slot
+    for (let who = 0; who < 3; who++) {
+      for (let lap = 0; lap < laps; lap++) {
+        for (let t = 0; t < duration; t += step) out.push({ who, t, p: this.place(who, t, split, lap * duration + t, new THREE.Vector3()) });
+      }
+    }
     return out;
   }
 
