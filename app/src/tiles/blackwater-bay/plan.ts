@@ -432,10 +432,12 @@ export const LENGTH: Record<string, number> = {
  * (`VHAGAR_ROCK`), her tail over its edge into the water. Dreamfyre lies in
  * the bronze doors, with her tail in the dark of the pit. Caraxes lies on the
  * flat top of the Red Keep's great tower, his tail laid west over Maegor's
- * Holdfast, and Meleys along High Tide's roofs, facing the river's mouth. On
- * the Dragonmont each of the other five lies at the mouth of a lair: a level
- * shelf at its height, and behind it a cave, dark inside, that its body and
- * tail go into (`LAIR`); the caves may meet inside the mountain. These are
+ * Holdfast, and Meleys along High Tide's roofs, facing the river's mouth.
+ * Meraxes crowns the Dragonmont's summit as Balerion crowns the dome, lying on
+ * the mountain as it is, with nothing cut. Each of the other four lies at the
+ * mouth of a lair: a level shelf at its height, and behind it a cave, dark
+ * inside, that its body and tail go into (`LAIR`); the caves may meet inside
+ * the mountain. These are
  * the dragons' show's numbers (`dragons.ts`), checked there against
  * everything built and dragon against dragon.
  */
@@ -445,8 +447,8 @@ export const HOMES: Record<string, Home> = {
   dreamfyre: { x: R.c[0], z: R.c[1] + R.drum + 1.5, y: R.y, facing: 90, where: 'in the bronze doors, her tail in the dark of the pit' },
   caraxes: { x: -22.5, z: 48.5, y: 30, facing: 0, where: "the flat top of the Red Keep's great tower, his tail laid west over Maegor's Holdfast" },
   meleys: { x: 30, z: 80, y: 16, facing: 180, where: "High Tide's roofs, facing the river's mouth" },
-  // the lairs on the Dragonmont: a high ledge under the summit, and four round the mountain at 20
-  meraxes: lair(90, 42, 80, 'a high ledge under the summit, on the south face'),
+  // on the Dragonmont: Meraxes on the summit as it is (where lair(90, 42, 80) puts her: the slope there is 41.9), and four lairs round the mountain at 20
+  meraxes: { x: 64, z: -40.6, y: 42, facing: 80, where: "a perch on the Dragonmont's summit, crowning it" },
   vermithor: lair(15, 20, 85, 'his smoking cavern on the south-east face'),
   silverwing: lair(85, 20, 70, 'her cavern beside his, on the south face'),
   sheepstealer: lair(180, 20, 190, 'his cave on the west face over the bay, a sheep penned on the slope below it'),
@@ -512,7 +514,7 @@ export function lairAt(x: number, z: number): { id: string; home: Home; part: 's
   return null;
 }
 /** The dragons whose homes are lairs on the Dragonmont. */
-export const LAIR_IDS: Record<string, true> = { sheepstealer: true, vermithor: true, silverwing: true, cannibal: true, meraxes: true };
+export const LAIR_IDS: Record<string, true> = { sheepstealer: true, vermithor: true, silverwing: true, cannibal: true };
 
 /** How far a place is from the middle of the road at the Dragonmont's foot, and from its ring at the camp of the Sowing. */
 function fromFootRoad(x: number, z: number): number {
