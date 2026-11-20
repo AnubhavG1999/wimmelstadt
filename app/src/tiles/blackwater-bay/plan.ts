@@ -597,7 +597,7 @@ export const FLEET: { x: number; z: number; heading: number; len: number }[] = [
  */
 export const MEADOW: P2[] = [[-50, 88], [-12, 88.5], [-9, 93], [-14, 99.5], [-50, 98]];
 export const FLOCK: P2[] = [
-  [-21, 90.5], [-44, 91], [-41, 93.5], [-37, 97], [-27, 97.5], [-24, 95.5], [-29, 91.5], [-46, 95.5], [-33, 92], [-19, 97], [-42, 97.5], [-16, 93],
+  [-21, 90.5], [-44, 91], [-41, 93.5], [-37, 97], [-27, 97.5], [-24, 95.5], [-29, 91.5], [-46, 95.5], [-33, 92], [-19, 97], [-47, 92.5], [-16, 93],
 ];
 
 /**
@@ -637,6 +637,6 @@ export const SIGHT: { id: string; x: number; y: number; z: number }[] = [
   { id: 'Spicetown', x: 58, y: 2, z: 62 },
   { id: 'High Tide', x: 34, y: 8, z: 89.5 },
   { id: 'the road along the Gullet', x: 40, y: 1.6, z: 58 },
-  { id: 'Stonedance', x: 28, y: 4, z: 100.5 },
+  { id: 'Stonedance', x: 20, y: 4, z: 100.5 },
   { id: 'the sheepfold', x: -35, y: 1, z: 96 },
 ];
