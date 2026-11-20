@@ -8,17 +8,18 @@
 // stream from the mastheads and the house's banner from the stern, and on the
 // great ships' castles hangs the silver seahorse on sea green. At King's
 // Landing's quays on the Rush a galley of the king's and two cogs lie
-// alongside with their gangplanks out; two cogs are moored in Duskendale's
-// harbour, one outside the other; a cog from the Free Cities lies off Spicetown
-// with her bright sail loosed to dry; and fishing boats work the bay, three of
-// them with their nets out.
+// alongside with their gangplanks out; in Duskendale's harbour two cogs are
+// moored, one outside the other, and a third lies at anchor east of them with
+// her sail loosed to dry and a man aloft; a cog from the Free Cities lies off
+// Spicetown with her bright sail loosed too; and fishing boats work the bay,
+// three of them with their nets out. No merchant ship sails the open bay: the
+// dragons fly low over it.
 //
 // Under way, each a mesh of its own: the ferry over the Rush, poled from the
 // water stairs at the foot of the Street of the Sisters to the end of the south
-// landing's stage and back; a Velaryon galley on patrol, rowing her round east
-// of Driftmark from under Dragonstone down to the fleet's line in the Gullet;
-// and a merchant cog under sail, going round the open bay north of Vhagar's
-// rock, clear of the dragon lying on it.
+// landing's stage and back; and a Velaryon galley on patrol, rowing her round
+// east of Driftmark from under Dragonstone down to the fleet's line in the
+// Gullet.
 //
 // From the books, as the research note gives them: the Gullet, the strait
 // between Driftmark and Massey's Hook, which the Velaryon fleet closed; the
@@ -281,19 +282,6 @@ function seahorseCloth(g: GeoBuilder, u: number, v: number, nu: number, nv: numb
   g.beam(at(-0.08, 1, 0.09), at(1.08, 1, 0.09), 0.035, 0.035, 0xb4b8be);
 }
 
-/** A sail set and drawing: strips from the yard to its foot, bellied forward, each strip a colour of `cloth`. */
-function setSail(g: GeoBuilder, u: number, top: number, foot: number, half: number, cloth: number[]): void {
-  const n = cloth.length, belly = [0.12, 0.62, 0.86, 0.78, 0.42];
-  const row = (i: number): { y: number; du: number; w: number } => {
-    const t = i / n;
-    return { y: top - (top - foot) * t, du: belly[Math.round(t * 4)] ?? 0.4, w: half * (1 - 0.06 * t) };
-  };
-  for (let i = 0; i < n; i++) {
-    const a = row(i), b = row(i + 1);
-    both4(g, [u + a.du, a.y, -a.w], [u + a.du, a.y, a.w], [u + b.du, b.y, b.w], [u + b.du, b.y, -b.w], cloth[i], [1, 0, 0]);
-  }
-}
-
 // ---------------------------------------------------------------------------
 // War galleys
 // ---------------------------------------------------------------------------
@@ -530,6 +518,7 @@ interface CogPaint { hull: number; band: number; cap: number; castle: number; tr
 const COG_OAK: CogPaint = { hull: OAK, band: 0x5a4128, cap: 0x5a4430, castle: 0x8a6a48, trim: 0x6b5136, pennant: 0xb84a3a };
 const COG_TARRED: CogPaint = { hull: 0x5a4636, band: 0x9a3a2e, cap: 0x4a3828, castle: 0x7a5c40, trim: 0x9a3a2e, pennant: 0xd6a12e };
 const COG_EAST: CogPaint = { hull: 0x5e3f55, band: SAFFRON, cap: 0x3f2a3a, castle: 0x6a4560, trim: SAFFRON, pennant: CRIMSON };
+const COG_BLUE: CogPaint = { hull: 0x6e5a44, band: 0x3f6ea8, cap: 0x4a3c30, castle: 0x857058, trim: 0x3f6ea8, pennant: 0x3f6ea8 };
 
 /** A cog's hull: short, round and high-sided, with a straight stern and a raked stem. */
 function cogHull(L: number, W: number, c: CogPaint): Hull {
@@ -567,7 +556,7 @@ function cogBody(g: GeoBuilder, L: number, W: number, c: CogPaint): Rig & { ligh
   // the rudder, hung on the sternpost
   g.box(stern.u - 0.36, -0.5, -0.06, stern.u - 0.02, stern.g - 0.2, 0.06, c.hull, { faces: 'NESWT' });
   // the mast, the yard, the bowsprit and the stays
-  const mastU = 0.06 * h, top = Math.min(0.92 * L, 10.5), yardY = 0.82 * L, half = 0.25 * L;
+  const mastU = 0.06 * h, top = Math.min(L, 10.5), yardY = 0.82 * L, half = 0.25 * L;
   mast(g, mastU, deckAt(H, mastU).y - 0.05, top, 0.15);
   yardOn(g, mastU, yardY, half);
   const sprit: V3 = [h + 0.1, bow.g + 0.6, 0];
@@ -580,12 +569,13 @@ function cogBody(g: GeoBuilder, L: number, W: number, c: CogPaint): Rig & { ligh
 }
 
 /**
- * A cog moored at a quay, her starboard side to it: her body; her sail
- * furled, or loosed to dry and hanging from the yard in stripes of `loose`;
- * her pennant; cargo on deck; and her crew. `ties` says where her mooring
- * lines go ashore.
+ * A cog moored at a quay, her starboard side to it, or lying at anchor: her
+ * body; her sail furled, or loosed to dry and hanging from the yard in stripes
+ * of `loose`; her pennant; cargo on deck; and her crew, with a man aloft in
+ * her shrouds if `aloft` says so. `ties` says where her mooring lines go
+ * ashore, and `anchor` sends her cable down into the water ahead of her.
  */
-function cogMoored(k: Build, f: Frame, L: number, W: number, c: CogPaint, o: { loose?: number[]; cargo?: number[]; crew?: number; ties?: [V3, number, number][] } = {}): void {
+function cogMoored(k: Build, f: Frame, L: number, W: number, c: CogPaint, o: { loose?: number[]; cargo?: number[]; crew?: number; ties?: [V3, number, number][]; anchor?: boolean; aloft?: boolean } = {}): void {
   const h = L / 2;
   let rig: (Rig & { light: V3; cTop: number }) | null = null;
   k.b.moved(f.x, WL, f.z, f.yaw, () => {
@@ -613,6 +603,10 @@ function cogMoored(k: Build, f: Frame, L: number, W: number, c: CogPaint, o: { l
     // her crew: one on the castle, others on deck
     const crew: V3[] = [[-0.76 * h, -0.25, r.cTop], [0.6 * h, -0.4, deckAt(H, 0.6 * h).y], [0.36 * h, 0.62, deckAt(H, 0.36 * h).y]];
     crew.slice(0, o.crew ?? 2).forEach(([u, v, y], i) => sailor(g, u, v, y, Math.abs(Math.round(f.x * 3)) + i));
+    // a man aloft, astride her yard on its starboard arm, just aft of where her sail hangs
+    if (o.aloft) sailor(g, r.mastU - 0.1, r.half * 0.55, r.yardY - 0.4, 2);
+    // her cable, out ahead of her and down into the water
+    if (o.anchor) g.beam([0.86 * h, H.st[H.st.length - 1].g - 0.3, 0.18], [h + 2.6, -1.3, 0.45], 0.04, 0.035, ROPE);
   });
   if (!rig) return;
   const R = rig as Rig & { light: V3; cTop: number }, H = R.H;
@@ -770,8 +764,10 @@ function gangplank(k: Build, f: Frame, H: Hull, u: number, bank: number): void {
 
 /**
  * Duskendale's harbour: two cogs moored south of the town's quay, one
- * alongside it and one made fast outside her, all in the water. The town and
- * its quay are the north shore's.
+ * alongside it and one made fast outside her; and a third lying at anchor just
+ * east of them, where the dragons never come low, her sail loosed to dry and a
+ * man aloft on her yard. All are in the water; the town and its quay are the
+ * north shore's.
  */
 function duskendale(k: Build): void {
   const l = lotOf('duskendale'), x = (l.x0 + l.x1) / 2, shore = SHORE.north;
@@ -785,6 +781,9 @@ function duskendale(k: Build): void {
     const pa = station(ha, (s * bL) / 2), pb = station(hb, (s * bL) / 2);
     k.b.beam(onBoard(fa, [(s * bL) / 2 + 0.6, pa.g, pa.w - 0.05]), onBoard(fb, [(s * bL) / 2, pb.g, -(pb.w - 0.05)]), 0.03, 0.03, ROPE);
   }
+  // the third, at anchor 1 east of their sterns' line, her bow and her cable out to the open water
+  const cL = 9.5, cW = 1.52, fc = frame(Math.max(fa.x + aL / 2, fb.x + bL / 2) + 1.0 + cL / 2, fa.z, 0);
+  cogMoored(k, fc, cL, cW, COG_BLUE, { loose: [CANVAS, CANVAS, COG_BLUE.band, CANVAS, CANVAS], cargo: [-1, 0x9a7a52, -1], crew: 2, anchor: true, aloft: true });
 }
 
 /**
@@ -1101,39 +1100,6 @@ function patrol(k: Build): void {
 }
 
 // ---------------------------------------------------------------------------
-// The merchant cog under sail
-// ---------------------------------------------------------------------------
-
-/**
- * Her round in the open bay north of Vhagar's rock: along under the fishing
- * village and Duskendale, south down the water under the Dragonmont's west
- * flank, back west short of the rock, and north again, turning wide, clear of
- * the dragon's tail where it lies in the water.
- */
-const MERCHANT: P2[] = [[-1.5, -65.5], [20.5, -64.2], [19.5, -42], [8, -43]];
-
-/**
- * A merchant cog under sail: her body, her square sail set and drawing in
- * plain canvas with a red band, her pennant streaming aft, and her crew. She
- * goes round slowly, heeling a little to the wind.
- */
-function merchant(k: Build): void {
-  const L = 9.5, W = 1.52, g = new GeoBuilder(), r = cogBody(g, L, W, COG_OAK), H = r.H;
-  setSail(g, r.mastU + 0.12, r.yardY - 0.1, deckAt(H, r.mastU).y + 1.3, r.half - 0.12, [CANVAS, 0xb84a3a, CANVAS, CANVAS]);
-  pennant(g, [r.mastU, r.top, 0], Math.PI, 0.15 * L, 0xb84a3a);
-  sailor(g, -0.72 * L / 2, -0.2, r.cTop, 1);
-  sailor(g, 0.45 * L / 2, -0.5, deckAt(H, 0.45 * L / 2).y, 0);
-  sailor(g, 0.62 * L / 2, 0.45, deckAt(H, 0.62 * L / 2).y, 3);
-  for (const [u, v, col] of [[-0.1, 0.55, 0x9a7a52], [0.15, -0.5, 0xc9b48a]] as V3[]) bale(g, (u * L) / 2, v, deckAt(H, (u * L) / 2).y, col);
-  const mesh = mover(k, g, 'merchant-cog'), way = new Way(MERCHANT, 8, 1.9);
-  k.each((_dt, time) => {
-    const t = timeOf(time), d = way.along(t + 5), [x, z] = way.at(d), yaw = way.headingAt(d);
-    mesh.position.set(x, WL + 0.05 * Math.sin(t * 1.1 + 2), z);
-    mesh.rotation.set(0.045 + 0.025 * Math.sin(t * 0.75), -yaw, 0.02 * Math.sin(t * 0.9), 'YZX');
-  });
-}
-
-// ---------------------------------------------------------------------------
 // Keeping what moves clear
 // ---------------------------------------------------------------------------
 
@@ -1182,7 +1148,7 @@ const toBody = (x: number, z: number, b: Body): number => {
 function checkWays(): void {
   const rock = rockRing(), rockOutline = rock.map(([p]) => p), sands = ring(SANDS);
   const toRock = (x: number, z: number): number => (inside(rockOutline, x, z) ? 0 : toEdges(x, z, rock));
-  const ways: [string, Way, number, number][] = [['the galley on patrol', new Way(PATROL, 3, 2.1), 5.5, 1.25], ['the merchant cog', new Way(MERCHANT, 8, 1.9), 4.75, 1.6]];
+  const ways: [string, Way, number, number][] = [['the galley on patrol', new Way(PATROL, 3, 2.1), 5.5, 1.25]];
   const lines: string[] = [];
   for (const [what, way, hl, hb] of ways) {
     const least = { shore: Infinity, rock: Infinity, sands: Infinity, ship: Infinity };
@@ -1232,7 +1198,6 @@ export function extras(k: Build): void {
   for (const b of FISHING) fishingBoat(k, frame(b.x, b.z, b.heading), b);
   ferry(k);
   patrol(k);
-  merchant(k);
   if (import.meta.env.DEV) {
     checkWays();
     // for pictures: `blackwaterShips.hold(t)` stands what moves as it is at t seconds, and `hold(null)` lets it go
