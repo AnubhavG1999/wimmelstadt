@@ -266,6 +266,26 @@ function build(k: Build): TileParts {
   }
 
   // -------------------------------------------------------------------------
+  // The screen for music: on the roof of Connaught Place's south-east block,
+  // which is kept clear for it, where the Outer Circle's hoardings stand in
+  // life. It looks to the south-east, on a frame of steel with stays behind.
+  // -------------------------------------------------------------------------
+
+  {
+    const cp = THINGS.find((t) => t.id === 'connaught-place')!;
+    const a = Math.PI / 4, r = CP_R.block1 - 1.5, nx = Math.cos(a), nz = Math.sin(a), tx = -nz, tz = nx, STEEL = 0x8a9098;
+    const x = CP[0] + nx * r, z = CP[1] + nz * r, roof = cp.h - 0.38, high = 4.2, foot = roof + 0.9, y = foot + high / 2;
+    const w = k.sign(SCREEN.id, x + nx * 0.16, y, z + nz * 0.16, nx, nz, high);
+    b.obox(x, y, z, 0.12, high / 2 + 0.18, w / 2 + 0.18, a, 0x15161c, { faces: 'B' });
+    for (const s of [-1, 0, 1]) {
+      const px = x + tx * w * 0.4 * s - nx * 0.25, pz = z + tz * w * 0.4 * s - nz * 0.25;
+      b.cyl(px, pz, roof, foot + 0.3, 0.13, 0.13, 4, STEEL, { cap: false });
+      b.beam([px, y + high * 0.3, pz], [px - nx * 2.3, roof, pz - nz * 2.3], 0.07, 0.07, STEEL);
+    }
+    k.lights.push({ x: x + nx * 5, z: z + nz * 5, r: 11, color: '#dfe6ff', k: 0.5 });
+  }
+
+  // -------------------------------------------------------------------------
   // Trees: the Ridge, and the rows along Kartavya Path
   // -------------------------------------------------------------------------
 
