@@ -266,4 +266,6 @@ export const PLOTS: Plot[] = [
   lot('centre', 'bazaar', -78, -72, 10, 10, 3, 'S'),
   // between Connaught Place and the hexagon
   lot('centre', 'lutyens', 18, -30, 9, 8, 2),
+  // one of the princes' houses round the hexagon, north-east of it
+  lot('centre', 'lutyens', 43, -23, 8, 10, 2),
 ];

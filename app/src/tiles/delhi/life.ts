@@ -8,6 +8,7 @@
 
 import * as THREE from 'three';
 import { rng, type GeoBuilder } from '../../engine/geo';
+import { area, rect } from '../../engine/ground';
 import { buildPath } from '../../engine/paths';
 import { figure, parasol, wheel } from '../../engine/parts';
 import { standingCar } from '../../engine/props';
@@ -170,6 +171,39 @@ function wedding(k: Build, places: Places): void {
   k.lights.push({ x: gx + 1, z: gz, r: 8, color: '#ffe2ae', k: 0.6 });
 }
 
+/**
+ * Gully cricket on the open ground south of the AIIMS flyover, between the
+ * dhaba and the Ring Road's swing to the south: a worn pitch, two sets of
+ * stumps, and a match in everyday clothes.
+ */
+function cricket(k: Build, places: Places): void {
+  const b = k.b, GRASS = 0x9db56c, PITCH = 0xd6c69c, WILLOW = 0xd8b67a;
+  area(k, [[13.5, 68], [24.3, 68], [37.6, 81.3], [13.5, 81.3]], GRASS);
+  places.take(13, 67.5, 38, 81.8);
+  const z = 75.2, x0 = 18.6, x1 = 26.2; // the pitch runs east and west
+  area(k, rect(x0, z - 0.75, x1, z + 0.75), PITCH, 0.035);
+  for (const x of [x0 + 0.5, x1 - 0.5]) for (const dz of [-0.22, 0, 0.22]) b.box(x - 0.04, 0, z + dz - 0.04, x + 0.04, 0.95, z + dz + 0.04, WILLOW);
+  const player = (x: number, zz: number, coat: number, legs = 0x3a4a6a): void => figure(b, x, zz, 0, { coat, legs, hat: 0x2a211c, hatH: 0.1 });
+  const bat = (x: number, zz: number): void => b.box(x - 0.07, 0.15, zz - 0.16, x + 0.07, 1.2, zz + 0.16, WILLOW);
+  // the batsman at the east end with the keeper behind him, the bowler running in, the other batsman backing up, and the umpire
+  player(x1 - 1.3, z + 0.1, 0xd8432b);
+  bat(x1 - 1.85, z + 0.5);
+  player(x1 + 0.9, z, 0x2a6fb0);
+  player(x0 + 1.9, z - 0.3, 0xf2c14e);
+  player(x0 + 0.3, z + 1.3, 0x4fa36b);
+  bat(x0 + 0.8, z + 1.7);
+  figure(b, x0 - 0.9, z, 0, { coat: 0xf4f1e8, legs: 0x26262a, hat: 0xf4f1e8, hatH: 0.22, hatR: 0.42 });
+  // the ball in the air, half way down the pitch
+  b.box((x0 + x1) / 2 - 0.09, 1.5, z - 0.09, (x0 + x1) / 2 + 0.09, 1.68, z + 0.09, 0xb3202a, { faces: 'NESWTB' });
+  // the field
+  const field: [number, number, number][] = [[16, 70.5, 0x7a4fa3], [22.5, 70, 0xe9dcc4], [15.8, 79.5, 0xf08a24], [24, 79.6, 0xe9dcc4], [30, 77.5, 0x2f8f6f], [31.5, 79.8, 0xd9d2c2], [27.5, 72.6, 0xc8202c]];
+  for (const [fx, fz, coat] of field) player(fx, fz, coat);
+  // whoever has stopped to watch, along the side by the dhaba, and two trees to sit under
+  for (const zz of [69.6, 71.2, 73.4, 77.6, 79]) k.person(14.2, zz);
+  k.tree(14.6, 80.6, 0.62);
+  k.tree(34.6, 80.4, 0.55);
+}
+
 /** White Ambassadors on Raisina Hill, and monkeys on its parapet. */
 function raisina(k: Build): void {
   const y = RAISINA.y;
@@ -198,6 +232,7 @@ export function life(k: Build, heroes: HeroSpot[]): ParkedSpot[] {
 
   wedding(k, places);
   raisina(k);
+  cricket(k, places);
 
   // --- Kartavya Path: families on the lawns, ice-cream carts and a balloon seller on the walks ---
   const lawns = THINGS.find((t) => t.id === 'kartavya-path')!;

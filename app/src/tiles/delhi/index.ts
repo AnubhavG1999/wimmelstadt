@@ -198,6 +198,16 @@ function build(k: Build): TileParts {
   ordinaryBuildings(k, PLOTS.map((p, i): Sited => ({
     x: p.x, z: p.z, w: p.w, d: p.d, y0: 0, y1: p.h, style: p.style, tint: i, roof: 'bare', signs: p.signs ?? '', quarter: p.quarter,
   })), RULES);
+  // on every ordinary roof but a shed's or a bungalow's: the black water tanks of Delhi's roofs, each on its stand
+  PLOTS.forEach((p, i) => {
+    if (p.style === 'shed' || p.style === 'lutyens') return;
+    for (let j = 0, n = p.w * p.d > 90 ? 2 : 1; j < n; j++) {
+      const x = p.x + 1.4 + j * 1.6, z = p.z + 1.4 + ((i + j) % 2) * 0.5;
+      b.box(x - 0.5, p.h, z - 0.5, x + 0.5, p.h + 0.4, z + 0.5, 0x9a958a);
+      b.cyl(x, z, p.h + 0.4, p.h + 1.35, 0.5, 0.5, 8, 0x1d1e22, { cap: 0x26272b });
+      b.cyl(x, z, p.h + 1.35, p.h + 1.45, 0.2, 0.2, 6, 0x1d1e22);
+    }
+  });
 
   // -------------------------------------------------------------------------
   // The things that stand on the tile. Each is a plain box with its name on a
