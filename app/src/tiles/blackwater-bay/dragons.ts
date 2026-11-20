@@ -37,7 +37,7 @@
 import * as THREE from 'three';
 import { Fire } from '../../engine/dragons/fire';
 import { BALERION, CANNIBAL, CARAXES, DREAMFYRE, MELEYS, MERAXES, SHEEPSTEALER, SILVERWING, VERMITHOR, VHAGAR } from '../../engine/dragons/kinds';
-import { Dragon, TUCK, blendForm, formAt, type DragonKind } from '../../engine/dragons/model';
+import { Dragon, TUCK, blendForm, formAt, measure, stance, type DragonKind } from '../../engine/dragons/model';
 import { Pilot, type Cue, type Held } from '../../engine/dragons/pilot';
 import { Track, type Waypoint } from '../../engine/dragons/track';
 import { Trails } from '../../engine/dragons/trails';
@@ -79,11 +79,12 @@ interface Home { x: number; y: number; z: number; facing: number; leave: number 
  * faces; which way it comes in to land, in degrees, over open air and never low over a tower (it turns round to face
  * out once it is down); how far out its run in to land begins, if nearer than its size would give, so that it stays
  * on the board; whether its home is a ledge on the Dragonmont, which it drops off and drops onto with its wings
- * drawn in, because others lie near it; and, where a neighbour lies within a tail's length, which way it turns round
- * once it is down (1 clockwise seen from above, -1 the other), so that its tail sweeps over open slope.
+ * drawn in, because others lie near it; where a neighbour lies within a tail's length, which way it turns round once
+ * it is down (1 clockwise seen from above, -1 the other), so that its tail sweeps over open slope; and whether its home
+ * is the Dragonpit's dome, above whose roof it is held as it leaves and comes down.
  */
-const WAYS: Record<Key, { leave?: number; arrive: number; approach?: number; cliff?: boolean; hold?: number; round?: 1 | -1 }> = {
-  balerion: { arrive: 135, approach: 18 },
+const WAYS: Record<Key, { leave?: number; arrive: number; approach?: number; cliff?: boolean; hold?: number; round?: 1 | -1; dome?: boolean }> = {
+  balerion: { arrive: 135, approach: 18, dome: true },
   // she rests looking out over the bay towards Driftmark, and turns north to leave over the open water
   vhagar: { leave: 270, arrive: 90, approach: 13 },
   // she turns in the doors to leave over the terrace, clear of the houses below the forecourt
@@ -126,6 +127,10 @@ const ROOFS = LOTS.filter((l) => ['rk-tower', 'rk-holdfast', 'red-keep', 'high-t
 function groundAt(x: number, z: number): number {
   let roof = -Infinity;
   for (const l of ROOFS) if (x >= l.x0 && x <= l.x1 && z >= l.z0 && z <= l.z1) roof = Math.max(roof, l.top);
+  // the Dragonpit's dome, which Balerion lies on and his tail lies over, and the top of its drum for a little way past
+  // its rim, so that a tail hangs down outside the wall and not through the dome's edge
+  const dd = Math.hypot(x - RHAENYS.c[0], z - RHAENYS.c[1]);
+  if (dd < RHAENYS.drum + 3) roof = Math.max(roof, dd < RHAENYS.drum ? domeOver(dd) : RHAENYS.wall);
   if (roof > -Infinity) return roof;
   return isWater(x, z) && !onRock(x, z) ? WATER_LEVEL + 0.4 : planGround(x, z);
 }
@@ -322,9 +327,34 @@ function placeOf(p: Part, H: Record<Key, Home>, t: number, out: THREE.Vector3): 
   return out;
 }
 
+/** How high a dragon's body stands above what it stands on, at its most, by its kind. */
+const STAND: Partial<Record<Key, number>> = {};
+const DOME_AT = new THREE.Vector3();
+
+/**
+ * How far a dragon whose home is the dome is carried above its line as it leaves and as it comes home, without
+ * turning it. Its line runs at the crown's height, the pilot lifts it to its standing height only while it settles or
+ * pushes off, and its long tail trails back over the roof behind it; so within a tail's length of the dome its body
+ * is kept above the crown by its standing height and a share of its length, less what its landing lifts it by.
+ */
+function domeLift(p: Part, H: Record<Key, Home>, t: number, cue: Cue): number {
+  const start = p.perches[0].tD, end = p.perches[p.perches.length - 1].tA;
+  const when = Math.max(1 - smooth((t - start - 12) / 3), smooth((t - (end - 13)) / 3));
+  if (when <= 0) return 0;
+  placeOf(p, H, t, DOME_AT);
+  const near = 1 - smooth((Math.hypot(DOME_AT.x - RHAENYS.c[0], DOME_AT.z - RHAENYS.c[1]) - 40) / 18);
+  if (near <= 0) return 0;
+  const kind = KIND[p.key], m = measure(kind.shape), L = kind.length;
+  const stand = (STAND[p.key] ??= Math.max(stance(0, m).root, stance(1, m).root) * L);
+  const land = Math.min(1, cue.sit * 2), down = Math.max(0, cue.sit * 2 - 1);
+  const body = DOME_AT.y + stance(down, m).root * L * land;
+  const least = RHAENYS.capY + 2 + (stand + 0.16 * L) * (1 - land), gap = body - least, k = 1.2;
+  return (when * near * (Math.sqrt(gap * gap + k * k) - gap)) / 2;
+}
+
 /** What a dragon is told to do, `t` into its part. */
 function cueOf(p: Part, t: number, out: Cue): Cue {
-  out.fire = 0; out.charge = 0; out.roll = 0; out.beat = 0; out.sit = 0; out.jaw = 0; out.look = 0; out.tuck = 0;
+  out.fire = 0; out.charge = 0; out.roll = 0; out.beat = 0; out.sit = 0; out.jaw = 0; out.look = 0; out.tuck = 0; out.lift = 0;
   // sitting, landing and leaving, as on Westeros: it flares, its feet come down, and it comes down onto the claws of
   // its wings; it leaves pushing up off them. A half perch keeps its wings spread, and so does a dragon home with a
   // mantle, for a while, before it folds them.
@@ -545,7 +575,8 @@ function moments(H: Record<Key, Home>): Moment[] {
       P(0, y, -50, 24), P(-36, y + 2, -60, 24), P(-66, y + 2, -36, 24), P(-66, y, 6, 24), P(-40, y - 2, 36, 24),
       P(-4, y - 2, 42, 24), P(20, y, 14, 24), P(18, y, -26, 24), P(0, y, -50, 24),
     ];
-    const b = part('balerion', H, [P(-10, 74, -24, 22), P(10, 84, -40, 22), ...round(90), P(-12, 78, -70, 22)], { marks: { join: 2, over: 8 }, beatsOut: 4 });
+    // he carries straight on out over the city before he turns, so that his lower wing does not reach back over the dome
+    const b = part('balerion', H, [P(-20, 68, 0, 22), P(-10, 74, -24, 22), P(10, 84, -40, 22), ...round(90), P(-12, 78, -70, 22)], { marks: { join: 3, over: 9 }, beatsOut: 4 });
     const v = part('vhagar', H, [P(10, 40, -74, 22), P(24, 56, -60, 24), P(16, 66, -40, 24), ...round(72).slice(0, 8), P(30, 60, -40, 24), P(26, 46, -64, 22), P(10, 34, -74, 22)], { marks: { join: 3, over: 9 } });
     const m = part('meraxes', H, [P(44, 66, 18, 26), P(24, 80, 6, 26), P(16, 94, -26, 26), ...round(108).slice(0, 7), P(40, 96, 30, 26), P(66, 70, 34, 26)], { marks: { join: 3, over: 9 } });
     together([b, v, m], 'join', [0, 2.9, 5.8]);
@@ -682,6 +713,7 @@ export function buildDragons(k: Build): void {
         } else {
           const p = f.part;
           cueOf(p, t, pilot.cue);
+          if (WAYS[key].dome) pilot.cue.lift = domeLift(p, H, t, pilot.cue);
           pilot.fly((tt, out) => placeOf(p, H, tt - f.start, out), clock, time, dt, () => floorFor(p, t), groundAt);
           const cue = pilot.cue;
           if (cue.fire > 0) {
