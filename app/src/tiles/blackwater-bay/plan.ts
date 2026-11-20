@@ -307,7 +307,7 @@ export const LOTS: Lot[] = [
   lot('hull', 'Hull', 33, 27.5, 50, 35, 6),
   lot('shipyards', 'Shipyards', 75, 33, 84, 49, 8),
   lot('spicetown', 'Spicetown', 46, 45, 60, 51.5, 6),
-  lot('high-tide', 'High Tide', 24.5, 72.5, 43.5, 89, 16),
+  lot('high-tide', 'High Tide', 24.5, 72.5, 46.6, 89, 16),
 
   // ======================= The south shore =======================
   lot('ferry-landing', 'Ferry', -79, 86.5, -69, 91, 3),

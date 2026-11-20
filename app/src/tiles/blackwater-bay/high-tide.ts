@@ -30,12 +30,12 @@
 import * as THREE from 'three';
 import { Smoke } from '../../engine/effects';
 import { interior, rng, type GeoBuilder, type V3, type WinSpec } from '../../engine/geo';
-import { area, flat, walls } from '../../engine/ground';
-import { figure, lathe, roundel } from '../../engine/parts';
+import { area } from '../../engine/ground';
+import { figure, lathe } from '../../engine/parts';
 import { face3, prism, type XZ } from '../../engine/shapes';
 import type { SignDef } from '../../engine/signs';
 import type { Build } from '../../engine/tile';
-import { DARK, DOOR, HOUSE, IRONWORK, LANCETS, ROOF, STONE, TIMBER, TIMBER_DARK, banner, brazier, doorway, fire, nameBoard, nameSign } from './look';
+import { DARK, DOOR, HOUSE, IRONWORK, LANCETS, ROOF, STONE, TIMBER, TIMBER_DARK, banner, brazier, doorway, fire, nameBoard, nameSign, rampart } from './look';
 import type { Model } from './models';
 import { DYKE, HERO_SPOTS, HOMES, ISLANDS, LANE, ROADS, SANDBAR, SANDS, TURNS, groundAt, inside, sandbarOut, type Lot, type P2 } from './plan';
 
@@ -53,6 +53,21 @@ const COURT = RING.r + (LANE + 1.2) / 2 + 0.7;
 const ROAD = ROADS.causeway, ROAD_X = ROAD[ROAD.length - 1][0];
 /** Half the gate's width: the road, and a little more on each side. */
 const GATE_HALF = LANE + 0.6;
+/** The sea bastion's face on the court, where the court's open circle ends on the east. */
+const BASTION_X = CX + COURT + 0.25;
+
+/**
+ * Where Meleys lies on the castle, as the plan lays her down: along a line
+ * east and west over the court, her chest over its west side. Under her runs
+ * the gallery, its walk a little under her and its parapet as high as she
+ * lies; and nothing of the castle near her rises higher than she does. Where
+ * the plan has not put her on the islet, the line the castle was drawn round.
+ */
+function dragonLine(): { z: number; z0: number; z1: number; walk: number; cap: number } {
+  const m = HOMES.meleys, on = !!m && inside(ISLANDS['high-tide'], m.x, m.z) && m.y > 12;
+  const z = on ? m.z : 80, cap = on ? m.y : 16;
+  return { z, z0: z - 2.5, z1: z + 2.5, walk: cap - 0.4, cap };
+}
 
 // ---------------------------------------------------------------------------
 // Colours
@@ -189,12 +204,12 @@ function spire(b: GeoBuilder, s: Spire): void {
   if (s.flag) pennant(b, s.x, s.z, s.top + s.cone + 0.17, 1.3);
 }
 
-/** A turret corbelled out from a wall's top: a cone of stone under it, a shaft, and a silver cone. */
-function bartizan(b: GeoBuilder, x: number, z: number, from: number, top: number, r = 0.55): void {
+/** A turret corbelled out from a wall's top: a cone of stone under it, a shaft, and a silver cone `cone` high. */
+function bartizan(b: GeoBuilder, x: number, z: number, from: number, top: number, r = 0.55, cone = 2.0): void {
   b.cyl(x, z, from - 0.7, from, 0.1, r, 8, PALE_SHADE, { cap: false });
   b.cyl(x, z, from, top - 0.3, r, r, 8, PALE, { win: rows(top - 0.3 - from, 1, 1.4, 0.4), seed: x * 0.31, cap: false });
   b.cyl(x, z, top - 0.3, top, r + 0.08, r + 0.08, 8, PALE_SHADE, { cap: false });
-  plated(b, x, z, [[r + 0.24, top], [(r + 0.24) * 0.45, top + 0.9], [0, top + 2.0]], 8, [SILVER_LO, SILVER, SILVER_HI]);
+  plated(b, x, z, [[r + 0.24, top], [(r + 0.24) * 0.45, top + cone * 0.45], [0, top + cone]], 8, [SILVER_LO, SILVER, SILVER_HI]);
 }
 
 /** A rock: a squat block of five faces from y0, bulging at `mid` and closed by a smaller top at `top`. */
@@ -252,13 +267,14 @@ function hanging(b: GeoBuilder, x: number, z: number, nx: number, nz: number, w:
 // ---------------------------------------------------------------------------
 
 /**
- * The keep, in the north-west corner beside the gate: the castle's tallest
- * block, four storeys of windows, battlements, a turret with a silver cone at
- * each corner, and a steep roof of beaten silver over the middle. Its corner
- * towards the court is cut off where the court begins, and a door is in it.
+ * The keep, in the north-west corner beside the gate: four storeys of
+ * windows, battlements round a flat roof of lead, and a turret with a silver
+ * cone at each corner. Nothing of it rises above where Meleys lies, beside
+ * it. Its corner towards the court is cut off where the court begins, and a
+ * door is in it.
  */
 function keep(k: Build, L: Layout): void {
-  const b = k.b, { x0, z0, x1, z1 } = L.keep, cut = L.cut, H = 15.2;
+  const b = k.b, { x0, z0, x1, z1 } = L.keep, cut = L.cut, cap = dragonLine().cap, H = cap - 1.75;
   const plan: XZ[] = [[x0, z0], [x1, z0], [x1, cut - x1], [cut - z1, z1], [x0, z1]];
   // a battered plinth on its two outer faces, the walls with their windows, and the walk on top
   b.box(x0 - 0.22, 0, z0 - 0.22, x1, 0.9, z0 + 0.3, PALE_SHADE, { faces: 'NWT' });
@@ -267,8 +283,9 @@ function keep(k: Build, L: Layout): void {
   // a string course round it under the top storey, and a band of corbels under the battlements
   const grown = (d: number): XZ[] => plan.map(([x, z]): XZ => [x + (x < (x0 + x1) / 2 ? -d : d), z + (z < (z0 + z1) / 2 ? -d : d)]);
   prism(b, grown(0.1), H - 3.9, H - 3.65, PALE_SHADE, { top: PALE_SHADE });
+  // the band's top is the flat roof of lead, inside the battlements
   const band = grown(0.14);
-  prism(b, band, H - 0.55, H, PALE_SHADE, { top: PALE_SHADE });
+  prism(b, band, H - 0.55, H, PALE_SHADE, { top: ROOF.lead });
   band.forEach((q, i) => {
     const p = plan[i], p2 = plan[(i + 1) % plan.length], q2 = band[(i + 1) % band.length];
     b.quad([p[0], H - 0.55, p[1]], [p2[0], H - 0.55, p2[1]], [q2[0], H - 0.55, q2[1]], [q[0], H - 0.55, q[1]], [0, -1, 0], PALE_SHADE);
@@ -283,32 +300,16 @@ function keep(k: Build, L: Layout): void {
     if (nx * mx + nz * mz < 0) { nx = -nx; nz = -nz; }
     merlons(b, [a[0] + nx * 0.15, a[1] + nz * 0.15], [c[0] + nx * 0.15, c[1] + nz * 0.15], H, 0.3, PALE, 0.8, 1.05);
   }
-  // the roof of beaten silver over the middle: four steep faces to a point, the two the sun finds brighter
-  const rx0 = x0 + 0.45, rx1 = x1 - 0.45, rz0 = z0 + 0.45, rz1 = z1 - 0.45, apex: V3 = [(rx0 + rx1) / 2, 18.85, (rz0 + rz1) / 2];
-  const corners: V3[] = [[rx0, H, rz0], [rx1, H, rz0], [rx1, H, rz1], [rx0, H, rz1]];
-  const face = (a: V3, c: V3, col: number): void => {
-    // the face leans out the way from the point to its edge's middle
-    const mx = (a[0] + c[0]) / 2 - apex[0], mz = (a[2] + c[2]) / 2 - apex[2], ml = Math.hypot(mx, mz), rise = apex[1] - H, nl = Math.hypot(ml, rise);
-    face3(b, a, c, apex, [((mx / ml) * rise) / nl, ml / nl, ((mz / ml) * rise) / nl], col);
-  };
-  face(corners[0], corners[1], SILVER);
-  face(corners[1], corners[2], SILVER_HI);
-  face(corners[2], corners[3], SILVER_HI);
-  face(corners[3], corners[0], SILVER);
-  b.cyl(apex[0], apex[2], apex[1] - 0.1, apex[1] + 0.85, 0.06, 0.03, 4, SILVER_HI, { cap: false });
-  b.cyl(apex[0], apex[2], apex[1] + 0.12, apex[1] + 0.36, 0.14, 0.14, 6, SILVER_HI);
-  // turrets at its corners, and one on the cut corner over the door
+  // turrets at its corners, and one on the cut corner over the door, their cones rising no higher than she lies
   const turrets: P2[] = [[x0 + 0.55, z0 + 0.55], [x1 - 0.55, z0 + 0.55], [x0 + 0.55, z1 - 0.55], [(x1 + cut - z1) / 2 - 0.4, (cut - x1 + z1) / 2 - 0.4]];
-  turrets.forEach(([x, z]) => bartizan(b, x, z, 12.6, 16.8));
-  banner(b, x0 + 0.55, z1 - 0.55, 18.7, 'velaryon', 1.15, 0.5);
+  turrets.forEach(([x, z]) => bartizan(b, x, z, H - 2.6, H - 0.05, 0.55, cap - 0.02 - (H - 0.05)));
   // the door, in the cut corner, facing the court, with a lamp beside it
   const dx = (x1 + cut - z1) / 2, dz = (cut - x1 + z1) / 2, f = Math.SQRT1_2;
   doorway(b, dx, 0.04, dz, f, f, 0.95, 2.0, 0.65, DOOR);
   b.box(dx - 0.6 * f - 0.08 + 0.06, 2.35, dz + 0.6 * f - 0.08 + 0.06, dx - 0.6 * f + 0.08 + 0.06, 2.55, dz + 0.6 * f + 0.08 + 0.06, IRONWORK);
   fire(k, dx - 0.6 * f + 0.14, 2.75, dz + 0.6 * f + 0.14, 0.18, 0);
-  // a brazier on the walk, and a guard looking out over the Gullet
-  brazier(k, x0 + 1.1, z1 - 1.2, H);
-  figure(b, x1 - 1.3, z1 - 1.1, H, GUARD);
+  // a brazier on the roof, burning low enough to stay under her
+  brazier(k, x0 + 1.1, z0 + 1.2, H);
 }
 
 // ---------------------------------------------------------------------------
@@ -360,7 +361,7 @@ function gate(k: Build, L: Layout): void {
   // the castle's name on the walk over the arch, facing the court, low between the battlements, and the
   // house's banners either side of it; guards, two at the gate and one on the walk
   nameBoard(k, 'high-tide-name', ROAD_X, z0 + 0.5, top - 1.35, [0, 0, 1], 0.95);
-  for (const s of [-1, 1]) banner(b, ROAD_X + s * 2.95, (z0 + z1) / 2 + 0.1, top, 'velaryon', 4.4, 0.75);
+  for (const s of [-1, 1]) banner(b, ROAD_X + s * 2.95, (z0 + z1) / 2 + 0.1, top, 'velaryon', dragonLine().cap - 0.2 - top, 0.75);
   figure(b, wJ - 1.2, z0 - 0.9, 0.01, GUARD);
   figure(b, eJ + 1.2, z0 - 0.9, 0.01, GUARD);
   figure(b, ROAD_X + 3.9, (z0 + z1) / 2, top, GUARD);
@@ -430,31 +431,21 @@ function greatHall(k: Build, L: Layout): void {
     hanging(b, x1, zc + s * 1.36, 1, 0, 0.42, 4.4, 8.8);
   }
   lancet(b, x1, zc, 1, 0, 0.8, 4.7, 9.6, 2.4);
-  // the gable over the door, with a round window in it, and its roof meeting the hall's
-  const gz0 = zc - 1.15, gz1 = zc + 1.15, gy = H + 1.75, back = x1 - ((gy - H) * (x1 - xm)) / rise;
-  face3(b, [x1, H, gz0], [x1, H, gz1], [x1, gy, zc], [1, 0, 0], PALE);
-  roundel(b, [x1 + 0.04, H + 0.62, zc], 0.38, 'E', GLASS, { win: interior(1.0) }, 10);
-  const slopeN = (a: V3, c: V3, d: V3): void => {
-    const ux = c[0] - a[0], uy = c[1] - a[1], uz = c[2] - a[2], vx = d[0] - a[0], vy = d[1] - a[1], vz = d[2] - a[2];
-    let nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
-    const nl = Math.hypot(nx, ny, nz);
-    if (ny < 0) { nx = -nx; ny = -ny; nz = -nz; }
-    face3(b, a, c, d, [nx / nl, ny / nl, nz / nl], SILVER_HI);
-  };
-  slopeN([x1, H, gz0], [x1, gy, zc], [back, gy, zc]);
-  slopeN([x1, H, gz1], [x1, gy, zc], [back, gy, zc]);
-  // the roof: two steep slopes of silver; on the back the curtain's parapet rises in front of it
-  const run = x1 - xm, len = Math.hypot(run, rise);
-  b.quad([x1, H, z0], [x1, H, z1], [xm, ridge, z1], [xm, ridge, z0], [rise / len, run / len, 0], SILVER);
-  const pw = x0 + 0.25, py = ridge - ((xm - pw) * rise) / run;
-  b.quad([pw, py, z1], [pw, py, z0], [xm, ridge, z0], [xm, ridge, z1], [-rise / len, run / len, 0], SILVER_LO);
+  // the roof: two steep slopes of silver either side of the gallery, which crosses over the hall's middle at the
+  // height Meleys lies; on the back the curtain's parapet rises in front of it
+  const run = x1 - xm, len = Math.hypot(run, rise), pw = x0 + 0.25, py = ridge - ((xm - pw) * rise) / run, G = dragonLine();
+  for (const [za, zb] of [[z0, Math.max(z0, G.z0)], [Math.min(z1, G.z1), z1]]) {
+    if (zb - za < 0.05) continue;
+    b.quad([x1, H, za], [x1, H, zb], [xm, ridge, zb], [xm, ridge, za], [rise / len, run / len, 0], SILVER);
+    b.quad([pw, py, zb], [pw, py, za], [xm, ridge, za], [xm, ridge, zb], [-rise / len, run / len, 0], SILVER_LO);
+    b.box(x0, H, za, pw, H + 0.6, zb, PALE, { faces: 'NESWT', top: PALE_SHADE });
+    merlons(b, [x0 + 0.125, za], [x0 + 0.125, zb], H + 0.6, 0.25, PALE, 0.62, 1.15);
+  }
   // the gable at the south end, and the end wall under it
   b.quad([x0, 0, z1], [x1, 0, z1], [x1, H, z1], [x0, H, z1], [0, 0, 1], PALE, { win: rows(H, 2, 1.6, 0.4) });
   face3(b, [x0, H, z1], [x1, H, z1], [xm, ridge, z1], [0, 0, 1], PALE);
-  // the back, over the sea: two rows of tall lights, a parapet with battlements, and buttresses
+  // the back, over the sea: two rows of tall lights, and buttresses
   b.box(x0, 0, z0, x0 + 0.01, H, z1, PALE, { faces: 'W', win: { ...LANCETS, storey: H / 2, lit: 0.5 }, seed: 0.83 });
-  b.box(x0, H, z0, pw, H + 0.6, z1, PALE, { faces: 'WEST', top: PALE_SHADE });
-  merlons(b, [x0 + 0.125, z0], [x0 + 0.125, z1], H + 0.6, 0.25, PALE, 0.62, 1.15);
   for (let z = z0 + 1.5; z < z1 - 0.6; z += 1.5) buttress(b, x0, z);
   // a chimney stack on the ridge, from the hall's hearth, and its smoke
   b.box(xm - 0.32, ridge - 0.6, z1 - 2.2, xm + 0.32, ridge + 1.3, z1 - 1.5, PALE_SHADE, { top: DARK });
@@ -537,7 +528,8 @@ function driftwoodThrone(b: GeoBuilder, x: number, y: number, z: number): void {
 /** The tower at the south-west corner, and the curtain that closes the corner behind it. */
 function southWest(k: Build, l: Lot, L: Layout): void {
   const b = k.b, { x, z, r } = L.sw;
-  spire(b, { x, z, r, top: 12, cone: 4, flag: true, y0: -1.0 });
+  // its cone, and the ball on it, no higher than Meleys lies, close by
+  spire(b, { x, z, r, top: 12, cone: dragonLine().cap - 0.25 - 12, y0: -1.0 });
   // the curtain from the hall's back round to the tower, with battlements on its outer edge
   const fx1 = x - r * 0.7, fz0 = L.hall.z1, fz1 = z - 0.2;
   b.box(l.x0, 0, fz0, fx1, 10.4, fz1, PALE, { faces: 'WSET', top: PALE_SHADE });
@@ -567,7 +559,7 @@ function seaWall(k: Build, l: Lot, xa: number, xb: number, h: number): void {
  * ring, and an onion dome with a finial.
  */
 function brassTurret(b: GeoBuilder, L: Layout): void {
-  const r = 0.72, x = L.hall.x1 + 0.36, z = L.keep.z1 + 0.36, top = 13.0;
+  const r = 0.72, x = L.hall.x1 + 0.36, z = L.keep.z1 + 0.36, top = dragonLine().cap - 3.1;
   b.cyl(x, z, 0, top - 0.3, r, r, 10, PALE, { win: rows(top - 0.3, 3, 1.3, 0.45), seed: 0.61, cap: false });
   b.cyl(x, z, top - 0.3, top, r + 0.16, r + 0.16, 10, PALE_SHADE, { cap: PALE_SHADE });
   annulus(b, x, z, r, r + 0.16, top - 0.3, -1, PALE_SHADE, 10);
@@ -609,78 +601,188 @@ function seaLoggia(k: Build, l: Lot, x0: number, x1: number, zp: number, h: numb
 }
 
 // ---------------------------------------------------------------------------
-// The dragon terrace
+// The gallery and the sea bastion, which Meleys lies on
 // ---------------------------------------------------------------------------
 
-/** The part of an outline east of x = x0, as an outline. */
-function eastOf(shape: P2[], x0: number): P2[] {
-  const out: P2[] = [];
-  shape.forEach((p, i) => {
-    const q = shape[(i + 1) % shape.length];
-    if (p[0] >= x0) out.push(p);
-    if (p[0] >= x0 !== q[0] >= x0) out.push([x0, p[1] + ((q[1] - p[1]) * (x0 - p[0])) / (q[0] - p[0])]);
+/**
+ * An outline grown outwards by `d` along each of its edges, but for the edges
+ * that `keep` says stay where they are. The outline must bulge outwards everywhere.
+ */
+function grownOut(plan: P2[], d: number, keep: (a: P2, c: P2) => boolean): P2[] {
+  const n = plan.length, cx = plan.reduce((s, p) => s + p[0], 0) / n, cz = plan.reduce((s, p) => s + p[1], 0) / n;
+  // each edge's line, moved out
+  const lines = plan.map((a, i) => {
+    const c = plan[(i + 1) % n], len = Math.hypot(c[0] - a[0], c[1] - a[1]);
+    let nx = (c[1] - a[1]) / len, nz = -(c[0] - a[0]) / len;
+    if (nx * ((a[0] + c[0]) / 2 - cx) + nz * ((a[1] + c[1]) / 2 - cz) < 0) { nx = -nx; nz = -nz; }
+    const o = keep(a, c) ? 0 : d;
+    return { p: [a[0] + nx * o, a[1] + nz * o] as P2, u: [(c[0] - a[0]) / len, (c[1] - a[1]) / len] as P2 };
   });
-  return out;
+  // each corner where its two moved edges meet
+  return plan.map((_, i) => {
+    const A = lines[(i + n - 1) % n], B = lines[i], det = A.u[0] * B.u[1] - A.u[1] * B.u[0];
+    if (Math.abs(det) < 1e-9) return B.p;
+    const t = ((B.p[0] - A.p[0]) * B.u[1] - (B.p[1] - A.p[1]) * B.u[0]) / det;
+    return [A.p[0] + A.u[0] * t, A.p[1] + A.u[1] * t] as P2;
+  });
 }
 
-/** Where the dragon terrace begins, west to east: where the court's open circle ends. */
-const TERRACE_X = CX + COURT + 0.25;
-
-/** How high the dragon terrace's paving lies: Meleys's home's height where the plan puts her on the islet, and a hair over the ground until it does. */
-function terraceY(): number {
-  const h = HOMES.meleys;
-  return h && inside(ISLANDS['high-tide'], h.x, h.z) ? Math.max(0.06, h.y) : 0.06;
+/** The arch the gallery spans the court on: a segment of a circle from the hall's front to the bastion's face, as points from west to east. */
+function galleryArch(L: Layout, spring: number, crown: number): [number, number][] {
+  const xa = L.hall.x1, xb = BASTION_X, half = (xb - xa) / 2, xc = (xa + xb) / 2, rise = crown - spring;
+  const rad = (half * half + rise * rise) / (2 * rise), cy = crown - rad;
+  const a0 = Math.atan2(spring - cy, xa - xc), a1 = Math.atan2(spring - cy, xb - xc), N = 14;
+  return Array.from({ length: N + 1 }, (_, i): [number, number] => {
+    const a = a0 + ((a1 - a0) * i) / N;
+    return [xc + Math.cos(a) * rad, cy + Math.sin(a) * rad];
+  });
 }
 
 /**
- * The dragon terrace on the islet's east side, where Meleys rests facing out
- * over the Gullet towards the fleet: one level of paving over the islet's
- * east part, open to the sky, with nothing on it but a low parapet along its
- * edge over the sea, with lanterns set low in it. The court opens onto it;
- * if it stands above the court, a wall holds it up and steps climb to it.
+ * The gallery: a high bridge across the court on the line Meleys lies on, from
+ * the great hall's front to the sea bastion, and on west over the hall's
+ * middle to its back over the sea; its walk a little under her and its
+ * parapet as high as she lies. One wide arch carries it over the court and
+ * its ring, springing from the hall's front and the bastion's face at the
+ * height of the hall's eaves, with a hood of darker stone round it as the
+ * gate has and the house's arms at its crown. A passage runs inside it, and
+ * its windows are lit at night; the house's banners hang from it, and
+ * lanterns along its parapets. The road turns under it, round the fountain.
  */
-function dragonTerrace(k: Build): void {
-  const b = k.b, y = terraceY(), shape = eastOf(ISLANDS['high-tide'], TERRACE_X), n = shape.length;
-  const FLAG = 0xbdb5a5, BORDER = PALE_SHADE, raised = y > 0.3;
-  if (raised) {
-    flat(b, shape, y, FLAG);
-    walls(b, shape, -1.0, y, PALE);
-  } else {
-    area(k, shape, FLAG, y);
+function gallery(k: Build, L: Layout): void {
+  const b = k.b, { z0, z1, walk, cap } = dragonLine();
+  const xh = L.hall.x0, xa = L.hall.x1, xb = BASTION_X, spring = 10.4, crown = 13.2, xw = xh - 0.45, xc = (xa + xb) / 2;
+  const arch = galleryArch(L, spring, crown);
+  // the arch: the two faces from it up to the walk, the soffit under it, and the hood round it on each face
+  for (let i = 0; i + 1 < arch.length; i++) {
+    const [px, py] = arch[i], [qx, qy] = arch[i + 1], len = Math.hypot(qx - px, qy - py);
+    b.quad([px, py, z0], [qx, qy, z0], [qx, walk, z0], [px, walk, z0], [0, 0, -1], PALE);
+    b.quad([px, py, z1], [qx, qy, z1], [qx, walk, z1], [px, walk, z1], [0, 0, 1], PALE);
+    b.quad([px, py, z0], [qx, qy, z0], [qx, qy, z1], [px, py, z1], [(qy - py) / len, -(qx - px) / len, 0], PALE_SHADE);
+    for (const [z, s] of [[z0, -1], [z1, 1]] as const) b.quad([px, py + 0.02, z + s * 0.03], [qx, qy + 0.02, z + s * 0.03], [qx, qy + 0.36, z + s * 0.03], [px, py + 0.36, z + s * 0.03], [0, 0, s], PALE_SHADE);
   }
-  // a border of paler flags along its inner edge, where the court ends
-  const inner = shape.filter((p) => Math.abs(p[0] - TERRACE_X) < 1e-6).map((p) => p[1]);
-  const za = Math.min(...inner), zb = Math.max(...inner);
-  b.quad([TERRACE_X, y + 0.012, zb], [TERRACE_X + 0.45, y + 0.012, zb], [TERRACE_X + 0.45, y + 0.012, za], [TERRACE_X, y + 0.012, za], [0, 1, 0], BORDER);
-  // the house's arms laid in the paving in its middle, seen when the dragon is away: a silver seahorse on a roundel of sea green
-  const ax = (TERRACE_X + Math.max(...shape.map((p) => p[0]))) / 2 - 0.2, az = (za + zb) / 2, ar = Math.min(2.0, (Math.max(...shape.map((p) => p[0])) - TERRACE_X) / 2 - 0.5);
-  for (let i = 0; i < 14; i++) {
-    const a0 = (i / 14) * TAU, a1 = ((i + 1) / 14) * TAU;
-    b.up([ax, y + 0.018, az], [ax + Math.cos(a0) * ar, y + 0.018, az + Math.sin(a0) * ar], [ax + Math.cos(a1) * ar, y + 0.018, az + Math.sin(a1) * ar], SEA_GREEN);
+  // over the hall's middle: its walls from the hall's eaves up, and a band of corbels on its back over the sea
+  b.quad([xh, spring, z0], [xa, spring, z0], [xa, walk, z0], [xh, walk, z0], [0, 0, -1], PALE);
+  b.quad([xh, spring, z1], [xa, spring, z1], [xa, walk, z1], [xh, walk, z1], [0, 0, 1], PALE);
+  b.quad([xh, spring, z0], [xh, spring, z1], [xh, walk - 0.6, z1], [xh, walk - 0.6, z0], [-1, 0, 0], PALE);
+  b.box(xw, walk - 0.6, z0 - 0.12, xh, walk, z1 + 0.12, PALE_SHADE, { faces: 'NSWB' });
+  // a band of corbels under the parapets along both faces, the walk, and the parapets round it
+  b.box(xh, walk - 0.35, z0 - 0.12, xb, walk, z0, PALE_SHADE, { faces: 'NTB' });
+  b.box(xh, walk - 0.35, z1, xb, walk, z1 + 0.12, PALE_SHADE, { faces: 'STB' });
+  b.quad([xw, walk, z1], [xb, walk, z1], [xb, walk, z0], [xw, walk, z0], [0, 1, 0], 0xc6beaf);
+  b.box(xw, walk, z0 - 0.12, xb, cap, z0 + 0.28, PALE, { faces: 'NSEWT', top: PALE_SHADE });
+  b.box(xw, walk, z1 - 0.28, xb, cap, z1 + 0.12, PALE, { faces: 'NSEWT', top: PALE_SHADE });
+  b.box(xw, walk, z0 + 0.28, xw + 0.3, cap, z1 - 0.28, PALE, { faces: 'EWT', top: PALE_SHADE });
+  // the passage's windows along both faces, clear of the arms at the crown and of the banners by the piers
+  for (const [z, s] of [[z0, -1], [z1, 1]] as const) {
+    for (const d of [1.4, 3.05, 4.7]) for (const t of [-1, 1]) lancet(b, xc + t * d, z, 0, s, 0.36, 13.75, 14.9, 1.6);
+    lancet(b, (xh + xa) / 2, z, 0, s, 0.42, 11.8, 14.6, 1.6);
+    shield(b, xc, 14.35, z + s * 0.05, s);
+    for (const x of [xa + 1.25, xb - 1.25]) hanging(b, x, z, 0, s, 0.5, 11.9, 14.85);
+    // lanterns hung on the parapet's face
+    for (let x = xa + 2.1; x < xb - 1; x += 4.4) k.glows.push({ x, y: walk + 0.12, z: z + s * 0.2, sx: 0.24, sy: 0.3, sz: 0.24, color: '#ffd59a' });
   }
-  seahorseFlat(b, (u, v) => [ax + u * ar * 1.3, y + 0.028, az - (v - 0.25) * ar * 1.3], [0, 1, 0]);
-  // the parapet along its edge over the sea, with a lantern set in it every few units
-  let turn = 0;
-  for (let i = 0; i < n; i++) turn += shape[i][0] * shape[(i + 1) % n][1] - shape[(i + 1) % n][0] * shape[i][1];
-  const inward = turn > 0 ? -1 : 1, PH = 0.65, PT = 0.26;
+  for (const z of [z0 + 1.4, z1 - 1.4]) lancet(b, xh, z, -1, 0, 0.45, 11.5, 14.4, 1.6);
+}
+
+/**
+ * The sea bastion on the islet's east side, its point to the fleet in the
+ * Gullet: a tall block of pale stone whose court side is straight and whose
+ * sea sides follow the shore, standing in the water; a sloping plinth,
+ * string courses, rows of windows, buttresses on its faces to the sea, a band
+ * of corbels, and on its flat top, as high as the gallery's walk and joined
+ * to it, a low parapet with lanterns and the house's seahorse laid in the
+ * paving. Meleys's body and tail lie along it. A door opens from it onto the
+ * court.
+ */
+function bastion(k: Build): void {
+  const b = k.b, { z0: gz0, z1: gz1, walk, cap } = dragonLine(), I = ISLANDS['high-tide'], xb = BASTION_X;
+  const zN = gz0 - 1.5, zS = gz1 + 2.5;
+  // where the shore runs at a height across, on the islet's east side, and its eastmost corner
+  const shoreAt = (z: number): number => {
+    let x = -Infinity;
+    I.forEach((p, i) => {
+      const q = I[(i + 1) % I.length];
+      if ((p[1] - z) * (q[1] - z) <= 0 && p[1] !== q[1]) x = Math.max(x, p[0] + ((q[0] - p[0]) * (z - p[1])) / (q[1] - p[1]));
+    });
+    return x;
+  };
+  const tip = I.reduce((m, p) => (p[0] > m[0] ? p : m), I[0]);
+  const plan: P2[] = [[xb, zN], [shoreAt(zN), zN], [tip[0], tip[1]], [shoreAt(zS), zS], [xb, zS]];
+  const court = (a: P2, c: P2): boolean => Math.abs(a[0] - xb) < 1e-6 && Math.abs(c[0] - xb) < 1e-6;
+  // its sea faces stand a hair out from the shore, so that they are not the islet's edge
+  const wall = grownOut(plan, 0.12, court);
+  // arrow loops, as a sea bastion has, not the palace's windows: rows of panes read as an office block from the opening view
+  const H = walk - 0.6, win = rows(H, 3, 2.2, 0.4, 7);
+  prism(b, grownOut(wall, 0.32, () => false), -1.0, 0.55, PALE_SHADE, { top: PALE_SHADE });
+  prism(b, wall, -1.0, H, PALE, { win, seed: 0.47, top: false });
+  for (const y of [5.0, 10.25]) prism(b, grownOut(wall, 0.09, () => false), y, y + 0.22, PALE_SHADE, { top: PALE_SHADE });
+  // the band of corbels, its top the walk, with its underside where it stands out
+  const band = grownOut(wall, 0.16, court);
+  prism(b, band, H, walk, PALE_SHADE, { top: 0xc6beaf });
+  band.forEach((q, i) => {
+    const p = wall[i], p2 = wall[(i + 1) % wall.length], q2 = band[(i + 1) % band.length];
+    if (!court(p, p2)) b.quad([p[0], H, p[1]], [p2[0], H, p2[1]], [q2[0], H, q2[1]], [q[0], H, q[1]], [0, -1, 0], PALE_SHADE);
+  });
+  // buttresses on the faces to the sea, two stages each, and the parapet along the top, with lanterns on its face
+  const n = band.length;
   for (let i = 0; i < n; i++) {
-    const p = shape[i], q = shape[(i + 1) % n], len = Math.hypot(q[0] - p[0], q[1] - p[1]);
-    if (len < 0.3 || (Math.abs(p[0] - TERRACE_X) < 1e-6 && Math.abs(q[0] - TERRACE_X) < 1e-6)) continue;
-    const nx = ((q[1] - p[1]) / len) * inward, nz = (-(q[0] - p[0]) / len) * inward;
-    const cx = (p[0] + q[0]) / 2 + nx * (PT / 2 + 0.1), cz = (p[1] + q[1]) / 2 + nz * (PT / 2 + 0.1);
-    b.obox(cx, y + PH / 2, cz, len / 2 + PT / 2, PH / 2, PT / 2, Math.atan2(q[1] - p[1], q[0] - p[0]), PALE, { top: PALE_SHADE });
-    for (let t = 1.2; t < len - 0.6; t += 3.2) {
-      const lx = p[0] + ((q[0] - p[0]) * t) / len + nx * (PT / 2 + 0.1), lz = p[1] + ((q[1] - p[1]) * t) / len + nz * (PT / 2 + 0.1);
-      k.glows.push({ x: lx, y: y + PH + 0.08, z: lz, sx: 0.22, sy: 0.14, sz: 0.22, color: '#ffd59a' });
+    const p = wall[i], c = wall[(i + 1) % n], len = Math.hypot(c[0] - p[0], c[1] - p[1]);
+    const ex = (c[0] - p[0]) / len, ez = (c[1] - p[1]) / len;
+    let nx = ez, nz = -ex;
+    const mx = (p[0] + c[0]) / 2 - xb - 2, mz = (p[1] + c[1]) / 2 - (zN + zS) / 2;
+    if (nx * mx + nz * mz < 0) { nx = -nx; nz = -nz; }
+    if (!court(p, c)) {
+      for (const t of len > 4.5 ? [0.3, 0.7] : [0.5]) {
+        const x = p[0] + (c[0] - p[0]) * t, z = p[1] + (c[1] - p[1]) * t;
+        b.moved(x, -1.0, z, Math.atan2(-nz, -nx), () => buttress(b, 0, 0));
+      }
+    }
+    // the parapet: all round its sea faces, and on its court face either side of where the gallery joins it
+    const P = band[i], Q = band[(i + 1) % n];
+    const runs: [P2, P2][] = court(p, c)
+      ? [[[P[0], Math.min(P[1], Q[1])], [P[0], gz0]], [[P[0], gz1], [P[0], Math.max(P[1], Q[1])]]]
+      : [[P, Q]];
+    for (const [A, C] of runs) {
+      const rl = Math.hypot(C[0] - A[0], C[1] - A[1]);
+      if (rl < 0.2) continue;
+      const ux = (C[0] - A[0]) / rl, uz = (C[1] - A[1]) / rl;
+      b.obox((A[0] + C[0]) / 2 - nx * 0.14, (walk + cap) / 2, (A[1] + C[1]) / 2 - nz * 0.14, rl / 2, (cap - walk) / 2, 0.14, Math.atan2(uz, ux), PALE, { top: PALE_SHADE });
+      if (!court(p, c)) for (let t = 1.0; t < rl - 0.5; t += 2.8) k.glows.push({ x: A[0] + ux * t + nx * 0.06, y: walk + 0.12, z: A[1] + uz * t + nz * 0.06, sx: 0.24, sy: 0.3, sz: 0.24, color: '#ffd59a' });
     }
   }
-  // if it stands above the court, a flight of steps up along its face, rising northwards where the court's open circle leaves room
-  if (raised) {
-    const steps = Math.ceil(y / 0.3), d = 0.36, south = CZ - Math.sqrt(Math.max(0, COURT * COURT - (TERRACE_X - 0.8 - CX) ** 2)) - 0.1;
-    for (let i = 0; i < steps; i++) b.box(TERRACE_X - 0.75, 0, south - (i + 1) * d, TERRACE_X + 0.01, (y * (i + 1)) / steps, south - i * d, PALE_SHADE, { faces: 'NSWT' });
+  // the house's seahorse laid in the paving of its top, seen when she is away
+  const ax = (xb + tip[0]) / 2, az = (zN + zS) / 2, ar = Math.min(2.0, (tip[0] - xb) / 2 - 0.4);
+  for (let i = 0; i < 14; i++) {
+    const a0 = (i / 14) * TAU, a1 = ((i + 1) / 14) * TAU;
+    b.up([ax, walk + 0.018, az], [ax + Math.cos(a0) * ar, walk + 0.018, az + Math.sin(a0) * ar], [ax + Math.cos(a1) * ar, walk + 0.018, az + Math.sin(a1) * ar], SEA_GREEN);
   }
-  k.lights.push({ x: (TERRACE_X + 46) / 2, z: CZ - 4, r: 9, color: '#ffd2a0', k: 0.4 });
-  k.lights.push({ x: (TERRACE_X + 46) / 2, z: CZ + 4, r: 9, color: '#ffd2a0', k: 0.4 });
+  seahorseFlat(b, (u, v) => [ax + u * ar * 1.3, walk + 0.028, az - (v - 0.25) * ar * 1.3], [0, 1, 0]);
+  // a door from it onto the court, south of the gallery, with a torch, and the light round its foot
+  const dz = (gz1 + zS) / 2 + 0.2;
+  doorway(b, xb, 0.55, dz, -1, 0, 1.0, 2.1, 0.6, DOOR);
+  b.box(xb - 0.2, 2.5, dz + 1.0 - 0.08, xb, 2.7, dz + 1.0 + 0.08, IRONWORK);
+  fire(k, xb - 0.24, 3.0, dz + 1.0, 0.18, 0);
+  k.lights.push({ x: xb - 1.6, z: dz, r: 6.5, color: '#ffcf8a', k: 0.5 });
+}
+
+/**
+ * The walls that close the court on the east: from the gate to the bastion's
+ * corner on the north, and on the south the sea wall's last stretches along
+ * the shore to the bastion, with the yard they close, paved.
+ */
+function eastWalls(k: Build, L: Layout, wallH: number): void {
+  const b = k.b, G = dragonLine(), zN = G.z0 - 1.5, zS = G.z1 + 2.5;
+  // on the north, from inside the gate's last pier to inside the bastion's corner
+  rampart(b, [L.gate.x1 - 0.3, L.gate.z1 - 0.4], [BASTION_X + 0.35, zN + 0.45], 10.4, PALE, { thick: 1.2, shade: PALE_SHADE, win: rows(10.4, 2, 2.4, 0.3) });
+  // on the south, along the shore: two stretches of sea wall, standing in the water
+  const runs: [P2, P2][] = [[[BASTION_X - 0.25, 88.75], [43.85, 87.75]], [[43.85, 87.75], [44.75, zS + 0.1]]];
+  for (const [a, c] of runs) {
+    const len = Math.hypot(c[0] - a[0], c[1] - a[1]), yaw = Math.atan2(c[1] - a[1], c[0] - a[0]);
+    b.obox((a[0] + c[0]) / 2, (wallH - 1.0) / 2, (a[1] + c[1]) / 2, len / 2 + 0.25, (wallH + 1.0) / 2, 0.25, yaw, PALE, { top: PALE_SHADE });
+    merlons(b, a, c, wallH, 0.5, PALE, 0.7, 1.1);
+  }
+  area(k, [[BASTION_X, zS + 0.02], [44.6, zS + 0.02], [43.75, 87.6], [BASTION_X, 88.4]], COURT_PAVE, 0.045);
 }
 
 // ---------------------------------------------------------------------------
@@ -694,11 +796,12 @@ function dragonTerrace(k: Build): void {
  * own surface, which lies lower and is laid in chords two units long, so that
  * no ground shows between them.
  */
-function courtPaving(k: Build, l: Lot, xe: number): void {
-  const half = (LANE + 1.2) / 2, r = RING.r + half - 0.25, rx = LANE - 0.05, z0 = l.z0 + 0.05, z1 = l.z1 - 0.05, x0 = l.x0 + 0.05;
+function courtPaving(k: Build, l: Lot, L: Layout): void {
+  const half = (LANE + 1.2) / 2, r = RING.r + half - 0.25, rx = LANE - 0.05, z0 = l.z0 + 0.05, z1 = l.z1 - 0.05, x0 = l.x0 + 0.05, xe = BASTION_X;
   area(k, Array.from({ length: 20 }, (_, i): P2 => [CX + Math.cos((i / 20) * TAU) * (RING.r - half + 0.2), CZ + Math.sin((i / 20) * TAU) * (RING.r - half + 0.2)]), COURT_PAVE, 0.045);
-  const zc = CZ - Math.sqrt(r * r - rx * rx);
-  const shape: P2[] = [[ROAD_X - rx, z0], [x0, z0], [x0, z1], [xe, z1], [xe, z0], [ROAD_X + rx, z0], [ROAD_X + rx, zc]];
+  const zc = CZ - Math.sqrt(r * r - rx * rx), zN = dragonLine().z0 - 1.5;
+  // as far east as the bastion, and on the north-east as far as the wall from the gate to it
+  const shape: P2[] = [[ROAD_X - rx, z0], [x0, z0], [x0, z1], [xe, z1], [xe, zN], [L.gate.x1, L.gate.z1], [L.gate.x1, z0], [ROAD_X + rx, z0], [ROAD_X + rx, zc]];
   const a0 = Math.atan2(zc - CZ, rx), a1 = Math.atan2(zc - CZ, -rx) + TAU, n = 40;
   for (let i = 1; i < n; i++) {
     const a = a0 + ((a1 - a0) * i) / n;
@@ -715,7 +818,7 @@ function courtPaving(k: Build, l: Lot, xe: number): void {
  * round the basin, flowers and orange trees in pots, brought from the east.
  */
 function fountain(k: Build): void {
-  const b = k.b, x = CX, z = CZ, island = RING.r - (LANE + 1.2) / 2, R = Math.min(1.0, island - 0.6);
+  const b = k.b, x = CX, z = CZ, island = RING.r - (LANE + 1.2) / 2, R = Math.min(0.9, island - 0.7);
   b.cyl(x, z, 0.04, 0.55, R, R, 14, PALE, { cap: false });
   annulus(b, x, z, R - 0.15, R, 0.55, 1, PALE_SHADE, 14);
   b.cyl(x, z, 0.4, 0.55, R - 0.15, R - 0.15, 14, PALE_SHADE, { cap: WATER });
@@ -726,12 +829,12 @@ function fountain(k: Build): void {
   // orange trees in pots at the four corners round it, and flowers between them
   const rand = rng(4417);
   for (let i = 0; i < 4; i++) {
-    const a = Math.PI / 4 + (i * Math.PI) / 2, px = x + Math.cos(a) * (island - 0.32), pz = z + Math.sin(a) * (island - 0.32);
+    const a = Math.PI / 4 + (i * Math.PI) / 2, px = x + Math.cos(a) * (island - 0.45), pz = z + Math.sin(a) * (island - 0.45);
     b.cyl(px, pz, 0.045, 0.4, 0.17, 0.22, 7, 0xb5643c, { cap: 0x4b3423 });
     k.tree(px, pz, 0.15, false, 0.38);
     // its oranges, on the side of the crown the view sees
     for (let j = 0; j < 2; j++) {
-      const t = Math.atan2(0.743, 0.669) + (j - 0.5) * 1.1, fy = 0.95 + rand() * 0.3, fx = px + Math.cos(t) * 0.4, fz = pz + Math.sin(t) * 0.4;
+      const t = Math.atan2(0.743, 0.669) + (j - 0.5) * 1.1, fy = 0.95 + rand() * 0.3, fx = px + Math.cos(t) * 0.34, fz = pz + Math.sin(t) * 0.34;
       b.box(fx - 0.06, fy, fz - 0.06, fx + 0.06, fy + 0.12, fz + 0.06, 0xf08a24, { faces: 'NESWT' });
     }
     // a low bed of flowers between each two pots
@@ -970,14 +1073,16 @@ const highTide: Model = (k, l) => {
   costed(k, 'hall', () => greatHall(k, L));
   costed(k, 'turret', () => brassTurret(k.b, L));
   costed(k, 'south-west', () => southWest(k, l, L));
-  costed(k, 'sea wall', () => seaWall(k, l, L.sw.x, TERRACE_X, wallH));
+  costed(k, 'sea wall', () => seaWall(k, l, L.sw.x, BASTION_X, wallH));
   // the loggia, from the south-west tower to where the court's open circle comes near the wall
   const lx1 = ROAD_X - 3, lzp = CZ + Math.sqrt(COURT * COURT - (CX - lx1) ** 2) + 0.05;
   costed(k, 'loggia', () => seaLoggia(k, l, L.sw.x + L.sw.r, lx1, lzp, wallH));
-  costed(k, 'court', () => courtPaving(k, l, TERRACE_X));
+  costed(k, 'gallery', () => gallery(k, L));
+  costed(k, 'bastion', () => bastion(k));
+  costed(k, 'east walls', () => eastWalls(k, L, wallH));
+  costed(k, 'court', () => courtPaving(k, l, L));
   costed(k, 'fountain', () => fountain(k));
   costed(k, 'folk', () => courtFolk(k, L));
-  costed(k, 'terrace', () => dragonTerrace(k));
   costed(k, 'shore', () => shore(k, l));
 };
 
