@@ -323,7 +323,7 @@ function build(k: Build): TileParts {
   const heroSpots: HeroSpot[] = HERO_PLACES.map((h) => ({ ...h }));
   const parked: ParkedSpot[] = [];
 
-  // (the Buddh circuit's ground, until it is built)
+  // the grass the Buddh circuit lies on: its kerbs, gravel, pit lane and banking are laid on this by its own model
   area(k, rect(BUDDH.x0 - 3.2, BUDDH.z0 - 5.5, BUDDH.x1 + 3.2, BUDDH.z1 + 5.5), 0x86a866);
 
   // what stands between the things: people, trees along the avenues, autos at their stands, carts, boards over the roads

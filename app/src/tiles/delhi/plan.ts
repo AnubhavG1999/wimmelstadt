@@ -146,7 +146,8 @@ export const THINGS: Thing[] = [
   T(9, 'kebab-lane', 'KEBAB LANE', 'old-delhi', -10, -59, 22, 6, 4),
   T(10, 'kashmere-gate', 'KASHMERE GATE', 'old-delhi', -2, -112.5, 12, 11, 9),
   T(11, 'signature-bridge', 'SIGNATURE BRIDGE', 'river', 83, -109, 4, 18, 46),
-  T(12, 'ghats', 'GHATS', 'river', 67.5, -50, 2.5, 60, 0),
+  // (the ghats are built out over the river's edge: the bank itself is the Ring Road's sidewalk)
+  T(12, 'ghats', 'GHATS', 'river', 70, -50, 4.5, 60, 0),
   // The centre
   T(13, 'connaught-place', 'CONNAUGHT PLACE', 'centre', CP[0] - CP_R.block1, CP[1] - CP_R.block1, CP_R.block1 * 2, CP_R.block1 * 2, 7.5),
   T(14, 'flag', 'THE FLAG', 'centre', CP[0] - 1, CP[1] - 1, 2, 2, 20),
@@ -233,7 +234,8 @@ export const WATERS: Record<string, { at: [number, number, number, number]; wet:
 export interface HeroPlace { id: string; x: number; y: number; z: number; heading: number; turn?: number }
 
 export const HERO_PLACES: HeroPlace[] = [
-  { id: 'auto-expo', x: 41, y: 0.03, z: -30, heading: 0.5, turn: 0.35 },
+  // (it stands on the turntable before the hall, whose top is 0.3 above the forecourt)
+  { id: 'auto-expo', x: 41, y: 0.3, z: -30, heading: 0.5, turn: 0.35 },
   { id: 'vintage-rally', x: 47, y: 0.03, z: 31, heading: 0.4 },
   { id: 'karol-bagh', x: -80, y: 0.03, z: -47.2, heading: 0 },
   { id: 'khan-market', x: 21.5, y: 0.03, z: 38.5, heading: 0 },
