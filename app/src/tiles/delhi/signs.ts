@@ -20,7 +20,7 @@ const shop = (id: string, hindi: string, english: string, color: string, ink: st
 export const SHOPS: Record<Quarter, SignDef[]> = {
   'old-delhi': [
     shop('sweets', 'मिठाई', 'SWEETS', '#b3202a', '#fbe9b7'), shop('chaat', 'चाट', 'CHAAT', '#f2c14e', '#5e1a1a', 'box'), shop('tea', 'चाय', 'TEA', '#1f5d48', '#f4f1e8'),
-    shop('spices', 'मसाले', 'SPICES', '#c8742a', '#fff6e0'), shop('jalebi', 'जलेबी', 'JALEBI', '#f08a24', '#3a1a08', 'box'), shop('kites', 'पतंग', 'KITES', '#2a6fb0', '#fff6e0'),
+    shop('spices', 'मसाले', 'SPICES', '#c8742a', '#fff6e0'), shop('jalebi', 'जलेबी', 'JALEBI', '#f08a24', '#3a1a08', 'box'),
   ],
   centre: [
     shop('tyres', 'टायर', 'TYRES', '#1b1b20', '#f2c14e'), shop('parts', 'ऑटो पार्ट्स', 'AUTO PARTS', '#f2c14e', '#1b1b20', 'box'), shop('sweets-2', 'मिठाई', 'SWEETS', '#7a1f5e', '#fbe9b7'),

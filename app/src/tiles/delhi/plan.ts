@@ -250,13 +250,12 @@ export const PLOTS: Plot[] = [
   lot('old-delhi', 'haveli', -62, -84, 10, 8, 2),
   lot('old-delhi', 'haveli', -50, -80, 9, 10, 3),
   lot('old-delhi', 'haveli', -39, -82, 8, 11, 2),
-  lot('old-delhi', 'haveli', -29, -80, 8, 10, 3),
+  // (one storey, so that Paranthe Wali Gali is seen over it from the south-east)
+  lot('old-delhi', 'haveli', -29, -80, 8, 10, 1),
   lot('old-delhi', 'haveli', -19, -82, 7, 12, 2),
   lot('old-delhi', 'haveli', -66, -74, 9, 10, 2),
   lot('old-delhi', 'haveli', -24, -69, 10, 6, 2),
-  // south of the mosque, towards the road
-  lot('old-delhi', 'haveli', -10, -52, 9, 6, 2, 'S'),
-  lot('old-delhi', 'haveli', 1, -52, 10, 6, 2, 'S'),
+  // (nothing stands south of the kebab lane: it is seen across open ground from the road)
   // the bus terminal north of the fort
   lot('old-delhi', 'shed', 30, -112, 16, 9, 1.5, 'S'),
   // Karol Bagh, behind the accessory street

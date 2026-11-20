@@ -183,13 +183,16 @@ On the blockout, 19 November 2026, and again as the tile grew:
 - **Mathura Road and Purana Qila are left out.** There was no ground east of the hexagon for them.
 - **The Buddh circuit is on the east bank**, as a small oval with one banked end. It is forty kilometres away in life, and its sign says so by naming Greater Noida.
 - **The statue of Hanuman stands north of Karol Bagh's shops.** The Metro that passes it in life is the Blue Line, which this tile does not have.
+- **The kites fly to the south of their roofs**, towards the side the tile is looked at from, so that each is seen against the roofs and not against the sky beyond the board. Their strings run back to the flyers on the roofs. Nothing in the kite quarter is a festival's: no date is named.
+- **The kebab lane's stalls face south**, to the road, and nothing stands south of them. In life the lane is hemmed in on both sides.
+- **The cycle rickshaws on Chandni Chowk go round it in a loop**, up one side and back down the other. The street has been closed to motor traffic by day since 2021, and here it is closed at night as well.
 - **Left out for care**, as the research note's section 8 says: the Taj Mahal, the new Parliament and the Central Vista's new blocks, the old Parliament, the mosque at the Qutub Minar's foot, Rajghat, Nizamuddin's shrine, and any parade.
 
 ## Real names on signs, and the Hindi on them
 
 Each is checked as it is written, and entered here with what confirmed it. A shop's board says what is sold and not whose shop it is, in Hindi above and English below. All checks were made by web searches on 19 November 2026.
 
-**Hindi words for trades**, on the shop boards in `signs.ts`:
+**Hindi words for trades**, on the shop boards in `signs.ts` and on the boards of Old Delhi's street life in `bazaar.ts`:
 
 | On the board | Meaning | What confirmed the spelling |
 | --- | --- | --- |
@@ -202,6 +205,10 @@ Each is checked as it is written, and entered here with what confirmed it. A sho
 | टायर | tyres | the title of Hindi Wikipedia's page on the tyre, टायर |
 | ऑटो पार्ट्स | auto parts | the usual spelling of the loan words. Not confirmed by a source read in full: to be looked at again before the tile is final. |
 | पतंग | kites | the title of Hindi Wikipedia's page on the kite, पतंग |
+| परांठे | parathas | a piece in Patrika on the lane, which it writes परांठे वाली गली |
+| लस्सी | lassi | the title of Hindi Wikipedia's page on the drink, लस्सी |
+| सूखे मेवे | dry fruit | Hindi Wikipedia's page on dry fruit, which is titled सूखे मेवे |
+| कबाब | kebabs | Hindi Wikipedia's page on the spice कबाबचीनी, which writes the dish's name so, and English Wikipedia's page on the kebab, which gives the Hindi as कबाब |
 
 **Names of places**, on the green boards over the roads in `signs.ts`. Names of places are safe on road and Metro boards:
 
