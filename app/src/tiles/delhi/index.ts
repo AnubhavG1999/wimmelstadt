@@ -19,6 +19,7 @@ import {
 } from './plan';
 import { AXIS } from './axis';
 import { KINDS } from './traffic';
+import { flypast } from './flypast';
 import { life } from './life';
 import * as bazaar from './bazaar';
 import * as centre from './centre';
@@ -286,6 +287,12 @@ function build(k: Build): TileParts {
     }
     k.lights.push({ x: x + nx * 5, z: z + nz * 5, r: 11, color: '#dfe6ff', k: 0.5 });
   }
+
+  // -------------------------------------------------------------------------
+  // In the air: three jets, which trail saffron, white and green down the axis
+  // -------------------------------------------------------------------------
+
+  flypast(k);
 
   // -------------------------------------------------------------------------
   // Trees: the Ridge, and the rows along Kartavya Path
