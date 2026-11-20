@@ -7,6 +7,7 @@
 // vehicles can pass, and for the places where one of them runs through
 // something that is built. `hiddenBy` says what stands between a place and
 // the camera. Whether a lot stands in a street is `clearOfStreets`, in roads.ts.
+// `flatFights` finds surfaces that lie in one plane, which flicker.
 //
 // Hong Kong's builder wrote these. A tile's faults showed in the console on the
 // next load, where before they showed in a picture much later, or not at all.
@@ -103,4 +104,170 @@ export function checkRoads(tile: string, routes: Route[], rails: Record<string, 
   const total = lines.map((l) => `${l.id} ${l.length.toFixed(0)}`).join(', ');
   if (found.length > 0) console.warn(`${tile}: roads that cross on the level:\n  ${found.join('\n  ')}`);
   else console.info(`${tile}: no road crosses another on the level${through.size > 0 ? '' : ', and none runs through anything built'}. Lengths: ${total}`);
+}
+
+// ---------------------------------------------------------------------------
+// Surfaces that lie in one plane
+// ---------------------------------------------------------------------------
+
+/** Two flat surfaces that lie in one plane and overlap. */
+export interface Fight {
+  /** Where they overlap, in the coordinates of what was looked through, and how high. */
+  x: number;
+  z: number;
+  y: number;
+  /** How much ground the two share near there. */
+  area: number;
+  /** What the two are: the mesh each is part of, its colour, and whether lines are painted on it. */
+  a: string;
+  b: string;
+}
+
+/** A triangle that faces straight up: its corners on the ground, its height, and what it looks like. */
+interface FlatTri { p: number[]; y: number; look: number; plain: boolean }
+
+/**
+ * Finds flat surfaces under `root` that lie in one plane, overlap, and do not
+ * look the same. Two such surfaces flicker: which of them is drawn in front
+ * changes from frame to frame as the view moves. No still picture shows it, so
+ * it is found here, or by whoever watches the tile for long enough.
+ *
+ * The usual causes: two streets that run together along one line (the engine
+ * clears a junction only where two streets cross: see `junction` in
+ * roads.ts), two decks or two lawns at one height, and two roofs at one height
+ * where buildings stand into each other. The cure is to end one of the two
+ * short of the other, to lay a junction over them, or to lift one by 0.01.
+ *
+ * Only surfaces that face straight up are looked at: a wall is rarely built
+ * twice. Whatever is in `skip` is left out, with everything under it.
+ * Surfaces nearer in height than `gap` count as in one plane: 0.004 apart
+ * is enough for the two to be told apart from every side.
+ */
+export function flatFights(root: THREE.Object3D, skip: Set<THREE.Object3D> = new Set(), gap = 0.0035): Fight[] {
+  root.updateMatrixWorld(true);
+  const inv = new THREE.Matrix4().copy(root.matrixWorld).invert(), m = new THREE.Matrix4();
+  const tris: FlatTri[] = [], looks: string[] = [];
+  const lookOf = (name: string): number => {
+    const i = looks.indexOf(name);
+    return i < 0 ? looks.push(name) - 1 : i;
+  };
+  const v = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()], c = new THREE.Color();
+  const walk = (o: THREE.Object3D): void => {
+    if (skip.has(o) || !o.visible) return;
+    const mesh = o as THREE.Mesh;
+    if (mesh.isMesh && !(o as THREE.InstancedMesh).isInstancedMesh && mesh.geometry.getAttribute('position')) {
+      const g = mesh.geometry, pos = g.getAttribute('position'), col = g.getAttribute('color'), win = g.getAttribute('aWin');
+      const mat = (Array.isArray(mesh.material) ? mesh.material[0] : mesh.material) as THREE.MeshBasicMaterial;
+      const name = mesh.name || 'a mesh of the tile\'s own';
+      m.multiplyMatrices(inv, mesh.matrixWorld);
+      const n = g.index ? g.index.count : pos.count;
+      for (let t = 0; t + 2 < n; t += 3) {
+        const i0 = g.index ? g.index.getX(t) : t;
+        for (let e = 0; e < 3; e++) v[e].fromBufferAttribute(pos, g.index ? g.index.getX(t + e) : t + e).applyMatrix4(m);
+        if (Math.abs(v[0].y - v[1].y) > 1e-4 || Math.abs(v[0].y - v[2].y) > 1e-4) continue;
+        // seen from above, the front of a surface is wound against the clock
+        const up = (v[1].z - v[0].z) * (v[2].x - v[0].x) - (v[1].x - v[0].x) * (v[2].z - v[0].z);
+        if (Math.abs(up) < 1e-5 || (up < 0 && mat.side !== THREE.DoubleSide)) continue;
+        // a deck always has its edge lines; a street has lines unless it is a plain patch or paving
+        const lined = name === 'deck' || (win !== undefined && win.getX(i0) >= 0.5 && (name !== 'street' || win.getW(i0) < 0.5));
+        if (col) c.setRGB(col.getX(i0), col.getY(i0), col.getZ(i0));
+        else c.copy(mat.color ?? c.set(0xffffff));
+        const p = [v[0].x, v[0].z, v[1].x, v[1].z, v[2].x, v[2].z];
+        // all wound the same way round, so that the inside is on the same hand of every edge
+        if (up > 0) p.splice(2, 4, p[4], p[5], p[2], p[3]);
+        tris.push({ p, y: v[0].y, look: lookOf(name === 'deck' ? 'deck, with lines' : `${name} #${c.getHexString()}${lined ? ', with lines' : ''}`), plain: !lined });
+      }
+    }
+    for (const child of o.children) walk(child);
+  };
+  walk(root);
+
+  // every triangle is filed under each square of ground it reaches
+  const CELL = 8;
+  const cells = new Map<number, number[]>();
+  const key = (x: number, z: number): number => (Math.floor(x / CELL) + 4096) * 8192 + Math.floor(z / CELL) + 4096;
+  tris.forEach((t, i) => {
+    const x0 = Math.min(t.p[0], t.p[2], t.p[4]), x1 = Math.max(t.p[0], t.p[2], t.p[4]), z0 = Math.min(t.p[1], t.p[3], t.p[5]), z1 = Math.max(t.p[1], t.p[3], t.p[5]);
+    if (((x1 - x0) / CELL + 1) * ((z1 - z0) / CELL + 1) > 20000) return;
+    for (let x = Math.floor(x0 / CELL); x <= Math.floor(x1 / CELL); x++) {
+      for (let z = Math.floor(z0 / CELL); z <= Math.floor(z1 / CELL); z++) {
+        const at = key(x * CELL, z * CELL), list = cells.get(at);
+        if (list) list.push(i);
+        else cells.set(at, [i]);
+      }
+    }
+  });
+
+  /** Which hand of the edge from corner e of a triangle a place is on: not below 0 is inside. */
+  const side = (t: number[], e: number, x: number, z: number): number => {
+    const px = t[e * 2], pz = t[e * 2 + 1], qx = t[((e + 1) % 3) * 2], qz = t[((e + 1) % 3) * 2 + 1];
+    return (qx - px) * (z - pz) - (qz - pz) * (x - px);
+  };
+  const inside = (t: number[], x: number, z: number): boolean => side(t, 0, x, z) >= 0 && side(t, 1, x, z) >= 0 && side(t, 2, x, z) >= 0;
+  /** The part of one triangle that lies inside another, as a ring of corners. */
+  const shared = (a: number[], b: number[]): number[] => {
+    let ring = a;
+    for (let e = 0; e < 3 && ring.length >= 6; e++) {
+      const out: number[] = [];
+      for (let i = 0; i < ring.length; i += 2) {
+        const ax = ring[i], az = ring[i + 1], bx = ring[(i + 2) % ring.length], bz = ring[(i + 3) % ring.length];
+        const sa = side(b, e, ax, az), sb = side(b, e, bx, bz);
+        if (sa >= 0) out.push(ax, az);
+        if ((sa >= 0) !== (sb >= 0)) out.push(ax + ((bx - ax) * sa) / (sa - sb), az + ((bz - az) * sa) / (sa - sb));
+      }
+      ring = out;
+    }
+    return ring;
+  };
+  /** Whether something flat lies just over a place: the patch of a junction over two carriageways, say. */
+  const covered = (x: number, z: number, y: number): boolean => (cells.get(key(x, z)) ?? []).some((i) => tris[i].y > y + gap && tris[i].y < y + 0.4 && inside(tris[i].p, x, z));
+
+  const tried = new Set<number>(), found = new Map<string, Fight>();
+  for (const list of cells.values()) {
+    list.sort((i, j) => tris[i].y - tris[j].y);
+    for (let a = 0; a < list.length; a++) {
+      for (let b = a + 1; b < list.length && tris[list[b]].y - tris[list[a]].y < gap; b++) {
+        const i = Math.min(list[a], list[b]), j = Math.max(list[a], list[b]);
+        const A = tris[i], B = tris[j];
+        // two plain surfaces of one colour look the same whichever is in front
+        if ((A.plain && B.plain && A.look === B.look) || tried.has(i * tris.length + j)) continue;
+        tried.add(i * tris.length + j);
+        const ring = shared(A.p, B.p);
+        if (ring.length < 6) continue;
+        let twice = 0, cx = 0, cz = 0;
+        for (let r = 0; r < ring.length; r += 2) {
+          const s = (r + 2) % ring.length, w = ring[r] * ring[s + 1] - ring[s] * ring[r + 1];
+          twice += w;
+          cx += (ring[r] + ring[s]) * w;
+          cz += (ring[r + 1] + ring[s + 1]) * w;
+        }
+        let area = Math.abs(twice) / 2;
+        if (area < 0.01) continue;
+        cx /= 3 * twice;
+        cz /= 3 * twice;
+        const top = Math.max(A.y, B.y);
+        const probes: [number, number][] = [[cx, cz]];
+        // in its middle and just inside each of its corners: it can be covered at one end and bare at the other
+        for (let r = 0; r < ring.length; r += 2) probes.push([cx + (ring[r] - cx) * 0.9, cz + (ring[r + 1] - cz) * 0.9]);
+        // only the part that nothing covers counts, as near as a handful of places can tell
+        const bare = probes.filter(([x, z]) => !covered(x, z, top)).length;
+        if (bare === 0) continue;
+        area *= bare / probes.length;
+        // one line for each few units of ground and each pair of looks
+        const [la, lb] = [looks[A.look], looks[B.look]].sort();
+        const where = `${Math.round(cx / 4)} ${Math.round(cz / 4)} ${top.toFixed(3)} ${la} ${lb}`;
+        const f = found.get(where);
+        if (f) {
+          f.x = (f.x * f.area + cx * area) / (f.area + area);
+          f.z = (f.z * f.area + cz * area) / (f.area + area);
+          f.area += area;
+        } else {
+          found.set(where, { x: cx, z: cz, y: top, area, a: la, b: lb });
+        }
+      }
+    }
+  }
+  const round = (n: number, to: number): number => Math.round(n * to) / to;
+  return [...found.values()].filter((f) => f.area >= 0.25).sort((f, g) => g.area - f.area)
+    .map((f) => ({ x: round(f.x, 10), z: round(f.z, 10), y: round(f.y, 1000), area: round(f.area, 10), a: f.a, b: f.b }));
 }

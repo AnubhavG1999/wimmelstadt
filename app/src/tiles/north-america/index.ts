@@ -8,6 +8,8 @@ export const northAmerica: TileDef = {
   id: 'north-america',
   name: 'North America',
   seed: 20261118,
+  // the middle of the United States
+  place: { lon: -96, lat: 39 },
   signs: SIGNS,
   build: buildCity,
 };

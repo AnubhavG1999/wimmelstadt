@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { rng } from './geo';
 import { buildPath, type Path } from './paths';
-import type { Build, HeroSpot, ParkedSpot, Route, TrafficType } from './tile';
+import type { Build, HeroSpot, ParkedSpot, Route, TrafficKind, TrafficType } from './tile';
 import { Flames, Smoke } from './effects';
 import type { PartyTrick, TrickFx, TrickRun } from './tricks';
 
@@ -63,7 +63,45 @@ function lampsFor(nose: number, tail: number, yHead: number, yTail: number, wid:
   return out;
 }
 
-interface VType { name: string; geo: THREE.BufferGeometry; len: number; wid: number; wb: number; colors: number[] }
+interface VType { name: string; geo: THREE.BufferGeometry; len: number; wid: number; wb: number; colors: number[]; lamps?: boolean }
+
+// ---------------------------------------------------------------------------
+// Traffic of a tile's own
+// ---------------------------------------------------------------------------
+//
+// A tile can bring kinds of traffic of its own shape (`TrafficKind` in
+// tile.ts): a rider, a cart, an auto-rickshaw. A kind's shape is made of the
+// same parts as the plain cars are, with the pieces below, so that it is
+// drawn by the same material, in one batch for the whole kind:
+//
+//   const cart: TrafficKind = {
+//     name: 'cart', len: 6, wid: 2.8, colors: [0x8a6a44, 0x6b5136], lamps: false,
+//     geo: shapeFrom([
+//       shapePart(boxAt(3.6, 0.9, 2.6, -1, 1.4, 0), PART.paint, 0xffffff),   // takes one of `colors`
+//       shapePart(boxAt(1.8, 1.5, 0.7, 2, 1.3, 0), PART.trim, 0x5a4636),     // keeps its own colour
+//       ...wheelsFor(0.9, 2.8, [-1]),
+//     ]),
+//   };
+//
+// The shape has its nose along +x, stands on y = 0 and has its middle over
+// (0, 0). Paint is given in white and takes the colour picked for each one;
+// every other part keeps the colour it is given. `head` and `tail` are lamps:
+// they light up at night, and a kind that has none says `lamps: false`, so
+// that it throws no beam on the road either.
+
+/** The parts a shape is made of. Only `paint` takes the colour picked for each vehicle; `head` and `tail` light up at night. */
+export const PART = { paint: PAINT, glass: GLASS, trim: TRIM, head: HEAD, tail: TAIL, hub: HUB } as const;
+/** A piece of a shape as one of its parts, in a colour. Paint is given in white. */
+export const shapePart = part;
+/** A side profile, as corners with x along the vehicle and y up, pushed out to a width. */
+export const sideProfile = extrude;
+/** A box so long, so high and so wide, with its middle at a place. */
+export const boxAt = box;
+export { wheelsFor, lampsFor };
+/** One shape from its pieces. */
+export function shapeFrom(pieces: THREE.BufferGeometry[]): THREE.BufferGeometry {
+  return mergeGeometries(pieces)!;
+}
 
 const TRAFFIC_COLORS = [0xd9d4cc, 0x9aa3ad, 0x5b6b7a, 0x2e3440, 0xb5483a, 0x4f7a6b, 0x3f6fa3, 0xd1b25a, 0xf2f0ea, 0x8b5e83, 0x6d8f9b];
 
@@ -212,6 +250,8 @@ interface Veh {
   held: number;
   len: number; wid: number; wb: number;
   type: number; inst: number; // traffic: which batch and which slot in it
+  /** Whether it throws a beam ahead at night. */
+  lamps: boolean;
   hero: Hero | null;
   heading: number; turn: number; lit: boolean;
   fx: number; // slot among the moving vehicles, or -1
@@ -241,7 +281,11 @@ export interface Vehicles {
   positions(): { route: string; s: number; v: number; x: number; y: number; z: number; hero: boolean }[];
 }
 
-/** A stretch of lane that two routes both run along: from `a0` on one of them, from `b0` on the other, for `len`. */
+/**
+ * A stretch of lane that two routes both run along: from `a0` on one of them,
+ * from `b0` on the other, for `len`. Each of the two routes holds it from its
+ * own side, and the two hold the same numbers: see `findShares`.
+ */
 interface Share { other: Loop; a0: number; b0: number; len: number }
 /** One route, the line it follows, the vehicles on it in the order they drive, and the lanes it shares. */
 interface Loop { def: Route; path: Path; list: Veh[]; shares: Share[] }
@@ -257,6 +301,9 @@ const PATIENCE = 2.5;
 /** How far past the end of a shared lane a vehicle is still in the way of the one behind it, though their ways have parted. */
 const PART_CLEAR = 9;
 
+/** How many seconds the traffic of a tile with shared lanes drives before anyone sees it: see the end of `buildVehicles`. */
+const SETTLE = 4;
+
 /** How far a vehicle is past the place a shared stretch starts, going round its own route: from 0 up to the route's length. */
 const pastStart = (s: number, from: number, L: number): number => (((s - from) % L) + L) % L;
 
@@ -266,6 +313,14 @@ const pastStart = (s: number, from: number, L: number): number => (((s - from) %
  * that lane, whichever route that one is on, and where two routes come
  * together the vehicle that is nearer goes first. Routes that merely cross are
  * not found, and their vehicles still pass through each other.
+ *
+ * Every two routes are looked at once, from the one that comes first, and both
+ * are given the one record of each stretch they share, each from its own side.
+ * They must not each measure it for themselves. Measured from points a unit
+ * apart, two measures of one stretch differ by up to a unit, and then each of
+ * two vehicles reckons where the other is a little differently from how the
+ * other reckons it itself. That is enough for each of two that stand waiting
+ * to take the other for the one that goes first, and then neither moves again.
  */
 function findShares(loops: Loop[]): void {
   const STEP = 1, CELL = 3;
@@ -294,7 +349,7 @@ function findShares(loops: Loop[]): void {
   }
   lines.forEach((line, a) => {
     const A = loops[a], n = line.length, step = A.path.length / n;
-    // for each of this route's points, the place on every other route that lies on it and heads the same way
+    // for each of this route's points, the place on every route after it that lies on it and heads the same way
     const match = new Map<number, Float64Array>();
     line.forEach((d, i) => {
       const cx = Math.floor(d.x / CELL), cz = Math.floor(d.z / CELL);
@@ -302,7 +357,7 @@ function findShares(loops: Loop[]): void {
       for (let ix = -1; ix <= 1; ix++) {
         for (let iz = -1; iz <= 1; iz++) {
           for (const e of grid.get(key(cx + ix, cz + iz)) ?? []) {
-            if (e.loop === a || Math.abs(e.y - d.y) > 0.6 || e.tx * d.tx + e.tz * d.tz < 0.92) continue;
+            if (e.loop <= a || Math.abs(e.y - d.y) > 0.6 || e.tx * d.tx + e.tz * d.tz < 0.92) continue;
             const fore = (d.x - e.x) * e.tx + (d.z - e.z) * e.tz;
             const off = Math.abs((d.x - e.x) * e.tz - (d.z - e.z) * e.tx);
             if (off > 0.45 || Math.abs(fore) > 0.75) continue;
@@ -319,6 +374,12 @@ function findShares(loops: Loop[]): void {
     });
     for (const [b, m] of match) {
       const B = loops[b], LB = B.path.length;
+      // the one record of a stretch, handed to both routes: what is `a0` to the one is `b0` to the other
+      const lay = (a0: number, b0: number, len: number): void => {
+        A.shares.push({ other: B, a0, b0, len });
+        B.shares.push({ other: A, a0: b0, b0: a0, len });
+      };
+      const onB = (s: number): number => ((s % LB) + LB) % LB;
       // two points in a row belong to one stretch if the other route moves along in step with this one
       const follows = (i: number, j: number): boolean => {
         if (Number.isNaN(m[i]) || Number.isNaN(m[j])) return false;
@@ -330,14 +391,14 @@ function findShares(loops: Loop[]): void {
         if (!follows((i + n - 1) % n, i)) { start = i; break; }
       }
       // the two routes are the same lane all the way round
-      if (start < 0) { A.shares.push({ other: B, a0: 0, b0: m[0], len: A.path.length }); continue; }
+      if (start < 0) { lay(0, onB(m[0]), A.path.length); continue; }
       let i = 0;
       while (i < n) {
         const at = (start + i) % n;
         if (Number.isNaN(m[at])) { i++; continue; }
         let run = 0;
         while (i + run + 1 < n && follows((start + i + run) % n, (start + i + run + 1) % n)) run++;
-        if (run * step >= 4) A.shares.push({ other: B, a0: line[at].s, b0: ((m[at] % LB) + LB) % LB, len: run * step });
+        if (run * step >= 4) lay(line[at].s, onB(m[at]), run * step);
         i += run + 1;
       }
     }
@@ -350,10 +411,17 @@ const HERO_ROOM = 40;
 /** How much room a spot counts for, next to a road's length, when a hero is put somewhere at random. */
 const SPOT_ROOM = 80;
 
-export function buildVehicles(k: Build, routes: Route[], parked: ParkedSpot[], heroSpots: HeroSpot[]): Vehicles {
+export function buildVehicles(k: Build, routes: Route[], parked: ParkedSpot[], heroSpots: HeroSpot[], kinds: TrafficKind[] = []): Vehicles {
   const group = new THREE.Group();
   const rand = rng(8675309);
-  const types = trafficTypes();
+  // the plain kinds first, always in the same order, and then the tile's own
+  const types: VType[] = [...trafficTypes(), ...kinds.map((q): VType => ({ ...q, wb: q.wb ?? q.len * 0.6 }))];
+  /** Which of the kinds a name means. A name nobody knows is said out loud, and a plain sedan stands in for it. */
+  const kindOf = (name: string): number => {
+    const i = types.findIndex((t) => t.name === name);
+    if (i < 0) console.warn(`There is no kind of traffic called "${name}" on this tile. The plain kinds are ${TYPE_NAMES.join(', ')}; a tile's own are handed over as \`kinds\`.`);
+    return Math.max(0, i);
+  };
 
   // --- who drives where ---
   const vehs: Veh[] = [];
@@ -364,14 +432,14 @@ export function buildVehicles(k: Build, routes: Route[], parked: ParkedSpot[], h
   const paints = new Map<Veh, number[]>();
 
   const blank = (): Veh => ({
-    id: serial++, path: null, s: 0, v: 0, vmax: 0, pace: 1, held: 0, len: 7, wid: 3, wb: 4.4, type: -1, inst: -1, hero: null,
+    id: serial++, path: null, s: 0, v: 0, vmax: 0, pace: 1, held: 0, len: 7, wid: 3, wb: 4.4, type: -1, inst: -1, hero: null, lamps: true,
     heading: 0, turn: 0, lit: false, fx: -1, shadow: -1, phase: rand() * 10, pos: new THREE.Vector3(),
   });
 
   for (const def of routes) {
     const path = buildPath(def.segs, true, def.hump);
     const list: Veh[] = [];
-    const pool = (def.types ?? TYPE_NAMES).map((t) => TYPE_NAMES.indexOf(t));
+    const pool = (def.types ?? TYPE_NAMES).map(kindOf);
     for (let i = 0; i < def.count; i++) {
       const v = blank();
       v.path = path;
@@ -382,6 +450,7 @@ export function buildVehicles(k: Build, routes: Route[], parked: ParkedSpot[], h
       v.type = pool[Math.floor(rand() * pool.length)];
       const t = types[v.type];
       v.len = t.len; v.wid = t.wid; v.wb = t.wb;
+      v.lamps = t.lamps !== false;
       if (def.paint && def.paint.length > 0) paints.set(v, def.paint);
       v.fx = movingCount++;
       list.push(v);
@@ -397,7 +466,8 @@ export function buildVehicles(k: Build, routes: Route[], parked: ParkedSpot[], h
     v.heading = spot.heading;
     v.turn = spot.turn ?? 0;
     v.lit = spot.lit === true;
-    v.type = rand() < 0.55 ? 0 : rand() < 0.75 ? 1 : rand() < 0.5 ? 2 : 3;
+    // the kind the spot asks for, or else one of the plain cars
+    v.type = spot.type !== undefined ? kindOf(spot.type) : rand() < 0.55 ? 0 : rand() < 0.75 ? 1 : rand() < 0.5 ? 2 : 3;
     const t = types[v.type];
     v.len = t.len; v.wid = t.wid; v.wb = t.wb;
     vehs.push(v);
@@ -539,7 +609,7 @@ export function buildVehicles(k: Build, routes: Route[], parked: ParkedSpot[], h
     sz.copy(right).multiplyScalar(v.wid + 3.8);
     p2.copy(pos).addScaledVector(fwd, v.len / 2 + 6.3).addScaledVector(up, 0.09);
     m4.makeBasis(sx, up, sz).setPosition(p2);
-    pools.setMatrixAt(v.fx, m4);
+    pools.setMatrixAt(v.fx, v.lamps ? m4 : NOTHING);
     // the spray behind, longer the faster it goes
     const quick = Math.min(1, v.v / 14);
     const l = (2.6 + 2.8 * quick) * (0.85 + 0.15 * Math.sin(time * 9 + v.phase)) * (quick > 0.25 ? 1 : 0);
@@ -687,7 +757,10 @@ export function buildVehicles(k: Build, routes: Route[], parked: ParkedSpot[], h
           target = Math.min(want.speed, bend * 1.3);
           pull = want.accel ?? 9;
         }
-        const safe = 2.4 + v.v * 0.55;
+        // The room it keeps to whoever is ahead: more the faster it goes, and never less than it
+        // needs to come down to that one's speed, braking as hard as it can. The second is what
+        // counts when it comes up fast behind one that stands still.
+        const safe = 2.4 + Math.max(v.v * 0.55, (v.v * v.v - aheadV * aheadV) / 48);
         if (ahead && gap < safe) target = Math.min(target, Math.max(0, aheadV * (gap / safe) - 0.4));
         if (ahead && gap < 0.9) target = 0;
         if (target > v.v) v.v = Math.min(target, v.v + pull * dt);
@@ -816,6 +889,10 @@ export function buildVehicles(k: Build, routes: Route[], parked: ParkedSpot[], h
     [...loops.values()].flatMap((l) => l.list.map((v) => ({ route: l.def.id, s: v.s, v: v.v, x: v.pos.x, y: v.pos.y, z: v.pos.z, hero: v.hero !== null })));
 
   update(0, 0, 0, 0);
+  // The vehicles were spread along their own routes, which takes no account of a lane that two
+  // routes share: there two of them can have been put down in one place. So on a tile with such
+  // lanes the traffic drives for a few seconds before anyone sees it, long enough for those to part.
+  if ([...loops.values()].some((l) => l.shares.length > 0)) for (let i = 0; i < SETTLE * 60; i++) update(1 / 60, 0, 0, 0);
   return {
     group, heroes, update, places, adopt, showHeroes, shared, positions,
     get moving() { return movingCount; },

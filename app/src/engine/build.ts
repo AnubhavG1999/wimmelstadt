@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { GeoBuilder, rng } from './geo';
 import { finishStreets } from './roads';
-import { FACE_NORMAL, SignBuilder, buildSignAtlas } from './signs';
+import { FACE_NORMAL, SignBuilder, buildSignAtlas, type Playing } from './signs';
 import { makeTileLook, tileMaterials, type TileLook } from './look/materials';
 import { TILE, type Build, type Light, type Rect, type TileDef } from './tile';
 
@@ -21,6 +21,8 @@ export interface Standing {
   mirrors: boolean;
   /** Brightens signs and lamps as night falls, and runs whatever the tile asked to have run. */
   frame(dt: number, time: number, night: number): void;
+  /** Shows what is playing on the tile's big screens, or their own pictures again if `now` is null. */
+  showPlaying(now: Playing | null): void;
   stats: { triangles: number; signs: number; glows: number; trees: number; people: number };
 }
 
@@ -163,17 +165,20 @@ export function startBuild(def: TileDef, ox: number, oz: number): { k: Build; fi
     base.box(board.x1, bottom, board.z0, board.x1 + rim, top, board.z1, color);
     base.box(board.x0, bottom, board.z0, board.x1, floor, board.z1, color, { faces: 'T' });
     const slab = new THREE.Mesh(base.build(), mat.prop());
+    slab.name = 'base';
     slab.receiveShadow = true;
     slab.layers.set(1); // layer 1 is left out of the mirror image used for wet streets
     group.add(slab);
 
     const cityMesh = new THREE.Mesh(k.b.build(), mat.city());
+    cityMesh.name = 'city';
     cityMesh.castShadow = true;
     cityMesh.receiveShadow = true;
     group.add(cityMesh);
 
     if (k.deck.triangles > 0) {
       const deckMesh = new THREE.Mesh(k.deck.build(), mat.deck());
+      deckMesh.name = 'deck';
       deckMesh.castShadow = true;
       deckMesh.receiveShadow = true;
       group.add(deckMesh);
@@ -182,6 +187,7 @@ export function startBuild(def: TileDef, ox: number, oz: number): { k: Build; fi
     finishStreets(k);
     if (k.street.triangles > 0) {
       const streetMesh = new THREE.Mesh(k.street.build(), mat.street());
+      streetMesh.name = 'street';
       streetMesh.receiveShadow = true;
       streetMesh.layers.set(1);
       group.add(streetMesh);
@@ -290,6 +296,7 @@ export function startBuild(def: TileDef, ox: number, oz: number): { k: Build; fi
         glowMat.color.setScalar(0.45 + 3.0 * night);
         for (const fn of frames) fn(dt, time, night);
       },
+      showPlaying: (now) => signs.atlas.showPlaying(now),
       stats: { triangles: k.b.triangles + k.deck.triangles + k.street.triangles, signs: signs.count, glows: k.glows.length, trees: trees.length, people: people.length },
     };
   };

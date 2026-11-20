@@ -85,7 +85,10 @@ export const STREETS: Laid[] = [
     segs: [{ t: 'ring', pts: [[kx0, kz0], [kx1, kz0], [kx1, kz1], [kx0, kz1]], y: 0, r: K.r }],
     closed: true, opts: { sidewalk: 2, zebras: false },
   },
-  { id: 'lungarno', segs: straight([kx1, LUNGARNO_TOP + 2], [kx1, K.z - 3]), opts: { sidewalk: 2 } },
+  // It begins at the inside of its turning circle's one lane, and ends where
+  // the loop's east side begins: it runs no further along another street than
+  // it has to.
+  { id: 'lungarno', segs: straight([kx1, LUNGARNO_TOP + 2 + 5.5 - 3], [kx1, kz0 + K.r]), opts: { sidewalk: 2 } },
   { id: 'lungarno-turn', segs: ringOf([kx1, LUNGARNO_TOP + 2], 5.5), closed: true, opts: { lanes: 1, width: 6, sidewalk: 1.5, zebras: false }, lamps: 0 },
   { id: 'via-emilia', segs: straight([kx0 + 5, EMILIA_Z], [VALLEY.x0 - 5, EMILIA_Z]), opts: { sidewalk: 2.5 } },
   { id: 'valley-east', segs: straight([VALLEY.x1, VALLEY.z0 - 5], [VALLEY.x1, EMILIA_Z + 5]), opts: { sidewalk: 2.5 } },

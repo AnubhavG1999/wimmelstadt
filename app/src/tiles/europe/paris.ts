@@ -264,7 +264,8 @@ export function notreDame(k: Build): void {
 
   // --- the west front ---
   const hw = 4.4, yG = 10.25, yT = 20.5;
-  b.box(xt, 0, zc - hw, xf, yG, zc + hw, STONE, { faces: 'NESWT' });
+  // (it has no top of its own: the band under the towers, further down, lies over all of it)
+  b.box(xt, 0, zc - hw, xf, yG, zc + hw, STONE, { faces: 'NESW' });
   /** A doorway, or a window, with a pointed head. */
   const pointed = (z: number, w: number, y0: number, y1: number, tip: number, color: number, lit = 0): void => {
     b.box(xf, y0, z - w, xf + 0.05, y1, z + w, color, { faces: 'E', win: lit ? interior(lit) : undefined });
