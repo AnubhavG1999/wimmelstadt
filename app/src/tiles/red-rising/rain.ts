@@ -1679,7 +1679,8 @@ export function buildRain(k: Build, ground: (x: number, z: number) => number): R
         airEnd = Math.max(airEnd, s.landAt - 1.5);
       }
     });
-    planShots(t0, airEnd, R);
+    // the guns keep one round of bursts going: a few shells between waves do not set a second round firing over the first
+    if (!shots.some((sh) => sh.t > t0 + 1.5)) planShots(t0, airEnd, R);
     return last - t0;
   }
 
@@ -2147,8 +2148,8 @@ export function buildRain(k: Build, ground: (x: number, z: number) => number): R
     }
     const age = T - sh.hit;
     if (age < 0.2) glow.sprite(b[0], b[1], b[2], 3.4, 1.0, 0.75, 0.4, (1 - age / 0.2) ** 2 * 2.4);
-    if (age < 2.8) {
-      const size = 1.7 * easeOut(age / 0.35) * (1 - span(age, 1.6, 2.8) ** 1.5);
+    if (age < 2.2) {
+      const size = 1.25 * easeOut(age / 0.35) * (1 - span(age, 1.2, 2.2) ** 1.5);
       puff(b[0] + 0.3 * age, b[1] + 0.2 * age, b[2], size, age < 0.6 ? 0x2f2b28 : 0x4a4643, sh.seed);
     }
   }

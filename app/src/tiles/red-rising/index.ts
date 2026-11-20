@@ -29,8 +29,9 @@ export const ironRain: TileDef = {
   place: { lon: -166, lat: 34.2, land: MARS, words: 'Mars' },
   build: (k) => {
     const parts = buildIronRain(k);
-    // what moves over the tile and on it, once everything that stands still is built
-    buildShow(k);
+    // what moves over the tile and on it, once everything that stands still is built. On the development server
+    // `?rr=still` leaves it out, so that the traffic can be run for hours by itself and the still tile's cost measured.
+    if (!(import.meta.env.DEV && new URLSearchParams(location.search).get('rr') === 'still')) buildShow(k);
     return parts;
   },
 };

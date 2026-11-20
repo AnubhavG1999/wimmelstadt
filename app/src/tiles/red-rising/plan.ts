@@ -445,7 +445,7 @@ export const LANDINGS = {
 
 export const SIGHT: { id: string; x: number; y: number; z: number }[] = [
   { id: 'the North Gate', x: -4, y: F + 8, z: -44.9 },
-  { id: 'the postern', x: -22, y: F + 6, z: -47 },
+  { id: 'the postern', x: -22, y: F + 6, z: -46.3 },
   { id: 'the grates', x: 10, y: F + 3, z: -47 },
   { id: 'the west ramp, halfway', x: -40, y: F + 3.5, z: -65 },
   { id: 'the east ramp, halfway', x: 32, y: F + 3.5, z: -65 },
