@@ -75,6 +75,21 @@ export const ISLANDS: Record<string, P2[]> = {
 
 /** The sands that the tide covers and uncovers, between Driftmark's south shore and High Tide's islet. */
 export const SANDS: P2[] = [[12, 63.5], [50, 64.8], [56, 68], [50, 72.5], [34, 71], [22, 73], [12, 71]];
+/** How high the sands lie: above the bay's water, and under the tide's at high water. */
+export const SANDS_Y = -0.35;
+
+/** The causeway's bank over the sands: a low dyke of stone under the road to High Tide, which the tide covers at high water. Its sides, and its top's height. */
+export const DYKE = { x0: 29.4, x1: 38.6, z0: 63, z1: 72, top: -0.03 };
+
+/** A bar of sand east of the causeway that the tide leaves dry, where a hero may stand: its middle, its half-lengths, how far out its top is level (as a share of them), and how high it is. */
+export const SANDBAR = { x: 47, z: 68, rx: 5, rz: 3.2, level: 0.68, top: 0.16 };
+
+/** How high the sandbar is at a place, or null off it. */
+export function sandbarAt(x: number, z: number): number | null {
+  const b = SANDBAR, d = Math.hypot((x - b.x) / b.rx, (z - b.z) / b.rz);
+  if (d >= 1) return null;
+  return d <= b.level ? b.top : b.top + ((SANDS_Y - b.top) * (d - b.level)) / (1 - b.level);
+}
 
 /** The Wendwater, from the south edge north through the kingswood into the Rush's mouth: its middle, and half its width at each end. */
 export const WENDWATER = { line: [[-27, 110.5], [-22, 105], [-13, 98], [-8.4, 93], [-6.4, 90.4]] as P2[], half: [0.8, 1.6] };
@@ -377,8 +392,8 @@ export const TURNS = {
  */
 export const HERO_SPOTS: { id: string; x: number; z: number; y: number; heading: number; where: string }[] = [
   { id: 'vault', x: -52, z: 7.2, y: 0.04, heading: Math.PI / 2, where: 'an open vault of the Dragonpit, its iron door swung back in the forecourt wall, beside the top of the climb' },
-  { id: 'forecourt', x: -46.5, z: -10, y: R.y + 0.04, heading: Math.PI / 4, where: "the Dragonpit's forecourt, before the bronze doors, between Dreamfyre and Balerion" },
-  { id: 'causeway', x: 47, z: 67.8, y: -0.31, heading: 0.3, where: 'on the wet sands beside the causeway to High Tide, as on a beach, at low tide' },
+  { id: 'forecourt', x: -46.5, z: -10, y: R.y + 0.04, heading: Math.PI / 4, where: "the Dragonpit's forecourt, before the bronze doors where Dreamfyre rests, under Balerion on the dome" },
+  { id: 'causeway', x: 47, z: 67.8, y: SANDBAR.top + 0.04, heading: 0.3, where: 'on a bar of sand beside the causeway to High Tide, as on a beach at low water, and an island of its own at high water' },
   { id: 'slip', x: 79.5, z: 45, y: 0.04, heading: 0, where: 'a slipway at the shipyards, facing east like a ship about to be launched' },
   { id: 'pier', x: 70.5, z: 13, y: 0.04, heading: Math.PI / 2, where: "Dragonstone's stone pier, by the old inn" },
   { id: 'quay', x: 56, z: 62.8, y: 0.04, heading: 0, where: "Spicetown's quay, among the bales from the east" },
@@ -535,6 +550,10 @@ export function groundAt(x: number, z: number): number {
   if (m > 0) return m;
   const h = hillAt(x, z);
   if (h > 0) return h;
+  if (inside(SANDS, x, z) && !Object.values(ISLANDS).some((shape) => inside(shape, x, z))) {
+    if (x > DYKE.x0 && x < DYKE.x1 && z > DYKE.z0 && z < DYKE.z1) return DYKE.top;
+    return sandbarAt(x, z) ?? SANDS_Y;
+  }
   return isWater(x, z) ? WATER_LEVEL : 0;
 }
 

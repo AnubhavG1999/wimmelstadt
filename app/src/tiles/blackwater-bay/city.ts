@@ -18,6 +18,7 @@ import { HERO_SPOTS, LOTS, RHAENYS, type Lot } from './plan';
 import { REGIONS } from './regions';
 import { buildRoads } from './roads';
 import { checkSight } from './sight';
+import { buildTide, pinTide } from './tide';
 import { boardOf } from './signs';
 import { TRAFFIC } from './traffic';
 
@@ -71,6 +72,7 @@ export function buildBlackwaterBay(k: Build): TileParts {
   };
 
   counted('the land', () => buildLand(k));
+  buildTide(k);
   const routes = counted('the roads', () => buildRoads(k));
 
   const models = new Map<string, [string, Model]>(regions.flatMap(([name, r]) => Object.entries(r.MODELS).map(([id, m]): [string, [string, Model]] => [id, [name, m]])));
@@ -113,7 +115,7 @@ export function buildBlackwaterBay(k: Build): TileParts {
     // For the console: pictures with `wimmel.shot`, which leaves the heroes out. blackwater.fourViews(name, x, y, z, r)
     // takes a thing from two opposite sides by day and by night; blackwater.close(name, { ...blackwater.aim(x, y, z, az, elev), zoom }, part)
     // takes one close picture.
-    (window as unknown as { blackwater: object }).blackwater = { lanes, frames, look, close, aim, sheet, fourViews };
+    (window as unknown as { blackwater: object }).blackwater = { lanes, frames, look, close, aim, sheet, fourViews, tide: pinTide };
   }
 
   return {

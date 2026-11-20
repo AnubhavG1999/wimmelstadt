@@ -6,13 +6,13 @@
 // The shapes are in plan.ts. What stands on the ground is built elsewhere.
 
 import { flat as line3, pathOf, rounded } from '../../engine/corners';
-import type { WinSpec } from '../../engine/geo';
+import type { V3, WinSpec } from '../../engine/geo';
 import { band, flat, walls, water } from '../../engine/ground';
 import { drawField, field, heightOn, type Field } from '../../engine/terrain';
 import type { Build } from '../../engine/tile';
 import { VAULT_GAP } from './dragonpit';
 import { CLIMB } from './roads';
-import { AEGON, DRAGONMONT, ISLANDS, LAND_NORTH, LAND_SOUTH, RHAENYS, SANDS, VHAGAR_ROCK, VISENYA, WATER, WENDWATER, groundAt, lairAt, mountBuilt, type P2 } from './plan';
+import { AEGON, DRAGONMONT, DYKE, ISLANDS, LAND_NORTH, LAND_SOUTH, RHAENYS, SANDBAR, SANDS, SANDS_Y, VHAGAR_ROCK, VISENYA, WATER, WENDWATER, groundAt, lairAt, mountBuilt, type P2 } from './plan';
 
 /** What the street material is told about a stretch of plain ground. */
 const GROUND: WinSpec = { cell: 0, storey: 1, lit: 0, kind: 1 };
@@ -63,9 +63,13 @@ export function buildLand(k: Build): void {
     flat(k.street, shape, 0.01, id === 'dragonstone' ? ASH : id === 'claw-isle' ? ROCK : GRASS, { win: GROUND });
     walls(k.b, shape, -1.5, 0.01, SHORE);
   }
-  // the sands, under the water at high tide
-  flat(k.street, SANDS, -0.35, SAND, { win: GROUND });
-  walls(k.b, SANDS, -1.5, -0.35, SAND);
+  // the sands, under the water at high tide, with the causeway's bank of stone across them and a bar of sand that stays dry
+  flat(k.street, SANDS, SANDS_Y, SAND, { win: GROUND });
+  walls(k.b, SANDS, -1.5, SANDS_Y, SAND);
+  const dyke: P2[] = [[DYKE.x0, DYKE.z0], [DYKE.x1, DYKE.z0], [DYKE.x1, DYKE.z1], [DYKE.x0, DYKE.z1]];
+  flat(k.b, dyke, DYKE.top, STONE);
+  walls(k.b, dyke, -1.5, DYKE.top, STONE_DARK);
+  sandbar(k);
 
   // King's Landing's hills: the Dragonpit's terrace, walled round, and the two others as slopes
   flat(k.b, RHAENYS.terrace, RHAENYS.y, PAVING);
@@ -152,4 +156,26 @@ function terraceWalls(k: Build): void {
     }
     wall(p, q);
   }
+}
+
+/** The sandbar east of the causeway: a level top, and a skirt that slopes down into the sands all round. */
+function sandbar(k: Build): void {
+  const b = SANDBAR, N = 24;
+  const ring = (f: number, y: number): V3[] =>
+    Array.from({ length: N }, (_, i): V3 => [b.x + Math.cos((i / N) * Math.PI * 2) * b.rx * f, y, b.z + Math.sin((i / N) * Math.PI * 2) * b.rz * f]);
+  const top = ring(b.level, b.top), foot = ring(1, SANDS_Y - 0.01);
+  for (let i = 0; i < N; i++) k.b.up([b.x, b.top, b.z], top[i], top[(i + 1) % N], SAND);
+  for (let i = 0; i < N; i++) {
+    const j = (i + 1) % N;
+    slope(k, top[i], foot[i], top[j], SAND);
+    slope(k, top[j], foot[i], foot[j], SAND);
+  }
+}
+
+/** A triangle of a slope, wound to face the sky and shaded by its own tilt. */
+function slope(k: Build, p: V3, q: V3, r: V3, color: number): void {
+  const ax = q[0] - p[0], ay = q[1] - p[1], az = q[2] - p[2], bx = r[0] - p[0], by = r[1] - p[1], bz = r[2] - p[2];
+  const nx = ay * bz - az * by, ny = az * bx - ax * bz, nz = ax * by - ay * bx, l = Math.hypot(nx, ny, nz) || 1;
+  if (ny >= 0) k.b.tri(p, q, r, [nx / l, ny / l, nz / l], color);
+  else k.b.tri(p, r, q, [-nx / l, -ny / l, -nz / l], color);
 }
