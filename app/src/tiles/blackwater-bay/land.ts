@@ -12,7 +12,7 @@ import { drawField, field, heightOn, type Field } from '../../engine/terrain';
 import type { Build } from '../../engine/tile';
 import { VAULT_GAP } from './dragonpit';
 import { CLIMB } from './roads';
-import { AEGON, DRAGONMONT, DYKE, ISLANDS, LAND_NORTH, LAND_SOUTH, RHAENYS, SANDBAR, SANDS, SANDS_Y, VHAGAR_ROCK, VISENYA, WATER, WENDWATER, groundAt, lairAt, mountBuilt, type P2 } from './plan';
+import { AEGON, DRAGONMONT, ISLANDS, LAND_NORTH, LAND_SOUTH, RHAENYS, SANDBAR, SANDS, SANDS_Y, VHAGAR_ROCK, VISENYA, WATER, WENDWATER, groundAt, lairAt, mountBuilt, type P2 } from './plan';
 
 /** What the street material is told about a stretch of plain ground. */
 const GROUND: WinSpec = { cell: 0, storey: 1, lit: 0, kind: 1 };
@@ -63,12 +63,9 @@ export function buildLand(k: Build): void {
     flat(k.street, shape, 0.01, id === 'dragonstone' ? ASH : id === 'claw-isle' ? ROCK : GRASS, { win: GROUND });
     walls(k.b, shape, -1.5, 0.01, SHORE);
   }
-  // the sands, under the water at high tide, with the causeway's bank of stone across them and a bar of sand that stays dry
+  // the sands, under the water at high tide, and a bar of sand on them that stays dry (the causeway's stone body over them is High Tide's builder's, on DYKE)
   flat(k.street, SANDS, SANDS_Y, SAND, { win: GROUND });
   walls(k.b, SANDS, -1.5, SANDS_Y, SAND);
-  const dyke: P2[] = [[DYKE.x0, DYKE.z0], [DYKE.x1, DYKE.z0], [DYKE.x1, DYKE.z1], [DYKE.x0, DYKE.z1]];
-  flat(k.b, dyke, DYKE.top, STONE);
-  walls(k.b, dyke, -1.5, DYKE.top, STONE_DARK);
   sandbar(k);
 
   // King's Landing's hills: the Dragonpit's terrace, walled round, and the two others as slopes

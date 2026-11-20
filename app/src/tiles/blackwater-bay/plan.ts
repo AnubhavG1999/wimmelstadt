@@ -78,8 +78,8 @@ export const SANDS: P2[] = [[12, 63.5], [50, 64.8], [56, 68], [50, 72.5], [34, 7
 /** How high the sands lie: above the bay's water, and under the tide's at high water. */
 export const SANDS_Y = -0.35;
 
-/** The causeway's bank over the sands: a low dyke of stone under the road to High Tide, which the tide covers at high water. Its sides, and its top's height. */
-export const DYKE = { x0: 29.4, x1: 38.6, z0: 63, z1: 72, top: -0.03 };
+/** The causeway's body over the sands: a low dyke of stone under the road to High Tide, half a unit wider than the road on each side, which the tide covers at high water. Its sides, its ends (under the islands' ground), and its top's height. High Tide's builder builds it. */
+export const DYKE = { x0: 29.5, x1: 38.5, z0: 63, z1: 72, top: 0 };
 
 /**
  * A bar of sand east of the causeway that the tide leaves dry, where a hero may

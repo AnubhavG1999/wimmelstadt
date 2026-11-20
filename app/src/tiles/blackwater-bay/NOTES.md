@@ -25,7 +25,7 @@ Nothing comes from the television series: not its dragons, its Dragonpit, its ca
 
 - **The water** is the engine's, at -0.9, and the islands and the shores stand over it on low walls.
 - **The tide** is the tile's own (`tide.ts`): a second surface of water over the sands between Driftmark and High Tide, whose middle rises from under the sands to a little over the causeway's road, and whose edge slopes down to below the bay's water eight units out, so that it swells out of the bay rather than standing in a wall. Its normals are level everywhere, as the bay's are, or the light draws a line where the slope meets the level. `blackwater.tide(share)` in the console stands it still for pictures, and `blackwater.tide(null)` lets it go.
-- **The causeway** stands on a low dyke of stone across the sands (`DYKE`), its top a little under the road, so that the road does not float over the sand and the tide covers both.
+- **The causeway** stands on a low dyke of stone across the sands (`DYKE` in `plan.ts`, built in `high-tide.ts`), its top just under the road and its kerbs no higher than the road, so that the road does not float over the sand and the tide covers both. Marker posts show the way across at high water.
 - **The sands** lie at -0.35 (`SANDS_Y`): over the bay, under the tide.
 
 ## The dragons' homes
