@@ -10,8 +10,9 @@ import type { WinSpec } from '../../engine/geo';
 import { band, flat, walls, water } from '../../engine/ground';
 import { drawField, field, heightOn, type Field } from '../../engine/terrain';
 import type { Build } from '../../engine/tile';
+import { VAULT_GAP } from './dragonpit';
 import { CLIMB } from './roads';
-import { AEGON, DRAGONMONT, ISLANDS, LAND_NORTH, LAND_SOUTH, RHAENYS, SANDS, VISENYA, WATER, WENDWATER, groundAt, lairAt, mountBuilt, type P2 } from './plan';
+import { AEGON, DRAGONMONT, ISLANDS, LAND_NORTH, LAND_SOUTH, RHAENYS, SANDS, VHAGAR_ROCK, VISENYA, WATER, WENDWATER, groundAt, lairAt, mountBuilt, type P2 } from './plan';
 
 /** What the street material is told about a stretch of plain ground. */
 const GROUND: WinSpec = { cell: 0, storey: 1, lit: 0, kind: 1 };
@@ -80,6 +81,8 @@ export function buildLand(k: Build): void {
     drawField(k.b, f, { color: (y, level) => (level > 0.93 ? (y > h.y - 0.1 ? PAVING : 0xb8ae96) : STONE_DARK), cut: STONE_DARK, edges: '' });
   }
 
+  vhagarsRock(k);
+
   // the Dragonmont as built: its natural shape, a level shelf before each lair, and the road at its foot cut in.
   // Its heights are worked out here, for whatever stands on it; dragonmont.ts draws it.
   const M = DRAGONMONT;
@@ -89,15 +92,43 @@ export function buildLand(k: Build): void {
   });
 }
 
+/** Basalt: dark, nearly black, a little lighter where the rock is level. */
+const BASALT = 0x3b3a3f, BASALT_TOP = 0x4c4a50;
+
+/**
+ * The low dark rock in the bay that Vhagar lies on: a level top 3 high over
+ * most of it, its sides falling steeply to the water, and a dark shore of
+ * rock round its foot down below the water.
+ */
+function vhagarsRock(k: Build): void {
+  const V = VHAGAR_ROCK, rough = (x: number, z: number): number => 0.25 * Math.sin(x * 1.7 + z * 0.9) * Math.cos(z * 1.3 - x * 0.4);
+  const f = field(V.x - V.hx, V.z - V.hz, V.x + V.hx, V.z + V.hz, 1, (x, z) => {
+    const d = Math.hypot((x - V.x) / V.hx, (z - V.z) / V.hz);
+    if (d >= 0.98) return 0;
+    if (d <= 0.78) return V.top + (d > 0.6 ? rough(x, z) * (d - 0.6) * 3 : 0);
+    const t = (0.98 - d) / 0.2;
+    return Math.max(0.02, V.top * Math.sqrt(t) + rough(x, z));
+  });
+  drawField(k.b, f, { color: (_y, level) => (level > 0.9 ? BASALT_TOP : BASALT), cut: BASALT, edges: '' });
+  // its foot, from below the water up to where the field begins
+  const ring: P2[] = Array.from({ length: 28 }, (_, i): P2 => {
+    const a = (i / 28) * Math.PI * 2;
+    return [V.x + Math.cos(a) * V.hx * 0.98, V.z + Math.sin(a) * V.hz * 0.98];
+  });
+  walls(k.b, ring, -1.6, 0.03, BASALT);
+}
+
 /**
  * The walls round the Dragonpit's terrace, from the ground up to its top,
- * with a gap in the south face where the climb comes up onto the forecourt.
+ * with gaps in the forecourt's south face where the climb comes up onto it
+ * and where the hero's vault opens (dragonpit.ts builds the wall over that).
  */
 function terraceWalls(k: Build): void {
   const t = RHAENYS.terrace, n = t.length;
   let area = 0;
   for (let i = 0; i < n; i++) area += t[i][0] * t[(i + 1) % n][1] - t[(i + 1) % n][0] * t[i][1];
-  const out = area > 0 ? -1 : 1, gap: [number, number] = [CLIMB.top[0] - 4.6, CLIMB.top[0] + 4.6];
+  const out = area > 0 ? -1 : 1;
+  const gaps: [number, number][] = ([[CLIMB.top[0] - 4.6, CLIMB.top[0] + 4.6], VAULT_GAP] as [number, number][]).sort((a, b) => a[0] - b[0]);
   const wall = (p: P2, q: P2): void => {
     const len = Math.hypot(q[0] - p[0], q[1] - p[1]);
     if (len < 0.01) return;
@@ -106,12 +137,17 @@ function terraceWalls(k: Build): void {
   };
   for (let i = 0; i < n; i++) {
     const p = t[i], q = t[(i + 1) % n];
-    // the south face, where the climb meets it: in two pieces, either side of the road
-    if (Math.abs(p[1] - RHAENYS.forecourt.z1) < 0.01 && Math.abs(q[1] - p[1]) < 0.01 && Math.min(p[0], q[0]) < gap[0] && Math.max(p[0], q[0]) > gap[1]) {
-      // keep the way round, so that each piece faces out
-      const [near, far] = p[0] < q[0] ? gap : [gap[1], gap[0]];
-      wall(p, [near, p[1]]);
-      wall([far, p[1]], q);
+    // the forecourt's south face: in pieces, between its gaps, keeping the way round so that each piece faces out
+    if (Math.abs(p[1] - RHAENYS.forecourt.z1) < 0.01 && Math.abs(q[1] - p[1]) < 0.01) {
+      const east = p[0] < q[0], cuts = east ? gaps : [...gaps].reverse();
+      let from = p[0];
+      for (const [g0, g1] of cuts) {
+        const [near, far]: [number, number] = east ? [g0, g1] : [g1, g0];
+        if ((east && (near <= from || near >= q[0])) || (!east && (near >= from || near <= q[0]))) continue;
+        wall([from, p[1]], [near, p[1]]);
+        from = far;
+      }
+      wall([from, p[1]], q);
       continue;
     }
     wall(p, q);

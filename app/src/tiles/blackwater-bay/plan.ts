@@ -112,8 +112,8 @@ export function isWater(x: number, z: number): boolean {
  */
 export const RHAENYS = {
   c: [-60, -40] as P2,
-  /** The drum, how high its wall stands, and how high its dome rises. */
-  drum: 20, wall: 25, dome: 40,
+  /** The drum, how high its wall stands, and how high its dome rises: to a level crown `cap` across, at `capY`, where Balerion lies. */
+  drum: 20, wall: 25, dome: 40, cap: 4.5, capY: 39.4,
   /** The terrace's height, and how far round the drum it reaches on its north side. */
   y: 6, crown: 24,
   /** Which way the bronze doors face, in degrees from east towards south: south. */
@@ -233,6 +233,9 @@ export const LOTS: Lot[] = [
   lot('dp-front', '', R.front.x0, R.front.z0, R.front.x1, R.front.z1, R.y, true),
   lot('dp-forecourt', '', R.forecourt.x0, R.forecourt.z0, R.forecourt.x1, R.forecourt.z1, R.y, true),
   lot('dp-doors', '', R.c[0] - 6, R.c[1] + R.drum - 4, R.c[0] + 6, R.c[1] + R.drum + 2, 22, true),
+  // on the aprons: the Dragonkeepers' hall on the east, against the city's wall, and the dragons' larder on the west
+  lot('dp-hall', "Dragonkeepers' hall", -35, -57, -18, -36, 14, true),
+  lot('dp-larder', '', -97, -57, -83, -40, 12, true),
   lot('drovers-pen', "Drovers' pen", -36, -100, -20, -86, 2.5),
   // --- Visenya's Hill ---
   lot('visenya', "Visenya's Hill", VISENYA.c[0] - VISENYA.crown, VISENYA.c[1] - VISENYA.crown, VISENYA.c[0] + VISENYA.crown, VISENYA.c[1] + VISENYA.crown, VISENYA.y, true),
@@ -400,16 +403,17 @@ export const LENGTH: Record<string, number> = {
  * east, 90 south). Landed, a dragon's head hangs about 0.3 of its length
  * ahead of its chest, and its body and tail lie out about 0.7 behind it.
  *
- * At the Dragonpit, Balerion and Vhagar flank the bronze doors on the
- * terrace's east and west aprons, facing south, their tails laid out along
- * the aprons beside the drum; Dreamfyre lies in the doorway with her tail in
- * the dark of the pit. On the Dragonmont each lies at the mouth of a lair: a
- * level shelf at its height, and behind it a cave, dark inside, that its
- * body and tail go into (`LAIR`).
+ * Balerion, the greatest, lies on the crown of the Dragonpit's dome, his
+ * tail draped down it. Vhagar lies on a low dark rock in the bay
+ * (`VHAGAR_ROCK`), her tail over its edge into the water. Dreamfyre lies in
+ * the bronze doors, with her tail in the dark of the pit. On the Dragonmont
+ * each lies at the mouth of a lair: a level shelf at its height, and behind
+ * it a cave, dark inside, that its body and tail go into (`LAIR`). The
+ * dragons' show, which flies them, is the main session's (`dragons.ts`).
  */
 export const HOMES: Record<string, Home> = {
-  balerion: { x: -29, z: -14, y: R.y, facing: 90, where: "the Dragonpit's east apron, at the bronze doors' right hand" },
-  vhagar: { x: -89, z: -13, y: R.y, facing: 90, where: "the Dragonpit's west apron, at the bronze doors' left hand" },
+  balerion: { x: R.c[0], z: R.c[1], y: R.dome - 0.6, facing: 45, where: "the crown of the Dragonpit's dome" },
+  vhagar: { x: 12, z: -30, y: 3, facing: 45, where: 'a low dark rock in the bay' },
   dreamfyre: { x: R.c[0], z: R.c[1] + R.drum + 1.5, y: R.y, facing: 90, where: 'in the bronze doors, her tail in the dark of the pit' },
   // the lower lairs, on the south-west and south faces and at the back
   sheepstealer: lair(150, 8, 120, 'his cave on the south-west flank, a sheep penned on the slope below it'),
@@ -423,6 +427,22 @@ export const HOMES: Record<string, Home> = {
 };
 
 /**
+ * The low dark rock in the bay that Vhagar lies on: its middle, its half
+ * sizes, and how high its level top stands. Its sides fall steeply to the
+ * water. Ships and anything tall keep 16 from it.
+ */
+export const VHAGAR_ROCK = { x: 12, z: -30, hx: 9, hz: 6.5, top: 3 };
+
+/** How high Vhagar's rock is at a place: its top over most of it, falling to the water at its edge; below the water where it is not. */
+export function rockAt(x: number, z: number): number {
+  const V = VHAGAR_ROCK, d = Math.hypot((x - V.x) / V.hx, (z - V.z) / V.hz);
+  if (d >= 1) return -Infinity;
+  if (d <= 0.78) return V.top;
+  const t = (1 - d) / 0.22;
+  return WATER_LEVEL + (V.top - WATER_LEVEL) * Math.sqrt(t);
+}
+
+/**
  * A lair, as shares of its dragon's length, in the dragon's own frame (ahead
  * is the way it faces): the level shelf it lies on, from `back` behind its
  * chest to `front` ahead of it and `half` to each side; and the cave behind
@@ -432,6 +452,26 @@ export const HOMES: Record<string, Home> = {
  * a dragon's body and tail lie in the rock.
  */
 export const LAIR = { back: 0.2, front: 0.12, half: 0.17, cave: 0.82, caveHalf: 0.09, roof: 0.2 };
+
+/**
+ * The Dragonpit as a dragon lies on it: over the drum, the dome's surface,
+ * level across its crown; and through the bronze doors, which face south, the
+ * pit's floor at the terrace's height. Null off the drum.
+ */
+export function pitAt(x: number, z: number): number | null {
+  const R = RHAENYS, dx = x - R.c[0], dz = z - R.c[1], d = Math.hypot(dx, dz);
+  if (d > R.drum) return null;
+  if (Math.abs(dx) < 4.5 && dz > 0) return R.y;
+  return domeAt(d);
+}
+
+/** How high the dome's surface is at a distance from its middle: level across its crown, and falling to the top of the drum's wall at its edge. */
+export function domeAt(d: number): number {
+  const R = RHAENYS;
+  if (d <= R.cap) return R.capY;
+  const t = Math.min(1, (d - R.cap) / (R.drum - R.cap));
+  return R.wall + (R.capY - R.wall) * Math.sqrt(1 - t * t);
+}
 
 /** The lair a place is in, if any: whose, the home, and whether on its shelf or in its cave. */
 export function lairAt(x: number, z: number): { id: string; home: Home; part: 'shelf' | 'cave' } | null {
@@ -487,6 +527,10 @@ export function mountBuilt(x: number, z: number): number {
 export function groundAt(x: number, z: number): number {
   const at = lairAt(x, z);
   if (at) return at.home.y;
+  const rock = rockAt(x, z);
+  if (rock > WATER_LEVEL) return rock;
+  const pit = pitAt(x, z);
+  if (pit !== null) return pit;
   const m = mountBuilt(x, z);
   if (m > 0) return m;
   const h = hillAt(x, z);
@@ -549,8 +593,6 @@ export const SIGHT: { id: string; x: number; y: number; z: number }[] = [
   { id: 'the forecourt ring', x: -58, y: R.y + 1.6, z: -1 },
   { id: 'the climb', x: -60, y: 4.6, z: 14 },
   { id: 'the foot of the climb', x: -60, y: 1.6, z: 30 },
-  { id: 'the square under Balerion', x: -29, y: 1.6, z: 1 },
-  { id: 'the square under Vhagar', x: -89, y: 1.6, z: 0 },
   { id: 'the Street of the Sisters by the River Gate', x: -60, y: 1.6, z: 50 },
   { id: "the Red Keep's gate", x: -30, y: AEGON.y + 2, z: 53.5 },
   { id: 'the quays', x: -60, y: 1.6, z: 67 },
