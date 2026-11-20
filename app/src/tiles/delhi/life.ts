@@ -298,7 +298,8 @@ export function life(k: Build, heroes: HeroSpot[]): ParkedSpot[] {
     const inner = HEX_LANES[0] - 5.5;
     for (let i = 0, tries = 0; i < 26 && tries < 300; tries++) {
       const a = rand() * Math.PI * 2, r = 4 + rand() * (inner - 4), x = HEX[0] + Math.cos(a) * r, z = HEX[1] + Math.sin(a) * r * 0.86;
-      if (!places.free(x, z, 1.4)) continue;
+      // (well clear of the gate and the memorials: the gate has posts and chains round it)
+      if (!places.free(x, z, 2.8)) continue;
       k.person(x, z);
       i++;
     }

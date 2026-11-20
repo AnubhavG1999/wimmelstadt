@@ -7,12 +7,12 @@
 // is what its name says: they are drawn plainly, nothing drives through them
 // and no hero is put on show near them.
 
-import { interior, type GeoBuilder } from '../../engine/geo';
+import { interior, type GeoBuilder, type QuadOpts, type V3 } from '../../engine/geo';
 import { area, oval, rect } from '../../engine/ground';
-import { figure, lathe } from '../../engine/parts';
+import { figure, lathe, roundel } from '../../engine/parts';
 import type { Build } from '../../engine/tile';
 import {
-  BUFF, BUFF_SHADE, CREAM, GOLD, MARBLE, RECESS, RED, RED_DARK, RED_LIGHT, arcade, archThrough, chhatri, dome, drum, niche, slot, steps, tiranga,
+  BUFF, BUFF_SHADE, CREAM, GOLD, MARBLE, RECESS, RED, RED_DARK, RED_LIGHT, arcade, archRing, archThrough, chhatri, dome, drum, niche, slot, steps, tiranga,
   type Facing,
 } from './mughal';
 import { AXIS_Z, HEX, RAISINA, type Thing } from './plan';
@@ -197,6 +197,40 @@ function kartavyaPath(k: Build, t: Thing): void {
   for (let x = t.x + 1.5; x <= t.x + t.w - 1; x += 7.6) for (const s of [-1, 1]) lampPost(k, x, AXIS_Z + s * 6.2);
 }
 
+/** Capitals as a mason cuts them, in strokes: each is its width and its strokes, [from across, from up, to across, to up], in a box one high. */
+const CAPITALS: Record<string, [number, [number, number, number, number][]]> = {
+  I: [0.2, [[0.1, 0, 0.1, 1]]],
+  N: [0.75, [[0, 0, 0, 1], [0, 1, 0.75, 0], [0.75, 0, 0.75, 1]]],
+  D: [0.75, [[0, 0, 0, 1], [0, 1, 0.45, 1], [0.45, 1, 0.75, 0.7], [0.75, 0.7, 0.75, 0.3], [0.75, 0.3, 0.45, 0], [0.45, 0, 0, 0]]],
+  A: [0.8, [[0, 0, 0.4, 1], [0.4, 1, 0.8, 0], [0.16, 0.36, 0.64, 0.36]]],
+  M: [0.9, [[0, 0, 0, 1], [0, 1, 0.45, 0.25], [0.45, 0.25, 0.9, 1], [0.9, 1, 0.9, 0]]],
+  C: [0.7, [[0.7, 0.88, 0.3, 1], [0.3, 1, 0, 0.7], [0, 0.7, 0, 0.3], [0, 0.3, 0.3, 0], [0.3, 0, 0.7, 0.12]]],
+  X: [0.75, [[0, 0, 0.75, 1], [0, 1, 0.75, 0]]],
+  V: [0.8, [[0, 1, 0.4, 0], [0.4, 0, 0.8, 1]]],
+};
+
+/**
+ * A word cut into a wall that faces east or west, as strokes a hair proud of
+ * it: a sign is not lit as the stone round it is, and would show as a label.
+ * `mid` is the middle of the word along the wall and `y` its foot. It reads
+ * from left to right for whoever stands before the wall.
+ */
+function carved(b: GeoBuilder, f: 'E' | 'W', plane: number, mid: number, y: number, word: string, h: number, color: number, o: QuadOpts = {}): void {
+  const gap = 0.24 * h, t = 0.12 * h, along = f === 'E' ? -1 : 1, x = plane + (f === 'E' ? 0.02 : -0.02), n: V3 = [f === 'E' ? 1 : -1, 0, 0];
+  const widths = [...word].map((ch) => CAPITALS[ch][0] * h);
+  let u = -(widths.reduce((s, w) => s + w, 0) + gap * (word.length - 1)) / 2;
+  [...word].forEach((ch, i) => {
+    for (const [u0, v0, u1, v1] of CAPITALS[ch][1]) {
+      // a stroke is a thin bar in the wall's plane, a little longer than its line at both ends, so that corners close
+      const du = (u1 - u0) * h, dv = (v1 - v0) * h, l = Math.hypot(du, dv) || 1, eu = ((du / l) * t) / 2, ev = ((dv / l) * t) / 2;
+      const P = (uu: number, vv: number): V3 => [x, y + vv, mid + along * (u + uu)];
+      const a0 = u0 * h - eu, b0 = v0 * h - ev, a1 = u1 * h + eu, b1 = v1 * h + ev;
+      b.quad(P(a0 - ev, b0 + eu), P(a1 - ev, b1 + eu), P(a1 + ev, b1 - eu), P(a0 + ev, b0 - eu), n, color, o);
+    }
+    u += widths[i] + gap;
+  });
+}
+
 function indiaGate(k: Build, t: Thing): void {
   const b = k.b, x0 = t.x, x1 = t.x + t.w, z0 = t.z, z1 = t.z + t.d, cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
   const way = 5.2, pier = (t.d - way) / 2, y0 = 0.7, body = t.h * 0.69, side = 1.9;
@@ -208,7 +242,11 @@ function indiaGate(k: Build, t: Thing): void {
   // two piers, each of two legs with a small arch through it from north to south
   for (const pz of [z0, z1 - pier]) {
     const pc = pz + pier / 2;
-    for (const [a, c] of [[x0, cx - side / 2], [cx + side / 2, x1]]) b.box(a, y0, pz, c, body, pz + pier, BUFF, { faces: 'NESW', ...lit });
+    for (const [a, c] of [[x0, cx - side / 2], [cx + side / 2, x1]]) {
+      b.box(a, y0, pz, c, body, pz + pier, BUFF, { faces: 'NESW', ...lit });
+      // the joints of its courses, up to the band at the springing of the great arch
+      for (let y = y0 + 1.1; y < body * 0.62 - 0.3; y += 1.1) b.box(a - 0.02, y, pz - 0.02, c + 0.02, y + 0.05, pz + pier + 0.02, BUFF_SHADE, { faces: 'NESW', ...lit });
+    }
     archThrough(b, 'z', cx, pc, pier, side, y0, 5.2, body, BUFF, BUFF_SHADE, true, FLOOD_GATE.lit);
     b.box(cx - side / 2, y0, pz + 0.5, cx + side / 2, y0 + 0.02, pz + pier - 0.5, BUFF_SHADE, { faces: 'T' });
     // a tall niche on each leg's east and west face, with a band at the springing of the great arch
@@ -218,14 +256,49 @@ function indiaGate(k: Build, t: Thing): void {
   // the great arch, from east to west, and the wall over it
   archThrough(b, 'x', cx, cz, t.w, way, y0, body * 0.86 - y0, body, BUFF, BUFF_SHADE, true, FLOOD_GATE.lit);
   b.box(x0, y0, cz - way / 2, x1, y0 + 0.02, cz + way / 2, 0xd8cfbb, { faces: 'T' });
+  // on both of its faces: a moulded band round the great arch, with a keystone at its head
+  const rise = body * 0.86 - y0;
+  for (const f of ['E', 'W'] as const) {
+    const plane = f === 'E' ? x1 : x0, s = f === 'E' ? 1 : -1;
+    archRing(b, f, plane, cz, y0, way, rise, 0.34, BUFF_SHADE, { round: true, lit: FLOOD_GATE.lit, proud: 0.05 });
+    b.box(Math.min(plane, plane + s * 0.16), y0 + rise - 0.2, cz - 0.3, Math.max(plane, plane + s * 0.16), y0 + rise + 0.72, cz + 0.3, BUFF_SHADE, { faces: 'NESWTB', ...lit });
+  }
   // the cornice, the attic stepping in twice, and the shallow bowl on top
+  b.box(x0 - 0.2, body - 0.22, z0 - 0.2, x1 + 0.2, body, z1 + 0.2, BUFF, { faces: 'NESWB', ...lit });
   b.box(x0 - 0.45, body, z0 - 0.45, x1 + 0.45, body + 0.6, z1 + 0.45, BUFF_SHADE, { faces: 'NESWTB', ...lit });
+  // the suns on the cornice: seven on each long side and three on each end
+  for (let i = -3; i <= 3; i++) for (const f of ['E', 'W'] as const) roundel(b, [f === 'E' ? x1 + 0.47 : x0 - 0.47, body + 0.3, cz + i * 1.9], 0.19, f, BUFF, lit, 8);
+  for (let i = -1; i <= 1; i++) for (const f of ['N', 'S'] as const) roundel(b, [cx + i * 2, body + 0.3, f === 'S' ? z1 + 0.47 : z0 - 0.47], 0.19, f, BUFF, lit, 8);
   b.box(x0 + 0.35, body + 0.6, z0 + 0.9, x1 - 0.35, body + 2.6, z1 - 0.9, BUFF, lit);
-  for (const f of ['E', 'W'] as const) b.box(f === 'E' ? x1 - 0.35 : x0 + 0.29, body + 1.2, cz - 3.4, f === 'E' ? x1 - 0.29 : x0 + 0.35, body + 2.1, cz + 3.4, BUFF_SHADE, { faces: f, win: interior(0.35) });
+  for (const f of ['E', 'W'] as const) {
+    b.box(f === 'E' ? x1 - 0.35 : x0 + 0.29, body + 1.2, cz - 3.4, f === 'E' ? x1 - 0.29 : x0 + 0.35, body + 2.1, cz + 3.4, BUFF_SHADE, { faces: f, win: interior(0.35) });
+    // what is cut there on both faces: INDIA, with the year the war began on its left and the year it ended on its right
+    const plane = f === 'E' ? x1 - 0.29 : x0 + 0.29, along = f === 'E' ? -1 : 1, INK = 0x7a6548, cut = { win: interior(0.25) };
+    carved(b, f, plane, cz, body + 1.36, 'INDIA', 0.58, INK, cut);
+    carved(b, f, plane, cz - along * 2.3, body + 1.5, 'MCMXIV', 0.32, INK, cut);
+    carved(b, f, plane, cz + along * 2.3, body + 1.5, 'MCMXIX', 0.32, INK, cut);
+  }
   b.box(x0 + 0.1, body + 2.6, z0 + 0.65, x1 - 0.1, body + 2.95, z1 - 0.65, BUFF_SHADE, { faces: 'NESWTB', ...lit });
   b.box(x0 + 0.9, body + 2.95, z0 + 2.2, x1 - 0.9, body + 3.9, z1 - 2.2, BUFF, lit);
   b.box(x0 + 0.65, body + 3.9, z0 + 1.95, x1 - 0.65, body + 4.15, z1 - 1.95, BUFF_SHADE, { faces: 'NESWTB', ...lit });
   b.cyl(cx, cz, body + 4.15, t.h, 1.35, 2.0, 12, BUFF_SHADE, { cap: 0x8a7a66 });
+  // posts of stone round its base with chains between them, open where the walk goes through, and a lamp on the ground at each corner
+  {
+    const X0 = x0 - 2.1, X1 = x1 + 2.1, Z0 = z0 - 2.1, Z1 = z1 + 2.1, CHAIN = 0x3a3d42, lines: [number, number][][] = [];
+    const run = (a: [number, number], c: [number, number], n: number): [number, number][] => Array.from({ length: n + 1 }, (_, i): [number, number] => [a[0] + ((c[0] - a[0]) * i) / n, a[1] + ((c[1] - a[1]) * i) / n]);
+    lines.push(run([X0, Z0], [X1, Z0], 4), run([X0, Z1], [X1, Z1], 4));
+    for (const x of [X0, X1]) lines.push(run([x, Z0], [x, cz - 2.2], 3), run([x, cz + 2.2], [x, Z1], 3));
+    for (const line of lines) {
+      line.forEach(([x, z], i) => {
+        b.box(x - 0.13, 0, z - 0.13, x + 0.13, 0.72, z + 0.13, 0xd8cfbb, { top: BUFF_SHADE });
+        if (i > 0) b.beam([line[i - 1][0], 0.56, line[i - 1][1]], [x, 0.56, z], 0.035, 0.035, CHAIN);
+      });
+    }
+    for (const [x, z] of [[X1 - 0.5, Z0 + 0.5], [X1 - 0.5, Z1 - 0.5], [X0 + 0.5, Z0 + 0.5], [X0 + 0.5, Z1 - 0.5]]) {
+      b.box(x - 0.2, 0, z - 0.2, x + 0.2, 0.2, z + 0.2, 0x3a3d42);
+      k.glows.push({ x, y: 0.3, z, sx: 0.3, sy: 0.16, sz: 0.3, color: '#fff0c8' });
+    }
+  }
   // the walk through it along the axis, and light on its two faces
   area(k, rect(HEX[0] - 13, AXIS_Z - 1.6, HEX[0] + 5, AXIS_Z + 1.6), 0xd9c2a4, 0.025);
   k.lights.push({ x: x1 + 4, z: cz, r: 15, color: '#ffe2ae', k: 0.8 }, { x: x0 - 4, z: cz, r: 15, color: '#ffe2ae', k: 0.8 });

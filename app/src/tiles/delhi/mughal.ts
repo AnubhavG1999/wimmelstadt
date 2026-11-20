@@ -59,6 +59,22 @@ export function niche(b: GeoBuilder, f: Facing, plane: number, a: number, y: num
   for (let i = 1; i + 1 < pts.length; i++) tri(b, pts[0], pts[i], pts[i + 1], NORMAL[f], color, q);
 }
 
+/**
+ * A raised band round an arch on a wall: the moulding that frames a great
+ * opening. The arch is `w` wide and `h` high, `a` is the middle of its foot,
+ * and the band is `band` wide.
+ */
+export function archRing(b: GeoBuilder, f: Facing, plane: number, a: number, y: number, w: number, h: number, band: number, color: number, o: ArchOpts = {}): void {
+  const inner = archOutline(w, h, !o.round), outer = archOutline(w + 2 * band, h + band, !o.round);
+  const q = o.lit ? { win: interior(o.lit) } : {};
+  // up one side from its foot, over the head, and down the other
+  const order = [1, ...inner.map((_, i) => i).slice(2), 0];
+  for (let i = 0; i + 1 < order.length; i++) {
+    const m = order[i], n = order[i + 1], at = (p: [number, number]): V3 => onWall(f, plane, a + p[0], y + p[1], o.proud ?? 0.08);
+    b.quad(at(inner[m]), at(outer[m]), at(outer[n]), at(inner[n]), NORMAL[f], color, q);
+  }
+}
+
 /** A plain upright opening on a wall: a rectangle of shade, a hair proud of the wall's plane. `a` is the middle of its foot. */
 export function slot(b: GeoBuilder, f: Facing, plane: number, a: number, y: number, w: number, h: number, color: number = RECESS, o: ArchOpts = {}): void {
   const p = (u: number, v: number): V3 => onWall(f, plane, a + u, y + v, o.proud ?? 0.06);
