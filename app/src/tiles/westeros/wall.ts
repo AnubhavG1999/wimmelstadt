@@ -16,7 +16,7 @@
 
 import * as THREE from 'three';
 import { Flames, Smoke } from '../../engine/effects';
-import { interior, rng, type GeoBuilder, type V3, type WinSpec } from '../../engine/geo';
+import { GeoBuilder, interior, rng, type V3, type WinSpec } from '../../engine/geo';
 import { area, oval } from '../../engine/ground';
 import { figure, lathe, type Dress } from '../../engine/parts';
 import { drum, face3, hip, slab } from '../../engine/shapes';
@@ -361,23 +361,52 @@ function stair(k: Build): void {
   brother(b, x, zMid(y), y + 0.02);
 }
 
-/** The winch cage on its chain, a little above the ground on its way up, and the crane arm over it at the top. */
+/**
+ * The winch cage on its chain, and the crane arm over it at the top. The cage
+ * is a mesh of its own, because it goes: up the ice with a brother in it, a
+ * while at the walk, and down again. Its chain is another, one bar that is
+ * drawn as long as the cage hangs low.
+ */
 function cage(k: Build): void {
-  const b = k.b, C = CAGE, x0 = C.x - C.w / 2, x1 = C.x + C.w / 2, y0 = C.y0, y1 = C.y0 + C.h;
-  const z0 = zS(y1) + 0.45, z1 = z0 + C.w, zm = (z0 + z1) / 2;
-  b.box(x0, y0 - 0.12, z0, x1, y0, z1, IRONWORK, { faces: 'NESWTB' });
-  b.box(x0, y1, z0, x1, y1 + 0.12, z1, IRONWORK, { faces: 'NESWTB', top: SNOW });
-  for (const [x, z] of [[x0, z0], [x1 - 0.12, z0], [x0, z1 - 0.12], [x1 - 0.12, z1 - 0.12]]) b.box(x, y0, z, x + 0.12, y1, z + 0.12, IRON, { faces: 'NESW' });
+  const b = k.b, C = CAGE, x0 = C.x - C.w / 2, x1 = C.x + C.w / 2;
+  const z0 = zS(C.y0 + C.h) + 0.45, z1 = z0 + C.w, zm = (z0 + z1) / 2;
+  // the crane arm stands high enough over the walk that the cage's floor comes level with it
+  const arm = WALK + C.h + 1.1, roof = C.h + 0.12;
+  // the cage, with its floor at 0
+  const g = new GeoBuilder();
+  g.box(x0, -0.12, z0, x1, 0, z1, IRONWORK, { faces: 'NESWTB' });
+  g.box(x0, C.h, z0, x1, roof, z1, IRONWORK, { faces: 'NESWTB', top: SNOW });
+  for (const [x, z] of [[x0, z0], [x1 - 0.12, z0], [x0, z1 - 0.12], [x1 - 0.12, z1 - 0.12]]) g.box(x, 0, z, x + 0.12, C.h, z + 0.12, IRON, { faces: 'NESW' });
   for (const u of [-0.27, 0.27]) {
-    for (const z of [z0 + 0.02, z1 - 0.1]) b.box(C.x + u - 0.04, y0, z, C.x + u + 0.04, y1, z + 0.08, IRON, { faces: 'NESW' });
-    for (const x of [x0 + 0.02, x1 - 0.1]) b.box(x, y0, zm + u - 0.04, x + 0.08, y1, zm + u + 0.04, IRON, { faces: 'NESW' });
+    for (const z of [z0 + 0.02, z1 - 0.1]) g.box(C.x + u - 0.04, 0, z, C.x + u + 0.04, C.h, z + 0.08, IRON, { faces: 'NESW' });
+    for (const x of [x0 + 0.02, x1 - 0.1]) g.box(x, 0, zm + u - 0.04, x + 0.08, C.h, zm + u + 0.04, IRON, { faces: 'NESW' });
   }
-  brother(b, C.x - 0.1, zm, y0);
-  // the chain, the crane arm on the walk, and the winch that winds it
-  const arm = 41.8;
-  b.beam([C.x, y1 + 0.12, zm], [C.x, arm - 0.2, zm], 0.05, 0.05, 0xb7bcc2);
-  b.box(C.x - 0.25, WALK, -93.3, C.x + 0.25, 42.0, -92.8, WOOD, { top: SNOW });
+  brother(g, C.x - 0.1, zm, 0);
+  const material = k.mat.city();
+  const lift = new THREE.Mesh(g.build(), material);
+  lift.name = 'winch-cage';
+  lift.castShadow = true;
+  const link = new GeoBuilder();
+  link.box(C.x - 0.05, 0, zm - 0.05, C.x + 0.05, 1, zm + 0.05, 0xb7bcc2, { faces: 'NESW' });
+  const chain = new THREE.Mesh(link.build(), material);
+  chain.name = 'winch-chain';
+  k.group.add(lift, chain);
+  // a slow round: a while at the foot, up, a while at the walk, down
+  const low = C.y0, high = WALK, wait = 7, climb = 17, round = 2 * (wait + climb);
+  let t = 3;
+  k.each((dt) => {
+    t = (t + dt) % round;
+    const u = t < wait ? 0 : t < wait + climb ? (t - wait) / climb : t < 2 * wait + climb ? 1 : 1 - (t - 2 * wait - climb) / climb;
+    const y = low + (high - low) * u * u * (3 - 2 * u);
+    lift.position.y = y;
+    chain.position.y = y + roof;
+    chain.scale.y = Math.max(0.01, arm - 0.45 - (y + roof));
+  });
+  // the crane arm on the walk, and the winch that winds the chain
+  b.box(C.x - 0.25, WALK, -93.3, C.x + 0.25, arm + 0.2, -92.8, WOOD, { top: SNOW });
   b.beam([C.x, arm, -94.3], [C.x, arm, zm], 0.14, 0.12, WOOD);
+  // a strut from the post's foot out under the arm
+  b.beam([C.x, WALK + 0.9, -93.05], [C.x, arm - 0.1, (zm - 93.05) / 2], 0.09, 0.08, WOOD);
   b.box(C.x - 0.18, arm - 0.45, zm - 0.18, C.x + 0.18, arm - 0.1, zm + 0.18, IRONWORK, { faces: 'NESWTB' });
   b.box(C.x - 0.4, 40.95, -94.75, C.x + 0.4, arm - 0.1, -94.05, GRANITE_SHADE, { faces: 'NESWTB', top: SNOW });
   drum(b, [C.x, 40.85, -95.5], 0.42, 0.7, WOOD, { cap: TIMBER_DARK });

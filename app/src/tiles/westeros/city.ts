@@ -15,6 +15,7 @@ import type { Model } from './models';
 import { GATES, HERO_SPOTS, LOTS, WALL, type Lot } from './plan';
 import { REGIONS } from './regions';
 import { buildRoads } from './roads';
+import { buildShips } from './ships';
 import { checkSight } from './sight';
 import { WAYFARERS } from './wayfarers';
 
@@ -46,11 +47,22 @@ export function buildWesteros(k: Build): TileParts {
   const regions = Object.entries(REGIONS);
   BOARDS.length = 0;
 
-  buildLand(k, new Set(bare ? [] : regions.flatMap(([, r]) => r.FLOORED)));
-  const routes = bare ? [] : buildRoads(k);
+  // what each part of the tile costs in triangles that stand still, for the console
+  const cost = new Map<string, number>(), dear: [string, number][] = [];
+  const counted = <T>(what: string, fn: () => T): T => {
+    const before = k.b.triangles + k.street.triangles + k.deck.triangles;
+    try {
+      return fn();
+    } finally {
+      cost.set(what, (cost.get(what) ?? 0) + k.b.triangles + k.street.triangles + k.deck.triangles - before);
+    }
+  };
+
+  counted('the land', () => buildLand(k, new Set(bare ? [] : regions.flatMap(([, r]) => r.FLOORED))));
+  const routes = bare ? [] : counted('the roads', () => buildRoads(k));
 
   if (!bare) {
-    const models = new Map<string, Model>(regions.flatMap(([, r]) => Object.entries(r.MODELS)));
+    const models = new Map<string, [string, Model]>(regions.flatMap(([name, r]) => Object.entries(r.MODELS).map(([id, m]): [string, [string, Model]] => [id, [name, m]])));
     const covered = new Set(regions.flatMap(([, r]) => r.COVERS));
     for (const l of LOTS) {
       const model = models.get(l.id);
@@ -59,7 +71,9 @@ export function buildWesteros(k: Build): TileParts {
         continue;
       }
       try {
-        model(k, l);
+        const before = k.b.triangles;
+        counted(model[0], () => model[1](k, l));
+        dear.push([l.id, k.b.triangles - before]);
       } catch (e) {
         // one model that fails does not take the tile with it: its lot stands as a box, and the console says why
         console.error(`Westeros: the model of ${l.id} failed.`, e);
@@ -68,16 +82,24 @@ export function buildWesteros(k: Build): TileParts {
     }
     for (const [name, r] of regions) {
       try {
-        r.extras(k);
+        const before = k.b.triangles;
+        counted(name, () => r.extras(k));
+        dear.push([`what ${name} builds besides`, k.b.triangles - before]);
       } catch (e) {
         console.error(`Westeros: what ${name} builds besides its lots failed.`, e);
       }
     }
     try {
-      buildCountry(k);
+      counted('the open country', () => buildCountry(k));
     } catch (e) {
       console.error('Westeros: the open country failed.', e);
     }
+    buildShips(k);
+  }
+  if (import.meta.env.DEV && !bare) {
+    const all = [...cost.values()].reduce((s, n) => s + n, 0);
+    console.info(`Westeros: ${all} triangles stand still. ${[...cost].sort((a, b) => b[1] - a[1]).map(([what, n]) => `${what} ${n}`).join(', ')}.`);
+    console.info(`Westeros: the dearest lots: ${dear.sort((a, b) => b[1] - a[1]).slice(0, 30).map(([what, n]) => `${what} ${n}`).join(', ')}.`);
   }
 
   buildDragons(k);
