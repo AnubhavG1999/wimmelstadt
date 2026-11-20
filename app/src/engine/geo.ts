@@ -3,7 +3,13 @@
 
 import * as THREE from 'three';
 
-/** How a wall is glazed. `cell` is the width of a window bay; 0 means no windows. */
+/**
+ * How a wall is glazed. `cell` is the width of a window bay; 0 means no windows.
+ * `kind` is how its windows are drawn: 0 plain windows, 1 a curtain wall, 2 and 3
+ * shopfronts along the ground storey, 4 small square windows, 5 a lit interior,
+ * 6 tall slits from floor to floor, and 7 a castle's arrow loops, narrow and dark
+ * by day.
+ */
 export interface WinSpec { cell: number; storey: number; lit: number; kind: number }
 
 export const NO_WIN: WinSpec = { cell: 0, storey: 5, lit: 0, kind: 0 };
