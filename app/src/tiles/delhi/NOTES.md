@@ -1,6 +1,6 @@
 # Delhi: notes
 
-What a later reader cannot see in the code. The tile is built, and every check on the page for tile builders was run on it on 19 November 2026. The collector has not yet called it final. He saw the plan that day and answered it: his answers are at the end.
+What a later reader cannot see in the code. Everything on the list below is built, every check on the page for tile builders was run on it, and the collector called the tile final on 19 November 2026. He saw the plan that day and then the built tile: what he said to each is at the end.
 
 The research is in `docs/districts/research/`: `delhi-for-the-tile.md`, and the two notes it builds on, `delhi.md` and `delhi-hauz-khas.md`.
 
@@ -225,7 +225,12 @@ All on 19 November 2026, on the built tile, alone on the board, in the order the
 
   Delhi has about twice the triangles that stand still on the built tiles, which is the most the page allows, and its frame costs what Europe's does. Its own meshes are few: two trains, two boats, the ducks, three tables that turn, the kites and the pigeons.
 
-- **After the screen's picture changed**, the same evening: the type check passes, `wimmel.fights('delhi')` is empty, and the screen was looked at head-on at 13 h and from the opening view at 21 h. Nothing else was run again: the change is one sign's picture, and it adds no mesh.
+- **On the tile as it was called final**, the same evening, after the screen's picture changed:
+  - `npm run typecheck` passes and `vite build` builds. The one chunk is now 1,384 kB.
+  - A fresh load has no error and no warning of the tile's. `wimmel.fights('delhi')` and `vehicles.shared()` are empty.
+  - Twenty minutes of traffic again, in steps of a twentieth of a second: 78 vehicles, twelve of them heroes, none standing still. The least from one vehicle to the next on its own route was 9.8, on Chandni Chowk as before. On the Ring Road it was 10.7 and on the long drive 13.2; at the first run, with ten heroes, they were 13.3 and 10.0. The nearest two of all were 4.4 apart, as before: one on the Ring Road's flyover and one on Shanti Path under it.
+  - The screen was looked at head-on at 13 h and from the opening view at 21 h.
+  - The cost was not measured again. The new picture adds no mesh, and 84,400 triangles stand still as before.
 
 ## Liberties taken with the real place
 
@@ -370,6 +375,23 @@ The village's boards say CAFE, BOUTIQUE and GALLERY in a painter's hand, in Engl
 
 VINTAGE CAR RALLY, on the banner, is what it is and nobody's name.
 
+## Views for the pictures
+
+The public pictures are taken when the tile joins the board. These are the views the collector was shown, as `wimmel.shot` takes them, all in clear weather. The pictures themselves are named `check-delhi-show-…` and are not checked in.
+
+| What | Taken with |
+| --- | --- |
+| The whole tile by day | `{ hour: 15.5, zoom: 250, w: 1800, h: 1250 }` |
+| The whole tile at night | `{ hour: 20.5, zoom: 250, w: 1800, h: 1250 }` |
+| The flypast with its smoke | `{ hour: 15, zoom: 250, w: 1800, h: 1250 }`, while the jets are over Kartavya Path on a pass with smoke: every third one, and by day only |
+| India Gate | `{ hour: 15, x: 17, z: 6, zoom: 34, elev: 14, az: 78, w: 1600, h: 1000 }` |
+| The Red Fort's walls | `{ hour: 15, x: 52, z: -78, zoom: 34, elev: 16, az: 70, w: 1600, h: 1000 }` |
+| The school | `{ hour: 15.5, x: -82, z: 84, zoom: 46, w: 1600, h: 1100 }` |
+| The screen on Connaught Place | `{ hour: 13, x: -30, z: -28, zoom: 34, elev: 12, az: 45, w: 1600, h: 1000 }` by day, and `{ hour: 21, x: -35.9, z: -34.8, zoom: 34, w: 1600, h: 1000 }` at night |
+| The jets, close | `{ hour: 15, x: x - 0.3 * y - 3, z: z - 2.2 * y + 4, zoom: 34, elev: 24, az: 12, w: 1600, h: 1000 }`, where `(x, y, z)` is where the jets are |
+
+Where the jets are is in the matrix of the group named `flypast`, under `wimmel.board.tiles[0].standing.group`: its elements 12, 13 and 14. `wimmel.advance` moves them on without drawing.
+
 ## Since `main` was merged
 
 `main` was merged in on 19 November 2026 at `f8e38c9` (the merge is `2ec85bb`), while the quarters were being built. What it brought, and what the tile did with it:
@@ -410,12 +432,45 @@ Nothing in the engine was changed in this branch. What the tile worked round:
 
 ## For the next tile
 
-- **Ask the sight lines again of what is built**, not only of the plan. A hill hides what is north-north-west of it for more than its own height: Bangla Sahib went into that shadow on the plan and could not come out of it.
-- **Give every sign a small `size`**: the tile's signs share one sheet, and a tile with 120 of them fills it.
+Written when the tile was called final. What went wrong between the builders is under "How it was built", and what the engine lacks is under "For the engine": neither is said again here.
+
+**What worked**
+
+- **The whole tile as numbers before anything is drawn.** Every thing has an id, a lot and a height in `plan.ts`, and every model takes its place from there. That let seven files be built at once without two of them meeting, and let things move late: the ghats, the bus shed, the dhaba's place for a hero.
+- **One file of shared parts, written before the monuments.** `mughal.ts` has the dome, the chhatri, the arches, the minaret and the battlements. Every quarter's monuments are made of them, so they look like one city's, and a mend to a part mends them all: when the collector asked for more on the fort's walls, its battlements got their points in one place.
+- **Questions to the collector as a short numbered list**, each saying what stands now and what the other choice is. He answered four in one line.
 - **Check a Hindi word by reading a page written in Hindi**, not by a search's summary of pages in English. Hindi Wikipedia's titles and its own search settled most of this tile's words in three fetches.
+- **Edits by a script in a file**, which swaps one piece of text for another and stops when the text is not there, so that a file which has changed since it was read is noticed. Passed to the shell inline, a script with backticks in it was mangled: write it to a file and run the file.
+
+**What cost time**
+
+- **Ask the sight lines again of what is built**, not only of the plan. A hill hides what is north-north-west of it for more than its own height: Bangla Sahib went into that shadow on the plan and could not come out of it.
 - **A place for a hero needs the whole car on its own ground**, 7.8 by 3.1 with room to spare, and nothing taller than a person in the strip between it and where the tile is looked at from. A tree is not counted by `wimmel.seen` and hides as well as a wall.
 - **A turntable's top is the hero's height.** The Auto Expo's place is at 0.3 because its table is.
+- **Give every sign a small `size`**: the tile's signs share one sheet, and a tile with 120 of them fills it.
 - **What costs is not triangles that stand still.** This tile has twice Europe's and its frame costs the same. Its own meshes are few, and its water is one river and four small tanks.
+- **The heroes are traffic too, and how many of them drive changes.** The first traffic check had ten of them on the roads and the last had twelve, and the least distances had moved, though nothing of the tile's roads had changed between the two: the Ring Road's from 13.3 to 10.7, the long drive's from 10.0 to 13.2. Leave room on a route for more than drive on it today, and run the traffic again on the day the tile is called final.
+
+**What I would do differently**
+
+- **Plan what is in the air with the tile.** Every built tile has something that flies, and Delhi had nothing until the collector asked. It then took three rounds: what it should be, its colours, its canopy. Put it in the list of things that goes to the collector before building, and show a close picture of it as of any landmark. He wanted it to look real: grey, with the flag on the fins, and not a display team's colours.
+- **Give the best-known things their small detail before the first showing.** The page says to build the centrepiece first and properly. Delhi's were right in their masses and came back all the same: for the words cut on India Gate, and for the battlements and the arches of the Red Fort's walls. What everybody knows a monument by is often small.
+- **Offer the screen's own picture as a choice, with the plan.** It is what most people see on the screen. Two ideas were put to the collector only after the first was built, and he chose the other.
+- **Ask about anything of a state's ceremony before it is built**, as the research note says. The flypast is the parade's. The collector was asked, and what is built is the aircraft and their smoke and nothing else of the day.
+
+**Built here, and of use to a later tile**
+
+- **Words cut in stone** are strokes and not a sign: `CAPITALS` and `carved` in `axis.ts` write capitals as dark strokes on a wall. A sign is not lit as the stone round it is, and it cannot follow a curve.
+- **Words round a circle, in a script that joins its letters**: `bent` in `signs.ts` writes the line straight on a canvas of its own and lays it round the circle in strips. Set down a letter at a time, Devanagari falls apart, and so would Bengali or Arabic.
+- **Smoke with a colour, which hangs in the air**: `Trails` in `flypast.ts`. The engine's smoke is grey and gone in a second. This is one mesh, drawn in one call, with a colour for each puff.
+- **A flight that leans into its turns**, in `flypast.ts`. Two things about it are easy to get wrong. The lean is worked out from how far the flight has turned since the last frame, and a picture is taken with the clock stopped: keep the last lean when no time has passed, or every picture shows the flight level. And start the round near its end, so that whoever opens the tile sees it pass within seconds.
+
+**What the page left out**
+
+- **With the browser's pane hidden the page draws nothing by itself**, and whatever waits for a frame waits for ever. `wimmel.frame(t)` draws one, with `t` a time in milliseconds that grows by about 17 at each call.
+- **`wimmel.fights` answers with a table**, and an empty one shows in the console as `Array(0)`. That line is its answer, not a fault.
+- **Building with several builders at once** is not on the page. What it took here is under "How it was built".
+- **The pictures the collector is shown are `check-` pictures too**, and the page says to delete those when the tile is done. Write down first what each was taken with: the public pictures are taken later, by other hands, and the view is half the work. Delhi's are under "Views for the pictures".
 
 ## What the collector said
 
@@ -438,3 +493,4 @@ To the built tile, the same day:
 - **Wenger's.** Asked whether to keep the two real trading names, or to make Wenger's a plain BAKERY: "yeah i like it". Both stay.
 - **The pupils' colours.** Asked whether white and bottle green are right: "yup".
 - **The screen's picture.** Asked to choose between the lorry's tailboard and the saying round a heart: "Let's do दिल्ली दिलवालों की round a heart". It is built so.
+- **Final.** Asked whether he calls the tile final: "Yes, it's final".
