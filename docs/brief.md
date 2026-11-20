@@ -38,7 +38,7 @@ It is the starting point for building. Terms are used as [CONTEXT.md](../CONTEXT
 
 - Real 3D, low-poly and lightly cel-shaded: flat bands of colour and soft outlines, on the city and the heroes alike.
 - The look is slightly cartoony, and a hero belongs in it. It is recognisable by its shape, colours and decals, but drawn in the city's hand, never as a photograph: it must not look like a sticker driving around.
-- An isometric camera at a fixed tilt, with a gentle tilt-shift blur that makes the city read as a miniature. The blur fades as the collector zooms in, so that a close look is always sharp.
+- An isometric camera that opens at a tilt of 38 degrees and can be tilted from 14, low across the table, to 80, almost straight down, with a gentle tilt-shift blur that makes the city read as a miniature. The blur fades as the collector zooms in, so that a close look is always sharp.
 - By day, a bright, warm miniature.
 - By night, neon in the vein of Blade Runner 2049, Cyberpunk 2077 and Tokyo Drift: haze, wet-look streets, signs reflected softly in vehicle paint, a little spray behind the wheels. Some traffic has underglow. Heroes never do.
 - Time follows the device's clock. A dial lets the collector drag to any hour and pin it. The controls are made to look like things of brass lying on the table: the dial, a token for each kind of weather, and a few keys. They are out of sight until the screen is touched.
@@ -55,6 +55,7 @@ It is the starting point for building. Terms are used as [CONTEXT.md](../CONTEXT
 - A tile is the size of the prototype's board, 208 units by 226, and stands on a base of its own, like a model on a table. Inside its edge its ground is whatever its place needs: a harbour, a hill, a canyon, a wall of ice.
 - Every tile holds at least the prototype's density of recognisable things: landmarks, named businesses and set-piece scenes. The prototype had 17, North America has 20, Japan 41, Hong Kong 39 and Europe 29. Ordinary buildings are only what stands between them. A place that cannot fill a tile shares one with a neighbour.
 - Inside a tile the roads can be as elaborate as the place deserves, and each district keeps a road worth driving, from the Stelvio Pass to Route 66. The tiles stand edge to edge on one table, and no road joins two of them: see [0010](adr/0010-the-tiles-stand-together-on-a-table.md). How a hero gets from one tile to the next is not decided.
+- The table stands in the collector's room, which is the background of the city. It rests on a long desk whose top is an old map of the world, with a pin at each tile's place and a thread from the pin to the tile, and round the desk are shelves of boxed cars, tall windows and brass lamps.
 - Agreed for the board, and not built yet: an opening sweep in which the tiles rise into place, weather of its own for each tile, things that cross the board such as a blimp and birds, a car transporter on a road printed on the table, and sound for each tile.
 - The founding: the collector founds and names the city. Every tile is made by hand; nothing is rolled or laid out by a generator. Where the tiles stand can change while the city is being built, and when that stops is not decided.
 - Dense, in the manner of Manhattan or a packed Cities: Skylines build.
@@ -78,7 +79,7 @@ It is the starting point for building. Terms are used as [CONTEXT.md](../CONTEXT
 
 ## Camera and touch
 
-- Three modes: explore, drift and follow. The camera turns freely like a turntable at its fixed tilt, and zooms.
+- Three modes: explore, drift and follow. The camera turns freely like a turntable, tilts between 14 and 80 degrees, and zooms. It opens at a tilt of 38, and Escape brings it back there.
 - The view stays wherever it is left, over one tile or across several. Double-clicking a tile goes to it, and double-clicking the table goes back to the whole board. A plate at the top left names the tile under the view.
 - Drift leans gently towards whatever is happening. When the collector leaves the screen alone, drift takes over at a calmer frame rate.
 - Taps: a hero opens its card, a vignette sets off its reaction, traffic honks or flashes its headlights, and anything else does nothing.
@@ -124,6 +125,7 @@ Rules around this:
 - The collector listens through Spotify on their phone, with a Premium account. The sound comes from Spotify itself. Wimmelstadt shows what is playing and steers it.
 - In the city: a big screen downtown shows the cover and the title, the night's neon takes its colours from the album cover, a marquee carries the artist's name, and a blimp tows the track title.
 - A small widget in the corner offers play, pause, skip and the collector's playlists.
+- Built so far: the big screens show what is playing, with the cover, the title and the artist, and their own pictures when nothing is: each tile has one screen, and paints for it a picture of its place. The link is made in the browser alone, with the listener's own account, from the Music row of the options, and only reads. The collector tried it against Spotify on 19 November 2026, and the screen showed what was playing. Not built yet: the neon taking its colours from the cover, the marquee, the blimp and the widget.
 
 ## Behind it
 
@@ -193,3 +195,4 @@ Checked in November 2026. Check again before relying on them.
 - **The first hero in the published city.** On 19 November 2026 the Countach's model, 1.5 MB, was sent to the backend, and the app showed it once the collector had entered the PIN. A device keeps what it is given, so the city starts with its heroes when the backend is asleep.
 - **Four tiles on the board.** On 19 November 2026, with North America, Japan, Hong Kong and Europe on the board, a frame took about 9 ms on the desktop: 790,000 triangles in some 350 draws, with 305 vehicles moving and 1,600 people standing about. The Duo has not been measured.
 - **Heights.** Measured on the same day, the towers of all four tiles were within about a tenth of one scale, 3.2 metres to a unit, without anybody having set out to keep to it: the Sears Tower's roof is 140 units up and 442 m in life, Tokyo Tower 112 and 333 m, ICC 145 and 484 m, the Eiffel Tower 110 and 330 m.
+- **The room and the tilt.** On 19 November 2026 the table, which had stood in empty space, was given the collector's room: a long desk whose top is an old map of the world, with a pin and a thread for each tile's place, and round it a floor, walls, shelves of boxed cars, windows and lamps. The map's coastlines are Natural Earth's, which are in the public domain. The room is fetched after the city, about 70 kB compressed, and costs about 14 more draws, which could not be measured in a frame on the desktop. On the same day the view, which had looked down at a fixed 38 degrees, was made to tilt from 14 to 80, and it is kept inside the room, so that nothing beyond the walls is ever seen.

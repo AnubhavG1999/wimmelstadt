@@ -8,7 +8,7 @@ Every Hot Wheels or Mini GT its collector adds drives around the city as a recog
 
 **Try it:** https://anubhavg1999.github.io/wimmelstadt/ is the app as it stands on `main`. The published city has traffic alone until it is unlocked. Its heroes are made from the collector's own pictures, so they sit behind a PIN, and whoever the collector gives the PIN to can see them. The look prototype it grew out of is at https://anubhavg1999.github.io/wimmelstadt/look/.
 
-Drag to move, right-drag to turn, and scroll to zoom. Double-click a tile to go to it, and the table to see the whole board again. Drag the sun round the dial at the bottom right from day to night, and pick the weather from the tokens round it.
+Drag to move, right-drag across to turn and up or down to tilt, and scroll to zoom. Double-click a tile to go to it, and the table to see the whole board again. Drag the sun round the dial at the bottom right from day to night, and pick the weather from the tokens round it.
 
 ## The intent
 
@@ -34,6 +34,7 @@ It is deliberately not a collection manager: no prices, no wish lists, no checkl
 | A first try at tiles | Built and set aside: two larger tiles, blocked out side by side. Beside the prototype they were too thinly filled. See [prototype/two-tiles](prototype/two-tiles). |
 | The city | Four tiles are built and stand together on a board: North America, Japan, Hong Kong and Europe. More are to come. See [app](app), [0009](docs/adr/0009-a-city-of-hand-built-tiles.md) and [0010](docs/adr/0010-the-tiles-stand-together-on-a-table.md). |
 | Heroes | One, the black Countach from the generator trial, carried through by hand. It drives in the published city for whoever has the collector's PIN. See [0011](docs/adr/0011-the-heroes-sit-behind-a-pin.md). The pipeline that makes a hero from the phone is not built. |
+| Music | Begun. A big screen on every tile shows what is playing on Spotify, through a link made with the listener's own account, and a picture of its own when nothing is. A device is linked from the Music row of the options. Steering the music is not built. |
 
 The order of building is: this prototype, then the city, then the pipeline that turns photos into heroes, then life in the city, then music, then extras.
 
@@ -110,6 +111,21 @@ The tiles stand on the board in the order they were built: North America at the 
 
 Two other forms of the city were built first and set aside. One was a continuous island with a coast, rivers and mountains. It was too large to build by hand, so the ground between its landmarks was filled with ordinary buildings made by rule, and it looked empty where the prototype looks full. It is kept on the branch `island-prototype`. The other was a pair of larger tiles joined by an avenue, which thinned out in the same way. It is kept in [prototype/two-tiles](prototype/two-tiles). [0009](docs/adr/0009-a-city-of-hand-built-tiles.md) records both.
 
+### The room
+
+The table stands in the collector's room, which is the background of everything. It rests on a long walnut desk whose top is an old map of the world, drawn as the double-hemisphere maps of the seventeenth century were: the New World in a round picture on the left and the Old World in one on the right, the two poles in the corners, a compass rose, Latin names for the continents and seas, and washes of colour along the coasts, on yellowed paper with creases. Each tile has a pin in the map at its place, with its name beside it and a red thread from the pin to a brass tack on the table's edge. Round the desk are a floor of boards, shelves of small cars in their boxes, tall windows that show the colour of the sky at the hour, and four brass lamps with green shades that light the map at night.
+
+It is all at the scale of the cars, so the desk is long and the room is a hall. A wall that would stand between the view and the table is left off, as the front of a doll's house is, and comes back as the view turns. The view is kept inside the room: however it is turned, tilted or drawn back, it shows nothing beyond the floor and the walls. The coastlines are Natural Earth's 1:50m land, which is in the public domain.
+
+| | |
+| --- | --- |
+| ![The board of four miniature cities seen from low across a long walnut desk, whose top is an old map of the world with red threads running over it; behind it a wall of shelves full of boxed toy cars, and brass lamps with green shades on the desk](app/screenshots/room.jpg) | ![The same view at night: the lamps light the map, the city glows in the middle of the desk, and the shelves behind are in shadow](app/screenshots/room-night.jpg) |
+| The room by day. | At night, under the lamps. |
+
+![Close on an old map on yellowed paper: Africa, Europe and Asia in washes of colour, pins at Europe, Hong Kong and Japan with their names beside them, and red threads running off towards the table](app/screenshots/map.jpg)
+
+The Old World on the map, with the pins of Europe, Hong Kong and Japan.
+
 ## The look prototype
 
 These pictures come from the look prototype: the same board before it became North America, which is why Big Ben and the Taj Mahal are in them. The heroes in them are stand-ins drawn by hand.
@@ -141,6 +157,8 @@ Famous landmarks stand in the city as toy versions of themselves, each on the ti
 | [docs/building-a-tile.md](docs/building-a-tile.md) | The page for whoever builds a tile: what a tile is, the kit, the checks, and what the earlier tiles taught their builders. |
 | [docs/districts/research](docs/districts/research) | The research notes behind each of the 23 districts: what stands where, what it looks like, and what was and was not checked. |
 | [app](app) | The real app, built with three.js: an engine, and a folder for each tile. So far four tiles. |
+| [app/src/engine/room](app/src/engine/room) | The collector's room round the table: the desk, the map on it with a pin for each tile, and the room the desk stands in. |
+| [app/src/music](app/src/music) | The link to Spotify, which puts what is playing on the big screens of the city. |
 | [supabase](supabase) | The backend's database, as the changes that made it: the heroes, the store for their models, and who may see them. |
 | [prototype/look](prototype/look) | The look prototype. Its README says what to judge and what is faked. |
 | [prototype/two-tiles](prototype/two-tiles) | The first try at tiles, set aside. Its README says why, and what is worth taking from it. |
