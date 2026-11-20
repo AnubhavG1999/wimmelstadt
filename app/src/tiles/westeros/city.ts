@@ -11,6 +11,7 @@ import type { Build, TileParts } from '../../engine/tile';
 import { buildCountry } from './country';
 import { buildDragons } from './dragons';
 import { buildKraken } from './kraken';
+import { checkLanes } from './lanes';
 import { buildLand } from './land';
 import { BOARDS } from './look';
 import type { Model } from './models';
@@ -115,6 +116,9 @@ export function buildWesteros(k: Build): TileParts {
     const open = new Set([...GATES.map((g) => g.lot), 'se-drum']);
     const solids: Solid[] = LOTS.filter((l) => !open.has(l.id)).map((l) => ({ id: l.id, x0: l.x0, z0: l.z0, x1: l.x1, z1: l.z1, y0: 0, y1: l.top }));
     checkRoads('Westeros', routes, {}, solids);
+    // and the lanes against what is really built, which the boxes are not: what it finds is `westeros.lanes` in the console
+    const lanes = checkLanes('Westeros', routes, k.b, { kinds: WAYFARERS, people: k.people });
+    Object.assign((window as unknown as { westeros: object }).westeros, { lanes });
     checkSight();
   }
 
