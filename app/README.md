@@ -2,13 +2,13 @@
 
 The real Wimmelstadt: a board of tiles, each a district built by hand, with traffic on its roads and the collector's heroes among it. See [0009](../docs/adr/0009-a-city-of-hand-built-tiles.md) for why the city is made of tiles and why a tile is the size it is, and [0010](../docs/adr/0010-the-tiles-stand-together-on-a-table.md) for how the tiles stand together.
 
-![Seven miniature cities on a green table with a wooden rim, each on a dark base of its own, in rows of three](screenshots/board.jpg)
+![Nine miniature cities on a green table with a wooden rim, each on a dark base of its own, in three rows of three](screenshots/board.jpg)
 
 The pictures of each tile are in the [README at the top](../README.md).
 
 ## The board and its tiles
 
-Every tile stands on a base of its own, with its name on a brass plate on each side, and the bases stand edge to edge on one table. The tiles are put on it in rows of three, in the order they were built, so the first ones keep the back of the table.
+Every tile stands on a base of its own, with its name on a brass plate on each side, and the bases stand edge to edge on one table. The tiles are put on it in rows of three, and shuffled anew each time the page loads, so that whoever opens the board finds them somewhere new. `?order=fixed` puts them in the order they were built.
 
 | Tile | Things to find | What it is | Its notes |
 | --- | --- | --- | --- |
@@ -19,6 +19,8 @@ Every tile stands on a base of its own, with its name on a brass plate on each s
 | Delhi | 44 | Old Delhi, Connaught Place, the axis from Rashtrapati Bhavan to India Gate, and the south beyond the Ring Road, with the Yamuna down its east side, the Metro on its viaduct, autos and cycle rickshaws, and three jets in the air. | [NOTES.md](src/tiles/delhi/NOTES.md) |
 | Urbana-Champaign | 48 | The campus of the University of Illinois on Quad Day and a home game, with Campustown and the railway to its west and a strip of Urbana to its east. Its loops round the blocks share lanes on purpose. | [NOTES.md](src/tiles/uiuc/NOTES.md) |
 | Westeros | 64 | *A Song of Ice and Fire*, after the books: the Wall, Winterfell, the riverlands, King's Landing and the south, with riders, carts and wains on its roads, three dragons, three ships and a kraken. | [NOTES.md](src/tiles/westeros/NOTES.md) |
+| Blackwater Bay | 63 | *Fire & Blood*, after the books: King's Landing with the Dragonpit whole, Dragonstone and the Dragonmont, Driftmark and High Tide, and ten great dragons, each with a home and moments of its own. | [NOTES.md](src/tiles/blackwater-bay/NOTES.md) |
+| The Iron Rain | 49 | *Golden Son*, after the books: a dome of Mars with Agea under its shield, eleven warships overhead, a Rain of starShells that never stops, and twenty-five figures of the saga in thirteen small stories. | [NOTES.md](src/tiles/red-rising/NOTES.md) |
 
 A tile's notes list what stands on it, the liberties taken with the real place, every real name on a sign and how it was checked, and what its builder learned.
 
@@ -105,6 +107,7 @@ The address bar takes options:
 | Option | What it does |
 | --- | --- |
 | `?tiles=japan,hong-kong` | puts only those tiles on the board, in that order. A tile named twice stands there twice, and `sample` is the sample tile, which is hidden otherwise. |
+| `?order=fixed` | puts the tiles in the order they were built, in place of a new shuffle at every load. |
 | `?hour=21.5` | sets the hour. |
 | `?weather=rain` | sets the weather the page opens with: `clear`, `cloudy`, `rain`, `storm`, `fog` or `snow`, or `auto` for the city's own. Without it the sky is clear. |
 | `?drift=0` | stops the view turning by itself. |
@@ -149,4 +152,4 @@ The same handle, `wimmel`, has more:
 - There is no roster, no card and no bench. The one hero was carried through by hand.
 - Nothing has a name on screen but the tile in view and the places on the map.
 - The screens show what is playing, and nothing else of the plan for music is built: the night's neon taking its colours from the cover, a marquee with the artist's name, a blimp towing the title, and a widget to steer the music. The link is off until the app at Spotify is made.
-- How it runs on the phone has not been measured. On the desktop, seven tiles take about 12 ms a frame.
+- How it runs on the phone has not been measured. On the desktop, nine tiles take about 17 ms a frame with the whole board in view.

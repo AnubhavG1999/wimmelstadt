@@ -1,6 +1,6 @@
 # Wimmelstadt
 
-![Seven miniature cities on a green table with a wooden rim, each on a dark base of its own, in rows of three: skyscrapers round a ring of raised road at the back, a white mountain and a red and white lattice tower to their right, a harbour city's towers at the far right, an iron lattice tower by a river at the left, domes and red sandstone in the middle, red brick in front of them, and a wall of ice and a smoking mountain at the far left. Two places at the front of the table are still bare felt.](app/screenshots/board.jpg)
+![Nine miniature cities on a green table with a wooden rim, each on a dark base of its own, in three rows of three: skyscrapers round a ring of raised road at the back, a white mountain and a red and white lattice tower to their right, a harbour city's towers at the far right, an iron lattice tower by a river at the left, domes and red sandstone in the middle, red brick to their right, and along the front a wall of ice, a great ribbed dome with a black dragon in the air over it, and a city under a clear dome with warships hanging above it.](app/screenshots/board.jpg)
 
 A living miniature city for a diecast collection.
 
@@ -17,7 +17,7 @@ A diecast collection mostly sits in boxes or on a shelf. Wimmelstadt gives each 
 - **A diecast becomes a hero.** The collector photographs the toy from six angles, or for a Mini GT simply picks its page on Mini GT's site, whose three product pictures are enough. A cloud service turns the pictures into a 3D model, which is finished at a bench: wheels that spin, lights, its true size, its decals restored, and the photographic shine flattened into the city's slightly cartoony look. Once approved, it arrives in the city on a car transporter.
 - **A hero is found by its detail alone.** Nothing glows and nothing is marked. Traffic is plain, so the one car with a number on its door is somebody.
 - **Heroes have lives.** They keep a routine tied to the real clock, gather at a meet in the evening, and now and then one does doughnuts under a bridge.
-- **The city is made of tiles, and it is permanent.** Each tile is one district, built by hand around a real or an imagined place: Hong Kong, Delhi, Merseyside, the Alps, Route 66's desert, Westeros behind its Wall. Every tile is packed with things to recognise, and no tile is another one in different clothes. Nothing already built ever moves, because the fun is in coming back to a place you know. The city grows a tile at a time. What grows with the collection is the number of heroes.
+- **The city is made of tiles, and it is permanent.** Each tile is one district, built by hand around a real or an imagined place: Hong Kong, Delhi, Westeros behind its Wall, Mars under an Iron Rain. Every tile is packed with things to recognise, and no tile is another one in different clothes. Nothing already built ever moves, because the fun is in coming back to a place you know. The city grows a tile at a time. What grows with the collection is the number of heroes.
 - **It is a thing to leave on.** It runs as a web app on a phone on a stand and in a desktop browser. By day it is a bright, warm miniature. At night it turns to neon, haze and wet streets. It opens under a clear sky. Give the weather to the city, and rain, storms, fog and snow come and go.
 
 It is deliberately not a collection manager: no prices, no wish lists, no checklists of what is missing.
@@ -29,10 +29,10 @@ It is deliberately not a collection manager: no prices, no wish lists, no checkl
 | The design | Agreed. See the [brief](docs/brief.md), the [glossary](CONTEXT.md) and the [decision records](docs/adr). |
 | A prototype of the look | Built. It was meant as a throwaway: one small hand-built scene. Its board turned out to be the right size and shape for a tile, and became the first one. See [prototype/look](prototype/look). |
 | A trial of the generators | Done. Rodin 2.5 made a good hero from Mini GT's own three pictures, at $0.40 a car. See [prototype/hero](prototype/hero). |
-| Research | Done for all 23 districts, with sources. See [docs/districts/research](docs/districts/research). |
+| Research | Kept for the tiles on the board, with sources: what stands in each place, and what was and was not checked. A new tile is researched when its turn comes. See [docs/districts/research](docs/districts/research). |
 | A first attempt at the city | Built and set aside: one continuous island of 23 districts. Beside the prototype its density and its layout did not hold up. It is kept in the repository's history. |
 | A first try at tiles | Built and set aside: two larger tiles, blocked out side by side. Beside the prototype they were too thinly filled. It is kept in the repository's history. |
-| The city | Seven tiles are built and stand together on a board: North America, Japan, Hong Kong, Europe, Delhi, Urbana-Champaign and Westeros. More are to come. See [app](app), [0009](docs/adr/0009-a-city-of-hand-built-tiles.md) and [0010](docs/adr/0010-the-tiles-stand-together-on-a-table.md). |
+| The city | Nine tiles are built and stand together on a board: North America, Japan, Hong Kong, Europe, Delhi, Urbana-Champaign, Westeros, Blackwater Bay and the Iron Rain. More are to come. See [app](app), [0009](docs/adr/0009-a-city-of-hand-built-tiles.md) and [0010](docs/adr/0010-the-tiles-stand-together-on-a-table.md). |
 | Heroes | Fifteen: the black Countach from the generator trial, and fourteen more made from Mini GT's own pictures and finished by hand, each with a party trick of its own. They drive in the published city for whoever has the collector's PIN. See [0011](docs/adr/0011-the-heroes-sit-behind-a-pin.md). The pipeline that makes a hero from the phone is not built. |
 | Music | Begun. A big screen on every tile shows what is playing on Spotify, through a link made with the listener's own account, and a picture of its own when nothing is. A device is linked from the Music row of the options. Steering the music is not built. |
 
@@ -42,7 +42,7 @@ The order of building is: this prototype, then the city, then the pipeline that 
 
 The city is made of tiles. A tile is one district on a board of its own, built by hand, lot by lot, until nothing in it is filler. It is the size of the look prototype's board, because that board turned out to be the right size: small enough that its landmarks stand shoulder to shoulder, with roads squeezed between them and streets passing underneath. Each tile stands on its own base, like a model on a table, with its name on a brass plate. The tiles stand together on one table, edge to edge, and that table is the board.
 
-Seven tiles are built, each to the same [page for tile builders](docs/building-a-tile.md). Each keeps notes in its own folder: what stands on it, the liberties taken with the real place, and every real name on a sign.
+Nine tiles are built, each to the same [page for tile builders](docs/building-a-tile.md). Each keeps notes in its own folder: what stands on it, the liberties taken with the real place, and every real name on a sign.
 
 ### North America
 
@@ -139,18 +139,52 @@ The continent of *A Song of Ice and Fire*, after the books and with nothing from
 
 ![A walled city on hills: a castle of pink stone with banners, a gold dome with seven crystal spires, a ruined black dome, a black castle of melted towers beyond, a smoking mountain on an island, a grey mountain with a castle on its shoulder, a round grey tower on a headland, and a gold dome among palms](app/screenshots/westeros-kings-landing.jpg)
 
-King's Landing, with the Red Keep, the Great Sept of Baelor and the ruined Dragonpit inside its walls, Harrenhal and the tourney ground behind it, and Dragonstone, the Giant's Lance, Storm's End and Sunspear round it.
+King's Landing, with the Red Keep, the Great Sept of Baelor and the ruined Dragonpit inside its walls, Harrenhal and the tourney ground behind it, and Dragonstone, the Giant's Lance, Storm's End and Sunspear round it. At the right is the edge of Blackwater Bay: the same city some hundred and seventy years earlier.
 
 See its [notes](app/src/tiles/westeros/NOTES.md).
+
+### Blackwater Bay
+
+Blackwater Bay in the year 129 after the Conquest, the age of *Fire & Blood*, after the books and with nothing from the television series. King's Landing stands behind its walls with the Dragonpit whole on the Hill of Rhaenys, a drum of forty bays under a dome of lead and bronze, the Red Keep with Maegor's Holdfast, and a sept on Visenya's Hill. Along the north shore run Rosby, Stokeworth, Duskendale and Rook's Rest. Across the water are Dragonstone, its black castle shaped as dragons under the smoking Dragonmont, and Driftmark with Hull, Spicetown and High Tide on its tidal causeway, and the Velaryon fleet rides at anchor in the Gullet. Drovers, a lord's litter and gold cloaks travel its roads. Ten great dragons of the Targaryens live on it, each at a home of its own: Balerion on the dome and Dreamfyre on the forecourt below him, Caraxes on the Red Keep's great tower, Vhagar on a rock in the bay, Meleys on High Tide, Meraxes on the Dragonmont's summit, and Vermithor, Silverwing, Sheepstealer and the Cannibal in its caves. They did not all live at one time, and gathering them is the tile's liberty. Each plays moments of its own from the books, two or three in the air at once: Balerion laps the city and breathes his black fire straight up, Sheepstealer carries a sheep home, Meleys races Caraxes round the bay, and the three dragons of the Conquest go round King's Landing one behind another. No rider is shown, and fire goes only straight up or out over open water. It has 63 things to find.
+
+| | |
+| --- | --- |
+| ![A tile of a bay: a walled city on hills with a great ribbed dome and a huge black dragon in the air over it, a black smoking mountain on an island with dragons on its ledges at the right, a pale castle on an islet and ships at anchor in front, and a red dragon low over the water](app/screenshots/blackwater-bay.jpg) | ![The same tile at night: lit windows in the city, lamps on the ships, and embers glowing in the caves and the crater of the mountain](app/screenshots/blackwater-bay-night.jpg) |
+| Blackwater Bay, with Balerion in the air over the Dragonpit. | At night, the Dragonmont aglow. |
+| ![A great drum under a ribbed dome of dark lead and bronze on a flagged and scorched terrace: a huge black dragon lies on the dome with its head over the doors, a pale blue dragon lies on the forecourt below, keepers in black stand about, and a sign reads Give way to dragons](app/screenshots/blackwater-bay-dragonpit.jpg) | ![A black volcano on an island: a silver dragon on its summit, a white one and a bronze one on ledges before their caves, a black castle whose towers are dragons at its foot, and a bronze-green dragon on a rock in the bay at the left](app/screenshots/blackwater-bay-dragonmont.jpg) |
+| The Dragonpit: Balerion on the dome and Dreamfyre on the forecourt, among the Dragonkeepers. | The Dragonmont: Meraxes on the summit, Silverwing and Vermithor before their caves, Dragonstone at its foot and Vhagar on her rock. |
+
+![Three dragons in the air over a walled city and its domed pit, one behind another: a huge black one, a bronze-green one and a silver one](app/screenshots/blackwater-bay-conquest.jpg)
+
+The dragons of the Conquest over King's Landing: Balerion, Vhagar and Meraxes.
+
+See its [notes](app/src/tiles/blackwater-bay/NOTES.md).
+
+### The Iron Rain
+
+Mars on the day of the Lion's Rain, from Pierce Brown's *Golden Son*, after the books alone. The tile's ground is a dome of the planet, green since its terraforming, with red rock where the ground is bare. Agea, the capital, lies in the canyon across its crown: the Citadel with its seven needle spires and its landing pads, six towers like jewelled blades, the walls with their gates and the grates where the river comes through, a quarter of plastered houses round a market, and the park of pylons that hold a shield over the whole city. Above them fly eleven warships: the Pax and the Morning Star with the Augustan line, the Bellona flagship Warchild in blue and silver, and ships of the Rim. The Rain never stops: every seventeen seconds a wave of forty starShells falls from the fleet in trails of fire, and those aimed at the city skid off the shield until it is brought down. Twenty-five figures of the saga are on it at the size of the tile's people, told by their colours, cloaks and arms, among them Darrow, Sevro and the Howlers, Ragnar, Mustang, Lorn and Alexandar, the Sovereign, Aja and Cassius. They play thirteen small stories, several at once, and every fight stops at the clash: the Reaper's squadron lands before the south wall, Ragnar forces the postern, the shield breaks, and Darrow and his companions close a ring round Aja before the Sovereign's shuttle. Its traffic is the army's column of hover skiffs, gravBikes and haulers, with spider tanks on patrol. Portraying named characters is the collector's own choice for this tile, and bringing figures of different years together is its liberty. It has 49 things to find.
+
+| | |
+| --- | --- |
+| ![A tile whose ground is a green and rust-red dome of a planet: a white palace with crimson spires and a cluster of glass towers behind a dark wall, a clear dome over them, a camp and snowy peaks in front, warships hanging above, and streaks of fire falling from them](app/screenshots/red-rising.jpg) | ![The same tile at night: the dome over the city glows, the towers are lit in colours, the tile's edges glow blue, and a wave of burning shells pours from a white warship onto the dome](app/screenshots/red-rising-night.jpg) |
+| The Iron Rain, with a wave falling. | At night, a wave from the Morning Star breaking on the shield. |
+| ![Before a dark wall, on green and rust-red ground beside a road: the open grey husks of landing shells and one red one, armoured figures standing among them, one in red lifting a curved blade, and spider tanks at the left](app/screenshots/red-rising-reaper.jpg) | ![A deck of landing pads beside a white palace: four white shuttles in a rank, a column of guards in purple, and in the open a ring of figures with blades raised round one in dark armour](app/screenshots/red-rising-aja.jpg) |
+| The Reaper's squadron before the south wall, out of its starShells. | The ring round Aja on the Citadel's landing pads, before the Sovereign's shuttle and its decoys. |
+
+![Seen from low at dusk: a dome of a planet with a walled city and its glass towers under a clear dome, warships hanging over it and burning shells falling, on a desk whose top is an old map, with shelves of boxed toy cars behind](app/screenshots/red-rising-rain.jpg)
+
+The dome of Mars at dusk, under its fleet and the Rain.
+
+See its [notes](app/src/tiles/red-rising/NOTES.md).
 
 ### The board
 
 | | |
 | --- | --- |
-| ![The whole board at night, seven lit tiles on a dark table, with beams of light rising from one of them](app/screenshots/board-night.jpg) | ![The whole board under snow, with flakes falling and every roof white](app/screenshots/board-snow.jpg) |
+| ![The whole board at night, nine lit tiles on a dark table, with beams of light rising from one of them and a clear dome glowing over a city at the front](app/screenshots/board-night.jpg) | ![The whole board under snow, with flakes falling and every roof white](app/screenshots/board-snow.jpg) |
 | The board at night. | Snow. |
 
-The tiles stand on the board in rows of three, in the order they were built: North America, Japan and Hong Kong at the back, Europe, Delhi and Urbana-Champaign in the middle, and Westeros at the front, where two places stand empty for the tiles to come. [0010](docs/adr/0010-the-tiles-stand-together-on-a-table.md) says why the tiles are joined like this. How a hero will get from one tile to the next is not decided yet: for now each hero is put on a tile at random whenever the page loads.
+The tiles stand on the board in rows of three, and they are shuffled each time the page loads, so that whoever opens it finds them somewhere new. These pictures show them in the order they were built, which `?order=fixed` gives: North America, Japan and Hong Kong at the back, Europe, Delhi and Urbana-Champaign in the middle, and Westeros, Blackwater Bay and the Iron Rain at the front. Most of the tiles' own pictures were taken before the Iron Rain joined them, whose fleet hangs over whatever stands behind it. A tenth tile will make rows of four. [0010](docs/adr/0010-the-tiles-stand-together-on-a-table.md) says why the tiles are joined like this. How a hero will get from one tile to the next is not decided yet: for now each hero is put on a tile at random whenever the page loads.
 
 Two other forms of the city were built first and set aside. One was a continuous island with a coast, rivers and mountains. It was too large to build by hand, so the ground between its landmarks was filled with ordinary buildings made by rule, and it looked empty where the prototype looks full. The other was a pair of larger tiles joined by an avenue, which thinned out in the same way. Both are kept only in the repository's history, and [0009](docs/adr/0009-a-city-of-hand-built-tiles.md) records them.
 
@@ -162,13 +196,13 @@ It is all at the scale of the cars, so the desk is long and the room is a hall. 
 
 | | |
 | --- | --- |
-| ![The board of seven miniature cities seen from low across a long walnut desk, whose top is an old map of the world with red threads running over it; behind it a wall of shelves full of boxed toy cars, and brass lamps with green shades on the desk](app/screenshots/room.jpg) | ![The same view at night: the lamps light the map, the city glows in the middle of the desk, and the shelves behind are in shadow](app/screenshots/room-night.jpg) |
+| ![The board of nine miniature cities seen from low across a long walnut desk, whose top is an old map of the world with red threads running over it; behind it a wall of shelves full of boxed toy cars, and brass lamps with green shades on the desk](app/screenshots/room.jpg) | ![The same view at night: the lamps light the map, the city glows in the middle of the desk, and the shelves behind are in shadow](app/screenshots/room-night.jpg) |
 | The room by day. | At night, under the lamps. |
 
 | | |
 | --- | --- |
-| ![Close on an old map on yellowed paper: Africa, Europe and Asia in washes of colour, pins at Europe, Delhi, Hong Kong and Japan with their names beside them, and red threads running off towards the table](app/screenshots/map.jpg) | ![The other half of the map: the Americas in washes of colour with two pins in the middle of the United States, and far out in the ocean to the west an island drawn in the same hand, with a pin of its own](app/screenshots/map-west.jpg) |
-| The Old World, with the pins of Europe, Delhi, Hong Kong and Japan. | The New World, with the pins of North America and Urbana-Champaign, and the land that Westeros brings to the map, lettered Hic sunt dracones: here be dragons. |
+| ![Close on an old map on yellowed paper: Africa, Europe and Asia in washes of colour, pins at Europe, Delhi, Hong Kong and Japan with their names beside them, and red threads running off towards the table](app/screenshots/map.jpg) | ![The other half of the map: the Americas in washes of colour with two pins in the middle of the United States, far out in the ocean to the south-west an island drawn in the same hand with two pins on it, and in the ocean to the north-west a small round land with a pin of its own](app/screenshots/map-west.jpg) |
+| The Old World, with the pins of Europe, Delhi, Hong Kong and Japan. | The New World, with the pins of North America and Urbana-Champaign; the land that Westeros brings to the map, lettered Hic sunt dracones, here be dragons, with Blackwater Bay's pin on its coast; and Mars, a round land of its own in the northern ocean. |
 
 ## The look prototype
 
@@ -199,8 +233,8 @@ Famous landmarks stand in the city as toy versions of themselves, each on the ti
 | [CONTEXT.md](CONTEXT.md) | The glossary: what a diecast, a hero, a casting, a tile, the board and the rest mean here. |
 | [docs/adr](docs/adr) | Eleven short records of decisions that would be hard to undo, each with its reason. |
 | [docs/building-a-tile.md](docs/building-a-tile.md) | The page for whoever builds a tile: what a tile is, the kit, the checks, and what the earlier tiles taught their builders. |
-| [docs/districts/research](docs/districts/research) | The research notes behind each of the 23 districts: what stands where, what it looks like, and what was and was not checked. |
-| [app](app) | The real app, built with three.js: an engine, and a folder for each tile. So far seven tiles. |
+| [docs/districts/research](docs/districts/research) | The research notes behind the tiles on the board: what stands where, what it looks like, and what was and was not checked. |
+| [app](app) | The real app, built with three.js: an engine, and a folder for each tile. So far nine tiles. |
 | [app/src/engine/room](app/src/engine/room) | The collector's room round the table: the desk, the map on it with a pin for each tile, and the room the desk stands in. |
 | [app/src/music](app/src/music) | The link to Spotify, which puts what is playing on the big screens of the city. |
 | [supabase](supabase) | The backend's database, as the changes that made it: the heroes, the store for their models, and who may see them. |

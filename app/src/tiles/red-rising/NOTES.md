@@ -2,7 +2,7 @@
 
 This file records what a later reader cannot see in the code.
 
-**Where the tile stands.** Built and checked on the branch `claude/red-rising-tile`, for the main session to merge as the ninth tile. The plan, the ground, the roads, the stories and their director are the tile session's; the buildings, the fleet, the Rain, the figures and the column's vehicles are builders' files, each from the brief `tile-red-rising-builders-brief.md` in the shared notes folder, judged and mended by the tile session. No README or picture has been touched: that pass is the main session's.
+**Where the tile stands.** Built and checked on the branch `claude/red-rising-tile`, and merged on 20 November 2026 as the ninth tile, which in the order of building stands in front of Urbana-Champaign. The plan, the ground, the roads, the stories and their director are the tile session's; the buildings, the fleet, the Rain, the figures and the column's vehicles are builders' files, each from the brief `tile-red-rising-builders-brief.md` in the shared notes folder, judged and mended by the tile session. The READMEs and the public pictures were done by the main session the same day.
 
 ## The collector's decisions
 
@@ -18,7 +18,7 @@ These were his, on 20 November 2026, and the tile is built on them.
 - **The traffic**: "army aesthetic for sure": the Augustan ground column.
 - **The side of the road**: "doesnt matter". Traffic keeps right.
 - **The screen**: the first of three ideas, the forecast board, IRON RAIN TODAY.
-- **The look**: "need it to look fuckin sexy m8 love red rising".
+- **The look**: that it be spectacular.
 
 ## Sources and rights
 
