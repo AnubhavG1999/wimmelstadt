@@ -34,13 +34,11 @@ const isTurn = (s: Step): s is Turn => !Array.isArray(s);
 const TURN = 3.6;
 
 /**
- * The climb up to the Dragonpit's forecourt: from where the Street of the
- * Sisters turns up it, north-east to where it reaches the terrace's edge.
+ * The climb up to the Dragonpit's forecourt: the last stretch of the Street
+ * of the Sisters, straight up the middle to the bronze doors, from its foot to
+ * where it reaches the forecourt's south edge.
  */
-export const CLIMB = (() => {
-  const [a, b] = [R.sisters[2], R.sisters[3]], t = (a[1] - RHAENYS.forecourt.z1) / (a[1] - b[1]);
-  return { foot: a, top: [a[0] + (b[0] - a[0]) * t, RHAENYS.forecourt.z1] as P2 };
-})();
+export const CLIMB = { foot: [R.sisters[1][0], RHAENYS.forecourt.z1 + 24] as P2, top: R.sisters[1] as P2 };
 
 /**
  * How high a road is at a place. Every road lies on the ground but the climb
@@ -62,7 +60,7 @@ const DRIFT = R.driftmark, CJ: P2 = R.causeway[0];
 const WALKS: Record<string, Step[]> = {
   // East along the quays' north side, up the Street of the Sisters to the forecourt and down again, on to
   // Aegon's strand, and back along the quays' south side to the west end.
-  city: [TURNS.quaysWest, R.sisters[0], R.sisters[1], R.sisters[2], R.sisters[3], TURNS.forecourt, R.sisters[3], R.sisters[2], R.sisters[1], R.sisters[0], TURNS.strand, R.sisters[0]],
+  city: [TURNS.quaysWest, R.sisters[0], R.sisters[1], TURNS.forecourt, R.sisters[1], R.sisters[0], TURNS.strand, R.sisters[0]],
   // Out of the drovers' pen through the Iron Gate, along the north shore to Rook's Rest, and back.
   rosby: [TURNS.pen, R.rosby[1], R.rosby[2], R.rosby[3], TURNS.rooksRest, R.rosby[3], R.rosby[2], R.rosby[1]],
   // From the harbour through the town and the castle, under the lairs to the camp of the Sowing, and back.

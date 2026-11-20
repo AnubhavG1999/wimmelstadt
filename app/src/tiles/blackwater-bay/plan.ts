@@ -101,34 +101,45 @@ export function isWater(x: number, z: number): boolean {
 // ---------------------------------------------------------------------------
 
 /**
- * The Hill of Rhaenys, with the Dragonpit on its crown. The drum stands in
- * the middle of a stone terrace, `y` high, walled round, and the terrace
- * reaches out to the south and the east: an apron to the south, where
- * Balerion lies, the forecourt before the bronze doors to the south-east, and
- * an apron to the east, where Vhagar lies looking out over the bay. The forty
- * vaults' iron doors are in the terrace's walls.
+ * The Hill of Rhaenys, with the Dragonpit on its crown. The drum stands at
+ * the north of a great stone terrace, `y` high and walled round, that fills
+ * the hill's south half. The bronze doors face south, onto the forecourt,
+ * where the Street of the Sisters comes up. Balerion lies on the terrace's
+ * east apron and Vhagar on its west apron, each facing south with its tail
+ * laid out behind it along the apron, so that the two flank the doors; and
+ * Dreamfyre lies in the doors themselves. The forty vaults' iron doors are in
+ * the terrace's walls.
  */
 export const RHAENYS = {
   c: [-60, -40] as P2,
   /** The drum, how high its wall stands, and how high its dome rises. */
   drum: 20, wall: 25, dome: 40,
-  /** The terrace's height, and how far round the drum it reaches where it does not reach out. */
+  /** The terrace's height, and how far round the drum it reaches on its north side. */
   y: 6, crown: 24,
-  /** Which way the bronze doors face: south-east, in degrees from east towards south. */
-  doors: 45,
-  /** Balerion's apron, the forecourt and Vhagar's apron, as rectangles. */
-  apronS: { x0: -73, z0: -22, x1: -50, z1: -2 },
-  forecourt: { x0: -50, z0: -28, x1: -28, z1: -2 },
-  apronE: { x0: -40, z0: -54, x1: -19, z1: -28 },
-  /** The terrace's outline, round the crown's north-west half and back by the aprons and the forecourt. */
+  /** Which way the bronze doors face, in degrees from east towards south: south. */
+  doors: 90,
+  /** Vhagar's apron, west of the drum, and Balerion's, east of it, each reaching back as far as the drum's north side. */
+  apronW: { x0: -99.5, z0: -62, x1: -78, z1: -4 },
+  apronE: { x0: -42, z0: -62, x1: -15.5, z1: -4 },
+  /** Before the drum, between the aprons, and the forecourt, which reaches further south where the climb comes up. */
+  front: { x0: -78, z0: -22, x1: -42, z1: -4 },
+  forecourt: { x0: -72, z0: -4, x1: -48, z1: 6 },
+  /** The terrace's outline. */
   terrace: [] as P2[],
 };
 {
   const R = RHAENYS, [cx, cz] = R.c, out: P2[] = [];
-  // the crown, round its north-west half: bearings measured from east towards south
-  for (let a = 120; a <= 336; a += 12) out.push([cx + R.crown * Math.cos((a * Math.PI) / 180), cz + R.crown * Math.sin((a * Math.PI) / 180)]);
-  out.push([R.apronE.x0, R.apronE.z0], [R.apronE.x1, R.apronE.z0], [R.apronE.x1, R.apronE.z1], [R.forecourt.x1, R.forecourt.z0],
-    [R.forecourt.x1, R.forecourt.z1], [R.apronS.x0, R.apronS.z1], [R.apronS.x0, cz + R.crown * Math.sin((120 * Math.PI) / 180)]);
+  const w = R.apronW, e = R.apronE, f = R.forecourt;
+  // where the crown's circle meets the inner edges of the two aprons, on its north side
+  const meet = (x: number): number => cz - Math.sqrt(R.crown * R.crown - (x - cx) * (x - cx));
+  out.push([w.x0, w.z1], [w.x0, w.z0], [w.x1, w.z0], [w.x1, meet(w.x1)]);
+  // round the north of the drum, from the west apron to the east one
+  const a0 = Math.atan2(meet(w.x1) - cz, w.x1 - cx), a1 = Math.atan2(meet(e.x0) - cz, e.x0 - cx);
+  for (let i = 1; i < 12; i++) {
+    const a = a0 + ((a1 - a0) * i) / 12;
+    out.push([cx + R.crown * Math.cos(a), cz + R.crown * Math.sin(a)]);
+  }
+  out.push([e.x0, meet(e.x0)], [e.x0, e.z0], [e.x1, e.z0], [e.x1, e.z1], [f.x1, e.z1], [f.x1, f.z1], [f.x0, f.z1], [f.x0, w.z1]);
   R.terrace = out;
 }
 
@@ -185,8 +196,6 @@ const lair = (bearing: number, y: number, facing: number, where: string): Home =
   const [x, z] = onMount(bearing, y);
   return { x, z, y, facing, where };
 };
-/** The lair a hero stands in, low on the mountain's south face above the road, lit inside. */
-export const HERO_LAIR = lair(112, 9, 100, 'a lair for a hero');
 
 // ---------------------------------------------------------------------------
 // What stands where: every lot as a rectangle with a height
@@ -219,10 +228,11 @@ export const LOTS: Lot[] = [
   // --- the Hill of Rhaenys and the Dragonpit: the centrepiece ---
   lot('dragonpit', 'The Dragonpit', R.c[0] - R.drum, R.c[1] - R.drum, R.c[0] + R.drum, R.c[1] + R.drum, R.dome),
   lot('dp-crown', '', R.c[0] - R.crown, R.c[1] - R.crown, R.c[0] + R.crown, R.c[1] + R.crown, R.y, true),
-  lot('dp-apron-s', '', R.apronS.x0, R.apronS.z0, R.apronS.x1, R.apronS.z1, R.y, true),
-  lot('dp-forecourt', '', R.forecourt.x0, R.forecourt.z0, R.forecourt.x1, R.forecourt.z1, R.y, true),
+  lot('dp-apron-w', '', R.apronW.x0, R.apronW.z0, R.apronW.x1, R.apronW.z1, R.y, true),
   lot('dp-apron-e', '', R.apronE.x0, R.apronE.z0, R.apronE.x1, R.apronE.z1, R.y, true),
-  lot('dp-doors', '', -51, -31, -41, -21, 22, true),
+  lot('dp-front', '', R.front.x0, R.front.z0, R.front.x1, R.front.z1, R.y, true),
+  lot('dp-forecourt', '', R.forecourt.x0, R.forecourt.z0, R.forecourt.x1, R.forecourt.z1, R.y, true),
+  lot('dp-doors', '', R.c[0] - 6, R.c[1] + R.drum - 4, R.c[0] + 6, R.c[1] + R.drum + 2, 22, true),
   lot('drovers-pen', "Drovers' pen", -36, -100, -20, -86, 2.5),
   // --- Visenya's Hill ---
   lot('visenya', "Visenya's Hill", VISENYA.c[0] - VISENYA.crown, VISENYA.c[1] - VISENYA.crown, VISENYA.c[0] + VISENYA.crown, VISENYA.c[1] + VISENYA.crown, VISENYA.y, true),
@@ -233,17 +243,16 @@ export const LOTS: Lot[] = [
   lot('rk-holdfast', "Maegor's Holdfast", -32, 42, -24, 50, 27, true),
   lot('rk-tower', '', -25, 46, -20, 51, 30, true),
   // --- houses: every block with its height. They are the ordinary buildings of the city ---
-  lot('h-nw', 'Houses', -98, -102, -86, -76, 8),
-  lot('h-n1', 'Houses', -84, -102, -68, -72, 8),
-  lot('h-n2', 'Houses', -66, -102, -50, -70, 8),
-  lot('h-n3', 'Houses', -48, -102, -40, -72, 7),
-  lot('h-ne', 'Houses', -36, -82, -18, -60, 7),
-  lot('h-w1', 'Houses', -98, -72, -88, -24, 7),
-  lot('h-w2', 'Houses', -98, -18, -76, 8, 7),
-  lot('h-sisters-w', 'Houses', -72, 12, -66, 52, 6),
-  lot('h-sisters-e', 'Houses', -54, 27, -49, 52, 6),
+  lot('h-nw', 'Houses', -98, -102, -82, -66, 8),
+  lot('h-n1', 'Houses', -80, -102, -66, -68, 8),
+  lot('h-n2', 'Houses', -64, -102, -50, -68, 8),
+  lot('h-n3', 'Houses', -48, -102, -40, -68, 7),
+  lot('h-ne', 'Houses', -36, -84, -18, -66, 7),
+  lot('h-w2', 'Houses', -98, 4, -76, 12, 6),
+  lot('h-sisters-w', 'Houses', -72, 14, -66, 52, 6),
+  lot('h-sisters-e', 'Houses', -53, 18, -49, 52, 5),
   lot('h-river-w', 'Houses', -98, 48, -70, 56, 6),
-  lot('h-east', 'Houses', -30, 4, -17, 21, 5),
+  lot('h-east', 'Houses', -30, 7, -17, 21, 5),
   // --- on the shore ---
   lot('strand', "Aegon's strand", -18, 60, -12.5, 72, 3, true),
 
@@ -314,7 +323,7 @@ export const ROADS = {
   /** King's Landing: along the quays under the south wall, from the west end to Aegon's strand. */
   quays: [[-93, 67], [-25, 67]] as P2[],
   /** The Street of the Sisters: in at the River Gate, north between Visenya's Hill and the High Hill, east under Balerion, and up to the forecourt. */
-  sisters: [[-60, 67], [-60, 14], [-48, 14], [-37, -4]] as P2[],
+  sisters: [[-60, 67], [-60, R.forecourt.z1]] as P2[],
   /** The Rosby road: out of the Iron Gate and along the north shore, through Duskendale, to Rook's Rest. */
   rosby: [[-28, -93], [-6, -94], [10, -93], [21, -89], [34, -94]] as P2[],
   /** Dragonstone: from the harbour west past the town, in at the castle's gate, out under the Dragon's Tail, and east under the lairs. */
@@ -337,7 +346,7 @@ export const TURNS = {
   /** Aegon's strand, at the east end of the quays. */
   strand: { c: [-25, 67] as P2, r: 3.8 },
   /** On the Dragonpit's forecourt, a little way out from the bronze doors. */
-  forecourt: { c: [-37, -8.5] as P2, r: 4.2 },
+  forecourt: { c: [-58, -1] as P2, r: 4.2 },
   /** The drovers' pen, inside the Iron Gate. */
   pen: { c: [-28, -92] as P2, r: 4.2 },
   /** Before Rook's Rest's gate. */
@@ -364,9 +373,8 @@ export const TURNS = {
  * `heading` is in radians: 0 faces east and a quarter turn faces south.
  */
 export const HERO_SPOTS: { id: string; x: number; z: number; y: number; heading: number; where: string }[] = [
-  { id: 'vault', x: -52.5, z: -1, y: 0.04, heading: Math.PI / 2, where: 'an open vault of the Dragonpit, its iron door swung back in the terrace wall, beside the climb' },
-  { id: 'forecourt', x: -32, z: -21, y: R.y + 0.04, heading: Math.PI / 4, where: "the Dragonpit's forecourt, before the bronze doors" },
-  { id: 'lair', x: HERO_LAIR.x, z: HERO_LAIR.z, y: HERO_LAIR.y + 0.04, heading: 1.75, where: 'a lair low on the Dragonmont, lit inside, as a car stands in a garage cut into rock' },
+  { id: 'vault', x: -52, z: 7.2, y: 0.04, heading: Math.PI / 2, where: 'an open vault of the Dragonpit, its iron door swung back in the forecourt wall, beside the top of the climb' },
+  { id: 'forecourt', x: -46.5, z: -10, y: R.y + 0.04, heading: Math.PI / 4, where: "the Dragonpit's forecourt, before the bronze doors, between Dreamfyre and Balerion" },
   { id: 'causeway', x: 47, z: 67.8, y: -0.31, heading: 0.3, where: 'on the wet sands beside the causeway to High Tide, as on a beach, at low tide' },
   { id: 'slip', x: 79.5, z: 45, y: 0.04, heading: 0, where: 'a slipway at the shipyards, facing east like a ship about to be launched' },
   { id: 'pier', x: 70.5, z: 13, y: 0.04, heading: Math.PI / 2, where: "Dragonstone's stone pier, by the old inn" },
@@ -378,32 +386,157 @@ export const HERO_SPOTS: { id: string; x: number; z: number; y: number; heading:
 // ---------------------------------------------------------------------------
 
 /**
- * Where each of the ten rests when it is not in the air: where it stands, how
- * high the ground under it is, and which way it faces, in degrees (0 east, 90
- * south). The Dragonpit's are on its terrace and in its bronze doors; the
- * rest are at the mouths of lairs on the Dragonmont, whose builder carves a
- * level shelf under each.
- */
-/**
- * How long each of the ten is, nose to tail tip, as the research note on the
- * great dragons has them (section 14). Westeros's Drogon is 14.
+ * How long each of the ten is, nose to tail tip, as the dragons' kit has them
+ * (`engine/dragons/kinds.ts`), after the research note on the great dragons
+ * (section 14). Westeros's Drogon is 14.
  */
 export const LENGTH: Record<string, number> = {
-  balerion: 57, vhagar: 44, meraxes: 37, vermithor: 26, cannibal: 24, silverwing: 24, caraxes: 24, dreamfyre: 22, meleys: 22, sheepstealer: 20,
+  balerion: 57, vhagar: 44, meraxes: 37, vermithor: 26, cannibal: 24, silverwing: 24, caraxes: 25, dreamfyre: 22, meleys: 22, sheepstealer: 20,
 };
 
+/**
+ * Where each of the ten rests when it is not in the air: where its chest is,
+ * how high the ground under it is, and which way it faces, in degrees (0
+ * east, 90 south). Landed, a dragon's head hangs about 0.3 of its length
+ * ahead of its chest, and its body and tail lie out about 0.7 behind it.
+ *
+ * At the Dragonpit, Balerion and Vhagar flank the bronze doors on the
+ * terrace's east and west aprons, facing south, their tails laid out along
+ * the aprons beside the drum; Dreamfyre lies in the doorway with her tail in
+ * the dark of the pit. On the Dragonmont each lies at the mouth of a lair: a
+ * level shelf at its height, and behind it a cave, dark inside, that its
+ * body and tail go into (`LAIR`).
+ */
 export const HOMES: Record<string, Home> = {
-  balerion: { x: -61.5, z: -13, y: R.y, facing: 90, where: "the Dragonpit's south apron, before the greatest of the forty vaults" },
-  vhagar: { x: -29, z: -42, y: R.y, facing: 0, where: "the Dragonpit's east apron, looking out over the bay" },
-  dreamfyre: { x: -43.5, z: -23.5, y: R.y, facing: 45, where: 'in the bronze doors' },
-  meraxes: lair(95, 32, 90, 'a high lair on the south face of the Dragonmont'),
-  vermithor: lair(128, 15, 115, 'his smoking cavern on the south-west flank'),
-  silverwing: lair(98, 13, 95, 'her cavern beside his'),
-  sheepstealer: lair(150, 9, 125, 'his cave on the west flank, a sheep penned on the slope below it'),
-  caraxes: lair(60, 22, 55, 'a lair on the south-east face'),
-  meleys: lair(20, 18, 25, 'a lair on the east face'),
-  cannibal: lair(-30, 12, -5, 'his lair at the back of the mountain, facing the Narrow Sea'),
+  balerion: { x: -29, z: -14, y: R.y, facing: 90, where: "the Dragonpit's east apron, at the bronze doors' right hand" },
+  vhagar: { x: -89, z: -13, y: R.y, facing: 90, where: "the Dragonpit's west apron, at the bronze doors' left hand" },
+  dreamfyre: { x: R.c[0], z: R.c[1] + R.drum + 1.5, y: R.y, facing: 90, where: 'in the bronze doors, her tail in the dark of the pit' },
+  // the lower lairs, on the south-west and south faces and at the back
+  sheepstealer: lair(150, 8, 120, 'his cave on the south-west flank, a sheep penned on the slope below it'),
+  vermithor: lair(125, 11, 110, 'his smoking cavern on the south-west flank'),
+  silverwing: lair(100, 9, 95, 'her cavern beside his'),
+  cannibal: lair(-30, 10, -10, 'his lair at the back of the mountain, facing the Narrow Sea'),
+  // the higher lairs, on the south and east faces
+  meraxes: lair(80, 18, 80, 'a high lair on the south face'),
+  caraxes: lair(40, 21, 45, 'a high lair on the south-east face'),
+  meleys: lair(5, 18, 15, 'a high lair on the east face'),
 };
+
+/**
+ * A lair, as shares of its dragon's length, in the dragon's own frame (ahead
+ * is the way it faces): the level shelf it lies on, from `back` behind its
+ * chest to `front` ahead of it and `half` to each side; and the cave behind
+ * it, from the shelf's back to `cave` behind the chest, `caveHalf` to each
+ * side and `roof` high over the shelf, dark inside. The cave's floor is at the
+ * shelf's height all the way in, and the mountain is raised over it, so that
+ * a dragon's body and tail lie in the rock.
+ */
+export const LAIR = { back: 0.2, front: 0.12, half: 0.17, cave: 0.82, caveHalf: 0.09, roof: 0.2 };
+
+/** The lair a place is in, if any: whose, the home, and whether on its shelf or in its cave. */
+export function lairAt(x: number, z: number): { id: string; home: Home; part: 'shelf' | 'cave' } | null {
+  for (const [id, h] of Object.entries(HOMES)) {
+    if (!LAIR_IDS[id]) continue;
+    const L = LENGTH[id], a = (h.facing * Math.PI) / 180, dx = x - h.x, dz = z - h.z;
+    const along = dx * Math.cos(a) + dz * Math.sin(a), side = Math.abs(-dx * Math.sin(a) + dz * Math.cos(a));
+    if (along <= LAIR.front * L && along >= -LAIR.back * L && side <= LAIR.half * L) return { id, home: h, part: 'shelf' };
+    if (along < -LAIR.back * L && along >= -LAIR.cave * L && side <= LAIR.caveHalf * L) return { id, home: h, part: 'cave' };
+  }
+  return null;
+}
+/** The dragons whose homes are lairs on the Dragonmont. */
+const LAIR_IDS: Record<string, true> = { sheepstealer: true, vermithor: true, silverwing: true, cannibal: true, meraxes: true, caraxes: true, meleys: true };
+
+/** How far a place is from the middle of the road at the Dragonmont's foot, and from its ring at the camp of the Sowing. */
+function fromFootRoad(x: number, z: number): number {
+  const road = ROADS.dragonstone.slice(2);
+  let d = Math.abs(Math.hypot(x - TURNS.sowing.c[0], z - TURNS.sowing.c[1]) - TURNS.sowing.r) - 0.6;
+  for (let i = 0; i + 1 < road.length; i++) {
+    const [ax, az] = road[i], [bx, bz] = road[i + 1], ux = bx - ax, uz = bz - az, l2 = ux * ux + uz * uz;
+    const t = Math.min(1, Math.max(0, ((x - ax) * ux + (z - az) * uz) / l2));
+    d = Math.min(d, Math.hypot(x - ax - ux * t, z - az - uz * t));
+  }
+  return d;
+}
+
+/**
+ * The Dragonmont's height as built: its natural slope; a level shelf before
+ * each lair, cut into the slope behind it and built out over the slope before
+ * it; and the road at its foot and the ring at the camp of the Sowing cut in,
+ * level with the ground. Each lair's cave runs on into the rock behind its
+ * shelf, under a mouth of rock that its builder raises at the shelf's back.
+ */
+export function mountBuilt(x: number, z: number): number {
+  let y = mountAt(x, z);
+  if (y <= 0) return 0;
+  // the road and its ring: cut down to the ground, and the slope eased in beside them
+  const d = fromFootRoad(x, z), cut = LANE + 2.5, ease = 4;
+  if (d < cut) return 0;
+  if (d < cut + ease) { const t = (d - cut) / ease; y *= t * t * (3 - 2 * t); }
+  const at = lairAt(x, z);
+  return at && at.part === 'shelf' ? at.home.y : y;
+}
+
+/**
+ * How high what a dragon lands or lies on is, at a place: a lair's shelf, and
+ * the floor of its cave, all the way in; the Dragonpit's terrace, and the
+ * floor of the pit inside the bronze doors; the hills of King's Landing; the
+ * Dragonmont as built; the water's surface; and the ground everywhere else.
+ * For whoever lays a dragon down or flies it low.
+ */
+export function groundAt(x: number, z: number): number {
+  const at = lairAt(x, z);
+  if (at) return at.home.y;
+  const m = mountBuilt(x, z);
+  if (m > 0) return m;
+  const h = hillAt(x, z);
+  if (h > 0) return h;
+  return isWater(x, z) ? WATER_LEVEL : 0;
+}
+
+// ---------------------------------------------------------------------------
+// What the dragons' moments use
+// ---------------------------------------------------------------------------
+
+/**
+ * The Velaryon fleet closing the Gullet, as it did in 129 AC: a line of ships
+ * at anchor across it, east of High Tide, and two more off Hull. Each is where
+ * its middle is, which way its bow points in degrees, and how long it is. They
+ * stand still.
+ */
+export const FLEET: { x: number; z: number; heading: number; len: number }[] = [
+  { x: 56, z: 79, heading: 80, len: 12 }, { x: 68, z: 76.5, heading: 86, len: 13 }, { x: 80, z: 79.5, heading: 92, len: 12 },
+  { x: 91, z: 77, heading: 84, len: 13 }, { x: 100, z: 81, heading: 96, len: 10 },
+  { x: 37, z: 18.5, heading: 0, len: 12 }, { x: 52, z: 19, heading: 180, len: 11 },
+];
+
+/**
+ * The sheepfold by the Wendwater, in the kingswood: the fold's lot is
+ * `sheepfold`, and the flock grazes the meadow round it, between the Rush and
+ * the south road. `FLOCK` is where each sheep stands; the first stands a
+ * little apart, nearest the water, and is the one Sheepstealer takes. It is
+ * left out of what stands still, so that whoever flies him can carry it off
+ * and bring it back.
+ */
+export const MEADOW: P2[] = [[-50, 88], [-12, 88.5], [-9, 93], [-14, 99.5], [-50, 98]];
+export const FLOCK: P2[] = [
+  [-21, 90.5], [-44, 91], [-41, 93.5], [-37, 97], [-27, 97.5], [-24, 95.5], [-29, 91.5], [-46, 95.5], [-33, 92], [-19, 97], [-42, 97.5], [-16, 93],
+];
+
+/**
+ * Where the Dragonkeepers stand: in black armour with crested helms, two at
+ * the bronze doors, one at the open vault, and others along the terrace's
+ * south face and at the drovers' pen. Each is where it stands, how high, and
+ * which way it faces in degrees.
+ */
+export const KEEPERS: { x: number; z: number; y: number; facing: number }[] = [
+  { x: -66, z: -18.6, y: R.y, facing: 90 }, { x: -54, z: -18.6, y: R.y, facing: 90 },
+  { x: -48.6, z: 10.5, y: 0, facing: 90 }, { x: -76, z: -5, y: R.y, facing: 90 }, { x: -44, z: -5, y: R.y, facing: 90 },
+  { x: -36, z: -5.5, y: R.y, facing: 135 }, { x: -82, z: -5.5, y: R.y, facing: 45 }, { x: -36, z: -97, y: 0, facing: 0 },
+];
+
+/** The camp of the Sowing, at the Dragonmont's south-east foot, below the lairs: its ground, between the town's two rows. */
+export const SOWING = { x0: 70.5, z0: -9.5, x1: 81.5, z1: -3 };
 
 
 // ---------------------------------------------------------------------------
@@ -412,12 +545,12 @@ export const HOMES: Record<string, Home> = {
 
 /** Places the view the tile opens with is to see, checked against the plan's lots on every load. */
 export const SIGHT: { id: string; x: number; y: number; z: number }[] = [
-  { id: 'the bronze doors', x: -42, y: 12, z: -22 },
-  { id: 'the forecourt ring', x: -37, y: R.y + 1.6, z: -8.5 },
-  { id: 'the climb', x: -42.5, y: 4.6, z: 5 },
-  { id: 'the foot of the climb', x: -48, y: 1.6, z: 14 },
-  { id: 'the Street of the Sisters', x: -54, y: 1.6, z: 14 },
-  { id: 'the square under Balerion', x: -60, y: 1.6, z: 6 },
+  { id: 'the bronze doors', x: -60, y: 10, z: -19.5 },
+  { id: 'the forecourt ring', x: -58, y: R.y + 1.6, z: -1 },
+  { id: 'the climb', x: -60, y: 4.6, z: 14 },
+  { id: 'the foot of the climb', x: -60, y: 1.6, z: 30 },
+  { id: 'the square under Balerion', x: -29, y: 1.6, z: 1 },
+  { id: 'the square under Vhagar', x: -89, y: 1.6, z: 0 },
   { id: 'the Street of the Sisters by the River Gate', x: -60, y: 1.6, z: 50 },
   { id: "the Red Keep's gate", x: -30, y: AEGON.y + 2, z: 53.5 },
   { id: 'the quays', x: -60, y: 1.6, z: 67 },

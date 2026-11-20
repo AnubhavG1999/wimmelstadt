@@ -10,7 +10,7 @@ import { lathe } from '../../engine/parts';
 import type { Build, TileParts } from '../../engine/tile';
 import { STONE, buildLand, landAt } from './land';
 import { BOARDS, nameBoard } from './look';
-import { HERO_SPOTS, HOMES, LENGTH, LOTS, RHAENYS, type Lot } from './plan';
+import { HERO_SPOTS, HOMES, LAIR, LENGTH, LOTS, RHAENYS, type Lot } from './plan';
 import { buildRoads } from './roads';
 import { checkSight } from './sight';
 import { DRAGON_NAMES, boardOf } from './signs';
@@ -57,21 +57,29 @@ function dragonpitBlock(k: Build): void {
  * a dark backing between them, facing the view the tile opens with.
  */
 function giveWayBoard(k: Build): void {
-  const x = -49, z = -5.2, y = RHAENYS.y, f = [0.669, 0.743], h = 4.6;
+  const x = -68.5, z = -0.5, y = RHAENYS.y, f = [0.669, 0.743], h = 4.4;
   const w = k.sign('give-way', x, y + 2.6 + h / 2, z, f[0], f[1], h, 9);
   const ax = -f[1], az = f[0];
   for (const s of [-1, 1]) k.b.beam([x + ax * s * (w / 2 + 0.25) - f[0] * 0.15, y, z + az * s * (w / 2 + 0.25) - f[1] * 0.15], [x + ax * s * (w / 2 + 0.25) - f[0] * 0.15, y + 3.0 + h, z + az * s * (w / 2 + 0.25) - f[1] * 0.15], 0.22, 0.2, 0x5a3b22);
   k.b.obox(x - f[0] * 0.1, y + 2.6 + h / 2, z - f[1] * 0.1, w / 2 + 0.2, h / 2 + 0.2, 0.06, Math.atan2(az, ax), 0x2b1d12, { faces: 'B' });
 }
 
-/** Each dragon's home, marked: the ground it will lie on, dark, and a board with its name. */
+/**
+ * Each dragon's home, marked until the dragons come: the ground it will lie
+ * on, from where its head will hang to the tip of its tail, dark; at a lair,
+ * the cave's dark mouth at the back of its shelf; and a board with its name.
+ */
 function homesBlock(k: Build): void {
-  Object.entries(HOMES).forEach(([id, h], i) => {
+  Object.entries(HOMES).forEach(([id, h]) => {
     const L = LENGTH[id], a = (h.facing * Math.PI) / 180, fx = Math.cos(a), fz = Math.sin(a);
-    // from its feet to the reach of its head, and as wide as its braced wings
-    const back = 0.17 * L, front = 0.34 * L, half = 0.13 * L, mid = (front - back) / 2;
+    const back = 0.7 * L, front = 0.3 * L, half = 0.115 * L, mid = (front - back) / 2;
     k.b.obox(h.x + fx * mid, h.y + 0.06, h.z + fz * mid, (front + back) / 2, 0.06, half, -a, 0x2a1c2c);
-    nameBoard(k, boardOf(DRAGON_NAMES[i]), h.x + fx * (front + 1.5), h.z + fz * (front + 1.5), h.y);
+    if (h.y !== RHAENYS.y) {
+      // the cave's mouth: dark, across the back of the shelf, as wide as the cave and as high as its roof
+      const bx = h.x - fx * LAIR.back * L, bz = h.z - fz * LAIR.back * L, w = LAIR.caveHalf * L, r = LAIR.roof * L;
+      k.b.quad([bx - fz * w, h.y, bz + fx * w], [bx + fz * w, h.y, bz - fx * w], [bx + fz * w, h.y + r, bz - fx * w], [bx - fz * w, h.y + r, bz + fx * w], [fx, 0, fz], 0x120c0a);
+    }
+    nameBoard(k, boardOf(DRAGON_NAMES[Object.keys(LENGTH).indexOf(id)]), h.x + fx * (front + 1.5), h.z + fz * (front + 1.5), h.y);
   });
 }
 

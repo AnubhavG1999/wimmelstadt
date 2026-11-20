@@ -8,10 +8,10 @@
 import { flat as line3, pathOf, rounded } from '../../engine/corners';
 import type { WinSpec } from '../../engine/geo';
 import { band, flat, walls, water } from '../../engine/ground';
-import { carved, drawField, field, heightOn, type Bench, type Field } from '../../engine/terrain';
+import { drawField, field, heightOn, type Field } from '../../engine/terrain';
 import type { Build } from '../../engine/tile';
 import { CLIMB } from './roads';
-import { AEGON, DRAGONMONT, HERO_LAIR, HOMES, ISLANDS, LAND_NORTH, LAND_SOUTH, LANE, LENGTH, RHAENYS, ROADS, SANDS, TURNS, VISENYA, WATER, WENDWATER, inside, mountAt, type P2 } from './plan';
+import { AEGON, DRAGONMONT, ISLANDS, LAND_NORTH, LAND_SOUTH, RHAENYS, SANDS, VISENYA, WATER, WENDWATER, groundAt, lairAt, mountBuilt, type P2 } from './plan';
 
 /** What the street material is told about a stretch of plain ground. */
 const GROUND: WinSpec = { cell: 0, storey: 1, lit: 0, kind: 1 };
@@ -32,20 +32,19 @@ export const CITY: P2[] = [[-99.5, -104.5], [-14, -104.5], [-14, 70.4], [-16.6, 
 /** The Dragonmont's ground, once its builder has carved it: a field over the island's north. */
 export let MOUNT: Field | null = null;
 
-/** How high the ground is at a place, as built: the hills, the terrace and the mountain. */
+/**
+ * How high the ground is at a place, as built: on the Dragonmont, the very
+ * facet that is drawn there, so that what stands on it neither floats nor
+ * sinks; in a lair, its shelf's and its cave's floor; and elsewhere the
+ * terrace, the hills and the water, as the plan's `groundAt` has them.
+ */
 export function landAt(x: number, z: number): number {
+  if (lairAt(x, z)) return groundAt(x, z);
   if (MOUNT && x >= MOUNT.x0 && x <= MOUNT.x1 && z >= MOUNT.z0 && z <= MOUNT.z1) {
     const y = heightOn(MOUNT, x, z);
     if (y > 0.02) return y;
   }
-  if (inside(RHAENYS.terrace, x, z)) return RHAENYS.y;
-  let y = 0;
-  for (const h of [VISENYA, AEGON]) {
-    const d = Math.hypot(x - h.c[0], z - h.c[1]);
-    if (d <= h.crown) y = Math.max(y, h.y);
-    else if (d < h.foot) { const t = (h.foot - d) / (h.foot - h.crown); y = Math.max(y, h.y * t * t * (3 - 2 * t)); }
-  }
-  return y;
+  return groundAt(x, z);
 }
 
 export function buildLand(k: Build): void {
@@ -81,12 +80,11 @@ export function buildLand(k: Build): void {
     drawField(k.b, f, { color: (y, level) => (level > 0.93 ? (y > h.y - 0.1 ? PAVING : 0xb8ae96) : STONE_DARK), cut: STONE_DARK, edges: '' });
   }
 
-  // the Dragonmont: its natural shape, with a level shelf before each lair and the road at its foot cut in
+  // the Dragonmont as built: its natural shape, a level shelf before each lair, the rock over each cave, and the road at its foot cut in
   const M = DRAGONMONT;
-  const benches = mountBenches();
-  MOUNT = field(M.summit[0] - M.reach.w, M.summit[1] - M.reach.n, M.summit[0] + M.reach.e, M.summit[1] + M.reach.s, 1.5, (x, z) => {
-    const natural = mountAt(x, z);
-    return natural > 0 ? carved(x, z, natural, benches, 0) + 0.01 : 0;
+  MOUNT = field(M.summit[0] - M.reach.w, M.summit[1] - M.reach.n, M.summit[0] + M.reach.e, M.summit[1] + M.reach.s, 1.2, (x, z) => {
+    const y = mountBuilt(x, z);
+    return y > 0 ? y + 0.01 : 0;
   });
   drawField(k.b, MOUNT, { color: (y, level) => (y > M.top - 3 ? 0x3a3532 : level > 0.8 ? ASH : ROCK), cut: ROCK, edges: '' });
 }
@@ -118,20 +116,4 @@ function terraceWalls(k: Build): void {
     }
     wall(p, q);
   }
-}
-
-/** What is cut into the Dragonmont: the road along its foot, the ring at the camp of the Sowing, and a shelf before each lair. */
-function mountBenches(): Bench[] {
-  const out: Bench[] = [];
-  const road = ROADS.dragonstone.slice(2);
-  for (let i = 0; i + 1 < road.length; i++) {
-    const [a, b] = [road[i], road[i + 1]], d = Math.hypot(b[0] - a[0], b[1] - a[1]);
-    for (let s = 0; s <= d; s += 1.5) out.push({ x: a[0] + ((b[0] - a[0]) * s) / d, z: a[1] + ((b[1] - a[1]) * s) / d, y: 0, half: LANE + 2.5 });
-  }
-  out.push({ x: TURNS.sowing.c[0], z: TURNS.sowing.c[1], y: 0, half: TURNS.sowing.r + LANE / 2 + 2.5 });
-  for (const [id, h] of [...Object.entries(HOMES), ['hero', HERO_LAIR] as const]) {
-    if (h.y === RHAENYS.y && id !== 'hero') continue;
-    out.push({ x: h.x, z: h.z, y: h.y, half: id === 'hero' ? 4.5 : 0.11 * (LENGTH[id] ?? 24) + 1 });
-  }
-  return out;
 }

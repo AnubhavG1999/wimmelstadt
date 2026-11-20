@@ -20,6 +20,7 @@ export const boardOf = (name: string): string => `name-${name.toLowerCase().repl
 
 /** Names that have a board while the tile is blocked out: every lot that has a name, and the dragons' homes. */
 const NAMES = [...new Set(LOTS.filter((l) => l.name).map((l) => l.name))];
+/** The ten's names, in the order of `LENGTH` in plan.ts. */
 export const DRAGON_NAMES = ['Balerion', 'Vhagar', 'Meraxes', 'Vermithor', 'The Cannibal', 'Silverwing', 'Caraxes', 'Dreamfyre', 'Meleys', 'Sheepstealer'];
 
 export const SIGNS: SignDef[] = [GIVE_WAY, ...[...NAMES, ...DRAGON_NAMES].map((n) => nameSign(boardOf(n), n))];
