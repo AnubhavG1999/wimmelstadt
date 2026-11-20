@@ -1,6 +1,6 @@
 // What moves on a line of its own: the train on the embankment, with the
 // platform it stops at beside Illinois Terminal; a tractor and its wagon on
-// the track round the corn; and an aeroplane that tows a banner round the
+// the track round the corn; and a crop duster that tows a banner round the
 // stadium on game day.
 //
 // The train is one piece, with a locomotive at each end, as the trains to
@@ -214,80 +214,133 @@ function tractor(k: Build): void {
 }
 
 // ---------------------------------------------------------------------------
-// The aeroplane with its banner, over the stadium
+// The crop duster with its banner
 // ---------------------------------------------------------------------------
 
-/** A small high-winged aeroplane with a banner on a line behind it, nose along +x, its middle at the origin. */
+/**
+ * What the banner says: the two halves of the chant that one side of the
+ * stadium calls to the other. Plain letters of straight strokes, the first
+ * half in orange and the second in navy. A plain capital I here is one upright
+ * bar with nothing on it: the university's own letter I is a mark, and this is
+ * not it.
+ */
+const CHANT: [string, number][] = [['I-L-L', 0xf26a21], ['I-N-I', 0x13294b]];
+
+/**
+ * A little crop duster, a biplane in yellow with blue trim, and the banner on
+ * a line behind it. Nose along +x, its middle at the origin.
+ */
 function planeGeometry(): THREE.BufferGeometry {
   const b = new GeoBuilder();
-  const YELLOW = 0xf6c832, TRIM = 0x23406a, ORANGE = 0xf26a21, CREAM = 0xfff3dc;
-  const lit = interior(0.5); // seen at night as if the stadium's lamps lit it from below
-  // the body, the wing over it, the tail
-  b.box(-1.6, -0.3, -0.34, 1.5, 0.42, 0.34, YELLOW, { faces: 'NESWTB', win: lit });
-  b.box(1.5, -0.2, -0.26, 1.95, 0.3, 0.26, TRIM, { faces: 'NESWTB' });
-  b.box(0.2, 0.05, -0.36, 1.1, 0.4, 0.36, 0x9fc0d4, { faces: 'NS' });
-  b.box(-0.1, 0.46, -3.1, 1.0, 0.58, 3.1, YELLOW, { faces: 'NESWTB', win: lit });
-  b.box(-0.1, 0.46, -3.1, 1.0, 0.585, -2.5, TRIM, { faces: 'NEWTB' });
-  b.box(-0.1, 0.46, 2.5, 1.0, 0.585, 3.1, TRIM, { faces: 'SEWTB' });
-  b.box(-2.9, -0.1, -0.16, -1.6, 0.22, 0.16, YELLOW, { faces: 'NSWTB', win: lit });
-  b.box(-2.9, 0.12, -1.05, -2.3, 0.2, 1.05, YELLOW, { faces: 'NESWTB', win: lit });
-  b.box(-2.9, 0.2, -0.05, -2.2, 1.0, 0.05, TRIM, { faces: 'NESWTB' });
-  // the wheels, and the propeller as a pale disc
-  for (const z of [-0.6, 0.6]) {
-    b.box(0.5, -0.75, z - 0.04, 0.6, -0.3, z + 0.04, TRIM, { faces: 'NESW' });
-    b.box(0.3, -0.95, z - 0.09, 0.8, -0.6, z + 0.09, 0x1e1f23, { faces: 'NESWTB' });
+  const YELLOW = 0xf6c832, TRIM = 0x23406a, CREAM = 0xfff3dc, STRUT = 0xd9dde2;
+  const lit = interior(0.5); // seen at night as if the lamps below lit it
+  // the body, with the hopper's hump before the cockpit, the round engine at the nose, and the tail
+  b.box(-1.7, -0.32, -0.36, 1.35, 0.4, 0.36, YELLOW, { faces: 'NESWTB', win: lit });
+  b.box(0.1, 0.4, -0.3, 1.2, 0.62, 0.3, YELLOW, { faces: 'NESWT', win: lit });
+  b.box(-0.75, 0.4, -0.24, -0.05, 0.72, 0.24, 0x9fc0d4, { faces: 'NESWT' });
+  b.box(1.35, -0.4, -0.44, 1.8, 0.48, 0.44, TRIM, { faces: 'NESWTB' });
+  b.box(1.8, -0.75, -0.75, 1.84, 0.83, 0.75, 0xd9dde2, { faces: 'EW' });
+  b.box(-3.0, -0.12, -0.17, -1.7, 0.24, 0.17, YELLOW, { faces: 'NSWTB', win: lit });
+  b.box(-3.0, 0.14, -1.1, -2.35, 0.22, 1.1, YELLOW, { faces: 'NESWTB', win: lit });
+  b.box(-3.0, 0.22, -0.05, -2.25, 1.05, 0.05, TRIM, { faces: 'NESWTB' });
+  // two wings, the upper a little longer and a little further forward, with blue tips and struts between them
+  const wing = (x0: number, x1: number, y: number, half: number): void => {
+    b.box(x0, y, -half, x1, y + 0.12, half, YELLOW, { faces: 'NESWTB', win: lit });
+    b.box(x0, y, -half, x1, y + 0.125, -half + 0.5, TRIM, { faces: 'NEWTB' });
+    b.box(x0, y, half - 0.5, x1, y + 0.125, half, TRIM, { faces: 'SEWTB' });
+  };
+  wing(0.15, 1.25, 1.15, 3.3);
+  wing(-0.25, 0.85, -0.3, 2.9);
+  for (const z of [-2.2, 2.2]) for (const x of [0.0, 0.75]) b.box(x, -0.18, z - 0.04, x + 0.08, 1.15, z + 0.04, STRUT, { faces: 'NESW' });
+  for (const z of [-0.33, 0.33]) b.box(0.55, 0.4, z - 0.03, 0.63, 1.15, z + 0.03, STRUT, { faces: 'NESW' });
+  // the bar it sprays from, under the lower wing, with its nozzles
+  b.box(-0.42, -0.5, -2.7, -0.34, -0.44, 2.7, STRUT, { faces: 'NESWTB' });
+  for (let z = -2.4; z <= 2.41; z += 0.8) b.box(-0.44, -0.62, z - 0.04, -0.32, -0.5, z + 0.04, 0x8d9198, { faces: 'NESWB' });
+  // the wheels
+  for (const z of [-0.7, 0.7]) {
+    b.box(0.55, -0.85, z - 0.04, 0.65, -0.3, z + 0.04, TRIM, { faces: 'NESW' });
+    b.box(0.35, -1.08, z - 0.1, 0.85, -0.68, z + 0.1, 0x1e1f23, { faces: 'NESWTB' });
   }
-  b.box(1.95, -0.62, -0.62, 1.99, 0.72, 0.62, 0xd9dde2, { faces: 'EW' });
-  // the line, and the banner on it: orange, with a cream edge and three cream diamonds. No lettering.
-  b.box(-6.2, 0.02, -0.02, -2.9, 0.06, 0.02, 0xc9ccd2, { faces: 'NSTB' });
-  const bx0 = -17.5, bx1 = -6.2, by0 = -0.85, by1 = 0.95;
+  b.box(-2.9, -0.4, -0.05, -2.7, -0.12, 0.05, 0x1e1f23, { faces: 'NESWTB' });
+
+  // the line, and the banner on it: cream, with a band of orange along its top and of navy along its foot
+  b.box(-6.2, 0.02, -0.02, -3.0, 0.06, 0.02, 0xc9ccd2, { faces: 'NSTB' });
+  const bx0 = -18.2, bx1 = -6.2, by0 = -0.95, by1 = 1.05;
+  b.box(bx0, by0, -0.03, bx1, by1, 0.03, CREAM, { faces: 'NESWTB', win: lit });
+  b.box(bx1 - 0.08, by0, -0.07, bx1, by1, 0.07, 0xc9ccd2, { faces: 'NESWTB' });
   for (const s of [-1, 1]) {
-    const z = s * 0.03, face = s > 0 ? 'S' : 'N';
-    b.box(bx0, by0, Math.min(0, z), bx1, by1, Math.max(0, z), ORANGE, { faces: face, win: lit });
-    b.box(bx0, by1 - 0.2, Math.min(z, z * 1.5), bx1, by1, Math.max(z, z * 1.5), CREAM, { faces: face, win: lit });
-    b.box(bx0, by0, Math.min(z, z * 1.5), bx1, by0 + 0.2, Math.max(z, z * 1.5), CREAM, { faces: face, win: lit });
-    for (const f of [0.25, 0.5, 0.75]) {
-      const x = bx0 + f * (bx1 - bx0);
-      b.quad([x - 0.55, 0.05, z * 1.5], [x, by0 + 0.45, z * 1.5], [x + 0.55, 0.05, z * 1.5], [x, by1 - 0.45, z * 1.5], [0, 0, s], CREAM, { win: lit });
+    const face = s > 0 ? 'S' : 'N', za = s > 0 ? 0.03 : -0.05, zb = s > 0 ? 0.05 : -0.03;
+    b.box(bx0, by1 - 0.2, za, bx1, by1, zb, 0xf26a21, { faces: face, win: lit });
+    b.box(bx0, by0, za, bx1, by0 + 0.2, zb, 0x13294b, { faces: face, win: lit });
+    // The lettering, read from left to right from whichever side it is seen. Seen from its right-hand side the
+    // aeroplane flies to the right, so the words begin at the banner's tail. Seen from its left they begin at the line.
+    const dir = s; // which way along x is "to the right" for whoever looks at this face
+    const cell = 0.9, gap = 1.5, w = 0.27, t = 0.17, lo = -0.52, hi = 0.62;
+    const total = 10 * cell + gap, start = (bx0 + bx1) / 2 - (dir * total) / 2;
+    let u = 0;
+    for (const [word, color] of CHANT) {
+      for (const ch of word) {
+        const ox = start + dir * (u + cell / 2);
+        /** A stroke of the letter, from (u0, v0) to (u1, v1) in the letter's own frame, where u is to the reader's right. */
+        const bar = (u0: number, v0: number, u1: number, v1: number): void => {
+          const xa = ox + dir * u0, xb = ox + dir * u1;
+          b.box(Math.min(xa, xb), v0, za, Math.max(xa, xb), v1, zb + s * 0.005, color, { faces: face, win: lit });
+        };
+        if (ch === 'I') bar(-t / 2, lo, t / 2, hi);
+        else if (ch === '-') bar(-w + 0.04, 0.05 - t / 2, w - 0.04, 0.05 + t / 2);
+        else if (ch === 'L') {
+          bar(-w, lo, -w + t, hi);
+          bar(-w, lo, w, lo + t);
+        } else if (ch === 'N') {
+          bar(-w, lo, -w + t, hi);
+          bar(w - t, lo, w, hi);
+          const z = s > 0 ? zb + 0.005 : za - 0.005;
+          b.quad([ox + dir * -w, hi, z], [ox + dir * (-w + t * 1.2), hi, z], [ox + dir * w, lo, z], [ox + dir * (w - t * 1.2), lo, z], [0, 0, s], color, { win: lit });
+        }
+        u += cell;
+      }
+      u += gap;
     }
   }
-  b.box(bx1 - 0.08, by0, -0.06, bx1, by1, 0.06, 0xc9ccd2, { faces: 'NESWTB' });
   return b.build();
 }
 
 function bannerPlane(k: Build): void {
   const stadium = lot('stadium');
-  // Its round lies a little south-east of the stadium and not very high. Seen from where the tile is first
-  // looked at, a thing in the air stands further north-west than it is, so this round is seen over the
-  // stadium, and nowhere on it does the aeroplane seem to fly out over the edge of the board.
-  const cx = (stadium.x0 + stadium.x1) / 2 + 12, cz = (stadium.z0 + stadium.z1) / 2 + 12, R = 24, Y = 26, speed = 9;
+  // Its round is a long oval over the stadium's south end, Kirby Avenue and the fields beyond, and not very
+  // high. Seen from where the tile is first looked at, a thing in the air stands further north-west than it
+  // is, so from there the oval is seen over the stadium, and nowhere on it does the aeroplane seem to fly out
+  // over the edge of the board. It keeps well west of the grove and its cemetery, in fact and to the eye.
+  const cx = (stadium.x0 + stadium.x1) / 2 + 18, cz = stadium.z1 + 5, RX = 32, RZ = 14, Y = 24, speed = 10;
   const craft = new THREE.Group();
-  craft.name = 'banner plane';
+  craft.name = 'crop duster';
   craft.matrixAutoUpdate = false;
   craft.add(new THREE.Mesh(planeGeometry(), k.mat.city()));
   // its lamps: red on the left wingtip, green on the right
   const lamp = (color: number, z: number): THREE.MeshBasicMaterial => {
     const mat = new THREE.MeshBasicMaterial({ color, toneMapped: false });
     const m = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.16, 0.16), mat);
-    m.position.set(0.45, 0.52, z);
+    m.position.set(0.7, 1.3, z);
     craft.add(m);
     return mat;
   };
-  const red = lamp(0xff2a2a, -3.12), green = lamp(0x2aff5a, 3.12);
+  const red = lamp(0xff2a2a, -3.32), green = lamp(0x2aff5a, 3.32);
   k.group.add(craft);
 
-  // round the stadium for ever, clockwise as seen from above, leaning a little into its turn
-  let a = 0.8;
-  const fwd = new THREE.Vector3(), up = new THREE.Vector3(), right = new THREE.Vector3(), pos = new THREE.Vector3();
-  const lean = 0.2;
+  // round the oval for ever, clockwise as seen from above, leaning into the turn at each end
+  let a = 2.2, lean = 0;
+  const fwd = new THREE.Vector3(), up = new THREE.Vector3(), right = new THREE.Vector3(), flat = new THREE.Vector3(), pos = new THREE.Vector3();
   k.each((dt, _time, night) => {
-    a += (speed / R) * dt;
-    pos.set(cx + Math.cos(a) * R, Y + Math.sin(a * 2) * 1.2, cz + Math.sin(a) * R);
-    fwd.set(-Math.sin(a), 0, Math.cos(a));
-    // towards the middle of the round is its right-hand side
-    right.set(-Math.cos(a), 0, -Math.sin(a));
+    const dx = -Math.sin(a) * RX, dz = Math.cos(a) * RZ, len = Math.hypot(dx, dz) || 1;
+    a += (speed / len) * dt;
+    pos.set(cx + Math.cos(a) * RX, Y + Math.sin(a * 2) * 1.0, cz + Math.sin(a) * RZ);
+    fwd.set(dx / len, 0, dz / len);
+    // its right-hand side is towards the middle of the oval. It leans that way in the tight turns at the ends.
+    flat.set(-fwd.z, 0, fwd.x);
+    const want = 0.5 * Math.pow(Math.abs(Math.cos(a)), 3);
+    lean += (want - lean) * Math.min(1, dt * 2);
     up.set(0, 1, 0);
-    right.multiplyScalar(Math.cos(lean)).addScaledVector(up, -Math.sin(lean));
+    right.copy(flat).multiplyScalar(Math.cos(lean)).addScaledVector(up, -Math.sin(lean));
     up.crossVectors(right, fwd).normalize();
     craft.matrix.makeBasis(fwd, up, right).setPosition(pos);
     craft.matrixWorldNeedsUpdate = true;
