@@ -101,14 +101,54 @@ export const smooth = (a: number, b: number, v: number): number => {
 };
 
 /**
+ * The snowy peaks on the dome's south-east, where the Reaper's squadron came
+ * down on a snow-covered mountain (GS 38): three toy mountains standing on the
+ * flank, their middles, how high each rises over the dome, and how far its
+ * foot reaches.
+ */
+export const PEAKS: { c: P2; h: number; r: number }[] = [
+  { c: [86, 92], h: 15, r: 11 },
+  { c: [95, 80], h: 10, r: 8 },
+  { c: [77, 104], h: 9, r: 8 },
+];
+
+/**
+ * The mine on the south flank: a tiered round pit like Lykos's Common (RR 2,
+ * 3), its middle, how far its rim reaches, how many tiers step down to its
+ * floor, and how deep the floor is under the rim.
+ */
+export const MINE = { c: [22, 100] as P2, r: 9, tiers: 3, depth: 7.8 };
+
+/** How far the peaks raise the ground at a place. */
+function peaksAt(x: number, z: number): number {
+  let y = 0;
+  for (const p of PEAKS) {
+    const d = Math.hypot(x - p.c[0], z - p.c[1]) / p.r;
+    if (d >= 1) continue;
+    // a ridge across each, so that it is a mountain and not a cone
+    const ridge = 0.85 + 0.15 * Math.cos(Math.atan2(z - p.c[1], x - p.c[0]) * 2 + p.c[0]);
+    y = Math.max(y, p.h * ridge * Math.pow(1 - d, 1.35));
+  }
+  return y;
+}
+
+/** How far the mine's pit takes the ground down at a place: a smooth bowl, which the flank's builder steps into tiers. */
+export function pitAt(x: number, z: number): number {
+  const d = Math.hypot(x - MINE.c[0], z - MINE.c[1]);
+  if (d >= MINE.r) return 0;
+  return MINE.depth * Math.min(1, Math.pow(1 - d / MINE.r, 0.7) * 1.15);
+}
+
+/**
  * How high the planet's ground is at a place, before the roads are cut into
  * it: the trench's floor in the trench, the dome beyond it, and between them
  * the canyon's wall or a slope. Where the dome is lower than the floor, at the
  * trench's south corners, the floor is carried out on a slope that falls to
- * the dome. What is cut for the roads is in land.ts.
+ * the dome. The peaks stand on the dome, and the mine is dug into it. What is
+ * cut for the roads is in land.ts.
  */
 export function naturalAt(x: number, z: number): number {
-  const d = outOfTrench(x, z), dome = domeAt(x, z);
+  const d = outOfTrench(x, z), dome = domeAt(x, z) + peaksAt(x, z) * Math.min(1, Math.min(104 - Math.abs(x), 113 - Math.abs(z)) / 6) - pitAt(x, z);
   if (d <= 0) return F;
   // the wall is steep on the north, where the canyon's cliff is, and a slope elsewhere
   const north = smooth(-30, -50, z);
@@ -288,8 +328,8 @@ export const LOTS: Lot[] = [
 
   // ============================ the south flank, outside the walls ============================
   lot('camp', 'Augustan Camp', -76, 64, -24, 78, 24),
-  lot('mine', 'The Mine', 4, 90, 40, 110, 14),
-  lot('peaks', '', 70, 76, 102, 110, 22),
+  lot('mine', 'The Mine', 4, 90, 40, 110, 14, true),
+  lot('peaks', '', 70, 76, 102, 110, 22, true),
 ];
 
 export const lotOf = (id: string): Lot => {

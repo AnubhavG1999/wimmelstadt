@@ -220,13 +220,15 @@ function atmosphere(k: Build): void {
   geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
   geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
   geo.setIndex(idx);
-  const mat = new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false });
+  const mat = new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.4, depthWrite: false, side: THREE.DoubleSide, fog: false });
   const mesh = new THREE.Mesh(geo, mat);
   mesh.name = 'atmosphere';
   mesh.renderOrder = 2;
   k.group.add(mesh);
   k.each((_dt, _t, night) => {
-    mat.opacity = 0.5 + 0.5 * night;
+    // pale by day, as thin air is; a glow by night
+    mat.opacity = 0.32 + 0.5 * night;
+    mat.blending = night > 0.5 ? THREE.AdditiveBlending : THREE.NormalBlending;
   });
 }
 
