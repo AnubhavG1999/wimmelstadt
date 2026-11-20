@@ -26,7 +26,7 @@ export interface Flame {
 }
 
 /** Black, shot through with red. */
-export const DROGON_FLAME: Flame = { core: [0.02, 0.015, 0.02], edge: [1.0, 0.1, 0.05], fleck: [1.0, 0.34, 0.08], flecks: 0.16, cores: 0.42, dark: true, reach: 13, light: 0xff3a1a };
+export const DROGON_FLAME: Flame = { core: [0.02, 0.015, 0.02], edge: [1.0, 0.08, 0.04], fleck: [1.0, 0.3, 0.05], flecks: 0.08, cores: 0.62, dark: true, reach: 13, light: 0xff3a1a };
 /** Orange and yellow, with veins of green. */
 export const RHAEGAL_FLAME: Flame = { core: [1.0, 0.86, 0.3], edge: [1.0, 0.5, 0.1], fleck: [0.2, 0.92, 0.3], flecks: 0.2, cores: 0.4, reach: 11, light: 0xffa030 };
 /** Pale gold, flecked with red and orange. */
@@ -94,8 +94,9 @@ export class Fire {
       if (this.flakes.length >= this.room) continue;
       const pick = Math.random();
       const core = pick < flame.cores, fleck = !core && pick < flame.cores + flame.flecks;
-      // the core stays close to the middle of the lance; its edge spreads to 1.4 wide at the far end
-      const spread = (core ? 0.02 : 0.07) * speed, a = Math.random() * Math.PI * 2, r = Math.sqrt(Math.random());
+      // the core stays close to the middle of the lance; its edge spreads to 1.4 wide at the far end.
+      // Black fire is black all through, and the red runs in it: its dark flakes spread as wide as the rest.
+      const spread = (core && !flame.dark ? 0.02 : 0.07) * speed, a = Math.random() * Math.PI * 2, r = Math.sqrt(Math.random());
       const v = new THREE.Vector3().copy(dir).multiplyScalar(speed * (0.82 + Math.random() * 0.3))
         .addScaledVector(this.side, Math.cos(a) * r * spread).addScaledVector(this.up2, Math.sin(a) * r * spread);
       const back = Math.random() * dt;

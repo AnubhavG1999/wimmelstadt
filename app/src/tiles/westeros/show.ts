@@ -46,25 +46,27 @@ export const SHOW: ShowPlan = {
       way: [
         [97, 100, 54, 22], [99, 72, 70, 44], [98, 40, 86, 50], [96, 24, 100, 46],
         [92, 24, 109, 34], [84, 27, 106, 30], [82, 30, 90, 30], [82, 30, 66, 30],
-        [86, 31, 50, 24], [90, 33, 38, 15], [91.5, 31, 27.5, 5],
+        [86, 31, 50, 24], [90, 34, 38, 15], [91.5, 30, 27.5, 5],
         [86, 28, 24, 12], [77, 42, 20, 26], [69, 52, 16, 32],
       ],
       fire: [{ at: 2, seconds: 1.5 }],
       perch: { at: 10, seconds: 9 },
       beats: [{ at: 10, n: 3 }],
     },
-    // Rhaegal: west across the riverlands to the Sunset Sea, south over Pyke and past the Rock, very low
-    // down the coast below Lannisport with one short breath over open sea, then once round Highgarden.
+    // Rhaegal: west across the riverlands to the Sunset Sea, south over Pyke and past the Rock, then very
+    // low down the sea past the Hightower on its seaward side, with one short breath over open water where
+    // the tower does not stand between him and the opening view. Round the south-west corner, once round
+    // Highgarden, and back north-east.
     {
       way: [
         [84, 96, 42, 30], [60, 74, 40, 50], [20, 60, 28, 54], [-30, 58, 0, 52], [-70, 56, -26, 48], [-90, 46, -40, 40],
         [-95, 44, -20, 36], [-95, 50, 10, 36], [-96, 48, 28, 38],
-        [-96, 40, 43, 42], [-95, 17, 56, 46], [-95, 15, 66, 46],
-        [-92, 22, 73, 38], [-80, 34, 73, 34], [-62, 46, 68, 32],
-        [-40, 52, 56, 32], [-14, 54, 58, 32], [-10, 54, 84, 32], [-36, 54, 98, 32], [-62, 54, 84, 32], [-50, 54, 58, 32],
-        [-20, 56, 44, 34], [14, 57, 34, 34], [40, 57, 22, 34],
+        [-97, 38, 46, 42], [-98, 22, 66, 46], [-98, 15, 84, 46], [-98, 15, 96, 46],
+        [-96, 19, 106, 42], [-88, 28, 111, 36], [-72, 38, 110, 33], [-56, 48, 102, 32],
+        [-34, 54, 99, 32], [-12, 54, 86, 32], [-10, 55, 64, 32], [-34, 55, 54, 32], [-56, 55, 62, 32], [-62, 55, 82, 32],
+        [-40, 55, 98, 32], [-14, 55, 88, 32], [-6, 56, 64, 32], [2, 56, 46, 34], [14, 57, 34, 34], [40, 57, 22, 34],
       ],
-      fire: [{ at: 10, seconds: 0.5 }],
+      fire: [{ at: 11, seconds: 0.5 }],
     },
     // Viserion: north to Winterfell, up over it in circles that widen, down to the Wall, along it alone,
     // and back down the east side over the Vale and Dragonstone.

@@ -9,8 +9,8 @@
 import * as THREE from 'three';
 import type { Build } from '../../engine/tile';
 import { checkFlight } from './clearance';
-import { aim, close, frames, look } from './debug';
-import { DROGON, Dragon, FLARE, FOLDED, RHAEGAL, VISERION, blendForm, formAt, wingPose, type Pose, type WingPose } from './dragon';
+import { aim, close, frames, look, sheet } from './debug';
+import { DROGON, Dragon, FLARE, FOLDED, RHAEGAL, VISERION, blendForm, formAt, stance, wingPose, type Pose, type WingPose } from './dragon';
 import { DROGON_FLAME, Fire, RHAEGAL_FLAME, VISERION_FLAME } from './fire';
 import { Show, type Cue } from './flight';
 import { LOTS, groundAt, isWater } from './plan';
@@ -32,7 +32,10 @@ export interface Held {
   speed?: number;
   /** Where it is in a wingbeat, from 0 to 1. 0 is a glide. */
   beat?: number;
-  /** How far it is through landing: 0 flies, 1 sits with its wings folded. */
+  /**
+   * How far it is through landing: 0 flies, 0.5 has its feet down with its wings still spread, and 1 stands
+   * braced on the claws of its wings. Where this is given, `y` is the height of what it stands on.
+   */
   sit?: number;
   jaw?: number;
   /** How strongly it breathes fire, from 0 to 1. */
@@ -74,7 +77,7 @@ export function buildDragons(k: Build): void {
   const show = new Show(SHOW);
   const held: (Held | null)[] = [null, null, null];
   const state = dragons.map((_, i): State => ({
-    pose: { pos: new THREE.Vector3(), quat: new THREE.Quaternion(), speed: 30, time: 0, neckYaw: 0, neckPitch: 0, arch: 0, right: blankWing(), left: blankWing(), jaw: 0, legs: 0, fin: 0, sit: 0 },
+    pose: { pos: new THREE.Vector3(), quat: new THREE.Quaternion(), speed: 30, time: 0, neckYaw: 0, neckPitch: 0, arch: 0, right: blankWing(), left: blankWing(), jaw: 0, legs: 0, fin: 0, sit: 0, brace: 0, floor: 0 },
     right: new THREE.Vector3(1, 0, 0), bank: 0, shaped: 30, beat: 0, untilBeat: 2 + i * 1.9, neckYaw: 0, neckPitch: 0,
     cue: { fire: 0, charge: 0, roll: 0, beat: 0, sit: 0 }, vel: new THREE.Vector3(),
   }));
@@ -97,16 +100,20 @@ export function buildDragons(k: Build): void {
   /** A dragon held still, to be looked at. */
   const holdStill = (i: number, h: Held, time: number, dt: number): void => {
     const d = dragons[i], p = state[i].pose, sit = h.sit ?? 0;
-    p.pos.set(h.x, h.y, h.z);
-    // heading, then nose up, then bank to its right
-    p.quat.setFromEuler(euler.set((h.bank ?? 0) * RAD, -(h.heading ?? 0) * RAD, (h.pitch ?? 0) * RAD, 'YZX'));
+    // how far its feet are down, and how far it has come down onto its wing claws
+    const land = Math.min(1, sit * 2), down = Math.max(0, sit * 2 - 1), stn = stance(down);
+    p.pos.set(h.x, h.y + stn.root * d.kind.length * land, h.z);
+    // heading, then nose up, then bank to its right; as it lands, it stands as a landing dragon stands
+    p.quat.setFromEuler(euler.set((h.bank ?? 0) * RAD * (1 - land), -(h.heading ?? 0) * RAD, (h.pitch ?? 0) * RAD * (1 - land) + stn.pitch * land, 'YZX'));
     p.speed = h.speed ?? 30;
     p.time = time;
     p.neckYaw = (h.look ?? 0) * RAD;
     p.neckPitch = 0;
-    p.arch = sit;
-    p.sit = sit;
-    p.legs = Math.min(1, sit * 1.6);
+    p.arch = down;
+    p.sit = down;
+    p.brace = down;
+    p.legs = land;
+    p.floor = sit > 0 ? h.y : groundAt(h.x, h.z);
     p.jaw = h.jaw ?? (h.fire ? 1 : 0);
     p.fin = ((h.bank ?? 0) * RAD) / 4;
     wings(p, p.speed, sit, h.beat ?? 0);
@@ -153,18 +160,23 @@ export function buildDragons(k: Build): void {
     p.quat.setFromRotationMatrix(m4.makeBasis(fwd, up, right));
     p.pos.copy(p1);
 
-    // landing: it levels out as it flares, and sits looking out over the water
+    // Landing: it rears back as it flares, its feet come down, and then it comes down onto the claws of its wings.
+    // The place it lands on is the ground under its feet, so the root of its neck is carried that much above its line.
+    const land = Math.min(1, cue.sit * 2), down = Math.max(0, cue.sit * 2 - 1);
     if (cue.sit > 0) {
-      const heading = Math.atan2(fwd.z, fwd.x);
-      perch.setFromEuler(euler.set(0, -heading, (cue.sit < 0.5 ? 0.6 * cue.sit * 2 : 0.6 * (1 - (cue.sit - 0.5) * 2) + 0.12) , 'YZX'));
-      p.quat.slerp(perch, Math.min(1, cue.sit * 2));
+      const heading = Math.atan2(fwd.z, fwd.x), stn = stance(down);
+      perch.setFromEuler(euler.set(0, -heading, stn.pitch * land, 'YZX'));
+      p.quat.slerp(perch, land);
+      p.pos.y += stn.root * d.kind.length * land;
     }
 
     p.speed = speed;
     p.time = time;
-    p.sit = Math.max(0, (cue.sit - 0.5) * 2);
-    p.arch = p.sit;
-    p.legs = Math.min(1, cue.sit * 2);
+    p.sit = down;
+    p.arch = down;
+    p.brace = down;
+    p.legs = land;
+    p.floor = show.perchFloor(i) ?? groundAt(p1.x, p1.z);
 
     // its head turns into a turn a moment before its body does, the leader's most of all
     show.pos(i, clock + 0.4, ahead);
@@ -249,7 +261,7 @@ export function buildDragons(k: Build): void {
       },
       /** Goes to a moment of the show and stops there: the clock is set a little before it and frames run up to it, so that banks have settled. */
       goto(seconds: number): number[][] { rate = 1; clock = seconds - 0.5; frames(30); rate = 0; return where(); },
-      frames, look, close, aim,
+      frames, look, close, aim, sheet,
     };
   }
 }

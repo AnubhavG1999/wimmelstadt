@@ -7,6 +7,24 @@
 interface Wimmel {
   frame(now: number): void;
   shot(name: string, o: Record<string, unknown>): Promise<string>;
+  rig: { elev: number };
+}
+
+/** The tilt of the opening view, in radians: 38 degrees. */
+const OPENING = 0.6632;
+
+/** One panel of a sheet of pictures. */
+export interface Panel {
+  /** What is written under it. */
+  words: string;
+  /** What to do before it is taken: stand something still, set a clock. */
+  before?: () => void;
+  /** What `wimmel.shot` is asked for. */
+  o: Record<string, unknown>;
+  /** The part of the picture that is kept, as shares of it. */
+  part?: [number, number, number, number];
+  /** The tilt of the view for this panel, in radians. The opening view's, if this is left out. */
+  elev?: number;
 }
 
 const wimmel = (): Wimmel => (window as unknown as { wimmel: Wimmel }).wimmel;
@@ -41,6 +59,41 @@ export async function close(name: string, o: Record<string, unknown> = {}, part:
   cv.height = Math.round(bmp.height * fh);
   cv.getContext('2d')!.drawImage(bmp, bmp.width * fx, bmp.height * fy, cv.width, cv.height, 0, 0, cv.width, cv.height);
   const blob = await new Promise<Blob | null>((done) => cv.toBlob(done, 'image/jpeg', 0.92));
+  const res = await fetch(`./__shot?name=${encodeURIComponent(`check-westeros-${name}.jpg`)}`, { method: 'POST', body: blob });
+  return `${name}: ${res.status} ${cv.width}x${cv.height}`;
+}
+
+/**
+ * One picture made of several, side by side with a line of words under each:
+ * a thing from two sides by day and by night, or a few moments one after
+ * another. Each panel is taken large and cut to the part that matters.
+ */
+export async function sheet(name: string, cols: number, panels: Panel[], size: [number, number] = [800, 534]): Promise<string> {
+  const [W, H] = size, BAR = 36;
+  const cv = document.createElement('canvas');
+  cv.width = cols * W;
+  cv.height = Math.ceil(panels.length / cols) * (H + BAR);
+  const ctx = cv.getContext('2d')!;
+  ctx.fillStyle = '#17161a';
+  ctx.fillRect(0, 0, cv.width, cv.height);
+  const big = `check-westeros-big-${name}`;
+  for (let i = 0; i < panels.length; i++) {
+    const p = panels[i];
+    wimmel().rig.elev = p.elev ?? OPENING;
+    p.before?.();
+    frames((p.o.frames as number | undefined) ?? 4);
+    await wimmel().shot(big, { hour: 13, w: 2400, h: 1600, steps: 1, ...p.o });
+    const bmp = await createImageBitmap(await (await fetch(`./screenshots/${big}.jpg?${Date.now()}`)).blob());
+    const [fx, fy, fw, fh] = p.part ?? [0.25, 0.25, 0.5, 0.5];
+    const x = (i % cols) * W, y = Math.floor(i / cols) * (H + BAR);
+    ctx.drawImage(bmp, bmp.width * fx, bmp.height * fy, bmp.width * fw, bmp.height * fh, x, y, W, H);
+    ctx.fillStyle = '#e9dcc0';
+    ctx.font = '600 19px system-ui, sans-serif';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(p.words, x + 14, y + H + BAR / 2 + 1);
+  }
+  wimmel().rig.elev = OPENING;
+  const blob = await new Promise<Blob | null>((done) => cv.toBlob(done, 'image/jpeg', 0.9));
   const res = await fetch(`./__shot?name=${encodeURIComponent(`check-westeros-${name}.jpg`)}`, { method: 'POST', body: blob });
   return `${name}: ${res.status} ${cv.width}x${cv.height}`;
 }

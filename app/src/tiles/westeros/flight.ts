@@ -318,6 +318,8 @@ export class Show {
       if (solo.perch) {
         const f = track.duration / this.natural[who];
         this.perch = { who, t0: at(solo.perch.at), t1: at(solo.perch.at) + solo.perch.seconds * f };
+        // it leaves with three strong beats, from the moment its wings are off the ground
+        this.soloEvents.push({ who, kind: 'beats', t0: this.perch.t1 - 0.3, t1: this.perch.t1 - 0.3 + 0.78 * 3, n: 3 });
       }
     });
 
@@ -410,8 +412,10 @@ export class Show {
         const p = this.perch;
         if (p && p.who === who) {
           if (at > p.t0 - 1.7 && at <= p.t0) out.sit = 0.5 * smooth((at - (p.t0 - 1.7)) / 1.7);
-          else if (at > p.t0 && at <= p.t1 - 1.0) out.sit = 0.5 + 0.5 * smooth((at - p.t0) / 0.9);
-          else if (at > p.t1 - 1.0 && at <= p.t1 + 0.5) out.sit = 1 - smooth((at - (p.t1 - 1.0)) / 1.5);
+          else if (at > p.t0 && at <= p.t1 - 1.2) out.sit = 0.5 + 0.5 * smooth((at - p.t0) / 1.2);
+          // it pushes up off its wings before it goes, and its feet leave the ground as it does
+          else if (at > p.t1 - 1.2 && at <= p.t1) out.sit = 1 - 0.5 * smooth((at - (p.t1 - 1.2)) / 1.2);
+          else if (at > p.t1 && at <= p.t1 + 1.0) out.sit = 0.5 - 0.5 * smooth((at - p.t1) / 1.0);
         }
       }
     }
@@ -428,6 +432,12 @@ export class Show {
       }
     }
     return out;
+  }
+
+  /** How high the place is that a dragon lands on, if it is the one that lands. */
+  perchFloor(who: number): number | null {
+    const solo = this.plan.solos[who];
+    return solo.perch ? solo.way[solo.perch.at][1] : null;
   }
 
   /** Whether a dragon is coming down to land, sitting or leaving, at a time counted from the start of a split. */

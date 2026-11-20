@@ -54,8 +54,12 @@ export function buildWesteros(k: Build): TileParts {
   // The blockout: every lot as a plain box, until its model is built
   // -------------------------------------------------------------------------
 
-  wallBlock(k);
-  for (const l of LOTS) if (l.id !== 'wall') box(k, l);
+  // On the development server, `?bare` leaves the ground empty: a clear stage for looking at a dragon from every side.
+  const bare = import.meta.env.DEV && new URLSearchParams(location.search).has('bare');
+  if (!bare) {
+    wallBlock(k);
+    for (const l of LOTS) if (l.id !== 'wall') box(k, l);
+  }
 
   // -------------------------------------------------------------------------
   // The dragons

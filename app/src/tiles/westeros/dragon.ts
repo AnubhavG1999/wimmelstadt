@@ -48,7 +48,7 @@ export const DROGON: DragonKind = {
 /** Green and bronze, with wings of jade. */
 export const RHAEGAL: DragonKind = {
   name: 'Rhaegal', length: 12, body: 0x1f4a2a, belly: 0x2c5e36, streak: 0x8c5a26, horn: 0x8c5a26, bone: 0x7a4e22,
-  skin: [0x2e7d5b, 0x27694d], claw: 0x0b0a0c, eye: 0xd98a2a, mouth: 0x4a2a10, glow: 0xffa020,
+  skin: [0x216349, 0x1b533d], claw: 0x0b0a0c, eye: 0xd98a2a, mouth: 0x4a2a10, glow: 0xffa020,
 };
 /** Cream and gold. The pale one. */
 export const VISERION: DragonKind = {
@@ -63,12 +63,61 @@ export const VISERION: DragonKind = {
 const HEAD = 0.1, NECK = 5, NECK_L = 0.048, BODY = 3, BODY_L = 0.2 / 3, TAIL = 10, TAIL_L = 0.046;
 /** Where a wing joins the chest, where a leg joins the hips, and where the wing's skin meets the flank: for the right side. */
 const SHOULDER: V3 = [-0.04, 0.026, 0.036], HIP: V3 = [-0.178, -0.02, 0.02], FLANK: V3 = [-0.232, 0.004, 0.018];
-const ARM = 0.22, FINGERS = [0.45, 0.405, 0.335, 0.25];
+/** The wing's arm is two bones: the upper arm to the elbow, and the forearm to the wrist. As a wing they lie in one line. */
+const UPPER = 0.09, FORE = 0.13, ARM = UPPER + FORE, FINGERS = [0.45, 0.405, 0.335, 0.25];
 /** How far back each finger fans from the first, when the hand is wide open. */
 const FAN = [0, 0.42, 0.9, 1.45];
 const THIGH = 0.07, SHIN = 0.066, FOOT = 0.03;
 /** Half the full span, from the middle of the back to a wing tip. */
 export const HALF_SPAN = 0.675;
+
+const RAD = Math.PI / 180;
+
+// On the ground it stands as a bat does, and as a dragon with two legs must:
+// on its feet and on the claws at the wrists of its wings, which it sets down
+// ahead of its chest and wide of it, with its elbows up and its fingers folded
+// back along its flanks.
+/** Where a wing's claws and a foot come down: how far ahead of the root of the neck, and how far to the side. */
+const WRIST_AT = [0.012, 0.116], FOOT_AT = [-0.158, 0.058];
+/** How the folded fingers lie: how steeply each rises towards the tail, and how far it leans in over the back. */
+const FOLD_RISE = [33 * RAD, 25 * RAD, 17 * RAD, 9 * RAD], FOLD_IN = [-0.17, -0.11, -0.05, 0.02];
+/** The tail laid out behind it: how steeply each joint runs down to the ground, and how far it curls to one side. */
+const LAY = [0.36, 0.55, 0.48, 0.24, 0.05, 0.02, 0.02, 0.02, 0.01, 0], CURL = [0, 0, 0, 0.04, 0.12, 0.24, 0.38, 0.54, 0.72, 0.9];
+
+/**
+ * How it stands as it lands. `down` is 0 as its feet touch, reared back with
+ * its wings spread, and 1 when it has come down onto its wing claws. Gives how
+ * far its nose is up, and how high the root of its neck is over what it stands
+ * on, as a share of its length.
+ */
+export function stance(down: number): { pitch: number; root: number } {
+  const t = down * down * (3 - 2 * down);
+  // braced, its chest is held up off the ground on its wings, and its hips are low
+  const pitch = 0.6 + (0.3 - 0.6) * t, hips = 0.118 + (0.08 - 0.118) * t;
+  return { pitch, root: hips - HIP[0] * Math.sin(pitch) - HIP[1] * Math.cos(pitch) };
+}
+
+/**
+ * Two bones in a row from `a` that are to reach `c`: where the joint between
+ * them is, bent the way `pole` points. `end` is where they reach to, which is
+ * short of `c` if it is too far.
+ */
+function bend(a: THREE.Vector3, c: THREE.Vector3, l1: number, l2: number, pole: THREE.Vector3, joint: THREE.Vector3, end: THREE.Vector3): void {
+  end.subVectors(c, a);
+  const far = end.length();
+  if (far < 1e-6) end.set(0, -1, 0);
+  else end.multiplyScalar(1 / far);
+  const d = Math.min((l1 + l2) * 0.985, Math.max(Math.abs(l1 - l2) * 1.02 + 1e-6, far));
+  const along = (l1 * l1 + d * d - l2 * l2) / (2 * d), off = Math.sqrt(Math.max(0, l1 * l1 - along * along));
+  // the pole, less what lies along the way to the far end
+  joint.copy(pole).addScaledVector(end, -pole.dot(end));
+  if (joint.lengthSq() < 1e-10) joint.set(1, 0, 0).addScaledVector(end, -end.x);
+  joint.normalize().multiplyScalar(off).addScaledVector(end, along).add(a);
+  end.multiplyScalar(d).add(a);
+}
+
+/** A direction part of the way from one to another. `out` may be `to`, but not `from`. */
+const towards = (from: THREE.Vector3, to: THREE.Vector3, t: number, out: THREE.Vector3): THREE.Vector3 => out.copy(to).multiplyScalar(t).addScaledVector(from, 1 - t).normalize();
 
 /** A slice across the neck, the body or the tail: half its width, how far its back rises and how far its keel drops. */
 interface Slice { w: number; up: number; down: number }
@@ -247,10 +296,22 @@ function boneShape(color: number, length: number, r0: number, r1: number, flat =
   return b;
 }
 
-/** The arm of the wing, from the shoulder at the origin to the wrist along +x, with the claw at the wrist that points forward. */
-function armShape(k: DragonKind, side: number): Shape {
-  const b = boneShape(k.bone, ARM, 0.0155, 0.009, 0.8);
-  b.beam([ARM, 0, 0], [ARM + 0.014, 0.005, -side * 0.034], 0.0055, 0.0008, k.claw);
+/**
+ * The hand at the wrist of a wing: a heel that takes its weight, and three
+ * hooked claws, the inner one the longest. Its claws point along +x and its
+ * back is +y. In the air they point forward off the wing's leading edge; on
+ * the ground it stands on them.
+ */
+function handShape(k: DragonKind, side: number): Shape {
+  const b = new Shape();
+  b.beam([-0.013, 0, 0], [0.012, 0, 0], 0.0105, 0.0085, k.bone, 0.75);
+  // where each claw leaves the hand, how long it is and how thick
+  const claws: [number, number, number][] = [[-side * 0.012, 0.06, 0.0072], [0, 0.048, 0.006], [side * 0.012, 0.04, 0.005]];
+  for (const [z, len, r] of claws) {
+    const knuckle: V3 = [0.008 + len * 0.58, 0.007, z * 1.9], tip: V3 = [0.008 + len, -0.008, z * 2.5];
+    b.beam([0.006, 0.001, z], knuckle, r, r * 0.66, k.claw);
+    b.beam(knuckle, tip, r * 0.66, 0.0006, k.claw);
+  }
   return b;
 }
 
@@ -305,15 +366,20 @@ export interface Pose {
   fin: number;
   /** How much it sits rather than flies: its tail is laid out behind it. */
   sit: number;
+  /** How far it is down on the claws of its wings: 0 while its wings are wings, 1 when it stands braced on them. */
+  brace: number;
+  /** How high what it stands on is: where its feet and its wing claws come down. */
+  floor: number;
 }
 
 const X = new THREE.Vector3(1, 0, 0), Y = new THREE.Vector3(0, 1, 0), Z = new THREE.Vector3(0, 0, 1);
-const turn = (yawRight: number, pitchUp: number, out: THREE.Quaternion): THREE.Quaternion => out.setFromEuler(new THREE.Euler(0, -yawRight, pitchUp, 'YZX'));
+const EULER = new THREE.Euler();
+const turn = (yawRight: number, pitchUp: number, out: THREE.Quaternion): THREE.Quaternion => out.setFromEuler(EULER.set(0, -yawRight, pitchUp, 'YZX'));
 
 interface Part { start: number; count: number; pos: Float32Array; nor: Float32Array; at: THREE.Vector3; q: THREE.Quaternion }
 
-/** How many corners the wings' skin takes: nine triangles to a wing. */
-const SKIN_TRIS = 9;
+/** How many corners the wings' skin takes: ten triangles to a wing. */
+const SKIN_TRIS = 10;
 
 /** The material the dragons are drawn in: the city's cel shading, both sides of every face, no snow, and light of their own in the eyes and the throat. */
 export function dragonMaterial(look: TileLook): { mat: THREE.MeshToonMaterial; eye: THREE.Color; throat: THREE.Color; lit: THREE.Color } {
@@ -374,7 +440,9 @@ export class Dragon {
   private readonly neck: Part[] = [];
   private readonly body: Part[] = [];
   private readonly tail: Part[] = [];
-  private readonly arm: Part[] = [];
+  private readonly upper: Part[] = [];
+  private readonly fore: Part[] = [];
+  private readonly hand: Part[] = [];
   private readonly finger: Part[][] = [[], []];
   private readonly thigh: Part[] = [];
   private readonly shin: Part[] = [];
@@ -406,7 +474,9 @@ export class Dragon {
     for (let j = 0; j < TAIL; j++) this.tail.push(add(tailShape(kind, j)));
     for (const side of [1, -1]) {
       const w = side > 0 ? 0 : 1;
-      this.arm.push(add(armShape(kind, side)));
+      this.upper.push(add(boneShape(kind.bone, UPPER, 0.0155, 0.0125, 0.8)));
+      this.fore.push(add(boneShape(kind.bone, FORE, 0.0125, 0.009, 0.8)));
+      this.hand.push(add(handShape(kind, side)));
       FINGERS.forEach((len, i) => this.finger[w].push(add(boneShape(kind.bone, len, 0.0072 - i * 0.0007, 0.0014, 0.75))));
       this.thigh.push(add(boneShape(kind.body, THIGH, 0.019, 0.012, 0.75)));
       this.shin.push(add(boneShape(kind.body, SHIN, 0.011, 0.0075, 0.8)));
@@ -419,7 +489,7 @@ export class Dragon {
     for (let w = 0; w < 2; w++) {
       for (let t = 0; t < SKIN_TRIS; t++) {
         // one shade to each panel between two fingers, and one to the panel next to the body
-        c.set(kind.skin[[0, 0, 1, 1, 0, 0, 1, 1, 1][t] ?? 0]);
+        c.set(kind.skin[[0, 0, 1, 1, 0, 0, 1, 1, 1, 1][t] ?? 0]);
         for (let v = 0; v < 3; v++) { pos.push(0, 0, 0); col.push(c.r, c.g, c.b); glow.push(0, 0); }
       }
     }
@@ -459,6 +529,9 @@ export class Dragon {
   // scratch, so that a frame makes nothing new
   private readonly q1 = new THREE.Quaternion();
   private readonly q2 = new THREE.Quaternion();
+  private readonly q3 = new THREE.Quaternion();
+  private readonly qYaw = new THREE.Quaternion();
+  private readonly s = Array.from({ length: 16 }, () => new THREE.Vector3());
   private readonly v1 = new THREE.Vector3();
   private readonly v2 = new THREE.Vector3();
   private readonly v3 = new THREE.Vector3();
@@ -492,6 +565,14 @@ export class Dragon {
     else mem[mem.length - 1].q.copy(p.quat);
     while (mem.length > 2 && mem[1].t < p.time - 1.2) mem.shift();
 
+    // --- its heading, for when it stands: forward and to its right along the ground ---
+    const fwd = this.s[12].copy(X).applyQuaternion(p.quat), zb = this.s[13].copy(Z).applyQuaternion(p.quat);
+    const hf = this.s[14].set(fwd.x, 0, fwd.z);
+    if (hf.lengthSq() < 1e-6) hf.set(1, 0, 0);
+    hf.normalize();
+    const hr = this.s[15].set(-hf.z, 0, hf.x);
+    this.qYaw.setFromAxisAngle(Y, -Math.atan2(hf.z, hf.x));
+
     // --- the body: rigid, from the root of the neck back ---
     at.copy(p.pos);
     v1.copy(X).applyQuaternion(p.quat);
@@ -503,12 +584,14 @@ export class Dragon {
 
     // --- the tail: each joint points the way the body did when it was there ---
     const lag = Math.min(0.055, (TAIL_L * L) / Math.max(p.speed, 10));
+    // when it sits, how steeply the tail must run down from the hips to lie on the ground
+    const lay = p.sit > 0 ? THREE.MathUtils.clamp(((at.y - p.floor) / L - 0.012) / 0.078, 0, 1.7) : 0;
     for (let j = 0; j < TAIL; j++) {
       this.remembered(p.time, lag * (j + 1) * (1 - p.sit), q1);
       // the last few joints swing with the fin, into the turn
       if (j >= TAIL - 4) q1.multiply(turn(p.fin * ((j - (TAIL - 5)) / 4), 0, q2));
-      // a tail that is laid out on the ground droops to it and then lies level
-      if (p.sit > 0) q1.multiply(turn(0, p.sit * (j < 3 ? -0.2 : j < 6 ? 0.08 : 0.02), q2));
+      // laid out behind it when it sits: down to the ground, then along it, curling to one side
+      if (p.sit > 0) q1.slerp(this.q3.copy(this.qYaw).multiply(turn(CURL[j], LAY[j] * lay, q2)), p.sit);
       this.tail[j].at.copy(at);
       this.tail[j].q.copy(q1);
       at.addScaledVector(v2.copy(X).applyQuaternion(q1), -TAIL_L * L);
@@ -518,15 +601,15 @@ export class Dragon {
     // --- the neck and the head: forward from the chest ---
     at.copy(p.pos);
     q1.copy(p.quat);
-    // drawn up into an S when it sits: up from the chest, then level again at the head
-    const S = [0.52, 0.38, 0.05, -0.3, -0.42];
+    // when it sits its shoulders are high, and its neck runs forward and down from them: the head hangs low and looks out level
+    const S = [-0.1, -0.25, -0.3, -0.1, 0.15];
     for (let j = 0; j < NECK; j++) {
       q1.multiply(turn(p.neckYaw / (NECK + 1), p.neckPitch / (NECK + 1) + p.arch * S[j], q2));
       this.neck[j].at.copy(at);
       this.neck[j].q.copy(q1);
       at.addScaledVector(v2.copy(X).applyQuaternion(q1), NECK_L * L);
     }
-    q1.multiply(turn(p.neckYaw / (NECK + 1), p.neckPitch / (NECK + 1) - p.arch * 0.2, q2));
+    q1.multiply(turn(p.neckYaw / (NECK + 1), p.neckPitch / (NECK + 1) + p.arch * 0.25, q2));
     this.head.at.copy(at);
     this.head.q.copy(q1);
     v2.copy(X).applyQuaternion(q1);
@@ -538,49 +621,104 @@ export class Dragon {
     this.jaw.q.copy(q1).multiply(turn(0, -0.34 * p.jaw, q2));
 
     // --- the wings ---
-    const pts = this.joints; // per wing: shoulder, wrist, four tips, flank
+    const pts = this.joints; // per wing: shoulder, elbow, wrist, four tips, flank; then the leg: hip, knee, ankle
+    const [aW, uW, backW, upW, target, pole, bentAt, reachTo, d, dB, upB, hint] = this.s;
+    const b = p.brace * p.brace * (3 - 2 * p.brace);
     for (let w = 0; w < 2; w++) {
       const side = w === 0 ? 1 : -1, wp = w === 0 ? p.right : p.left;
       const shoulder = pts[0].set(SHOULDER[0] * L, SHOULDER[1] * L, SHOULDER[2] * L * side).applyQuaternion(p.quat).add(p.pos);
-      // the arm: swept back and raised, in the body's own frame
-      const a = v1.set(-Math.sin(wp.sweep) * Math.cos(wp.lift), Math.sin(wp.lift), side * Math.cos(wp.sweep) * Math.cos(wp.lift));
-      // the hand: its first finger, and the way back along the wing from it
+      // As a wing. The arm: swept back and raised, in the body's own frame.
+      aW.set(-Math.sin(wp.sweep) * Math.cos(wp.lift), Math.sin(wp.lift), side * Math.cos(wp.sweep) * Math.cos(wp.lift));
+      // The hand: its first finger, and the way back along the wing from it.
       const rise = wp.lift + wp.tip;
-      const u = v2.set(-Math.sin(wp.hand) * Math.cos(rise), Math.sin(rise), side * Math.cos(wp.hand) * Math.cos(rise));
-      const back = this.v3.set(-1, 0, 0).addScaledVector(u, u.x).normalize(); // straight back, less what lies along the finger
+      uW.set(-Math.sin(wp.hand) * Math.cos(rise), Math.sin(rise), side * Math.cos(wp.hand) * Math.cos(rise));
+      backW.set(-1, 0, 0).addScaledVector(uW, uW.x).normalize(); // straight back, less what lies along the finger
       // what is up for the wing: at right angles to the finger and to the way back
-      const up = this.at.crossVectors(back, u).multiplyScalar(side).normalize();
-      // the arm's part: its own x along the arm, its y the wing's up
-      this.place(this.arm[w], shoulder, a, up, p.quat);
-      const wrist = pts[1].copy(a).multiplyScalar(ARM * L).applyQuaternion(p.quat).add(shoulder);
+      upW.crossVectors(backW, uW).multiplyScalar(side).normalize();
+      // all of it turned into the world
+      aW.applyQuaternion(p.quat);
+      uW.applyQuaternion(p.quat);
+      backW.applyQuaternion(p.quat);
+      upW.applyQuaternion(p.quat);
+
+      // Braced on the ground: the wrist comes down ahead of the chest and wide of it, and the elbow stands up and out.
+      let upperDir = aW, foreDir = aW;
+      if (b > 0) {
+        target.copy(p.pos).addScaledVector(hf, WRIST_AT[0] * L).addScaledVector(hr, side * WRIST_AT[1] * L);
+        target.y = p.floor + 0.009 * L;
+        pole.copy(Y).addScaledVector(hf, -0.6).addScaledVector(hr, side * 0.5);
+        bend(shoulder, target, UPPER * L, FORE * L, pole, bentAt, reachTo);
+        // the way each bone points, part of the way from the wing's to these
+        reachTo.sub(bentAt).normalize();
+        bentAt.sub(shoulder).normalize();
+        upperDir = towards(aW, bentAt, b, bentAt);
+        foreDir = towards(aW, reachTo, b, reachTo);
+        upW.lerp(upB.copy(Y).addScaledVector(hr, side * 0.7).normalize(), b).normalize();
+      }
+      const elbow = pts[1].copy(shoulder).addScaledVector(upperDir, UPPER * L);
+      const wrist = pts[2].copy(elbow).addScaledVector(foreDir, FORE * L);
+      this.place(this.upper[w], shoulder, upperDir, upW);
+      this.place(this.fore[w], elbow, foreDir, upW);
       for (let i = 0; i < 4; i++) {
         const ang = FAN[i] * wp.fan;
-        const d = this.q1v.copy(u).multiplyScalar(Math.cos(ang)).addScaledVector(back, Math.sin(ang));
-        this.place(this.finger[w][i], wrist, d, up, p.quat);
-        pts[2 + i].copy(d).multiplyScalar(FINGERS[i] * L).applyQuaternion(p.quat).add(wrist);
+        d.copy(uW).multiplyScalar(Math.cos(ang)).addScaledVector(backW, Math.sin(ang));
+        if (b > 0) {
+          // folded: back along the flank from the wrist, rising towards the tail and leaning in over the back
+          dB.copy(hf).multiplyScalar(-Math.cos(FOLD_RISE[i])).addScaledVector(Y, Math.sin(FOLD_RISE[i])).addScaledVector(hr, side * FOLD_IN[i]).normalize();
+          d.copy(towards(d, dB, b, dB));
+        }
+        this.place(this.finger[w][i], wrist, d, upW);
+        pts[3 + i].copy(wrist).addScaledVector(d, FINGERS[i] * L);
       }
-      const flank = pts[6].set(FLANK[0] * L, FLANK[1] * L, FLANK[2] * L * side).applyQuaternion(p.quat).add(p.pos);
-      this.tips[w].copy(pts[2]);
-      this.skin(w, shoulder, wrist, pts[2], pts[3], pts[4], pts[5], flank, this.q1v.copy(up).applyQuaternion(p.quat), ground);
+      // the hand: its claws forward off the wing's leading edge in the air, and set down on the ground turned a little out
+      this.bx.copy(fwd);
+      this.bz.crossVectors(this.bx, upW).normalize();
+      this.by.crossVectors(this.bz, this.bx);
+      q1.setFromRotationMatrix(this.m3.makeBasis(this.bx, this.by, this.bz));
+      if (b > 0) {
+        this.bx.copy(hf).multiplyScalar(Math.cos(0.4)).addScaledVector(hr, side * Math.sin(0.4));
+        this.bz.crossVectors(this.bx, Y);
+        q1.slerp(q2.setFromRotationMatrix(this.m3.makeBasis(this.bx, Y, this.bz)), b);
+      }
+      this.hand[w].at.copy(wrist);
+      this.hand[w].q.copy(q1);
+      const flank = pts[7].set(FLANK[0] * L, FLANK[1] * L, FLANK[2] * L * side).applyQuaternion(p.quat).add(p.pos);
+      this.tips[w].copy(pts[3]);
+      this.skin(w, shoulder, elbow, wrist, pts[3], pts[4], pts[5], pts[6], flank, upW, ground);
 
-      // --- the leg on this side: folded flat along the belly, or down ---
-      const hip = pts[7].set(HIP[0] * L, HIP[1] * L, HIP[2] * L * side).applyQuaternion(p.quat).add(p.pos);
-      const g = p.legs;
+      // --- the leg on this side ---
+      const hip = pts[8].set(HIP[0] * L, HIP[1] * L, HIP[2] * L * side).applyQuaternion(p.quat).add(p.pos);
+      // Folded: the thigh lies back along the belly, the shin doubles forward under it and the foot back again.
       // Each bone is turned from the one before it, in a frame that looks back along the body.
-      // Folded, the thigh lies back along the belly, the shin doubles forward under it and the foot back again.
-      // Standing, the thigh reaches down and forward, the shin down and back, and the foot lies flat, claws forward.
-      const thighPitch = -0.12 + (-2.04 + 0.12) * g, shinPitch = -2.9 + (0.99 + 2.9) * g, footPitch = 2.8 + (-2.09 - 2.8) * g;
-      q1.copy(p.quat).multiply(turn(Math.PI - side * 0.06 * (1 - g), 0, q2)).multiply(turn(0, thighPitch, q2));
-      this.thigh[w].at.copy(hip);
-      this.thigh[w].q.copy(q1);
-      const knee = pts[8].copy(X).applyQuaternion(q1).multiplyScalar(THIGH * L).add(hip);
-      q1.multiply(turn(0, shinPitch, q2));
-      this.shin[w].at.copy(knee);
-      this.shin[w].q.copy(q1);
-      const ankle = pts[9].copy(X).applyQuaternion(q1).multiplyScalar(SHIN * L).add(knee);
-      q1.multiply(turn(0, footPitch, q2));
-      this.foot[w].at.copy(ankle);
-      this.foot[w].q.copy(q1);
+      q1.copy(p.quat).multiply(turn(Math.PI - side * 0.06, 0, q2)).multiply(turn(0, -0.12, q2));
+      const thighDir = aW.copy(X).applyQuaternion(q1);
+      q1.multiply(turn(0, -2.9, q2));
+      const shinDir = uW.copy(X).applyQuaternion(q1);
+      q1.multiply(turn(0, 2.8, q2));
+      const footDir = backW.copy(X).applyQuaternion(q1);
+      const footUp = hint.crossVectors(footDir, zb);
+      const g = p.legs * p.legs * (3 - 2 * p.legs);
+      if (g > 0) {
+        // Down: the foot reaches for the ground under the hip, the knee forward and out. While the ground is
+        // still out of reach the leg hangs towards it with its claws down, and they come level as they touch.
+        target.copy(p.pos).addScaledVector(hf, FOOT_AT[0] * L).addScaledVector(hr, side * FOOT_AT[1] * L);
+        target.y = p.floor + 0.009 * L;
+        const short = THREE.MathUtils.clamp((hip.distanceTo(target) - (THIGH + SHIN) * L * 0.985) / (0.08 * L), 0, 1);
+        pole.copy(hf).addScaledVector(hr, side * 0.5).addScaledVector(Y, 0.25);
+        bend(hip, target, THIGH * L, SHIN * L, pole, bentAt, reachTo);
+        reachTo.sub(bentAt).normalize();
+        bentAt.sub(hip).normalize();
+        thighDir.copy(towards(thighDir, bentAt, g, bentAt));
+        shinDir.copy(towards(shinDir, reachTo, g, reachTo));
+        dB.copy(hf).multiplyScalar(Math.cos(0.22)).addScaledVector(hr, side * Math.sin(0.22)).multiplyScalar(Math.cos(0.9 * short)).addScaledVector(Y, -Math.sin(0.9 * short));
+        footDir.copy(towards(footDir, dB, g, dB));
+        footUp.copy(towards(footUp, upB.copy(Y), g, upB));
+      }
+      const knee = pts[9].copy(hip).addScaledVector(thighDir, THIGH * L);
+      const ankle = pts[10].copy(knee).addScaledVector(shinDir, SHIN * L);
+      this.place(this.thigh[w], hip, thighDir, d.crossVectors(thighDir, zb));
+      this.place(this.shin[w], knee, shinDir, d.crossVectors(shinDir, zb));
+      this.place(this.foot[w], ankle, footDir, footUp);
     }
 
     // --- every rigid part, turned and moved into the mesh ---
@@ -622,12 +760,12 @@ export class Dragon {
   private readonly by = new THREE.Vector3();
   private readonly bz = new THREE.Vector3();
 
-  /** Sets a bone at a place in the world, with its length along `dir` and its top along `up`: both given in the body's own frame. */
-  private place(part: Part, at: THREE.Vector3, dir: THREE.Vector3, up: THREE.Vector3, body: THREE.Quaternion): void {
+  /** Sets a bone at a place, with its length along `dir` and its top along `up`. */
+  private place(part: Part, at: THREE.Vector3, dir: THREE.Vector3, up: THREE.Vector3): void {
     this.bx.copy(dir).normalize();
     this.bz.crossVectors(this.bx, up).normalize();
     this.by.crossVectors(this.bz, this.bx);
-    part.q.setFromRotationMatrix(this.m3.makeBasis(this.bx, this.by, this.bz)).premultiply(body);
+    part.q.setFromRotationMatrix(this.m3.makeBasis(this.bx, this.by, this.bz));
     part.at.copy(at);
   }
 
@@ -636,8 +774,8 @@ export class Dragon {
   private readonly nn = new THREE.Vector3();
   private readonly mids = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
 
-  /** The skin of one wing: drawn taut between the shoulder, the wrist, the finger tips and the flank, with a slight scallop between tips. */
-  private skin(w: number, shoulder: THREE.Vector3, wrist: THREE.Vector3, t1: THREE.Vector3, t2: THREE.Vector3, t3: THREE.Vector3, t4: THREE.Vector3, flank: THREE.Vector3, up: THREE.Vector3, ground: (x: number, z: number) => number): void {
+  /** The skin of one wing: drawn taut between the shoulder, the elbow, the wrist, the finger tips and the flank, with a slight scallop between tips. */
+  private skin(w: number, shoulder: THREE.Vector3, elbow: THREE.Vector3, wrist: THREE.Vector3, t1: THREE.Vector3, t2: THREE.Vector3, t3: THREE.Vector3, t4: THREE.Vector3, flank: THREE.Vector3, up: THREE.Vector3, ground: (x: number, z: number) => number): void {
     const out = this.position.array as Float32Array, nout = this.normal.array as Float32Array, sp = this.shadowPos.array as Float32Array;
     let o = (this.skinStart + w * SKIN_TRIS * 3) * 3, so = w * SKIN_TRIS * 9;
     const { e1, e2, nn, mids } = this;
@@ -665,7 +803,8 @@ export class Dragon {
     tri(wrist, mids[1], t3);
     tri(wrist, t3, mids[2]);
     tri(wrist, mids[2], t4);
-    tri(shoulder, wrist, t4);
+    tri(shoulder, elbow, t4);
+    tri(elbow, wrist, t4);
     tri(shoulder, t4, mids[3]);
     tri(shoulder, mids[3], flank);
   }
@@ -674,8 +813,6 @@ export class Dragon {
 // ---------------------------------------------------------------------------
 // The shapes a wing takes
 // ---------------------------------------------------------------------------
-
-const RAD = Math.PI / 180;
 
 /** A wing's shape by what it is doing: how far the arm is swept, what share of the full span it shows, how it is raised and how wide the hand is. */
 interface WingForm { sweep: number; span: number; lift: number; fan: number; tip: number }
