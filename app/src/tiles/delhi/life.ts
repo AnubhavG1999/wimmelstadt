@@ -127,6 +127,32 @@ function wedding(k: Build, places: Places): void {
   b.cyl((x0 + x1) / 2, (z0 + z1) / 2, 3.6, 5.2, 4.2, 0.2, 4, 0xc8202c, { phase: Math.PI / 4, cap: false });
   for (let z = z0; z <= z1; z += 1.5) for (const x of [x0, x1]) k.glows.push({ x, y: 3.3, z, sx: 0.18, sy: 0.18, sz: 0.18, color: '#ffd98a' });
   k.lights.push({ x: (x0 + x1) / 2, z: (z0 + z1) / 2, r: 11, color: '#ffd9a0', k: 0.7 });
+  // inside it: a stage at the far end with a wall of marigolds behind two red chairs, where the bride waits, a carpet up the middle,
+  // rows of chairs with the guests among them, and the dinner laid along one side
+  const mid = (x0 + x1) / 2, MARIGOLD = [0xf2a01e, 0xf2c81e, 0xe0601c], CLOTH = 0xf4f1e8, CARPET = 0xb01e2e;
+  b.box(mid - 2.3, 0, z0 + 0.3, mid + 2.3, 0.45, z0 + 2.1, CLOTH, { top: CARPET });
+  for (let i = 0; i < 10; i++) b.box(mid - 2.2 + i * 0.44, 0.45, z0 + 0.3, mid - 1.76 + i * 0.44, 3.0, z0 + 0.45, MARIGOLD[i % 3]);
+  for (const dx of [-0.6, 0.6]) {
+    b.box(mid + dx - 0.3, 0.45, z0 + 0.75, mid + dx + 0.3, 0.9, z0 + 1.35, CARPET);
+    b.box(mid + dx - 0.3, 0.9, z0 + 0.75, mid + dx + 0.3, 1.9, z0 + 0.9, CARPET, { top: 0xd9b24a });
+  }
+  figure(b, mid - 0.6, z0 + 1.6, 0.45, { coat: 0xc8202c, legs: 0xc8202c, hat: 0xd9b24a, hatH: 0.08 });
+  b.box(mid - 0.7, 0, z0 + 2.1, mid + 0.7, 0.06, z1 + 4.2, CARPET);
+  for (let row = 0; row < 3; row++) {
+    const z = z0 + 3.6 + row * 1.35;
+    for (const dx of [-2.6, -1.85, 1.85, 2.6]) {
+      b.box(mid + dx - 0.2, 0, z - 0.2, mid + dx + 0.2, 0.45, z + 0.2, CLOTH, { top: CARPET });
+      b.box(mid + dx - 0.2, 0.45, z + 0.12, mid + dx + 0.2, 0.95, z + 0.2, CLOTH);
+    }
+  }
+  for (const [dx, dz] of [[-2.2, 3.0], [1.4, 3.1], [2.3, 4.3], [-1.4, 4.4], [-2.3, 5.6], [1.5, 5.7], [0.2, 7.6], [-1.3, 8.2], [2.5, 7.4]]) k.person(mid + dx, z0 + dz);
+  b.box(x0 + 0.25, 0, z1 - 2.4, x0 + 0.95, 0.9, z1 - 0.3, CLOTH, { faces: 'NESWT' });
+  for (let i = 0; i < 4; i++) b.cyl(x0 + 0.6, z1 - 2.1 + i * 0.5, 0.9, 1.12, 0.19, 0.19, 8, STEEL);
+  figure(b, x0 + 1.5, z1 - 1.3, 0, { coat: 0xf4f1e8, legs: 0x26262a, hat: 0xf4f1e8, hatH: 0.3 });
+  // marigolds: strings of them hanging from the front eave, and a gate of them where the carpet begins
+  for (let x = x0 + 0.2, i = 0; x < x1; x += 0.42, i++) b.box(x - 0.07, 2.5 + (i % 3) * 0.25, z1 - 0.07, x + 0.07, 3.4, z1 + 0.07, MARIGOLD[i % 3]);
+  for (const dx of [-1.25, 1.25]) b.box(mid + dx - 0.14, 0, z1 + 4.0, mid + dx + 0.14, 2.9, z1 + 4.28, MARIGOLD[0]);
+  b.box(mid - 1.5, 2.9, z1 + 3.96, mid + 1.5, 3.3, z1 + 4.32, MARIGOLD[1], { faces: 'NESWTB' });
   // the baraat: the groom on a white mare, the band in red and gold before him, lamps carried either side
   const gx = -8, gz = 39.5;
   b.box(gx - 1.1, 0.9, gz - 0.35, gx + 1.1, 1.75, gz + 0.35, 0xf4f1e8, { faces: 'NESWTB' });
