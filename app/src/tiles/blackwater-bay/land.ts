@@ -5,12 +5,14 @@
 //
 // The shapes are in plan.ts. What stands on the ground is built elsewhere.
 
+import * as THREE from 'three';
 import { flat as line3, pathOf, rounded } from '../../engine/corners';
 import type { V3, WinSpec } from '../../engine/geo';
 import { band, flat, walls, water } from '../../engine/ground';
 import { drawField, field, heightOn, type Field } from '../../engine/terrain';
 import type { Build } from '../../engine/tile';
 import { VAULT_GAP } from './dragonpit';
+import { clipped, mixed, mottle, scaled } from './look';
 import { CLIMB } from './roads';
 import { AEGON, DRAGONMONT, ISLANDS, LAND_NORTH, LAND_SOUTH, RHAENYS, SANDBAR, SANDS, SANDS_Y, VHAGAR_ROCK, VISENYA, WATER, WENDWATER, groundAt, lairAt, mountBuilt, type P2 } from './plan';
 
@@ -60,7 +62,8 @@ export function buildLand(k: Build): void {
 
   // the islands: level ground over the water, with a shore round each
   for (const [id, shape] of Object.entries(ISLANDS)) {
-    flat(k.street, shape, 0.01, id === 'dragonstone' ? ASH : id === 'claw-isle' ? ROCK : GRASS, { win: GROUND });
+    if (id === 'dragonstone') volcanicGround(k, shape);
+    else flat(k.street, shape, 0.01, id === 'claw-isle' ? ROCK : GRASS, { win: GROUND });
     walls(k.b, shape, -1.5, 0.01, SHORE);
   }
   // the sands, under the water at high tide, and a bar of sand on them that stays dry (the causeway's stone body over them is High Tide's builder's, on DYKE)
@@ -69,7 +72,7 @@ export function buildLand(k: Build): void {
   sandbar(k);
 
   // King's Landing's hills: the Dragonpit's terrace, walled round, and the two others as slopes
-  flat(k.b, RHAENYS.terrace, RHAENYS.y, PAVING);
+  // the terrace's floor is the Dragonpit's: flagstones, the way to the doors and the soot (`floor` in dragonpit.ts)
   terraceWalls(k);
   for (const h of [VISENYA, AEGON]) {
     const f = field(h.c[0] - h.foot, h.c[1] - h.foot, h.c[0] + h.foot, h.c[1] + h.foot, 2, (x, z) => {
@@ -177,4 +180,39 @@ function slope(k: Build, p: V3, q: V3, r: V3, color: number): void {
   const nx = ay * bz - az * by, ny = az * bx - ax * bz, nz = ax * by - ay * bx, l = Math.hypot(nx, ny, nz) || 1;
   if (ny >= 0) k.b.tri(p, q, r, [nx / l, ny / l, nz / l], color);
   else k.b.tri(p, r, q, [-nx / l, -ny / l, -nz / l], color);
+}
+
+/** Dragonstone's ash, darker towards the Dragonmont's foot, and its cinders. */
+const ASH_FAR = 0x605a53, ASH_NEAR = 0x3b3733, CINDER = 0x221e1b;
+
+/**
+ * Dragonstone's ground: volcanic ash, darkening to near black at the
+ * Dragonmont's foot, mottled, with cinders strewn in it, laid in patches of
+ * which each triangle takes its own colour. Under the mountain, where its rock
+ * is drawn over the ground, none is laid.
+ */
+function volcanicGround(k: Build, shape: P2[]): void {
+  const C = 3, M = DRAGONMONT;
+  let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+  for (const [x, z] of shape) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); }
+  // how far out a place is from the summit, as a share of the mountain's reach: 1 at its foot
+  const out = (x: number, z: number): number => {
+    const dx = x - M.summit[0], dz = z - M.summit[1];
+    return Math.hypot(dx / (dx < 0 ? M.reach.w : M.reach.e), dz / (dz < 0 ? M.reach.n : M.reach.s));
+  };
+  for (let z = z0; z < z1; z += C) {
+    for (let x = x0; x < x1; x += C) {
+      // skipped only where the mountain as built stands over the whole patch: the road at its foot cuts it down to the ground
+      if ([[x, z], [x + C, z], [x, z + C], [x + C, z + C], [x + C / 2, z + C / 2]].every(([px, pz]) => mountBuilt(px, pz) > 0.5)) continue;
+      const p = clipped(shape, x, z, x + C, z + C);
+      if (p.length < 3) continue;
+      for (const [a, b, c] of THREE.ShapeUtils.triangulateShape(p.map((v) => new THREE.Vector2(v[0], v[1])), [])) {
+        const tx = (p[a][0] + p[b][0] + p[c][0]) / 3, tz = (p[a][1] + p[b][1] + p[c][1]) / 3, n = mottle(tx, tz);
+        const near = Math.max(0, Math.min(1, (1.35 - out(tx, tz)) / 0.4));
+        let color = scaled(mixed(ASH_FAR, ASH_NEAR, near), 0.92 + n * 0.14);
+        if (n > 0.88 && near > 0.15) color = mixed(color, CINDER, 0.55);
+        k.street.up([p[a][0], 0.01, p[a][1]], [p[b][0], 0.01, p[b][1]], [p[c][0], 0.01, p[c][1]], color, { win: GROUND });
+      }
+    }
+  }
 }
