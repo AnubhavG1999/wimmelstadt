@@ -340,8 +340,10 @@ export const LOTS: Lot[] = [
   onFloor('field', 'Field of Mars', -24, 30, 2, 54, 0.4, true),
 
   // ============================ the south flank, outside the walls ============================
-  lot('camp', 'Augustan Camp', -76, 64, -24, 78, 24),
-  lot('mine', 'The Mine', 4, 90, 40, 110, 14, true),
+  // The ground under the camp's east end is at 21 to 23, so its tents and pavilion have room up to 27.
+  lot('camp', 'Augustan Camp', -76, 64, -24, 78, 27),
+  // The mine's north rim is at 16: its top leaves room for a lamp or a mast there.
+  lot('mine', 'The Mine', 4, 90, 40, 110, 18, true),
   lot('peaks', '', 70, 76, 102, 110, 22, true),
 ];
 
@@ -358,10 +360,12 @@ export const lotOf = (id: string): Lot => {
 export const HERO_SPOTS: { id: string; x: number; z: number; y: number; heading: number; where: string }[] = [
   // the square as built stands at 35.13: the rim road's bench has raised the ground beside the road above the natural ground
   { id: 'institute', x: -46, z: -91.2, y: 35.17, heading: 0, where: "the marble square before the Institute's gates, on the plateau, looking out over Agea" },
-  { id: 'pad', x: -21, z: 20, y: F + 6.04, heading: 0, where: "a landing pad beside the Sovereign's shuttle" },
+  // at the deck's south-east corner, at the head of the ramp up from the avenue: the deck before the shuttles' ramps is the stories'
+  { id: 'pad', x: -16.4, z: 23.6, y: F + 6.04, heading: 0, where: "the landing pads' deck, at the head of its ramp, beside the Sovereign's shuttles" },
   { id: 'field', x: -18, z: 51, y: F + 0.44, heading: 0, where: 'the Field of Mars, on its white stone' },
   { id: 'tryst', x: -27, z: -34, y: F + 28.04, heading: 0, where: "the deck of Tryst, the club on a tower's roof" },
-  { id: 'camp', x: -30, z: 72, y: naturalAt(-30, 72) + 0.44, heading: 0, where: "the Augustan camp's motor pool, among the spider tanks" },
+  // level with the ground under the bay's highest corner, the north-east, so that no corner of a car sinks into the slope
+  { id: 'camp', x: -30, z: 72, y: naturalAt(-26.1, 70.45) + 0.15, heading: 0, where: "the Augustan camp's motor pool, among the spider tanks" },
   { id: 'shield-park', x: 64, z: -24, y: F + 0.04, heading: 0, where: "the drive through the shield park, among the generators' pylons" },
 ];
 

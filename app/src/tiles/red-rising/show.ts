@@ -13,7 +13,7 @@
 // Nobody dies: every fight stops at the clash, as the research's stories say.
 //
 // The stories, from the books (docs/districts/research/red-rising.md, section 4):
-//  1. The Reaper's squadron falls in the Rain onto the canyon's west end (GS 38).
+//  1. The Reaper's squadron falls in the Rain before the south wall, where the view opens on it (GS 38).
 //  2. Into the river: the group comes up inside the wall, a pulse kills their boots, and they haul each other out (GS 39, 40).
 //  3. Ragnar opens the postern: he clashes with the Wind Knight and Cassius, and the infantry march in (GS 41).
 //  4. Sevro and the last boots: roof to roof, Darrow lifted onto the Citadel's wall, and the howl (GS 41).
@@ -35,7 +35,7 @@
 import * as THREE from 'three';
 import type { V3 } from '../../engine/geo';
 import type { Build } from '../../engine/tile';
-import { SHUTTLE_PADS, shuttleGeometry } from './citadel';
+import { CITADEL_PLACES, SHUTTLE, SHUTTLE_PADS, shuttleGeometry } from './citadel';
 import {
   LOOKS, RIDER_FEET, SOLDIERS, blend, bow, buildCast, buildFox, buildGriffins, draw, fly, guard, haul, howl, kneel, leap, parry, push, ride, run, salute, sit, strike, walk,
   type Cast, type CastId, type Figure, type Fox, type Griffin, type Look, type Pose, type SoldierKind,
@@ -173,11 +173,14 @@ function posts(): Record<Id, Spot | null> {
   // the Sovereign's guard on the pads, and the Sovereign herself by her shuttle (the pads' builder sets where the shuttles stand)
   const [own] = SHUTTLE_PADS;
   const deck = F + 6;
-  p.sovereign = at(own.x - 2.5, deck, own.z + 4.2, E);
-  p.aja = at(own.x + 0.2, deck, own.z + 4.6, E);
-  p.karnus = at(own.x + 4.6, deck, own.z + 3.6, W);
-  p.fitchner = at(own.x + 4.4, deck, own.z + 6.2, W);
-  for (let i = 0; i < 8; i++) p[`praetorian-${i}`] = at(-29 + i * 2.2, deck, 24.4, N);
+  // The Sovereign and her party on the pads' deck, at the head of an aisle of Praetorians, four a side, which leads to
+  // the ramp of her shuttle: the first of the rank. They look out over the city until a story turns them.
+  const { aft, OUT } = astern(own, deck);
+  p.sovereign = aft(12.4, 0, OUT);
+  p.aja = aft(13.2, -1.55, OUT);
+  p.karnus = aft(13.2, 1.45, OUT);
+  p.fitchner = aft(14.6, 0, OUT);
+  for (let i = 0; i < 8; i++) p[`praetorian-${i}`] = aft(6.2 + Math.floor(i / 2) * 1.4, i % 2 ? -1.5 : 1.5, OUT);
   // the infantry who march in through the postern wait outside the wall, unseen, until the postern opens
   for (let i = 0; i < 8; i++) p[`augustanGray-${i}`] = null;
   return p;
@@ -371,6 +374,31 @@ interface StoryDef {
 /** Everything a story can reach while it is written: the posts, and the live parts. */
 interface World { posts: Record<Id, Spot | null>; fleet: Fleet | null; rain: Rain | null }
 
+/** Where a figure is on a way through several places, `s` of the whole way along it (0 to 1), facing the way it goes. */
+function wayAt(pts: Spot[], s: number): Spot {
+  const lens = pts.slice(1).map((p, i) => Math.hypot(p.x - pts[i].x, p.z - pts[i].z));
+  let d = clamp(s) * lens.reduce((a, b) => a + b, 0);
+  for (let i = 0; i < lens.length; i++) {
+    if (d <= lens[i] || i === lens.length - 1) {
+      const f = lens[i] > 1e-6 ? Math.min(1, d / lens[i]) : 1, a = pts[i], b = pts[i + 1];
+      return at(lerp(a.x, b.x, f), lerp(a.y, b.y, f), lerp(a.z, b.z, f), lens[i] > 1e-6 ? toward(a.x, a.z, b.x, b.z) : b.h);
+    }
+    d -= lens[i];
+  }
+  return pts[pts.length - 1];
+}
+
+/**
+ * Places on the deck behind a shuttle standing on its pad: `d` astern of its
+ * middle and `s` to its port side, facing `h`, `up` over the deck. Its ramp
+ * comes down astern, its lip 4.9 from the middle. `IN` faces the shuttle and
+ * `OUT` away from it; `sx`, `sz` is the way to port, along the rank.
+ */
+function astern(pad: { x: number; z: number; heading: number }, deck: number): { aft(d: number, s: number, h: number, up?: number): Spot; IN: number; OUT: number; sx: number; sz: number } {
+  const ax = -Math.cos(pad.heading), az = -Math.sin(pad.heading), sx = -az, sz = ax;
+  return { aft: (d, s, h, up = 0) => at(pad.x + ax * d + sx * s, deck + up, pad.z + az * d + sz * s, h), IN: Math.atan2(-az, -ax), OUT: Math.atan2(az, ax), sx, sz };
+}
+
 function stories(Wd: World): StoryDef[] {
   const P0 = Wd.posts;
   const post = (id: Id): Spot => P0[id] ?? at(0, F, 0, S);
@@ -380,16 +408,20 @@ function stories(Wd: World): StoryDef[] {
   // ---------------------------------------------------------------- 1. The Reaper's squadron falls
   {
     const who = ['darrow', 'sevro', 'alexandar', 'clown', 'pebble', 'screwface'];
-    const lz = LANDINGS.west;
-    // where each shell lands on the canyon's west end, and where each stands once out of it
-    const spots = who.map((_, i) => onGround(lz.x0 + 3 + (i % 3) * 3.2, -12 + Math.floor(i / 3) * 4.4 + (i % 2) * 0.6, E));
+    // Where each shell lands: before the south wall, on the open ground the opening view looks straight down on,
+    // in a chevron with the Reaper at its point nearest the wall. An open husk reaches 3.4 from its middle, so
+    // they stand 7 apart.
+    const CHEVRON: [number, number][] = [[1, 66.6], [7.5, 69.3], [-5.5, 69.3], [14, 72], [-12, 72], [1, 73.6]];
+    const spots = CHEVRON.map(([x, z]) => onGround(x, z, N));
     const marks: Record<Id, Spot | 'post'> = {};
     who.forEach((id) => (marks[id] = 'post'));
-    const UP = 9, GONE = 4, FALL = 6.5;
+    // up off the rim and gone; the shells are fired; and how long a shell is expected to take from its tube to its husk's opening
+    const UP = 9, GONE = 4, FALL = 12.5;
     /** When each shell opened, in story time, once the Rain has said; until then, the time it is expected to take. */
     const opens: (number | undefined)[] = [];
+    const openAt = (i: number): number => opens[i] ?? UP + GONE + FALL + i * 0.35;
     out.push({
-      id: 'reaper', name: "the Reaper's squadron falls", cast: who, holds: ['westLz'], weight: 1.2, marks, body: UP + GONE + FALL + 16,
+      id: 'reaper', name: "the Reaper's squadron falls", cast: who, holds: ['outside'], weight: 1.2, marks, body: UP + GONE + FALL + 16,
       play(tb, P) {
         who.forEach((id, i) => {
           const home = P.from(id), land = spots[i];
@@ -397,24 +429,25 @@ function stories(Wd: World): StoryDef[] {
             // up off the rim, straight up into the sky, and gone
             const s = tb / UP;
             P.put(id, still(at(home.x, home.y + 70 * ease(s), home.z, home.h), fly(s), { boots: 1, cloak: 1, shown: s < 0.92 }));
-          } else if (tb < (opens[i] ?? UP + GONE + FALL + i * 0.35)) {
+          } else if (tb < openAt(i)) {
             P.put(id, still(land, {}, { shown: false }));
           } else {
-            // out of the husk: a crouch, up, the razor out, and the squadron forms on Darrow
-            const s = tb - (opens[i] ?? UP + GONE + FALL + i * 0.35);
-            const pose = s < 1.2 ? blend(kneel(1), {}, s / 1.2) : id === 'darrow' && s > 3 && s < 7 ? salute(span(s, 3, 7)) : {};
-            P.put(id, still(at(land.x, land.y, land.z, turnTo(E, toward(land.x, land.z, 0, -20), span(s, 1, 2))), pose, { razor: s > 2 ? 'blade' : 'coiled', flash: id === 'darrow' && s > 3 && s < 3.4 ? 1 : 0 }));
+            // out of the husk: a crouch, up, a few steps clear of it towards the wall, the razor out; the Reaper lifts his
+            // slingBlade to the wall, and the Howlers behind him howl
+            const s = tb - openAt(i), step = 2.8 * ease(span(s, 1.3, 3.1)), z = land.z - step;
+            const pose = s < 1.2 ? blend(kneel(1), {}, s / 1.2) : s > 1.3 && s < 3.1 ? walk((s * 1.2) % 1) : id === 'darrow' && s > 4 && s < 9.5 ? { armR: 2.9, elbowR: 0.2 } : s > 5.5 && s < 10.5 && id !== 'darrow' ? howl(span(s, 5.5, 10.5)) : {};
+            P.put(id, still(at(land.x, landAt(land.x, z), z, N), pose, { razor: s > 3.2 ? 'blade' : 'coiled', flash: id === 'darrow' && s > 4 && s < 4.5 ? 1 : 0, cloak: 0.4 }));
           }
         });
       },
       props(tb, _X, live, once) {
         if (!live || !Wd.rain) return;
-        if (tb < UP) opens.length = 0;
         // the shells, one after another: the Reaper's red, the Howlers' wolf grey
         who.forEach((id, i) => {
           const t0 = UP + GONE + i * 0.35;
           if (tb < t0) return;
           once(`fire-${i}`, () => {
+            if (i === 0) opens.length = 0;
             const tubes = Wd.fleet?.tubes('pax') ?? [];
             const from: V3 = tubes[(i * 3) % Math.max(1, tubes.length)] ?? [84, 100, 30];
             const land = spots[i];
@@ -424,10 +457,6 @@ function stories(Wd: World): StoryDef[] {
         });
       },
     });
-    // the drop is fired when the squadron is gone into the sky
-    const def = out[out.length - 1];
-    const props = def.props!;
-    def.props = (tb, X, live, once) => { props(tb, X, live, once); };
   }
 
   // ---------------------------------------------------------------- 2. Into the river
@@ -587,7 +616,9 @@ function stories(Wd: World): StoryDef[] {
     const howlers = ['clown', 'pebble', 'screwface'];
     // from the roof of the Howlers' tower, to the stage on Temptation's rim, to the podium's edge
     const roofs = [at(-38.6, F + 40, -18.6, S), at(-23.4, F + 24, -15.4, S), at(-19, F + 1.2, -10, S)];
-    const wall = at(-32.4, F + 7, 1.5, W);
+    // the plain stretch of the Citadel's outer wall, as built, and how far Darrow runs along its top
+    const WT = CITADEL_PLACES.wallTop;
+    const wall = at(WT.x, WT.y, WT.z0 + 1.5, W), along = Math.max(2, Math.min(9, WT.z1 - WT.z0 - 3));
     const marks: Record<Id, Spot | 'post'> = { sevro: roofs[0], darrow: at(-9.5, F, -38, S) };
     howlers.forEach((id, i) => (marks[id] = at(-10.5 + i * 1.2, F, -40 - i * 1.4, S)));
     out.push({
@@ -623,7 +654,7 @@ function stories(Wd: World): StoryDef[] {
         if (tb >= 15.5) {
           // Darrow runs on alone along the wall's top and over it, into the grounds
           const s = span(tb, 16, 21);
-          P.put('darrow', still(at(wall.x - 0.2, wall.y, wall.z + 9 * ease(s), S), s > 0 && s < 1 ? run((tb * 1.4) % 1) : {}, { cloak: 0.7, shown: s < 0.97 }));
+          P.put('darrow', still(at(wall.x - 0.2, wall.y, wall.z + along * ease(s), S), s > 0 && s < 1 ? run((tb * 1.4) % 1) : {}, { cloak: 0.7, shown: s < 0.97 }));
         }
         if (tb >= 15.5 && tb < 19) {
           // Sevro goes back for the next, and his boots die halfway: he drops lightly to the ground
@@ -654,10 +685,12 @@ function stories(Wd: World): StoryDef[] {
   {
     const team = ['mustang', 'obsidian-0', 'obsidian-1'];
     const pylons: V3[] = [[60, F, -40], [82, F, -40], [60, F, -12], [82, F, -12]];
-    const field = [at(-22, F, 34, S), at(-16.5, F, 31.5, S)];
+    const field = [at(-21.5, F, 33.5, S), at(-20.5, F, 41, S)];
+    /** When each of the two marked shells opened, in story time, once the Rain has said. */
+    const opens: (number | undefined)[] = [];
     const marks: Record<Id, Spot | 'post'> = { mustang: at(64, F, -36, E), 'obsidian-0': at(66.2, F, -33, E), 'obsidian-1': at(68.6, F, -34.6, E), holiday: 'post', thraxa: 'post' };
     out.push({
-      id: 'shield', name: 'Mustang drops the shield', cast: [...team, 'holiday', 'thraxa'], holds: ['park', 'shield', 'cityLz'], weight: 1, marks, body: 44,
+      id: 'shield', name: 'Mustang drops the shield', cast: [...team, 'holiday', 'thraxa'], holds: ['park', 'shield', 'cityLz'], weight: 1, marks, body: 52,
       may: () => Wd.rain?.shield.isUp() ?? true,
       play(tb, P) {
         // she sets a charge on each pylon in turn, kneeling at its foot, while her Obsidians keep watch
@@ -695,14 +728,14 @@ function stories(Wd: World): StoryDef[] {
         // Holiday and Thraxa come down in the wave through the open sky, onto the Field of Mars
         ['holiday', 'thraxa'].forEach((id, i) => {
           const home = P.from(id), spot = field[i];
-          const t0 = 27 + i * 0.6;
+          const open = opens[i] ?? 39 + i * 0.6;
           if (tb < 22) P.put(id, still(home));
           else if (tb < 26) {
             const s = span(tb, 22, 26);
             P.put(id, still(at(home.x, home.y + 75 * ease(s), home.z, home.h), fly(s), { boots: 1, cloak: 1, shown: s < 0.92 }));
-          } else if (tb < t0 + 6) P.put(id, still(spot, {}, { shown: false }));
+          } else if (tb < open) P.put(id, still(spot, {}, { shown: false }));
           else {
-            const s = tb - t0 - 6;
+            const s = tb - open;
             P.put(id, still(spot, s < 1.2 ? blend(kneel(1), {}, s / 1.2) : guard(0), { razor: id === 'thraxa' ? 'blade' : 'coiled' }));
           }
         });
@@ -724,7 +757,7 @@ function stories(Wd: World): StoryDef[] {
             Wd.rain?.wave(tubes, [LANDINGS.city, LANDINGS.flank], 18);
             field.forEach((spot, i) => {
               const from = tubes()[i * 4] ?? [80, 120, 60];
-              Wd.rain?.drop(from, [spot.x, spot.y, spot.z], i === 0 ? 0x5e6670 : 0xc9a23a);
+              opens[i] = 26.5 + (Wd.rain?.drop(from, [spot.x, spot.y, spot.z], i === 0 ? 0x5e6670 : 0xc9a23a) ?? 12.5);
             });
           });
         }
@@ -737,92 +770,120 @@ function stories(Wd: World): StoryDef[] {
   {
     const guards = Array.from({ length: 8 }, (_, i) => `praetorian-${i}`);
     const pad = SHUTTLE_PADS[0];
-    const ramp = at(pad.x - 3.4, deck, pad.z, E);
-    const marks: Record<Id, Spot | 'post'> = { sovereign: 'post', aja: 'post', karnus: 'post', fitchner: 'post', darrow: at(-13, deck, 2.8, W) };
+    const { aft, IN, OUT, sx, sz } = astern(pad, deck);
+    // the foot of her shuttle's ramp, and its hatch at the ramp's head
+    const lip = aft(5.4, 0, IN), hatch = aft(3.5, 0, IN, 0.9);
+    // Darrow comes onto the deck at its east edge, runs for the aisle of Praetorians and up it; Fitchner sets him down on the open deck
+    const dStart = at(-13.2, deck, 16.6, W), setDown = at(-15.6, deck, 16.2, W);
+    const dash = [dStart, at(-24.6, deck, 19.2, W), aft(11.2, 0, IN), aft(8.4, 0, IN)];
+    const marks: Record<Id, Spot | 'post'> = { sovereign: 'post', aja: 'post', karnus: 'post', fitchner: 'post', darrow: dStart };
     guards.forEach((id) => (marks[id] = 'post'));
+    /** How far a shuttle has lifted off the deck: all four together, then each to its own height, and down again. */
+    const liftAt = (tb: number, i: number): number => (ease(span(tb, 14, 19)) * 4 + ease(span(tb, 19, 28)) * (13 + i * 4.5)) * (1 - ease(span(tb, 33, 38.5)));
+    /** Where Darrow is. */
+    const darrowAt = (tb: number): State => {
+      const lift = liftAt(tb, 0);
+      if (tb < 9) return still(dStart, guard(0), { razor: 'coiled' });
+      if (tb < 13.5) return still(wayAt(dash, span(tb, 9, 13.5)), run((tb * 1.6) % 1), { razor: 'blade', cloak: 0.8 });
+      if (tb < 15) {
+        // a leap clean over Fitchner onto the ramp as it lifts
+        const s = span(tb, 13.5, 15), a = dash[3], b = aft(4.7, 0, IN, liftAt(15, 0) + 0.45);
+        return still(at(lerp(a.x, b.x, s), lerp(a.y, b.y, s) + 3.4 * Math.sin(Math.PI * s), lerp(a.z, b.z, s), IN), leap(s), { razor: 'blade', boots: Math.sin(Math.PI * s) });
+      }
+      if (tb < 19) {
+        // on the ramp as the shuttle climbs, blade to blade with Karnus in the hatch
+        const beat = (tb - 15) / 1.3, f = beat % 1;
+        return still(aft(4.7, 0, IN, lift + 0.45), Math.floor(beat) % 2 ? strike(f) : parry(f), { razor: 'blade', flash: f > 0.45 && f < 0.55 ? 1 : 0 });
+      }
+      if (tb < 23) {
+        // Fitchner has him by the collar, and they come down across the deck on blazing boots
+        const s = ease(span(tb, 19, 23)), a = aft(4.9, 0, IN, liftAt(19, 0) + 0.45);
+        return still(at(lerp(a.x, setDown.x, s), lerp(a.y, deck, s), lerp(a.z, setDown.z, s), W), haul(0.5), { razor: 'coiled' });
+      }
+      if (tb < 24) return still(setDown, kneel(1 - span(tb, 23, 24)), { razor: 'coiled' });
+      // he watches the shuttles go
+      return still(at(setDown.x, deck, setDown.z, tb < 38 ? IN + 0.5 : W), tb < 38 ? { nod: -0.5 } : guard(0), { razor: 'coiled' });
+    };
     out.push({
-      id: 'shuttle', name: "the Sovereign's shuttle", cast: ['sovereign', 'aja', 'karnus', 'fitchner', 'darrow', ...guards], holds: ['pads', 'shuttles'], weight: 1.1, marks, body: 46,
+      id: 'shuttle', name: "the Sovereign's shuttle", cast: ['sovereign', 'aja', 'karnus', 'fitchner', 'darrow', ...guards], holds: ['pads', 'shuttles'], weight: 1.1, marks, body: 47,
       play(tb, P) {
-        // the Praetorians form two lines from her place to the ramp, and she walks between them
-        guards.forEach((id, i) => {
-          const a = P.from(id);
-          const b = at(ramp.x - 1 - Math.floor(i / 2) * 1.6, deck, ramp.z + (i % 2 ? 1.6 : -1.6) + 2.4, i % 2 ? N : S);
-          const s = span(tb, 0, 4);
-          const turnToDarrow = tb > 9 && tb < 16 ? toward(b.x, b.z, -13, 4) : b.h;
-          P.put(id, still(at(lerp(a.x, b.x, ease(s)), deck, lerp(a.z, b.z, ease(s)), s < 1 ? toward(a.x, a.z, b.x, b.z) : turnTo(b.h, turnToDarrow, span(tb, 9, 10))), s > 0 && s < 1 ? walk((tb * 1.2) % 1) : guard(0), { razor: tb > 9.5 && tb < 16 ? 'blade' : 'coiled' }));
-        });
         const sv = P.from('sovereign'), aja = P.from('aja'), kar = P.from('karnus'), fit = P.from('fitchner');
-        // the Sovereign walks to the ramp and up into the shuttle; Aja at her shoulder; Karnus and Fitchner behind
-        const walkTo = (id: Id, a: Spot, b: Spot, t0: number, t1: number, hide: number): void => {
-          const s = span(tb, t0, t1);
-          P.put(id, still(at(lerp(a.x, b.x, s), deck + (tb > t1 ? 0.6 : 0), lerp(a.z, b.z, s), toward(a.x, a.z, b.x, b.z)), s > 0 && s < 1 ? walk((tb * 1.1) % 1) : {}, { shown: tb < hide }));
+        const lift = liftAt(tb, 0);
+        const dw = darrowAt(tb);
+        P.put('darrow', dw);
+        // the Praetorians, four a side, turn to face each other across the way to her ramp, and salute her as she passes;
+        // then every blade is out and turned on the man running up between them; then they watch the shuttles climb
+        guards.forEach((id, i) => {
+          const a = P.from(id), rank = Math.floor(i / 2), inward = Math.atan2((i % 2 ? 1 : -1) * sz, (i % 2 ? 1 : -1) * sx);
+          const passes = 4 + (12.4 - (6.2 + rank * 1.4)) / 1.52;
+          let h = turnTo(OUT, inward, span(tb, 0.3, 1.5)), pose: Partial<Pose> = guard(0), razor: State['razor'] = 'coiled';
+          if (tb >= 2.5 && tb < 9.2) pose = salute(span(tb, passes - 1.2, passes + 1.6));
+          else if (tb >= 9.2 && tb < 15.4) { h = turnTo(inward, toward(a.x, a.z, dw.x, dw.z), span(tb, 9.2, 9.8)); razor = 'blade'; }
+          else if (tb >= 15.4 && tb < 33) { h = turnTo(inward, IN, span(tb, 15.4, 16.4)); pose = { nod: -0.55 }; razor = tb < 20 ? 'blade' : 'coiled'; }
+          else if (tb >= 33 && tb < 46) h = turnTo(IN, inward, span(tb, 33, 34));
+          else if (tb >= 46) h = turnTo(inward, OUT, span(tb, 46, 47));
+          P.put(id, still(at(a.x, a.y, a.z, h), pose, { razor }));
+        });
+        // the Sovereign walks up the aisle and into her shuttle, Aja at her shoulder; and they come out again when it is back
+        const board = (id: Id, post: Spot, way: Spot[], t0: number, t1: number, back0: number, back1: number, more: Partial<State> = {}): void => {
+          if (tb < t0) P.put(id, still(at(post.x, post.y, post.z, turnTo(OUT, IN, span(tb, t0 - 1.5, t0))), {}, more));
+          else if (tb < t1) P.put(id, still(wayAt(way, span(tb, t0, t1)), walk((tb * 1.1) % 1), more));
+          else if (tb < t1 + 0.8) {
+            // up the ramp and in
+            const s = span(tb, t1, t1 + 0.8), from = way[way.length - 1];
+            P.put(id, still(at(lerp(from.x, hatch.x, s), lerp(from.y, hatch.y, s), lerp(from.z, hatch.z, s), IN), walk((tb * 1.1) % 1), { ...more, shown: s < 0.9 }));
+          } else if (tb < back0) P.put(id, still(hatch, {}, { shown: false }));
+          else if (tb < back0 + 0.8) {
+            const s = span(tb, back0, back0 + 0.8);
+            P.put(id, still(at(lerp(hatch.x, lip.x, s), lerp(hatch.y, lip.y, s), lerp(hatch.z, lip.z, s), OUT), walk((tb * 1.1) % 1), { ...more, shown: s > 0.1 }));
+          } else if (tb < back1) P.put(id, still(wayAt([at(lip.x, lip.y, lip.z, OUT), ...way.slice(0, -1).reverse()], span(tb, back0 + 0.8, back1)), walk((tb * 1.1) % 1), more));
+          else P.put(id, still(at(post.x, post.y, post.z, OUT), {}, more));
         };
-        walkTo('sovereign', sv, at(pad.x, deck, pad.z, E), 4, 9, 9.2);
-        walkTo('aja', aja, at(pad.x - 0.8, deck, pad.z + 0.6, E), 4.4, 9.4, 9.8);
-        // Karnus stands at the hatch; Fitchner at the ramp's foot
-        walkTo('karnus', kar, at(ramp.x + 1.2, deck, ramp.z + 0.4, W), 5, 9.5, 99);
-        walkTo('fitchner', fit, at(ramp.x - 1.4, deck, ramp.z - 1.4, W), 5.4, 9.6, 99);
-        // Darrow sprints across the pads, weaving through the guards, and leaps onto the ramp as it lifts
-        const d = P.from('darrow');
-        if (tb < 9) P.put('darrow', still(d, guard(0), { razor: 'coiled' }));
-        else if (tb < 13.5) {
-          const s = span(tb, 9, 13.5), weave = Math.sin(s * Math.PI * 3) * 1.6;
-          const x = lerp(d.x, ramp.x - 1.2, s), z = lerp(d.z, ramp.z, s) + weave * (1 - s);
-          P.put('darrow', still(at(x, deck, z, toward(d.x, d.z, ramp.x, ramp.z)), run((tb * 1.6) % 1), { razor: 'blade', cloak: 0.8 }));
-        } else if (tb < 15) {
-          const s = span(tb, 13.5, 15);
-          P.put('darrow', still(at(lerp(ramp.x - 1.2, ramp.x + 0.6, s), deck + 2.6 * Math.sin(Math.PI * s * 0.8) + 2 * s, ramp.z, E), leap(s), { razor: 'blade' }));
-        } else if (tb < 19) {
-          // on the ramp as the shuttle rolls; Karnus swings and Darrow vaults over him
-          const lift = 2 + 3 * span(tb, 15, 19);
-          const v = span(tb, 16.6, 17.6);
-          P.put('darrow', still(at(ramp.x + 0.6 + 1.2 * v, deck + lift + 1.6 * Math.sin(Math.PI * v), ramp.z, E), v > 0 && v < 1 ? leap(v) : guard(0), { razor: 'blade' }));
-          P.put('karnus', still(at(ramp.x + 1.6, deck + lift, ramp.z + 0.4, W), strike(span(tb, 15.6, 17)), { razor: 'blade' }));
+        board('sovereign', sv, [sv, lip], 4, 8.6, 41, 46.2);
+        board('aja', aja, [aja, aft(11.6, 0, IN), aft(6.9, 0, IN)], 4.6, 9.4, 40, 45.2, { razor: 'coiled', cloak: 0.3 });
+        // Karnus follows them and stands in the hatch; Fitchner stops at the foot of the ramp
+        if (tb < 5.9) P.put('karnus', still(at(kar.x, kar.y, kar.z, turnTo(OUT, IN, span(tb, 4.4, 5.9)))));
+        else if (tb < 11.2) P.put('karnus', still(wayAt([kar, aft(12.2, 0, IN), lip], span(tb, 5.9, 11.2)), walk((tb * 1.1) % 1)));
+        else if (tb < 12) { const s = span(tb, 11.2, 12); P.put('karnus', still(aft(lerp(5.4, 3.6, s), 0, turnTo(IN, OUT, s), 0.9 * s), walk((tb * 1.1) % 1))); }
+        else if (tb < 19) {
+          const beat = (tb - 15) / 1.3, f = ((beat % 1) + 1) % 1, fighting = tb >= 15;
+          P.put('karnus', still(aft(3.6, 0, OUT, lift + 0.9), fighting ? (Math.floor(beat) % 2 ? parry(f) : strike(f)) : guard(0), { razor: tb > 13 ? 'blade' : 'coiled', flash: fighting && f > 0.45 && f < 0.55 ? 1 : 0 }));
+        } else if (tb < 39) P.put('karnus', still(hatch, {}, { shown: false }));
+        else if (tb < 39.8) { const s = span(tb, 39, 39.8); P.put('karnus', still(at(lerp(hatch.x, lip.x, s), lerp(hatch.y, lip.y, s), lerp(hatch.z, lip.z, s), OUT), walk((tb * 1.1) % 1), { shown: s > 0.1 })); }
+        else if (tb < 44) P.put('karnus', still(wayAt([at(lip.x, lip.y, lip.z, OUT), aft(12.2, 0, OUT), kar], span(tb, 39.8, 44)), walk((tb * 1.2) % 1)));
+        else P.put('karnus', still(at(kar.x, kar.y, kar.z, OUT)));
+        if (tb < 6.4) P.put('fitchner', still(at(fit.x, fit.y, fit.z, turnTo(OUT, IN, span(tb, 4.9, 6.4)))));
+        else if (tb < 11.8) P.put('fitchner', still(wayAt([fit, aft(6.9, 0, IN)], span(tb, 6.4, 11.8)), walk((tb * 1.05) % 1)));
+        else if (tb < 17.5) P.put('fitchner', still(aft(6.9, 0, tb < 13 ? turnTo(IN, OUT, span(tb, 11.8, 12.6)) : turnTo(OUT, IN, span(tb, 15, 15.8))), tb > 15 ? { nod: -0.6 } : guard(0)));
+        else if (tb < 19) {
+          // he rises on his boots to the ramp, his pulseFist flashing
+          const s = ease(span(tb, 17.5, 19));
+          P.put('fitchner', still(aft(lerp(6.9, 4.9, s), -0.95 * s, IN, lerp(0, liftAt(19, 0) + 1.05, s)), fly(s), { boots: 1, cloak: 0.8, flash: tb > 18.5 ? 1 : 0 }));
         } else if (tb < 23) {
-          // Fitchner turns with his pulseFist flashing, seizes Darrow and drops off the ramp on blazing boots
-          const s = span(tb, 19, 23);
-          const x = lerp(ramp.x + 1.8, -17, ease(s)), z = lerp(ramp.z, 18, ease(s)), y = lerp(deck + 5, deck, ease(s));
-          P.put('fitchner', still(at(x + 0.6, y + 0.5, z, W), fly(s), { boots: 1, cloak: 1 }));
-          P.put('darrow', still(at(x, y - 0.4, z + 0.3, W), haul(0.5), { razor: 'coiled' }));
-          P.put('karnus', still(kar, {}, { shown: false }));
-        } else if (tb < 30) {
-          // he sets Darrow down on a pad, salutes, and is gone
-          const set = at(-17, deck, 18, W);
-          P.put('darrow', still(at(set.x - 0.8, deck, set.z + 0.4, E), tb < 24 ? kneel(1 - span(tb, 23, 24)) : guard(0), { razor: 'coiled' }));
-          const s = span(tb, 26, 30);
-          P.put('fitchner', still(at(set.x + 0.6 + 6 * s, deck + 20 * s * s, set.z - 4 * s, W), tb < 26 ? salute(span(tb, 23.6, 26)) : fly(s), { boots: tb > 26 ? 1 : 0, shown: s < 0.95 }));
-        } else if (tb < 38) {
-          P.put('darrow', still(at(-17.8, deck, 18.4, E), guard(0)));
-          P.put('fitchner', still(fit, {}, { shown: false }));
-        } else {
-          // the shuttles come back down and her party walks out again, to the places they began
-          const s = span(tb, 40, 45);
-          walkTo('sovereign', at(pad.x, deck, pad.z, W), sv, 40, 45, 99);
-          walkTo('aja', at(pad.x - 0.8, deck, pad.z + 0.6, W), aja, 40.3, 45, 99);
-          walkTo('karnus', at(ramp.x + 1.2, deck, ramp.z + 0.4, W), kar, 40.6, 45, 99);
-          P.put('fitchner', still(fit, guard(0), { shown: tb > 41 }));
-          P.put('darrow', still(at(-17.8, deck, 18.4, E), guard(0)));
-          void s;
+          const s = ease(span(tb, 19, 23));
+          P.put('fitchner', still(at(dw.x + lerp(0.95, 1.3, s), dw.y + 0.6 * (1 - s), dw.z - 0.4 * s, W), fly(span(tb, 19, 23)), { boots: 1, cloak: 1 }));
         }
+        else if (tb < 30) {
+          // he sets Darrow down, salutes him, and is gone
+          const s = span(tb, 26, 30);
+          P.put('fitchner', still(at(setDown.x + 1.3 + 6 * s, deck + 20 * s * s, setDown.z - 0.4 - 4 * s, W), tb < 26 ? salute(span(tb, 23.6, 26)) : fly(s), { boots: tb > 26 ? 1 : 0, shown: s < 0.95 }));
+        } else P.put('fitchner', still(at(fit.x, fit.y, fit.z, OUT), guard(0), { shown: tb > 41 }));
       },
       props(tb, X) {
         if (!X.shuttles) return;
-        // the four shuttles start their engines together, climb, swap places, and the Sovereign's shimmers out of sight
+        // the four shuttles start their engines together and climb; each pair changes places and back; the Sovereign's shimmers out of sight for a while
+        const back = 1 - ease(span(tb, 33, 38.5));
         SHUTTLE_PADS.forEach((p, i) => {
-          const eng = tb > 8 && tb < 36 ? 1 : tb > 7 && tb < 38 ? 0.5 : 0;
-          const lift = ease(span(tb, 14, 19)) * 4 + ease(span(tb, 19, 28)) * (18 + i * 3);
-          const swap = Math.sin(span(tb, 22, 30) * Math.PI) * (i % 2 ? 5 : -5);
-          const bank = i === 0 ? Math.sin(span(tb, 15.5, 19) * Math.PI * 2) * 0.7 : 0;
-          const down = ease(span(tb, 34, 40));
-          const y = deck + lift * (1 - down);
-          const shown = i !== 0 || tb < 27 || tb > 33;
-          X.shuttles!.set(i, p.x + swap * (1 - down), y, p.z, p.heading, bank * (1 - down), shown, eng);
+          const eng = tb > 8 && tb < 37.5 ? 1 : tb > 7 && tb < 39 ? 0.5 : 0;
+          const swap = Math.sin(span(tb, 22, 30) * Math.PI) * (i % 2 ? 4.5 : -4.5) * back;
+          const bank = i === 0 ? Math.sin(span(tb, 15.5, 19) * Math.PI * 2) * 0.3 : 0;
+          X.shuttles!.set(i, p.x + sx * swap, deck + liftAt(tb, i), p.z + sz * swap, p.heading, bank, i !== 0 || tb < 27 || tb > 32, eng);
         });
-        // the grenade Aja kicks out of the hatch, tumbling down to burst harmlessly in a puff of light
-        const g = span(tb, 17.6, 19.6);
-        if (g > 0 && g < 1) X.specks.speck([pad.x - 1, deck + 4.5 - 5 * g * g, pad.z + 1.4 + 2 * g], 0.5, 0xffd27a);
+        // the grenade Aja kicks out of the hatch, tumbling down to burst harmlessly on the empty deck in a puff of light
+        const g = span(tb, 17.6, 19.6), burst = aft(6.5, -3.4, IN);
+        if (g > 0 && g < 1) X.specks.speck([lerp(hatch.x, burst.x, g), lerp(deck + liftAt(17.6, 0) + 1.6, deck + 0.3, g * g), lerp(hatch.z, burst.z, g)], 0.5, 0xffd27a);
         const b = span(tb, 19.6, 21);
-        X.rings.set(3, [pad.x - 1, deck + 0.2, pad.z + 3.4], 0.4 + 3 * b, b > 0 && b < 1 ? 1 - b : 0, 0xffe2a0);
+        X.rings.set(3, [burst.x, deck + 0.2, burst.z], 0.4 + 3 * b, b > 0 && b < 1 ? 1 - b : 0, 0xffe2a0);
       },
     });
   }
@@ -893,24 +954,26 @@ function stories(Wd: World): StoryDef[] {
 
   // ---------------------------------------------------------------- 8. The Willow Way
   {
-    const T = STAGES.terrace, ty = T.y;
-    const lornAt = at(-41, ty, 43.5, S), darrowAt = at(-41, ty, 46.5, N);
-    const steps = at(-41.5, F + 1.6, 52.8, S);
-    const door = at(-45.6, ty, 44, E);
-    const marks: Record<Id, Spot | 'post'> = { lorn: lornAt, darrow: darrowAt, alexandar: at(-37.8, ty, 40.2, S), boyAlexandar: door };
+    const TP = CITADEL_PLACES.terrace, ty = TP.y, cx = (TP.x0 + TP.x1) / 2;
+    // on the terrace's flat: Lorn with his back to the Citadel, Darrow with his to the steps
+    const lornAt = at(cx, ty, TP.z0 + 3.6, S), darrowAt = at(cx, ty, TP.z0 + 6.6, N);
+    // the boy comes over the bridge from the Citadel's door, round the flat's west side, and sits on a tread of the steps to watch
+    const tread = TP.steps[Math.min(3, TP.steps.length - 1)];
+    const seat = at(Math.min(tread.x1 - 1.2, cx + 2.4), tread.y, (tread.z0 + tread.z1) / 2, N);
+    const door = at(TP.door.x, ty, TP.door.z, S);
+    const boyWay = [door, at(TP.x0 + 1.2, ty, TP.flatZ1 - 0.9, S), at(seat.x, ty, TP.flatZ1 - 0.5, E), seat];
+    // where Lorn stands once he has stepped back, and where the grown Alexandar waits his turn
+    const aside = at(cx - 2.4, ty, TP.z0 + 1.4, E + 0.6), waits = at(Math.min(TP.x1 - 1.4, cx + 3.2), ty, TP.z0 + 1.6, S);
+    const marks: Record<Id, Spot | 'post'> = { lorn: lornAt, darrow: darrowAt, alexandar: waits, boyAlexandar: door };
     out.push({
       id: 'willow', name: 'the Willow Way', cast: ['lorn', 'darrow', 'alexandar', 'boyAlexandar'], holds: ['terrace'], weight: 0.9, marks, body: 46,
       play(tb, P) {
         // the boy comes out with his bread and sits on the steps to watch
         if (tb < 1) P.put('boyAlexandar', still(door, {}, { shown: false }));
-        else if (tb < 5) {
-          const s = span(tb, 1, 5);
-          P.put('boyAlexandar', still(at(lerp(door.x, steps.x, s), lerp(ty, steps.y, s * s), lerp(door.z, steps.z, s), toward(door.x, door.z, steps.x, steps.z)), walk((tb * 1.4) % 1)));
-        } else if (tb < 24) P.put('boyAlexandar', still(at(steps.x, steps.y, steps.z, N), sit(((tb - 5) / 3) % 1)));
-        else if (tb < 28) {
-          const s = span(tb, 24, 28);
-          P.put('boyAlexandar', still(at(lerp(steps.x, door.x, s), lerp(steps.y, ty, s), lerp(steps.z, door.z, s), toward(steps.x, steps.z, door.x, door.z)), walk((tb * 1.4) % 1), { shown: s < 0.95 }));
-        } else P.put('boyAlexandar', still(door, {}, { shown: false }));
+        else if (tb < 6) P.put('boyAlexandar', still(wayAt(boyWay, span(tb, 1, 6)), walk((tb * 1.4) % 1)));
+        else if (tb < 24) P.put('boyAlexandar', still(seat, sit(((tb - 6) / 3) % 1)));
+        else if (tb < 29) P.put('boyAlexandar', still(wayAt([...boyWay].reverse(), span(tb, 24, 29)), walk((tb * 1.4) % 1), { shown: tb < 28.8 }));
+        else P.put('boyAlexandar', still(door, {}, { shown: false }));
         // Lorn and Darrow spar slowly, in the Willow Way's sets of twelve moves (GS 12)
         const sparring = (a: Id, b: Id, sa: Spot, sb: Spot, t0: number, t1: number): void => {
           if (tb < t0 || tb >= t1) return;
@@ -923,83 +986,80 @@ function stories(Wd: World): StoryDef[] {
         // Lorn steps back, and a grown Alexandar, white hair streaming, takes his place
         if (tb >= 20 && tb < 23) {
           const s = span(tb, 20, 23);
-          P.put('lorn', still(at(lerp(lornAt.x, -44.4, s), ty, lerp(lornAt.z, 40.6, s), E), walk((tb * 1.1) % 1), { razor: 'coiled' }));
+          P.put('lorn', still(at(lerp(lornAt.x, aside.x, s), ty, lerp(lornAt.z, aside.z, s), toward(lornAt.x, lornAt.z, aside.x, aside.z)), walk((tb * 1.1) % 1), { razor: 'coiled' }));
           P.put('darrow', still(darrowAt, guard(0), { razor: 'blade' }));
-          const a = P.from('alexandar');
-          P.put('alexandar', still(at(lerp(a.x, lornAt.x, s), ty, lerp(a.z, lornAt.z, s), S), walk((tb * 1.2) % 1), { cloak: 0.5 }));
+          P.put('alexandar', still(at(lerp(waits.x, lornAt.x, s), ty, lerp(waits.z, lornAt.z, s), S), walk((tb * 1.2) % 1), { cloak: 0.5 }));
         }
-        if (tb >= 23) P.put('lorn', still(at(-44.4, ty, 40.6, E + 0.6), guard(0), { razor: 'coiled' }));
+        if (tb >= 23) P.put('lorn', still(aside, guard(0), { razor: 'coiled' }));
         sparring('alexandar', 'darrow', lornAt, darrowAt, 23, 38);
         // and the three bow to each other
         if (tb >= 38) {
-          const s = bow(span(tb, 39, 44));
-          P.put('darrow', still(at(darrowAt.x, ty, darrowAt.z, toward(darrowAt.x, darrowAt.z, -42.6, 42)), s, { razor: 'coiled' }));
-          P.put('alexandar', still(at(lornAt.x, ty, lornAt.z, toward(lornAt.x, lornAt.z, -42.6, 44)), s, { razor: 'coiled' }));
-          P.put('lorn', still(at(-44.4, ty, 40.6, toward(-44.4, 40.6, -41, 45)), s, { razor: 'coiled' }));
+          const s = bow(span(tb, 39, 44)), mid = at(cx - 0.8, ty, TP.z0 + 4.6, S);
+          P.put('darrow', still(at(darrowAt.x, ty, darrowAt.z, toward(darrowAt.x, darrowAt.z, mid.x, mid.z)), s, { razor: 'coiled' }));
+          P.put('alexandar', still(at(lornAt.x, ty, lornAt.z, toward(lornAt.x, lornAt.z, mid.x, mid.z + 1)), s, { razor: 'coiled' }));
+          P.put('lorn', still(at(aside.x, ty, aside.z, toward(aside.x, aside.z, mid.x, mid.z)), s, { razor: 'coiled' }));
         }
         if (tb < 1) {
           P.put('lorn', still(lornAt));
           P.put('darrow', still(darrowAt));
         }
-        if (tb < 20) P.put('alexandar', still(P.from('alexandar'), guard(0)));
+        if (tb < 20) P.put('alexandar', still(waits, guard(0)));
       },
     });
   }
 
   // ---------------------------------------------------------------- 9. Darrow and his companions against Aja
   {
-    const pad = SHUTTLE_PADS[0];
-    const ajaAt = at(pad.x - 4.6, deck, pad.z + 0.4, E);
-    const ring = (i: number, r: number): Spot => {
-      const a = W + (i - 1.5) * 0.7;
-      return at(ajaAt.x + Math.cos(a) * r, deck, ajaAt.z + Math.sin(a) * r, a + Math.PI);
-    };
-    const marks: Record<Id, Spot | 'post'> = { aja: ajaAt, darrow: ring(0, 3.4), mustang: ring(1, 3.6), cassius: ring(2, 3.4), sevro: ring(3, 5.4) };
+    // on the open deck before the shuttles' ramps: Aja with her back to them, and the three coming at her from the city's side
+    const ajaAt = at(-19.5, deck, 16.9, E);
+    const FAN = 0.35, BEHIND = FAN + 2.2;
+    const about = (a: number, r: number): Spot => at(ajaAt.x + Math.cos(a) * r, deck, ajaAt.z + Math.sin(a) * r, a + Math.PI);
+    const fan = (i: number, r: number): Spot => about(FAN + (i - 1) * 0.9, r);
+    const closing = (i: number): Spot => (i < 3 ? fan(i, 2.9) : about(BEHIND, 2.9));
+    // the decoy behind her, whose ramp she backs up at the end
+    const decoy = SHUTTLE_PADS[1], D = astern(decoy, deck);
+    const lip = D.aft(5.4, 0, D.IN), hatch = D.aft(3.5, 0, D.IN, 0.9);
+    const marks: Record<Id, Spot | 'post'> = { aja: ajaAt, darrow: fan(0, 3.4), mustang: fan(1, 3.6), cassius: fan(2, 3.4), sevro: about(BEHIND, 4.2) };
     out.push({
-      id: 'aja', name: 'Darrow and his companions against Aja', cast: ['aja', 'darrow', 'mustang', 'cassius', 'sevro'], holds: ['pads', 'shuttles'], weight: 1.2, marks, body: 40,
+      id: 'aja', name: 'Darrow and his companions against Aja', cast: ['aja', 'darrow', 'mustang', 'cassius', 'sevro'], holds: ['pads', 'shuttles'], weight: 1.2, marks, body: 41,
       play(tb, P) {
         const order = ['darrow', 'mustang', 'cassius'];
         // they circle her, and she turns each of them aside in turn, razors ringing
-        const circling = (id: Id, i: number): Spot => {
-          const a = W + (i - 1) * 0.9 + Math.sin(tb * 0.5 + i) * 0.3, r = 3.2 + 0.4 * Math.sin(tb * 0.7 + i * 2);
-          return at(ajaAt.x + Math.cos(a) * r, deck, ajaAt.z + Math.sin(a) * r, a + Math.PI);
-        };
+        const circling = (i: number, t: number): Spot => about(FAN + (i - 1) * 0.9 + Math.sin(t * 0.5 + i) * 0.3, 3.2 + 0.4 * Math.sin(t * 0.7 + i * 2));
         const turn = Math.floor(tb / 3) % 3, f = (tb % 3) / 3;
         if (tb < 24) {
           order.forEach((id, i) => {
-            const c = circling(id, i), lunging = i === turn && f > 0.2 && f < 0.75;
+            const c = circling(i, tb), lunging = i === turn && f > 0.2 && f < 0.75;
             const p = lunging ? at(lerp(c.x, ajaAt.x, 0.35), deck, lerp(c.z, ajaAt.z, 0.35), c.h) : c;
             P.put(id, still(p, lunging ? strike(span(f, 0.2, 0.75)) : guard(0), { razor: 'blade', flash: lunging && f > 0.45 && f < 0.52 ? 1 : 0, cloak: 0.4 }));
           });
-          const foe = circling(order[turn], turn);
+          const foe = circling(turn, tb);
           P.put('aja', still(at(ajaAt.x, deck, ajaAt.z, toward(ajaAt.x, ajaAt.z, foe.x, foe.z)), f > 0.25 && f < 0.75 ? parry(span(f, 0.25, 0.75)) : guard(0), { razor: 'blade', flash: f > 0.45 && f < 0.52 ? 1 : 0, cloak: 0.3 }));
           // Sevro is knocked down early, and lies still as if out of the fight
           const sv = P.from('sevro');
-          const down = span(tb, 2, 3);
-          P.put('sevro', still(at(sv.x, deck, sv.z, sv.h), tb < 2 ? guard(0) : kneel(down), { razor: 'blade' }));
+          P.put('sevro', still(at(sv.x, deck, sv.z, sv.h), tb < 2 ? guard(0) : kneel(span(tb, 2, 3)), { razor: 'blade' }));
         } else {
           // Sevro springs up behind her; the four close in a ring with their razors raised
           const s = span(tb, 24, 26);
           ['darrow', 'mustang', 'cassius', 'sevro'].forEach((id, i) => {
-            const r = ring(i, 2.9);
-            const from = id === 'sevro' ? P.from('sevro') : circling(id, i);
-            P.put(id, still(at(lerp(from.x, r.x, ease(s)), deck, lerp(from.z, r.z, ease(s)), r.h), tb < 26 ? leap(s) : { armR: 2.7, elbowR: 0.3 }, { razor: 'blade', cloak: 0.3 }));
+            const r = closing(i);
+            const from = id === 'sevro' ? P.from('sevro') : circling(i, 24);
+            P.put(id, still(at(lerp(from.x, r.x, ease(s)), deck, lerp(from.z, r.z, ease(s)), r.h), tb < 26 ? leap(s) : tb < 37 ? { armR: 2.7, elbowR: 0.3 } : guard(0), { razor: tb < 37 ? 'blade' : 'coiled', cloak: 0.3 }));
           });
-          // Aja salutes with her blade and steps back up the ramp, and the shuttle lifts away
+          // Aja salutes them with her blade, backs up the ramp of the shuttle behind her, and it lifts away
           if (tb < 32) P.put('aja', still(ajaAt, salute(span(tb, 26.5, 31)), { razor: 'blade' }));
+          else if (tb < 34.6) P.put('aja', still(wayAt([ajaAt, lip], span(tb, 32, 34.6)), walk((tb * 1.1) % 1), { razor: 'coiled', cloak: 0.4 }));
           else {
-            const u = span(tb, 32, 34.5);
-            P.put('aja', still(at(lerp(ajaAt.x, pad.x, u), deck + 0.6 * u, lerp(ajaAt.z, pad.z, u), E), walk((tb * 1.1) % 1), { shown: u < 0.97, razor: 'coiled' }));
+            const u = span(tb, 34.6, 35.3);
+            P.put('aja', still(at(lerp(lip.x, hatch.x, u), lerp(lip.y, hatch.y, u), lerp(lip.z, hatch.z, u), D.IN), walk((tb * 1.1) % 1), { shown: u < 0.9, razor: 'coiled' }));
           }
-          if (tb >= 37) ['darrow', 'mustang', 'cassius', 'sevro'].forEach((id, i) => P.put(id, still(ring(i, 2.9), guard(0), { razor: 'coiled' })));
         }
       },
       props(tb, X) {
         if (!X.shuttles) return;
-        // her shuttle lifts away, out over the city, and comes down again once the story is over
-        const p = SHUTTLE_PADS[0];
-        const up = ease(span(tb, 34.5, 38)), back = ease(span(tb, 38, 40));
-        X.shuttles.set(0, p.x + 30 * up * (1 - back), F + 6 + 40 * up * (1 - back), p.z - 10 * up * (1 - back), p.heading, 0, tb < 37 || tb > 39.5, tb > 33 && tb < 40 ? 1 : 0);
+        // the decoy lifts away with her, out over the city, and is back on its pad when the story is over
+        const up = ease(span(tb, 35.4, 38.6)), back = ease(span(tb, 38.6, 40.6)), far = up * (1 - back);
+        X.shuttles.set(1, decoy.x + 26 * far, deck + 34 * far, decoy.z - 8 * far, decoy.heading, 0, tb < 37.8 || tb > 39.6, tb > 34 && tb < 40.6 ? 1 : 0);
       },
     });
   }
@@ -1302,8 +1362,8 @@ export function buildShow(k: Build): Sky {
     if (best) start(best);
   };
 
-  // the opening: the Reaper's squadron falls, the Sovereign walks to her shuttle, and Lorn marches on the south wall
-  for (const id of ['reaper', 'shuttle', 'southWall']) { const d = defs.find((x) => x.id === id); if (d && free(d)) start(d); }
+  // the opening: the Reaper's squadron falls before the south wall, and Ragnar goes for the postern
+  for (const id of ['reaper', 'postern']) { const d = defs.find((x) => x.id === id); if (d && free(d)) start(d); }
 
   // The Rain never stops. A full wave falls from the Pax and the Morning Star in turn, and between the waves a few
   // shells at a time, so that there is always fire somewhere in the sky. While the shield stands, the share of
@@ -1312,6 +1372,8 @@ export function buildShow(k: Build): Sky {
   const rnd = (): number => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296;
   const outside: Zone[] = [LANDINGS.west, LANDINGS.east, LANDINGS.flank, LANDINGS.peaks];
   const WAVE = 40, WAVE_EVERY = 17;
+  /** Where the Rain may fall now: not on the ground a story has taken for its own marked shells. */
+  const zonesNow = (): Zone[] => [...outside.filter((z) => z !== LANDINGS.flank || !holding.has('outside')), ...(holding.has('cityLz') ? [] : [LANDINGS.city])];
 
   let frame = 0;
   k.each((dt) => {
@@ -1326,12 +1388,12 @@ export function buildShow(k: Build): Sky {
       if (nextWave <= 0) {
         const ship = fromPax ? 'pax' : 'morningStar';
         fromPax = !fromPax;
-        rain.wave(() => fleet.tubes(ship), [...outside, LANDINGS.city], WAVE);
+        rain.wave(() => fleet.tubes(ship), zonesNow(), WAVE);
         nextWave = WAVE_EVERY;
         nextFew = 6 + rnd() * 2;
       } else if (nextFew <= 0) {
         const ship = rnd() < 0.5 ? 'pax' : 'morningStar';
-        const zones = [...outside, LANDINGS.city];
+        const zones = zonesNow();
         rain.wave(() => fleet.tubes(ship), [zones[Math.floor(rnd() * zones.length)]], 2 + Math.floor(rnd() * 4));
         nextFew = 1.4 + rnd() * 2.2;
       }
@@ -1399,8 +1461,14 @@ export function buildShow(k: Build): Sky {
     else console.info('The Iron Rain: the show\'s check: no figure stands in anything built or below the ground, none passes through another, and every flight clears what is under it.');
     (window as unknown as { rrShow: object }).rrShow = {
       play: (id: string) => { const d = defs.find((x) => x.id === id); if (d) start(d); return d ? d.name : 'no such story'; },
-      running: () => running.map((r) => `${r.def.id} ${r.t.toFixed(1)}`),
+      /** What is playing, and how far into its body each is (negative while its cast is still on the way). */
+      running: () => running.map((r) => `${r.def.id} ${(r.t - r.tin).toFixed(1)}`),
+      /** How far into its body a story is, or null if it is not playing. */
+      at: (id: string) => { const r = running.find((x) => x.def.id === id); return r ? r.t - r.tin : null; },
       stories: () => defs.map((d) => d.id),
+      /** Ends whatever is playing and plays one story alone, for looking at it; `resume()` lets the director choose again. */
+      only: (id: string) => { for (const r of [...running]) finish(r); const d = defs.find((x) => x.id === id); if (d) start(d); nextPick = 1e9; return d ? d.name : 'no such story'; },
+      resume: () => { nextPick = 1; },
       /** Fires a wave from a ship's own tubes now: `rrShow.wave('pax', 40)`. */
       wave: (ship: 'pax' | 'morningStar' = 'pax', n = WAVE) => (rain && fleet ? rain.wave(() => fleet.tubes(ship), [...outside, LANDINGS.city], n) : 0),
     };
@@ -1416,7 +1484,7 @@ export function buildShow(k: Build): Sky {
 function buildShuttles(k: Build): Props['shuttles'] {
   const geo = shuttleGeometry() ?? new THREE.BoxGeometry(9, 2.6, 4).translate(0, 1.3, 0);
   const meshes: THREE.Mesh[] = [];
-  const glows: THREE.Mesh[] = [];
+  const glows: THREE.Mesh[][] = [];
   const glowGeo = new THREE.SphereGeometry(0.6, 8, 6);
   SHUTTLE_PADS.forEach((p) => {
     const mesh = new THREE.Mesh(geo, k.mat.city());
@@ -1424,10 +1492,14 @@ function buildShuttles(k: Build): Props['shuttles'] {
     mesh.rotation.y = -p.heading;
     k.group.add(mesh);
     meshes.push(mesh);
-    const glow = new THREE.Mesh(glowGeo, new THREE.MeshBasicMaterial({ color: 0xffc27a, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
-    glow.position.set(-4.8, 1.2, 0);
-    mesh.add(glow);
-    glows.push(glow);
+    // the glow of its two engines, in their exhausts
+    const lit = new THREE.MeshBasicMaterial({ color: 0xffc27a, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
+    glows.push(SHUTTLE.engines.map((e) => {
+      const glow = new THREE.Mesh(glowGeo, lit);
+      glow.position.set(e[0] - 0.25, e[1], e[2]);
+      mesh.add(glow);
+      return glow;
+    }));
   });
   return {
     set(i, x, y, z, h, bank, shown, engines) {
@@ -1436,8 +1508,8 @@ function buildShuttles(k: Build): Props['shuttles'] {
       m.position.set(x, y, z);
       m.rotation.set(bank, -h, 0, 'YXZ');
       m.visible = shown;
-      (glows[i].material as THREE.MeshBasicMaterial).opacity = engines;
-      glows[i].scale.setScalar(0.6 + engines);
+      (glows[i][0].material as THREE.MeshBasicMaterial).opacity = engines;
+      for (const g of glows[i]) g.scale.setScalar(0.3 + 0.35 * engines);
     },
   };
 }
