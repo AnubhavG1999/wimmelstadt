@@ -7,6 +7,7 @@
 // beats them now and then, and breathes fire when the show says so.
 
 import * as THREE from 'three';
+import { rng } from '../../engine/geo';
 import type { Build } from '../../engine/tile';
 import { checkFlight } from './clearance';
 import { aim, close, fourViews, frames, look, sheet } from './debug';
@@ -19,7 +20,9 @@ import { SHOW } from './show';
 import { Trails } from './trails';
 
 const RAD = Math.PI / 180;
-const UP = new THREE.Vector3(0, 1, 0);
+const UP = new THREE.Vector3(0, 1, 0), Z = new THREE.Vector3(0, 0, 1);
+/** How long one beat of the wings takes, for each of the three: the black one's are the slowest, because he is the largest. */
+const BEAT = [0.74, 0.65, 0.61];
 
 /** A dragon held still, for looking at it: where, which way it heads, and how it is posed. */
 export interface Held {
@@ -55,9 +58,15 @@ interface State {
   bank: number;
   /** The speed its wings are shaped for: it follows its real speed with a little lag. */
   shaped: number;
-  /** A wingbeat of its own, and how long until the next. */
+  /** A wingbeat of its own, how many more follow it at once, how deep they are, and how long until the next. */
   beat: number;
+  more: number;
+  deep: number;
   untilBeat: number;
+  /** How far its body is lifted by its wings just now: up on the downstroke, down on the upstroke. */
+  heave: number;
+  /** How strongly its wing tips draw their ribbons just now. */
+  ribbon: number;
   neckYaw: number;
   neckPitch: number;
   cue: Cue;
@@ -79,7 +88,7 @@ export function buildDragons(k: Build): void {
   const held: (Held | null)[] = [null, null, null];
   const state = dragons.map((_, i): State => ({
     pose: { pos: new THREE.Vector3(), quat: new THREE.Quaternion(), speed: 30, time: 0, neckYaw: 0, neckPitch: 0, arch: 0, right: blankWing(), left: blankWing(), jaw: 0, legs: 0, fin: 0, sit: 0, brace: 0, floor: 0 },
-    right: new THREE.Vector3(1, 0, 0), bank: 0, shaped: 30, beat: 0, untilBeat: 2 + i * 1.9, neckYaw: 0, neckPitch: 0,
+    right: new THREE.Vector3(1, 0, 0), bank: 0, shaped: 30, beat: 0, more: 0, deep: 1, untilBeat: 0.8 + i * 0.9, heave: 0, ribbon: 0, neckYaw: 0, neckPitch: 0,
     cue: { fire: 0, charge: 0, roll: 0, beat: 0, sit: 0 }, vel: new THREE.Vector3(),
   }));
 
@@ -87,15 +96,17 @@ export function buildDragons(k: Build): void {
   let clock = 0, rate = 1;
   const p0 = new THREE.Vector3(), p1 = new THREE.Vector3(), p2 = new THREE.Vector3(), q0 = new THREE.Vector3(), q2 = new THREE.Vector3();
   const vel = new THREE.Vector3(), acc = new THREE.Vector3(), fwd = new THREE.Vector3(), level = new THREE.Vector3(), up = new THREE.Vector3(), right = new THREE.Vector3(), ahead = new THREE.Vector3();
-  const m4 = new THREE.Matrix4(), euler = new THREE.Euler(), perch = new THREE.Quaternion();
+  const m4 = new THREE.Matrix4(), euler = new THREE.Euler(), perch = new THREE.Quaternion(), nod = new THREE.Quaternion();
   const ease = (dt: number, per: number): number => 1 - Math.exp(-dt * per);
+  /** Each dragon's own run of chance, for when it beats its wings. */
+  const chance = dragons.map((_, i) => rng(4711 + i * 97));
 
-  /** Sets a dragon's wings: by its speed, by how far it is through landing, and by where it is in a beat. */
-  const wings = (p: Pose, speed: number, sit: number, beat: number): void => {
+  /** Sets a dragon's wings: by its speed, by how far it is through landing, and by where it is in a beat and how deep the beat is. */
+  const wings = (p: Pose, speed: number, sit: number, beat: number, deep = 1): void => {
     const flying = formAt(speed);
     const form = sit <= 0 ? flying : sit < 0.5 ? blendForm(flying, FLARE, sit * 2) : blendForm(FLARE, FOLDED, (sit - 0.5) * 2);
-    wingPose(form, sit > 0.5 ? 0 : beat, p.right);
-    wingPose(form, sit > 0.5 ? 0 : beat, p.left);
+    wingPose(form, sit > 0.5 ? 0 : beat, p.right, deep);
+    wingPose(form, sit > 0.5 ? 0 : beat, p.left, deep);
   };
 
   /** A dragon held still, to be looked at. */
@@ -191,21 +202,57 @@ export function buildDragons(k: Build): void {
     p.neckPitch = st.neckPitch;
     p.fin = st.bank / 4;
 
-    // its wings: shaped by its speed, with a little lag, and beaten now and then
+    // Its wings: shaped by its speed, with a little lag, and beaten as a great bird beats them. It beats when
+    // it has to work: without a pause while it climbs, two or three beats and then a glide while it cruises,
+    // one shallow flick now and then when it is fast, and not at all when it comes down or dives.
     st.shaped += (speed - st.shaped) * ease(dt, 2.2);
-    let beat = cue.beat;
+    let beat = cue.beat, deep = 1;
     if (beat <= 0) {
-      // a beat of its own: one every few seconds while it cruises, none when it is fast
       if (st.beat > 0) {
-        st.beat += dt / 0.76;
-        if (st.beat >= 1) st.beat = 0;
-      } else if (st.shaped < 36 && cue.sit <= 0) {
+        st.beat += dt / BEAT[i];
+        if (st.beat >= 1) {
+          st.more -= 1;
+          st.beat = st.more > 0 ? 0.0001 : 0;
+        }
+      } else if (cue.sit <= 0 && cue.roll === 0 && vel.y > -7 && st.shaped < 50) {
         st.untilBeat -= dt;
-        if (st.untilBeat <= 0) { st.beat = 0.0001; st.untilBeat = 5 + 3 * ((Math.sin(time * 12.9898 + i * 78.233) * 43758.5453) % 1 + 1) % 1; }
+        if (st.untilBeat <= 0) {
+          const r = chance[i], climbing = vel.y > 5, fast = st.shaped > 36;
+          st.beat = 0.0001;
+          st.more = climbing ? 2 + Math.floor(r() * 2) : fast ? 1 : 1 + Math.floor(r() * 2.6);
+          st.deep = fast && !climbing ? 0.55 : 1;
+          // the two that follow work a little harder to hold their places
+          st.untilBeat = (climbing ? 0.25 + 0.4 * r() : fast ? 2.6 + 1.9 * r() : 1.6 + 1.8 * r()) * (i === 0 ? 1 : 0.85);
+        }
       }
       beat = st.beat;
-    } else st.beat = 0;
-    wings(p, st.shaped, cue.sit, beat);
+      deep = st.deep;
+    } else {
+      st.beat = 0;
+      st.more = 0;
+    }
+    wings(p, st.shaped, cue.sit, beat, deep);
+
+    if (cue.sit <= 0) {
+      // In a turn the wing on the inside is drawn in a little and the one on the outside reaches.
+      const tuck = Math.min(1, Math.abs(st.bank) / (70 * RAD)) * 0.5, inner = st.bank > 0 ? p.right : p.left, outer = st.bank > 0 ? p.left : p.right;
+      inner.sweep += 0.1 * tuck; inner.hand += 0.14 * tuck; inner.fan -= 0.06 * tuck; inner.lift += 0.05 * tuck;
+      outer.hand = Math.max(0.03, outer.hand - 0.05 * tuck); outer.tip += 0.04 * tuck;
+      // And a wing is never quite still in a glide: it gives a little to the air, each wing in its own time.
+      p.right.lift += 0.035 * Math.sin(time * 1.15 + i * 2.1);
+      p.left.lift += 0.035 * Math.sin(time * 1.15 + i * 2.1 + 0.7);
+      p.right.tip += 0.03 * Math.sin(time * 0.8 + i * 1.3);
+      p.left.tip += 0.03 * Math.sin(time * 0.8 + i * 1.3 + 1.1);
+    }
+
+    // Its body rides its wings: lifted through the downstroke and let down through the upstroke, its nose
+    // with it. Its neck gives the other way, so that its head stays steadier than its chest, and its tail
+    // follows a moment later, as it follows every turn.
+    const riding = beat > 0 ? Math.sin(Math.PI * 2 * (beat - 0.12)) * deep * Math.min(1, beat / 0.1, (1 - beat) / 0.12) : 0;
+    st.heave += (riding * (1 - land) - st.heave) * ease(dt, 14);
+    p.pos.addScaledVector(up, st.heave * 0.034 * d.kind.length);
+    p.quat.multiply(nod.setFromAxisAngle(Z, st.heave * 0.045));
+    p.neckPitch -= st.heave * 0.032;
 
     p.jaw = Math.max(cue.fire, cue.charge * 0.45);
     d.pose(p, groundAt);
@@ -230,8 +277,11 @@ export function buildDragons(k: Build): void {
       // a ribbon off each wing tip in a hard turn or at speed, and in the cold air of the North a little more
       const st = state[i];
       const hard = h ? 0 : Math.max(THREE.MathUtils.smoothstep(Math.abs(st.bank) / RAD, 42, 62), THREE.MathUtils.smoothstep(st.shaped, 38, 46)) * (st.pose.pos.z < -40 ? 1.3 : 1) * (st.cue.sit > 0 ? 0 : 1);
-      trails.feed(i * 2, d.tips[0], hard, dt * rate);
-      trails.feed(i * 2 + 1, d.tips[1], hard, dt * rate);
+      // a wing that beats draws no ribbon: the ribbon is what a still wing leaves, and it comes back a moment after the beat
+      const still = (st.cue.beat || st.beat) > 0 ? 0 : hard;
+      st.ribbon += (still - st.ribbon) * (1 - Math.exp(-dt * rate * (still < st.ribbon ? 22 : 3.5)));
+      trails.feed(i * 2, d.tips[0], st.ribbon, dt * rate);
+      trails.feed(i * 2 + 1, d.tips[1], st.ribbon, dt * rate);
       // its eyes show by day and burn at night; its shadow is paler the higher it is, and gone by night
       d.eye.set(d.kind.eye).multiplyScalar(0.6 + 2.2 * night);
       d.shadowMat.opacity = 0.32 * (1 - night) * Math.max(0.3, 1 - state[i].pose.pos.y / 150);
@@ -255,6 +305,10 @@ export function buildDragons(k: Build): void {
       rate(r?: number): number { if (r !== undefined) rate = r; return rate; },
       split(split = true): number { const start = show.force(clock, split); clock = start; return start; },
       where,
+      /** Where each is in a beat of its wings just now: 0 while it glides. */
+      beating: (): number[] => state.map((s) => s.cue.beat || s.beat),
+      /** How fast each flies, how fast it climbs, and how far it is banked, in degrees. */
+      moving: (): number[][] => state.map((s) => [Math.round(s.vel.length() * 10) / 10, Math.round(s.vel.y * 10) / 10, Math.round(s.bank / RAD)]),
       /** Takes the dragons, their fire, their shadows and their ribbons away, or puts them back: for measuring what they cost. */
       off(v = true): void {
         away = v;

@@ -15,8 +15,8 @@ export interface Panel {
   words: string;
   /** What to do before it is taken: stand something still, set a clock. */
   before?: () => void;
-  /** What `wimmel.shot` is asked for. `frames` is how many frames pass first. */
-  o: Record<string, unknown>;
+  /** What `wimmel.shot` is asked for, or something that says so once `before` has been done. `frames` is how many frames pass first. */
+  o: Record<string, unknown> | (() => Record<string, unknown>);
   /** The part of the picture that is kept, as shares of it. */
   part?: [number, number, number, number];
 }
@@ -88,8 +88,9 @@ export async function sheet(name: string, cols: number, panels: Panel[], size: [
   for (let i = 0; i < panels.length; i++) {
     const p = panels[i];
     p.before?.();
-    frames((p.o.frames as number | undefined) ?? 4);
-    await wimmel().shot(big, { hour: 13, w: 2400, h: 1600, steps: 1, ...p.o });
+    const o = typeof p.o === 'function' ? p.o() : p.o;
+    frames((o.frames as number | undefined) ?? 4);
+    await wimmel().shot(big, { hour: 13, w: 2400, h: 1600, steps: 1, ...o });
     const x = (i % cols) * W, y = Math.floor(i / cols) * (H + BAR);
     await cut(ctx, big, p.part ?? [0.25, 0.25, 0.5, 0.5], x, y, W, H);
     ctx.fillStyle = '#e9dcc0';

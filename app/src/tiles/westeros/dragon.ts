@@ -590,6 +590,8 @@ export class Dragon {
       this.remembered(p.time, lag * (j + 1) * (1 - p.sit), q1);
       // the last few joints swing with the fin, into the turn
       if (j >= TAIL - 4) q1.multiply(turn(p.fin * ((j - (TAIL - 5)) / 4), 0, q2));
+      // and the whole tail sways as it flies: a slow wave that runs down it and grows towards its tip, each dragon's in its own time
+      if (p.sit < 1) q1.multiply(turn((1 - p.sit) * (0.012 + 0.011 * j) * Math.sin(p.time * 1.9 - j * 0.6 + L), 0, q2));
       // laid out behind it when it sits: down to the ground, then along it, curling to one side
       if (p.sit > 0) q1.slerp(this.q3.copy(this.qYaw).multiply(turn(CURL[j], LAY[j] * lay, q2)), p.sit);
       this.tail[j].at.copy(at);
@@ -843,13 +845,14 @@ export const blendForm = blend;
  * A wing's form as the angles of its bones. `beat` is where it is in a
  * wingbeat: 0 when it glides, and from 0 to 1 through one beat, a quick
  * downstroke with the wing spread and then a slower upstroke with the hand
- * half folded.
+ * half folded. `amount` is how deep the beat is: 1 is a full beat, and less
+ * is the shallow flick of a wing that stays swept at speed.
  */
-export function wingPose(f: WingForm, beat: number, out: WingPose): WingPose {
+export function wingPose(f: WingForm, beat: number, out: WingPose, amount = 1): WingPose {
   let { sweep, span, lift, fan, tip } = f;
   if (beat > 0) {
     // how far it is raised through the beat: up before the downstroke, down at 0.4, and up again
-    const up = 34 * RAD, down = -26 * RAD;
+    const up = lift + (34 * RAD - lift) * amount, down = lift + (-26 * RAD - lift) * amount;
     const ease = (t: number): number => t * t * (3 - 2 * t);
     let raise: number, folded: number;
     if (beat < 0.4) { raise = up + (down - up) * ease(beat / 0.4); folded = 0; }
@@ -857,10 +860,10 @@ export function wingPose(f: WingForm, beat: number, out: WingPose): WingPose {
     // it comes in from the glide and goes back out to it at the two ends of the beat
     const into = Math.min(1, beat / 0.08, (1 - beat) / 0.1);
     lift += (raise - lift) * into * (beat < 0.4 ? 1 : 0.85);
-    span *= 1 - 0.3 * folded;
-    fan *= 1 - 0.28 * folded;
-    tip += (-16 * RAD * folded + (beat < 0.4 ? 8 * RAD : 0)) * into;
-    sweep += 10 * RAD * folded;
+    span *= 1 - 0.3 * folded * amount;
+    fan *= 1 - 0.28 * folded * amount;
+    tip += (-16 * RAD * folded + (beat < 0.4 ? 8 * RAD : 0)) * into * amount;
+    sweep += 10 * RAD * folded * amount;
   }
   // the hand's sweep is whatever brings the tip in to the span that is asked for
   const reach = (span * HALF_SPAN - SHOULDER[2] - ARM * Math.cos(sweep) * Math.cos(lift)) / (FINGERS[0] * Math.cos(lift + tip));
