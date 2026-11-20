@@ -112,20 +112,22 @@ export interface DomeOpts {
   finial?: number | false;
   /** Stretches it upwards. */
   tall?: number;
+  /** How brightly it glows at night: a gilded dome, or one that is floodlit. */
+  lit?: number;
 }
 
 /** A dome of radius `r` that stands on (x, y, z). Returns the height of its top, without the finial. */
 export function dome(b: GeoBuilder, x: number, y: number, z: number, r: number, color: number, o: DomeOpts = {}): number {
-  const prof = PROFILES[o.kind ?? 'onion'], sides = o.sides ?? 12, tall = o.tall ?? 1;
+  const prof = PROFILES[o.kind ?? 'onion'], sides = o.sides ?? 12, tall = o.tall ?? 1, q = o.lit ? { win: interior(o.lit) } : {};
   for (let i = 0; i + 1 < prof.length; i++) {
     const [r0, h0] = prof[i], [r1, h1] = prof[i + 1];
     const y0 = y + h0 * r * tall, y1 = y + h1 * r * tall;
-    if (o.stripe === undefined) { b.cyl(x, z, y0, y1, r0 * r, r1 * r, sides, color, { cap: false }); continue; }
+    if (o.stripe === undefined) { b.cyl(x, z, y0, y1, r0 * r, r1 * r, sides, color, { cap: false, ...q }); continue; }
     for (let s = 0; s < sides; s++) {
       const a0 = ((s + 0.5) / sides) * Math.PI * 2, a1 = ((s + 1.5) / sides) * Math.PI * 2, am = (a0 + a1) / 2;
       const slope = ((r0 - r1) * r) / Math.max(1e-6, y1 - y0), nl = Math.hypot(1, slope);
       const p = (a: number, rr: number, yy: number): V3 => [x + Math.cos(a) * rr * r, yy, z + Math.sin(a) * rr * r];
-      b.quad(p(a0, r0, y0), p(a1, r0, y0), p(a1, r1, y1), p(a0, r1, y1), [Math.cos(am) / nl, slope / nl, Math.sin(am) / nl], s % 2 ? o.stripe : color);
+      b.quad(p(a0, r0, y0), p(a1, r0, y0), p(a1, r1, y1), p(a0, r1, y1), [Math.cos(am) / nl, slope / nl, Math.sin(am) / nl], s % 2 ? o.stripe : color, q);
     }
   }
   const top = y + prof[prof.length - 1][1] * r * tall;
@@ -149,7 +151,12 @@ export function chhatri(b: GeoBuilder, x: number, y: number, z: number, half: nu
   }
   // the eave, and the low drum the dome sits on
   b.cyl(x, z, y + post, y + post + 0.18, reach + 0.32, reach + 0.32, n === 4 ? 4 : 8, stone, { faces: 'NESWTB' });
-  b.cyl(x, z, y + post - 0.001, y + post, reach + 0.32, reach + 0.32, n === 4 ? 4 : 8, stone, { cap: false });
+  // (the eave's underside, which is looked up at from low down)
+  const es = n === 4 ? 4 : 8, eave = (i: number): V3 => {
+    const a = Math.PI / es + (i / es) * Math.PI * 2;
+    return [x + Math.cos(a) * (reach + 0.32), y + post, z + Math.sin(a) * (reach + 0.32)];
+  };
+  for (let i = 1; i + 1 < es; i++) tri(b, eave(0), eave(i), eave(i + 1), [0, -1, 0], stone);
   b.cyl(x, z, y + post + 0.18, y + post + 0.4, half * 0.92, half * 0.92, 8, stone, { cap: false });
   dome(b, x, y + post + 0.4, z, half * 0.9, cap, { kind: o.kind ?? 'onion', sides: 8, finial: half * 0.55 });
 }
@@ -179,9 +186,14 @@ export function minaret(b: GeoBuilder, x: number, z: number, y0: number, y1: num
         b.quad(p(a0, at(f0), ya), p(a1, at(f0), ya), p(a1, at(f1), yb), p(a0, at(f1), yb), [Math.cos(am), 0, Math.sin(am)], s % 2 ? o.stripe : color);
       }
     }
-    // the balcony at its head: a ring that stands out, on a swelling of the shaft
+    // the balcony at its head: a ring that stands out, on a swelling of the shaft, with the strip of its underside that shows
     b.cyl(x, z, yb - 0.45, yb, at(f1), at(f1) + 0.45, sides, color, { cap: false });
     b.cyl(x, z, yb, yb + 0.32, at(f1) + 0.5, at(f1) + 0.5, sides, o.stripe ?? color, { cap: o.stripe ?? color });
+    for (let s = 0; s < sides; s++) {
+      const a0 = Math.PI / sides + (s / sides) * Math.PI * 2, a1 = Math.PI / sides + ((s + 1) / sides) * Math.PI * 2;
+      const p = (a: number, rr: number): V3 => [x + Math.cos(a) * rr, yb, z + Math.sin(a) * rr];
+      b.quad(p(a0, at(f1) + 0.45), p(a1, at(f1) + 0.45), p(a1, at(f1) + 0.5), p(a0, at(f1) + 0.5), [0, -1, 0], color);
+    }
   }
   chhatri(b, x, y0 + shaft + 0.32, z, top * 0.95, r * 1.1, color, o.cap ?? MARBLE, { sides: 8 });
 }
@@ -227,14 +239,17 @@ export function drum(b: GeoBuilder, x: number, z: number, y0: number, y1: number
   }
 }
 
-/** India's flag on a mast `staff` high that stands at height `y`: saffron above, white with the navy wheel, green below. It flies towards the east. */
-export function tiranga(b: GeoBuilder, x: number, z: number, y: number, staff: number, fl = 3, fh = 2): void {
-  const SAFFRON = 0xff9933, WHITE = 0xffffff, GREEN = 0x138808, NAVY = 0x000080;
+/**
+ * India's flag on a mast `staff` high that stands at height `y`: saffron above, white with the navy wheel, green below.
+ * It flies towards the east. `lit` is how brightly it glows at night, for a flag that is floodlit.
+ */
+export function tiranga(b: GeoBuilder, x: number, z: number, y: number, staff: number, fl = 3, fh = 2, lit = 0): void {
+  const SAFFRON = 0xff9933, WHITE = 0xffffff, GREEN = 0x138808, NAVY = 0x000080, q = lit ? { win: interior(lit) } : {};
   b.cyl(x, z, y, y + staff, Math.max(0.1, staff * 0.012), Math.max(0.06, staff * 0.007), 6, 0xd4d6da, { cap: false });
   const fy = y + staff - fh - 0.15, band = fh / 3, x0 = x + 0.12;
   for (const side of [-1, 1]) {
     const zz = z + side * 0.025;
-    [GREEN, WHITE, SAFFRON].forEach((color, i) => b.quad([x0, fy + i * band, zz], [x0 + fl, fy + i * band, zz], [x0 + fl, fy + (i + 1) * band, zz], [x0, fy + (i + 1) * band, zz], [0, 0, side], color));
+    [GREEN, WHITE, SAFFRON].forEach((color, i) => b.quad([x0, fy + i * band, zz], [x0 + fl, fy + i * band, zz], [x0 + fl, fy + (i + 1) * band, zz], [x0, fy + (i + 1) * band, zz], [0, 0, side], color, q));
     // the wheel: a ring and its twenty-four spokes
     const cx = x0 + fl / 2, cy = fy + fh / 2, r = band * 0.42, zw = z + side * 0.04;
     for (let i = 0; i < 24; i++) {

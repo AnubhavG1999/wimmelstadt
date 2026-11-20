@@ -186,13 +186,43 @@ On the blockout, 19 November 2026, and again as the tile grew:
 - **The kites fly to the south of their roofs**, towards the side the tile is looked at from, so that each is seen against the roofs and not against the sky beyond the board. Their strings run back to the flyers on the roofs. Nothing in the kite quarter is a festival's: no date is named.
 - **The kebab lane's stalls face south**, to the road, and nothing stands south of them. In life the lane is hemmed in on both sides.
 - **The cycle rickshaws on Chandni Chowk go round it in a loop**, up one side and back down the other. The street has been closed to motor traffic by day since 2021, and here it is closed at night as well.
+- **The wedding is on a lawn in the Ridge**, south of Raisina Hill, where the big hotels' lawns are in life. It first stood by Aurobindo Marg, hard against the gate of Safdarjung's Tomb, which is no place for it.
+- **The park south of the AIIMS flyover is a quiet one**, with a class at its exercises on mats: it lies beside the Lotus Temple's garden. Gully cricket is played in R. K. Puram's colony park.
 - **Left out for care**, as the research note's section 8 says: the Taj Mahal, the new Parliament and the Central Vista's new blocks, the old Parliament, the mosque at the Qutub Minar's foot, Rajghat, Nizamuddin's shrine, and any parade.
+
+**Old Delhi**, in `old-delhi.ts`:
+
+- The Lahori Gate is 5 from the north end of the fort's west wall and not in its middle: that is where Chandni Chowk meets the wall.
+- The fort's river front is a terrace 6.4 high with the marble halls on it, so that the lawns inside stay in view. In life the fort's whole ground is at that level.
+- The Diwan-i-Am and the drum house stand west of the Rang Mahal, off the Lahori Gate's axis. The Hira Mahal is left out, and so are the small turrets on Jama Masjid's hall.
+- The row of faiths is five equal plots in the order the street has them from the fort: Lal Mandir, Gauri Shankar, the Baptist church, Sis Ganj, Sunehri Masjid. Wikipedia's page on Chandni Chowk and Delhi Heritage Walks' route both give that order. Which side of the street each stands on was not found: all five stand on its south side, with their fronts to it.
+- Not confirmed by any source found: the colours of the Gauri Shankar temple and of the church, Kashmere Gate's detail, and that the Delhi Gate's two elephants face each other.
+- Bharat Mandapam hides the Delhi Gate's barbican from the opening view. The gate, its towers and both elephants are seen.
+
+**The centre**, in `centre.ts`:
+
+- Connaught Place is one ring of six blocks, which stands for both circles. Palika Bazaar's mound is in the park in the middle; in life it has a park of its own to the south.
+- Jantar Mantar: the Samrat Yantra's slope is about 40 degrees, not 28.6. The Ram Yantra's two drums are on the west side, not at the south end. The Jai Prakash bowls stand above the ground.
+- Agrasen ki Baoli is turned a quarter, so that the mosque beside the way in comes to the west end. Its deep end faces west, away from the opening view: from there the steps, the top two tiers of the north wall, the mosque and the well are seen.
+- Bangla Sahib: the arcade is on the tank's north side only, and is a wall of arches and not an open verandah. In life it runs round three sides. The pennant on the Nishan Sahib is plain.
+- **Bangla Sahib stands in the shadow of Raisina Hill.** From the opening view North Block hides the tank's middle and its south walk. The hall, the dome, the mast and the arcade on the north are seen, and all of it is seen from the north and the west. Only moving its lot would show the rest, and there is no ground for it between the road to Karol Bagh and the hill.
+- The statue of Hanuman: the way in, a monster's open mouth in life, is a plain arch, and the chest that opens is not shown. The statue is turned to face the opening view. Which way the real one faces was not confirmed, and of its look the sources found confirm only the saffron colour, the arms at the chest and a decorated crown.
+
+**The south**, in `south.ts`:
+
+- Humayun's Tomb is about twice as tall for its width as in life. Its plinth is 1.5 times the body's width, not twice. The garden has twelve plots, not thirty-six, and only the west gate.
+- Safdarjung's Tomb: the south pavilion and the mosque beside the gate are left out, and the east channel is short.
+- Lodhi Garden: the mosque stands against the Bara Gumbad's east side (north-west of it in life) and still faces east. The guest hall is left out. The Sheesh Gumbad is south-east of the Bara Gumbad; in life it is 75 m north.
+- The Lotus Temple is about 1.4 times as tall for its width as in life. The three leaves of each of its nine sides stand on one line from the middle, after an encyclopaedia's "the petals rise in threes from nine arches": no drawing was found. The outline of the pools is the builder's own.
+- The Qutub Minar: the Alai Darwaza is due east of the tower, so that it does not cover the tower's foot; in life it is south-east. The Iron Pillar stands on the lawn. Twelve flutes to a storey, not twenty-four.
+- Khan Market's car park holds the hero's bay and a scooter, and no other car: none fits beside the bay.
+- The Metro's viaduct hides the south half of the Lodhi strip and Dilli Haat's court from the opening view. Both are seen from the other sides.
 
 ## Real names on signs, and the Hindi on them
 
 Each is checked as it is written, and entered here with what confirmed it. A shop's board says what is sold and not whose shop it is, in Hindi above and English below. All checks were made by web searches on 19 November 2026.
 
-**Hindi words for trades**, on the shop boards in `signs.ts` and on the boards of Old Delhi's street life in `bazaar.ts`:
+**Hindi words for trades**, on the shop boards in `signs.ts`, on the boards of Old Delhi's street life in `bazaar.ts` and on the parts market's at Kashmere Gate in `old-delhi.ts`:
 
 | On the board | Meaning | What confirmed the spelling |
 | --- | --- | --- |
@@ -203,7 +233,8 @@ Each is checked as it is written, and entered here with what confirmed it. A sho
 | जलेबी | jalebi | the same list of sweets |
 | पंचर | puncture repair | two listings of puncture shops under that word: पंचर बनाने की दुकान, पंचर दुकान (explurger.com) |
 | टायर | tyres | the title of Hindi Wikipedia's page on the tyre, टायर |
-| ऑटो पार्ट्स | auto parts | the usual spelling of the loan words. Not confirmed by a source read in full: to be looked at again before the tile is final. |
+| ऑटो पार्ट्स | auto parts | Hindi Wikipedia's pages on the TVS group, on Kongu Nadu and on cargo, which all write the two loan words so |
+| बैटरी | batteries | Hindi Wikipedia's page on the electric cell, विद्युत कोष, which writes लेड-एसिड बैटरी. The board has the singular, as a shop's board does. |
 | पतंग | kites | the title of Hindi Wikipedia's page on the kite, पतंग |
 | परांठे | parathas | a piece in Patrika on the lane, which it writes परांठे वाली गली |
 | लस्सी | lassi | the title of Hindi Wikipedia's page on the drink, लस्सी |
@@ -228,7 +259,18 @@ Each is checked as it is written, and entered here with what confirmed it. A sho
 | सर एम. विश्वेश्वरैया मोती बाग, SIR M. VISHWESHWARAIAH MOTI BAGH | Wikipedia's page for the station: an elevated station of the Pink Line with side platforms, opened on 6 August 2018. The Hindi is the title of Hindi Wikipedia's page for it. The name is as the operator lists it: no picture of the station's own board was found, and sources spell the engineer's name in more than one way. |
 | मयूर विहार-I, MAYUR VIHAR-I | Wikipedia's page for the station: an elevated station of the Pink Line with side platforms, opened on 31 December 2018. The Hindi is as a Metro route finder's Hindi pages write it. |
 
-**Still to be entered**: every real name the other quarters' files hang, as each file is taken in.
+**A bazaar and a bakery**, the two real names of places that trade:
+
+| On the board | Where | What confirmed it |
+| --- | --- | --- |
+| दिल्ली हाट, DILLI HAAT | both faces of the bazaar's gate, in `south.ts` | Delhi Tourism's own page for Dilli Haat INA, a fair held there in January 2026, and the tourism corporation's auction of its stalls for July to September 2026. The Hindi is the title of Hindi Wikipedia's page for it. |
+| WENGER'S | the inner front of Connaught Place's west block, in `centre.ts`: plain dark lettering on cream | Outlook Traveller Eats, 14 August 2026, "Wenger's: 100 years of Delhi's original sweet spot", which places the bakery in Block A of the Inner Circle, trading under the family's third generation |
+
+**Boards in English only.** Connaught Place's shops and hoardings say what is sold and not whose shop it is, in English, as most of its boards do: OPTICIANS, JEWELLERS, CAFE, TAILORS, CHEMIST, TRAVEL AGENTS, EMPORIUM, COFFEE, CAMERAS, HANDLOOMS, STATIONERS, SPORTS GOODS, LUGGAGE; SHOES, BOOKS, SAREES, WATCHES, SUITINGS SHIRTINGS, ICE CREAM; MARKET over Palika's doorway. Karol Bagh: CAR ACCESSORIES, ALLOY WHEELS, SEAT COVERS, CAR AUDIO, LED LIGHTS. Khan Market: BOOKS, CAFE, KEBABS, FLOWERS. Dilli Haat's stalls: POTTERY, RUGS, MOMOS. Sarojini Nagar: SHOES, BAGS, JEANS. None is anybody's name.
+
+No place of worship carries a board, and neither does a tomb or a memorial.
+
+**Still to be entered**: the real names the river's and the south-west's files hang, as each is taken in.
 
 ## Since `main` was merged
 

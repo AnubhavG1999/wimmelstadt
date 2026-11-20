@@ -14,7 +14,7 @@ import { CONCRETE, clearOfStreets, lampsAlong, roadDeck, street } from '../../en
 import type { SignDef } from '../../engine/signs';
 import type { Build, HeroSpot, ParkedSpot, TileDef, TileParts } from '../../engine/tile';
 import {
-  AXIS_Z, BUDDH, CHANDNI, CP, CP_R, EAST_BANK, GROUNDS, HEX_LANES, PLOTS, RAISINA, RING, STOREY, THINGS, WATERS, WEST_BANK, hexCorner,
+  AXIS_Z, BUDDH, CHANDNI, CP, CP_R, EAST_BANK, GROUNDS, HERO_PLACES, HEX_LANES, PLOTS, RAISINA, RING, STOREY, THINGS, WATERS, WEST_BANK, hexCorner,
   type Quarter, type Thing,
 } from './plan';
 import { AXIS } from './axis';
@@ -301,7 +301,8 @@ function build(k: Build): TileParts {
         if (keep(x, z)) k.tree(x, z, 0.6 + rand() * 0.4);
       }
     };
-    wood(46, -103, 32, -62, 49);
+    // (east of x -80.5 the wood gives way to a lawn, where the wedding is)
+    wood(64, -103, 32, -62, 49, (x) => x < -80.5);
     wood(34, -103, -112, -86, -78);
   }
 
@@ -319,13 +320,7 @@ function build(k: Build): TileParts {
   // Places for heroes
   // -------------------------------------------------------------------------
 
-  const heroSpots: HeroSpot[] = [
-    { id: 'auto-expo', x: 41, y: 0.03, z: -30, heading: 0.5, turn: 0.35 },
-    { id: 'vintage-rally', x: 47, y: 0.03, z: 31, heading: 0.4 },
-    { id: 'karol-bagh', x: -80, y: 0.03, z: -47.2, heading: 0 },
-    { id: 'khan-market', x: 21.5, y: 0.03, z: 38.5, heading: 0 },
-    { id: 'dhaba', x: 8, y: 0.03, z: 85, heading: 0.3 },
-  ];
+  const heroSpots: HeroSpot[] = HERO_PLACES.map((h) => ({ ...h }));
   const parked: ParkedSpot[] = [];
 
   // (the Buddh circuit's ground, until it is built)

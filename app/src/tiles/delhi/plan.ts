@@ -201,7 +201,8 @@ export const GROUNDS: Record<string, [number, number, number, number]> = {
   'bharat-mandapam': [30, -48, 51, -24],
   'vintage-rally': [43, 24, 51, 38],
   'humayuns-tomb': [45, 87, 68, 112],
-  'lodhi-garden': [7.5, 42, 28, 50],
+  // (it begins at x 9: further west its corner lay on Aurobindo Marg's sidewalk)
+  'lodhi-garden': [9, 42, 28, 50],
   'khan-market': [15, 33, 27, 41],
   'safdarjungs-tomb': [-30, 22.5, -12, 40.5],
   dps: [-102, 70, -70, 92.5],
@@ -222,6 +223,27 @@ export const WATERS: Record<string, { at: [number, number, number, number]; wet:
   'bangla-sahib': { at: [-80, -28.5, -71.5, -20.5], wet: true },
   akshardham: { at: [90, 4, 103.6, 24], wet: true },
   'agrasen-ki-baoli': { at: [5, -28.2, 15, -23.8], wet: false },
+};
+
+// ---------------------------------------------------------------------------
+// Places for heroes
+// ---------------------------------------------------------------------------
+
+/** Where a hero stands on show. Each is open to the south-east. `heading` is in radians, 0 facing east; `turn` is for a turntable. */
+export interface HeroPlace { id: string; x: number; y: number; z: number; heading: number; turn?: number }
+
+export const HERO_PLACES: HeroPlace[] = [
+  { id: 'auto-expo', x: 41, y: 0.03, z: -30, heading: 0.5, turn: 0.35 },
+  { id: 'vintage-rally', x: 47, y: 0.03, z: 31, heading: 0.4 },
+  { id: 'karol-bagh', x: -80, y: 0.03, z: -47.2, heading: 0 },
+  { id: 'khan-market', x: 21.5, y: 0.03, z: 38.5, heading: 0 },
+  { id: 'dhaba', x: 8, y: 0.03, z: 85, heading: 0.3 },
+];
+
+export const heroPlace = (id: string): HeroPlace => {
+  const h = HERO_PLACES.find((q) => q.id === id);
+  if (!h) throw new Error(`There is no place for a hero called ${id} in Delhi's plan.`);
+  return h;
 };
 
 // ---------------------------------------------------------------------------
@@ -265,6 +287,7 @@ export const PLOTS: Plot[] = [
   lot('centre', 'bazaar', -92, -72, 12, 10, 2, 'S'),
   lot('centre', 'bazaar', -78, -72, 10, 10, 3, 'S'),
   // between Connaught Place and the hexagon
-  lot('centre', 'lutyens', 18, -30, 9, 8, 2),
+  // (one storey, and three east of where it first stood: it hid Agrasen ki Baoli's well end)
+  lot('centre', 'lutyens', 21, -30, 9, 8, 1),
   // (nothing is built north-east of the hexagon: a house there stood between the Auto Expo's turntable and the opening view)
 ];

@@ -115,10 +115,16 @@ export function gantry(k: Build, id: string, x: number, z: number, nx: number, n
 // The scenes this file stages
 // ---------------------------------------------------------------------------
 
-/** A wedding on the lawn by Aurobindo Marg: a tent of red and white, and the groom's procession arriving, with its band and its lamps. */
+/**
+ * A wedding on a lawn in the Ridge, south of Raisina Hill, where the big hotels' lawns are in life: a tent of red and
+ * white, and the groom's procession arriving, with its band and its lamps. It first stood by Aurobindo Marg, hard
+ * against the gate of Safdarjung's Tomb, which is no place for it.
+ */
 function wedding(k: Build, places: Places): void {
-  const b = k.b, x0 = -11, z0 = 24, x1 = -4.5, z1 = 33;
-  places.take(x0 - 1, z0 - 1, 0.5, 44);
+  // (it stands at the lawn's east end: further west, the Metro's station hides it from the opening view)
+  const b = k.b, x0 = -72, z0 = 31.5, x1 = -65.5, z1 = 40.5;
+  area(k, rect(-79.5, 30.3, -63.6, 50.8), 0x86b85c);
+  places.take(-79.5, 30, -63.6, 51);
   // the tent: poles, a roof in stripes, and strings of light along its eaves
   for (const [x, z] of [[x0, z0], [x1, z0], [x1, z1], [x0, z1]]) b.box(x - 0.1, 0, z - 0.1, x + 0.1, 3.4, z + 0.1, 0xf2efe6);
   for (let i = 0; i < 6; i++) {
@@ -138,7 +144,7 @@ function wedding(k: Build, places: Places): void {
     b.box(mid + dx - 0.3, 0.9, z0 + 0.75, mid + dx + 0.3, 1.9, z0 + 0.9, CARPET, { top: 0xd9b24a });
   }
   figure(b, mid - 0.6, z0 + 1.6, 0.45, { coat: 0xc8202c, legs: 0xc8202c, hat: 0xd9b24a, hatH: 0.08 });
-  b.box(mid - 0.7, 0, z0 + 2.1, mid + 0.7, 0.06, z1 + 4.2, CARPET);
+  b.box(mid - 0.7, 0, z0 + 2.1, mid + 0.7, 0.06, z1 + 2.4, CARPET);
   for (let row = 0; row < 3; row++) {
     const z = z0 + 3.6 + row * 1.35;
     for (const dx of [-2.6, -1.85, 1.85, 2.6]) {
@@ -152,10 +158,11 @@ function wedding(k: Build, places: Places): void {
   figure(b, x0 + 1.5, z1 - 1.3, 0, { coat: 0xf4f1e8, legs: 0x26262a, hat: 0xf4f1e8, hatH: 0.3 });
   // marigolds: strings of them hanging from the front eave, and a gate of them where the carpet begins
   for (let x = x0 + 0.2, i = 0; x < x1; x += 0.42, i++) b.box(x - 0.07, 2.5 + (i % 3) * 0.25, z1 - 0.07, x + 0.07, 3.4, z1 + 0.07, MARIGOLD[i % 3]);
-  for (const dx of [-1.25, 1.25]) b.box(mid + dx - 0.14, 0, z1 + 4.0, mid + dx + 0.14, 2.9, z1 + 4.28, MARIGOLD[0]);
-  b.box(mid - 1.5, 2.9, z1 + 3.96, mid + 1.5, 3.3, z1 + 4.32, MARIGOLD[1], { faces: 'NESWTB' });
+  for (const dx of [-1.25, 1.25]) b.box(mid + dx - 0.14, 0, z1 + 2.2, mid + dx + 0.14, 2.9, z1 + 2.48, MARIGOLD[0]);
+  b.box(mid - 1.5, 2.9, z1 + 2.16, mid + 1.5, 3.3, z1 + 2.52, MARIGOLD[1], { faces: 'NESWTB' });
   // the baraat: the groom on a white mare, the band in red and gold before him, lamps carried either side
-  const gx = -8, gz = 39.5;
+  // (close before the gate: any further south and the Metro's viaduct hides them from the opening view)
+  const gx = mid - 0.25, gz = z1 + 4.7;
   b.box(gx - 1.1, 0.9, gz - 0.35, gx + 1.1, 1.75, gz + 0.35, 0xf4f1e8, { faces: 'NESWTB' });
   b.box(gx + 1.0, 1.5, gz - 0.25, gx + 1.6, 2.4, gz + 0.25, 0xf4f1e8);
   for (const [dx, dz] of [[-0.9, -0.25], [-0.9, 0.25], [0.9, -0.25], [0.9, 0.25]]) b.box(gx + dx - 0.1, 0, gz + dz - 0.1, gx + dx + 0.1, 0.9, gz + dz + 0.1, 0xf4f1e8);
@@ -163,7 +170,7 @@ function wedding(k: Build, places: Places): void {
   figure(b, gx, gz, 1.85, { coat: 0xf2e6c8, legs: 0xf2e6c8, hat: 0xd9b24a, hatH: 0.42 });
   for (let i = 0; i < 6; i++) figure(b, gx + 2.6 + (i % 3) * 1.1, gz - 0.7 + Math.floor(i / 3) * 1.4, 0, { coat: 0xc8202c, legs: 0xf4f1e8, hat: 0xd9b24a, hatH: 0.3 });
   for (let i = 0; i < 4; i++) {
-    const lx = gx - 1.5 + i * 1.9, lz = gz + (i % 2 ? 1.9 : -1.9);
+    const lx = gx - 1.5 + i * 1.9, lz = gz + (i % 2 ? 1.7 : -1.7);
     figure(b, lx, lz, 0, { coat: 0x4a4f58, legs: 0x3a3d46, hat: 0x2a211c, hatH: 0.1 });
     b.box(lx - 0.22, 2.4, lz - 0.22, lx + 0.22, 2.95, lz + 0.22, 0xfff3c4);
     k.glows.push({ x: lx, y: 3.05, z: lz, sx: 0.4, sy: 0.5, sz: 0.4, color: '#ffe9a8' });
@@ -172,36 +179,34 @@ function wedding(k: Build, places: Places): void {
 }
 
 /**
- * Gully cricket on the open ground south of the AIIMS flyover, between the
- * dhaba and the Ring Road's swing to the south: a worn pitch, two sets of
- * stumps, and a match in everyday clothes.
+ * A neighbourhood park on the open ground south of the AIIMS flyover, between
+ * the dhaba and the Ring Road's swing to the south. It lies beside the Lotus
+ * Temple's garden, which is a place of silence, so it is a quiet one: old
+ * trees, benches, and a class at its exercises on their mats. (Gully cricket
+ * was played here at first. That game is in R. K. Puram's colony park.)
  */
-function cricket(k: Build, places: Places): void {
-  const b = k.b, GRASS = 0x9db56c, PITCH = 0xd6c69c, WILLOW = 0xd8b67a;
+function park(k: Build, places: Places): void {
+  const b = k.b, GRASS = 0x8fbf63, MATS = [0x7a4fa3, 0x2a6fb0, 0xd8432b, 0x2f8f6f, 0xf08a24, 0xd9a25f], COATS = [0xf4f1e8, 0xe9dcc4, 0xf2c14e, 0x9fd0c8];
   area(k, [[13.5, 68], [24.3, 68], [37.6, 81.3], [13.5, 81.3]], GRASS);
   places.take(13, 67.5, 38, 81.8);
-  const z = 75.2, x0 = 18.6, x1 = 26.2; // the pitch runs east and west
-  area(k, rect(x0, z - 0.75, x1, z + 0.75), PITCH, 0.035);
-  for (const x of [x0 + 0.5, x1 - 0.5]) for (const dz of [-0.22, 0, 0.22]) b.box(x - 0.04, 0, z + dz - 0.04, x + 0.04, 0.95, z + dz + 0.04, WILLOW);
-  const player = (x: number, zz: number, coat: number, legs = 0x3a4a6a): void => figure(b, x, zz, 0, { coat, legs, hat: 0x2a211c, hatH: 0.1 });
-  const bat = (x: number, zz: number): void => b.box(x - 0.07, 0.15, zz - 0.16, x + 0.07, 1.2, zz + 0.16, WILLOW);
-  // the batsman at the east end with the keeper behind him, the bowler running in, the other batsman backing up, and the umpire
-  player(x1 - 1.3, z + 0.1, 0xd8432b);
-  bat(x1 - 1.85, z + 0.5);
-  player(x1 + 0.9, z, 0x2a6fb0);
-  player(x0 + 1.9, z - 0.3, 0xf2c14e);
-  player(x0 + 0.3, z + 1.3, 0x4fa36b);
-  bat(x0 + 0.8, z + 1.7);
-  figure(b, x0 - 0.9, z, 0, { coat: 0xf4f1e8, legs: 0x26262a, hat: 0xf4f1e8, hatH: 0.22, hatR: 0.42 });
-  // the ball in the air, half way down the pitch
-  b.box((x0 + x1) / 2 - 0.09, 1.5, z - 0.09, (x0 + x1) / 2 + 0.09, 1.68, z + 0.09, 0xb3202a, { faces: 'NESWTB' });
-  // the field
-  const field: [number, number, number][] = [[16, 70.5, 0x7a4fa3], [22.5, 70, 0xe9dcc4], [15.8, 79.5, 0xf08a24], [24, 79.6, 0xe9dcc4], [30, 77.5, 0x2f8f6f], [31.5, 79.8, 0xd9d2c2], [27.5, 72.6, 0xc8202c]];
-  for (const [fx, fz, coat] of field) player(fx, fz, coat);
-  // whoever has stopped to watch, along the side by the dhaba, and two trees to sit under
-  for (const zz of [69.6, 71.2, 73.4, 77.6, 79]) k.person(14.2, zz);
-  k.tree(14.6, 80.6, 0.62);
-  k.tree(34.6, 80.4, 0.55);
+  // the class: two rows of four on their mats, and the teacher before them
+  for (let i = 0; i < 8; i++) {
+    const x = 18.4 + (i % 4) * 2.1, z = 73.4 + Math.floor(i / 4) * 3;
+    area(k, rect(x - 0.45, z - 1, x + 0.45, z + 1), MATS[i % MATS.length], 0.035);
+    figure(b, x, z, 0, { coat: COATS[i % COATS.length], legs: 0x3a4a6a, hat: 0x2a211c, hatH: 0.1 });
+  }
+  area(k, rect(27.2, 73.9, 28.1, 75.9), 0xf4f1e8, 0.035);
+  figure(b, 27.65, 74.9, 0, { coat: 0xf4f1e8, legs: 0xf4f1e8, hat: 0x2a211c, hatH: 0.1 });
+  // benches along the west side, with someone on the walk before each, and old trees round the edge
+  for (const z of [70, 74.2, 78.4]) {
+    b.box(14.1, 0.38, z - 0.8, 14.6, 0.5, z + 0.8, 0x9a6b3f, { faces: 'NESWTB' });
+    b.box(14.0, 0.5, z - 0.8, 14.12, 1.05, z + 0.8, 0x9a6b3f);
+    for (const dz of [-0.65, 0.65]) b.box(14.15, 0, z + dz - 0.06, 14.55, 0.38, z + dz + 0.06, 0x3a3d46);
+    k.person(15.6, z + 0.5);
+  }
+  for (const [x, z, size] of [[15, 80.4, 0.66], [34.6, 80.3, 0.58], [21.5, 69.3, 0.6], [29.5, 79.6, 0.55], [16.4, 68.9, 0.5], [25.5, 80.2, 0.5]]) k.tree(x, z, size);
+  k.person(31.6, 77.2);
+  k.person(23.2, 79);
 }
 
 /** White Ambassadors on Raisina Hill, and monkeys on its parapet. */
@@ -232,7 +237,9 @@ export function life(k: Build, heroes: HeroSpot[]): ParkedSpot[] {
 
   wedding(k, places);
   raisina(k);
-  cricket(k, places);
+  park(k, places);
+  // (a thing that is ground is not kept clear by its height: the baoli is kept clear by name)
+  places.take(4, -30.5, 16, -23);
 
   // --- Kartavya Path: families on the lawns, ice-cream carts and a balloon seller on the walks ---
   const lawns = THINGS.find((t) => t.id === 'kartavya-path')!;
