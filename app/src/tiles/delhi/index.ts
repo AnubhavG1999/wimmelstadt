@@ -8,20 +8,28 @@
 import { ordinaryBuildings, type BuildingRules, type Lot } from '../../engine/buildings';
 import { checkRoads, type Solid } from '../../engine/checks';
 import { LAWN, area, band, flat, ground, oval, rect, terrace, walls, water } from '../../engine/ground';
-import { lane, sample, toSegs, type Piece } from '../../engine/lines';
+import { lane, toSegs, type Piece } from '../../engine/lines';
 import { buildPath, type Path } from '../../engine/paths';
 import { CONCRETE, clearOfStreets, lampsAlong, roadDeck, street } from '../../engine/roads';
 import type { SignDef } from '../../engine/signs';
 import type { Build, HeroSpot, ParkedSpot, TileDef, TileParts } from '../../engine/tile';
 import {
-  AXIS_Z, AUROBINDO_X, BUDDH, CHANDNI, CP, CP_R, EAST_BANK, GROUNDS, HEX_LANES, PLOTS, RAISINA, RING, SHANTI_X, STOREY, THINGS, WEST_BANK, hexCorner,
+  AXIS_Z, BUDDH, CHANDNI, CP, CP_R, EAST_BANK, GROUNDS, HEX_LANES, PLOTS, RAISINA, RING, STOREY, THINGS, WATERS, WEST_BANK, hexCorner,
   type Quarter, type Thing,
 } from './plan';
 import { AXIS } from './axis';
-import { FLYOVERS, METRO_LINE, RAISINA_HUMP, RING_LANES, RING_PARTS, ROUTES, STREETS } from './roads';
+import * as bazaar from './bazaar';
+import * as centre from './centre';
+import * as east from './east';
+import * as metro from './metro';
+import * as oldDelhi from './old-delhi';
+import * as south from './south';
+import * as southWest from './south-west';
+import { FLYOVERS, RAISINA_HUMP, RING_LANES, RING_PARTS, ROUTES, STREETS } from './roads';
 
 /** The models that are built, by the id of the thing in the plan. A thing without one is a plain box with its name. */
-const MODELS: Record<string, (k: Build, t: Thing) => void> = { ...AXIS };
+const QUARTERS = [oldDelhi, bazaar, centre, east, south, southWest, metro];
+const MODELS: Record<string, (k: Build, t: Thing) => void> = Object.assign({ ...AXIS }, ...QUARTERS.map((q) => q.MODELS));
 
 const PAVING = 0xb9ae9c, QUAY = 0x9c9482, WATER = 0x6f8468, PLAZA = 0xd9cdb4, SANDSTONE = 0xb5553c, BUFF = 0xdcc096, VERGE = 0x6f9a52, KERB = 0xcfc7b6;
 const BOX: Record<Quarter, number> = { 'old-delhi': 0xc98a6b, centre: 0xe6dcc6, south: 0xcdd3c2, river: 0xd9c8b0 };
@@ -41,7 +49,7 @@ const SHOPS: SignDef[] = [
 /** A board for each thing that is still a plain box, with its name on it. */
 const BOARDS: SignDef[] = THINGS.map((t) => ({ id: `board-${t.id}`, lines: [t.name], color: '#fbf6e6', ink: '#2a1d14', aspect: Math.max(2.6, t.name.length * 0.6), kind: 'board' }));
 
-const SIGNS: SignDef[] = [...SHOPS, ...BOARDS];
+const SIGNS: SignDef[] = [...SHOPS, ...BOARDS, ...QUARTERS.flatMap((q) => q.SIGNS)];
 
 /** A plot with the quarter it stands in. */
 type Sited = Lot & { quarter: Quarter };
@@ -63,6 +71,10 @@ const RULES: BuildingRules<Sited> = {
 
 const pathOf = (pieces: Piece[]): Path => buildPath(toSegs(pieces), false);
 
+/** The grounds that are lawn, and the ones that are paved. The rest are left to whoever builds the thing. */
+const GARDENS = ['humayuns-tomb', 'lodhi-garden', 'safdarjungs-tomb', 'hauz-khas', 'qutub-minar', 'lotus-temple', 'rk-puram'];
+const PAVED = ['jama-masjid', 'bharat-mandapam', 'vintage-rally', 'khan-market', 'karol-bagh', 'dhaba', 'national-stadium'];
+
 function build(k: Build): TileParts {
   const b = k.b;
   const DEV = import.meta.env.DEV;
@@ -72,8 +84,10 @@ function build(k: Build): TileParts {
   // -------------------------------------------------------------------------
 
   const river = rect(WEST_BANK, k.board.z0 + 0.2, EAST_BANK, k.board.z1 - 0.2);
-  ground(k, { color: PAVING, holes: [river] });
+  const tanks = Object.values(WATERS);
+  ground(k, { color: PAVING, holes: [river, ...tanks.map((w) => rect(...w.at))] });
   water(k, river, { drop: 1.4, color: WATER, quay: QUAY });
+  for (const w of tanks) if (w.wet) water(k, rect(...w.at), { color: 0x6f9a8c, quay: 0xb5ab98 });
 
   // Raisina Hill: one level, with Rashtrapati Bhavan and the two Blocks on it
   terrace(k, rect(k.board.x0 + 0.2, RAISINA.z0, RAISINA.x1, RAISINA.z1), 0, RAISINA.y, { top: PLAZA, side: SANDSTONE });
@@ -88,8 +102,8 @@ function build(k: Build): TileParts {
   area(k, [0, 1, 2, 3, 4, 5].map((i) => hexCorner(i, HEX_LANES[0] - 4.5)), LAWN);
   // the gardens and forecourts that things stand in
   for (const [id, [x0, z0, x1, z1]] of Object.entries(GROUNDS)) {
-    const paved = id === 'jama-masjid' || id === 'bharat-mandapam' || id === 'vintage-rally' || id === 'khan-market';
-    area(k, rect(x0, z0, x1, z1), paved ? PLAZA : LAWN);
+    if (GARDENS.includes(id)) area(k, rect(x0, z0, x1, z1), LAWN);
+    else if (PAVED.includes(id)) area(k, rect(x0, z0, x1, z1), PLAZA);
   }
   // Chandni Chowk, paved in red sandstone
   area(k, rect(CHANDNI.x0, CHANDNI.z - CHANDNI.half, CHANDNI.x1, CHANDNI.z + CHANDNI.half), 0xb9705a);
@@ -147,28 +161,6 @@ function build(k: Build): TileParts {
   lampsAlong(k, bankPath, 7.6);
 
   // -------------------------------------------------------------------------
-  // The Metro's viaduct: a trough of concrete on single piers
-  // -------------------------------------------------------------------------
-
-  {
-    const pts = sample(METRO_LINE, 2);
-    const onRoad = (x: number, z: number): boolean =>
-      // the two streets under the flyovers, and the Ring Road's corner, where its lanes swing north under the viaduct
-      (z < RING.z + 12 && (Math.abs(x - SHANTI_X) < 8.5 || Math.abs(x - AUROBINDO_X) < 8.5)) || (x > 46 && x < 68) || (x > WEST_BANK + 1 && x < EAST_BANK - 1 && Math.abs(x - 79) > 2);
-    for (let i = 0; i + 1 < pts.length; i++) {
-      const [x0, y, z0] = pts[i], [x1, , z1] = pts[i + 1];
-      const yaw = Math.atan2(z1 - z0, x1 - x0), cx = (x0 + x1) / 2, cz = (z0 + z1) / 2, half = Math.hypot(x1 - x0, z1 - z0) / 2 + 0.03;
-      b.obox(cx, y - 0.55, cz, half, 0.45, 3.3, yaw, CONCRETE, { faces: 'B' });
-      for (const side of [-1, 1]) b.obox(cx - Math.sin(yaw) * 3.1 * side, y + 0.35, cz + Math.cos(yaw) * 3.1 * side, half, 0.45, 0.2, yaw, CONCRETE);
-      if (i % 6 === 3 && !onRoad(cx, cz)) {
-        const foot = cx > WEST_BANK && cx < EAST_BANK ? -2.4 : 0;
-        b.cyl(cx, cz, foot, y - 1.8, 0.75, 0.75, 8, CONCRETE, { cap: false });
-        b.obox(cx, y - 1.4, cz, 0.9, 0.4, 2.2, yaw, CONCRETE, { faces: 'B' });
-      }
-    }
-  }
-
-  // -------------------------------------------------------------------------
   // Ordinary buildings
   // -------------------------------------------------------------------------
 
@@ -216,8 +208,21 @@ function build(k: Build): TileParts {
   for (const t of THINGS) {
     if (t.h > 0 && t.id !== 'connaught-place' && (t.y ?? 0) <= RAISINA.y) clearOfStreets(k, t.name, t.x, t.z, t.x + t.w, t.z + t.d);
     const model = MODELS[t.id];
-    if (model) model(k, t);
-    else boxed(t);
+    if (!model) boxed(t);
+    else {
+      try {
+        model(k, t);
+      } catch (e) {
+        console.error(`delhi: the model of ${t.id} failed`, e);
+      }
+    }
+  }
+  for (const q of QUARTERS) {
+    try {
+      q.extras(k);
+    } catch (e) {
+      console.error("delhi: a quarter's extras failed", e);
+    }
   }
 
   // -------------------------------------------------------------------------
@@ -245,7 +250,7 @@ function build(k: Build): TileParts {
   if (DEV) {
     const solids: Solid[] = THINGS.filter((t) => t.h > 0 && (t.y ?? 0) <= RAISINA.y && t.id !== 'connaught-place' && t.id !== 'signature-bridge').map((t) => ({ id: t.id, x0: t.x, z0: t.z, x1: t.x + t.w, z1: t.z + t.d, y0: t.y ?? 0, y1: (t.y ?? 0) + t.h }));
     for (const p of PLOTS) solids.push({ id: `a plot at ${p.x}, ${p.z}`, x0: p.x, z0: p.z, x1: p.x + p.w, z1: p.z + p.d, y0: 0, y1: p.h });
-    checkRoads('delhi', ROUTES, { metro: sample(METRO_LINE, 1) }, solids);
+    checkRoads('delhi', ROUTES, Object.assign({}, ...QUARTERS.map((q) => q.RAILS)), solids);
   }
 
   // -------------------------------------------------------------------------

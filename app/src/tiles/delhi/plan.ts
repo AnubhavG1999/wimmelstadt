@@ -136,12 +136,12 @@ export const THINGS: Thing[] = [
   T(1, 'red-fort', 'RED FORT', 'old-delhi', 31, -100, 19, 38, 9),
   T(2, 'jama-masjid', 'JAMA MASJID', 'old-delhi', -10, -84, 22, 24, 18),
   T(3, 'chandni-chowk', 'CHANDNI CHOWK', 'old-delhi', CHANDNI.x0, CHANDNI.z - CHANDNI.half, CHANDNI.x1 - CHANDNI.x0, CHANDNI.half * 2, 0),
-  T(4, 'faiths', 'ROW OF FAITHS', 'old-delhi', -14, -90, 24, 6, 10),
+  T(4, 'faiths', 'ROW OF FAITHS', 'old-delhi', -26, -90, 36, 6, 10),
   T(5, 'fatehpuri', 'FATEHPURI MASJID', 'old-delhi', -62, -101, 10, 12, 12),
   T(6, 'paranthe-gali', 'PARANTHE WALI GALI', 'old-delhi', -40, -90, 12, 8, 7),
   T(7, 'khari-baoli', 'KHARI BAOLI', 'old-delhi', -84, -100, 20, 12, 8),
   T(8, 'kites', 'KITES AND PIGEONS', 'old-delhi', -48, -80, 34, 10, 0),
-  T(9, 'kebab-lane', 'KEBAB LANE', 'old-delhi', -10, -59, 22, 6, 6),
+  T(9, 'kebab-lane', 'KEBAB LANE', 'old-delhi', -10, -59, 22, 6, 4),
   T(10, 'kashmere-gate', 'KASHMERE GATE', 'old-delhi', -2, -112.5, 12, 11, 9),
   T(11, 'signature-bridge', 'SIGNATURE BRIDGE', 'river', 83, -109, 4, 18, 46),
   T(12, 'ghats', 'GHATS', 'river', 67.5, -50, 2.5, 60, 0),
@@ -189,6 +189,11 @@ export const thing = (id: string): Thing => {
 
 /** The ground a thing is given beyond its own walls: a garden, a forecourt, a tank. Nothing built by anyone else stands on it. */
 export const GROUNDS: Record<string, [number, number, number, number]> = {
+  'red-fort': [27, -101, 51.5, -51],
+  'karol-bagh': [-102, -60, -74, -45.5],
+  'national-stadium': [29, 39, 51, 50],
+  dhaba: [6, 68.5, 12.5, 93],
+  buddh: [89, 80, 104, 112.5],
   'jama-masjid': [-10, -84, 12, -60],
   'bangla-sahib': [-88, -30, -70, -19],
   'bharat-mandapam': [30, -48, 51, -24],
@@ -203,6 +208,18 @@ export const GROUNDS: Record<string, [number, number, number, number]> = {
   'qutub-minar': [-44, 95, -12, 113],
   'lotus-temple': [13, 82, 43, 112],
   akshardham: [89, 0, 104, 36],
+};
+
+/**
+ * Tanks and pools that are cut into the ground: [x0, z0, x1, z1]. The tile cuts the hole and, for a wet one, lays the
+ * water, 0.9 below the ground. Whoever builds the thing builds its walls and steps. The baoli is dry, and its hole goes
+ * down to the floor of the base, 2.4 below the ground.
+ */
+export const WATERS: Record<string, { at: [number, number, number, number]; wet: boolean }> = {
+  'hauz-khas': { at: [-33, 81, -13, 93], wet: true },
+  'bangla-sahib': { at: [-80, -28.5, -71.5, -20.5], wet: true },
+  akshardham: { at: [90, 4, 103.6, 24], wet: true },
+  'agrasen-ki-baoli': { at: [5, -28.2, 15, -23.8], wet: false },
 };
 
 // ---------------------------------------------------------------------------
@@ -226,7 +243,6 @@ export const PLOTS: Plot[] = [
   lot('old-delhi', 'bazaar', -6, -112, 3.5, 12, 2, 'S'),
   // its south side, low, so that the street is seen
   lot('old-delhi', 'bazaar', -50, -90, 9, 6, 2, 'N'),
-  lot('old-delhi', 'bazaar', -27, -90, 12, 6, 1, 'N'),
   // godowns behind Khari Baoli
   lot('old-delhi', 'haveli', -84, -112, 9, 10, 2),
   lot('old-delhi', 'haveli', -73, -112, 9, 10, 3),
@@ -249,13 +265,4 @@ export const PLOTS: Plot[] = [
   lot('centre', 'bazaar', -78, -72, 10, 10, 3, 'S'),
   // between Connaught Place and the hexagon
   lot('centre', 'lutyens', 18, -30, 9, 8, 2),
-  // the National Stadium's stand
-  lot('south', 'lutyens', 30, 40, 11, 9, 2),
-  // R. K. Puram's flats, north of the colony park
-  lot('south', 'colony', -70, 70, 8.5, 8, 2),
-  // Hauz Khas Village, behind the madrasa
-  lot('south', 'village', -44, 68.5, 5, 7, 4, 'S'),
-  lot('south', 'village', -38.5, 68.5, 5, 7, 3, 'S'),
-  // the dhaba on Aurobindo Marg
-  lot('south', 'shed', 6, 70, 6.5, 9, 1.5, 'S'),
 ];
