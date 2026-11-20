@@ -2,7 +2,7 @@
 
 What a later reader cannot see in the code.
 
-**Where it stands.** The plan was put to the collector on 19 November 2026. He answered the same day, and this is the plan with what he asked for worked in. The tile is blocked out: its ground, its streets, the railway's embankment with its two viaducts, its routes and its places for heroes are built, and every lot is a plain box with its name on a board until its model is built. Built so far: the Illini Union, Gregory Place with Basil Thai and Manolo's, the Six Pack, the blocks between Fourth Street and Wright Street, both rows of the Main Quad with Foellinger Auditorium, the stadium with the saucer, the engineering campus, the screen on the stadium's board, and what moves on a line of its own: the train, a tractor and an aeroplane. The rest of the lots are being built a file at a time (see "The models"). The research is in [docs/districts/research/uiuc.md](../../../../docs/districts/research/uiuc.md). Where this file and that note disagree, this file is the later: see "What the research note has wrong".
+**Where it stands.** The plan was put to the collector on 19 November 2026. He answered the same day, and this is the plan with what he asked for worked in. The tile is blocked out: its ground, its streets, the railway's embankment with its two viaducts, its routes and its places for heroes are built, and every lot is a plain box with its name on a board until its model is built. Built so far: the Illini Union, Gregory Place with Basil Thai and Manolo's, the Six Pack, the blocks between Fourth Street and Wright Street, both rows of the Main Quad with Foellinger Auditorium, the stadium with the saucer, the engineering campus, Green Street's south side, the screen on the stadium's board, the scenes on the ground, and what moves on a line of its own: the train, a tractor and an aeroplane. The rest of the lots are being built a file at a time (see "The models"). The research is in [docs/districts/research/uiuc.md](../../../../docs/districts/research/uiuc.md). Where this file and that note disagree, this file is the later: see "What the research note has wrong".
 
 ## Where things are
 
@@ -83,7 +83,26 @@ Not checked against a picture: what Wassaja Hall looks like (its brick, its stor
 - *The laboratories south of Green Street.* Two storeys of red brick with four ridges of skylight and loading doors at the back.
 - *Boneyard Creek*, from the line of Wright Street east to the Siebel Center: two courses of stone on each bank, three arched footbridges, walks, benches, and the bronze man who sits on a bench with a laptop in front of Grainger.
 
+**Green Street's south side** (`campustown.ts`, built by an Opus builder and looked at from four sides by day and by night). The fronts on this side face north, so the opening view sees their backs first: every back has its doors, stairs, bins and roof units, and each real name is hung twice, once on the front and once where the opening view can read it.
+
+- *The Red Lion.* One tall storey of deep red-brown brick with RED LION in red neon on its front and again on its east wall, over its beer garden: a board fence with a gate onto Green Street, four picnic tables, two parasols, four strings of lamps from the bar's wall to three posts, and about twenty people.
+- *The two rows of shops.* A stone ground floor and one storey of flats over each shop, each in its own brick. West of 309 Green: TACOS, BUBBLE TEA and BARBER. By Wright Street: CRACKED, SHAWARMA and MIA ZA'S, with CRACKED again on a board over the roof and MIA ZA'S again on the east wall.
+- *309 Green.* A foot of brick with COFFEE, the lobby and BIKES, and over it a mass of red-brown brick to 24 and one of buff to 26, in storeys of 1.0, with balconies on the east face, a pool behind a glass rail on the roof, a corner of blue glass and a mast with a red lamp at 29.
+- *The Tower at Third.* A lobby of bronze glass, nineteen floors of cream concrete with fins, a blank stair core up the west face, and a glazed top floor that is lit at night, where the hotel's restaurant was.
+- *A bar and grill*, with no name: BAR & GRILL in neon on its front, and BAR & GRILL and SPORTS on boards on its roof.
+- *Joe's Brewery.* Two storeys of old brick with a stepped front and a corbelled cornice, JOE'S BREWERY painted large on its east wall and on a board on its roof, and a beer garden under a pergola on its east side.
+
+Not confirmed by any source found: what 309 Green, the Tower at Third, the Red Lion and Joe's Brewery look like (a pool on 309 Green's roof is in its listings, and the Tower at Third was a hotel of 1972 with 21 floors and a restaurant on top), and that Joe's has a beer garden.
+
 **The screen** (`scenes.ts`). An ordinary sign of the kind `screen` on both faces of the board over the stadium's south end, with the picture described under "The screen" as its own `paint`. Nobody stands on the top row of the south end under it: their heads would be in the board.
+
+**The scenes on the ground** (`scenes.ts`).
+
+- *The corn.* The field south of Florida Avenue, inside the track the tractor drives round it. Its west two thirds stand, in rows that run north and south, green with gold on top. Its east third is stubble, and a red combine works north along the edge of what stands.
+- *The tailgate.* Lot E-14 has a row of five bays inside its aisle. The first and the last hold parked vehicles and the second and the fourth are the heroes'. In the middle one stands an orange tent with a table, a grill, two coolers, four chairs and five people, and south of it a game of bags thrown at two boards. Everything is inside the middle bay, so that it hides neither hero.
+- *The bus stops.* Wright Street is paved in brick where the buses slow, with a shelter on each side of it: west of the street on the open ground between the building site and the bookstore, and east of it before Henry Administration's end wall. Each has a roof on four posts, a back of glass, a bench, five people, and a board that says BUS.
+- *The grove and its cemetery.* The cemetery is a hedge round a lawn, a gate with two stone posts on its north side, a path in from the gate and one across, and rows of plain stones of slightly different heights. Nothing is lettered and nobody is in it. Outside it a walk runs the length of the grove, with three benches and a few people out walking.
+- The saucer's east car park has lines for the two rows of cars that stand there.
 
 **What moves** (`moving.ts`).
 
@@ -393,7 +412,7 @@ The near lane is the one on the camera's side of the buildings that hide it: the
 
 ## Real names on signs
 
-On signs so far: ENGINEERING HALL, GRAINGER ENGINEERING LIBRARY, THOMAS M. SIEBEL CENTER FOR COMPUTER SCIENCE, EVERITT LABORATORY and TALBOT LABORATORY, each on its building; CHAMPAIGN-URBANA, the name of the railway's station, on the platform; ALTGELD HALL, HENRY ADMINISTRATION BUILDING, ENGLISH BUILDING, LINCOLN HALL and GREGORY HALL, each over its door on the Quad; FOELLINGER AUDITORIUM, HARKER HALL, NATURAL HISTORY BUILDING, NOYES LABORATORY, DAVENPORT HALL, SMITH MEMORIAL HALL (the university's full name for it is Tina Weedon Smith Memorial Hall) and ASTRONOMICAL OBSERVATORY, each where the opening view can read it; GIES MEMORIAL STADIUM (so named on 9 September 2025) on the stadium's south wall, and ILLINOIS FIELD on its grandstand; ARMORY, ICE ARENA, SHERMAN HALL, ILLINI TOWER and ILLINI UNION BOOKSTORE, each on its building (Illini Tower is a private hall: its own leasing pages and the university's list of certified housing have it under that name for 2026 to 2027), and a P on the parking deck; the names of the Six Pack's seven halls and of the Ikenberry Dining Center, each over its door, as the research note gives them; ILLINI UNION, on both fronts of the Union; BASIL THAI, with "at Urbana" under it, on its awning; and MANOLO'S, with PIZZA & EMPANADAS under it, on its board and on its awning. The rest are the names the plan would use, each as plain lettering on a plain board, with what the research found on 19 November 2026. Each is checked again as its sign is written.
+On signs so far: RED LION and JOE'S BREWERY, each twice; CRACKED and MIA ZA'S, each twice; 309 GREEN and THE TOWER AT THIRD, each over its door and high on its east face; ENGINEERING HALL, GRAINGER ENGINEERING LIBRARY, THOMAS M. SIEBEL CENTER FOR COMPUTER SCIENCE, EVERITT LABORATORY and TALBOT LABORATORY, each on its building; CHAMPAIGN-URBANA, the name of the railway's station, on the platform; ALTGELD HALL, HENRY ADMINISTRATION BUILDING, ENGLISH BUILDING, LINCOLN HALL and GREGORY HALL, each over its door on the Quad; FOELLINGER AUDITORIUM, HARKER HALL, NATURAL HISTORY BUILDING, NOYES LABORATORY, DAVENPORT HALL, SMITH MEMORIAL HALL (the university's full name for it is Tina Weedon Smith Memorial Hall) and ASTRONOMICAL OBSERVATORY, each where the opening view can read it; GIES MEMORIAL STADIUM (so named on 9 September 2025) on the stadium's south wall, and ILLINOIS FIELD on its grandstand; ARMORY, ICE ARENA, SHERMAN HALL, ILLINI TOWER and ILLINI UNION BOOKSTORE, each on its building (Illini Tower is a private hall: its own leasing pages and the university's list of certified housing have it under that name for 2026 to 2027), and a P on the parking deck; the names of the Six Pack's seven halls and of the Ikenberry Dining Center, each over its door, as the research note gives them; ILLINI UNION, on both fronts of the Union; BASIL THAI, with "at Urbana" under it, on its awning; and MANOLO'S, with PIZZA & EMPANADAS under it, on its board and on its awning. The rest are the names the plan would use, each as plain lettering on a plain board, with what the research found on 19 November 2026. Each is checked again as its sign is written.
 
 | Name | Where | What confirmed it |
 | --- | --- | --- |
@@ -401,13 +420,19 @@ On signs so far: ENGINEERING HALL, GRAINGER ENGINEERING LIBRARY, THOMAS M. SIEBE
 | Basil Thai | 701 S. Gregory Street, Urbana | OpenStreetMap, checked on site 26 May 2026; reviews into autumn 2026. Its awning is white and reads BASIL THAI, with "at Urbana" under it, as the collector describes it. |
 | Manolo's | 1115 W. Oregon Street, Urbana | Its last day was 20 October 2026 (Smile Politely; the Daily Illini, 16 November 2026). It is on the tile because the collector asked for it by name. |
 | KAMS | 102 E. Green Street | The Daily Illini's Best of CU, 5 March 2026 |
+| Cracked | 619 E. Green Street | the Experience C-U map of July 2026 has "Cracked: The Egg Came First" there. On the tile. |
+| Mia Za's | 629 E. Green Street | the same map, and a sale listing for 629 E. Green that names it as the tenant. On the tile. |
+| 309 Green | 309 E. Green Street | its owner's current listing of the building under that name. On the tile. |
+| The Tower at Third | Third Street | current listings of student housing under that name. On the tile. |
 | Legends | 522 E. Green Street | The Daily Illini, 5 December 2025; OpenStreetMap, March 2026 |
 | Murphy's Pub | 604 E. Green Street | The Daily Illini's Best of CU, 5 March 2026 |
 | The Red Lion | 211 E. Green Street | The Daily Illini's Best of CU, 5 March 2026 |
 | Joe's Brewery | 706 S. Fifth Street | The Daily Illini, 5 December 2025; OpenStreetMap, August 2026 |
 | Illini Union Bookstore | 809 S. Wright Street | its own site, with hours for 2026 |
 
-Open in 2026 and free to use on Green Street's shops, each to be checked as its sign is written: Chopstix (202 E. Green), Sakanaya (403 E. Green), Bangkok Thai (410 E. Green), Cracked (619 E. Green) and Mia Za's (629 E. Green).
+Open in 2026 and free to use on Green Street's shops, each to be checked as its sign is written: Chopstix (202 E. Green) and Bangkok Thai (410 E. Green).
+
+Not used: Brothers, which the research had at 613 E. Green Street. Listings and the Experience C-U map of July 2026 have it at 601 S. First Street, so the bar on its lot here has no name. And Sakanaya (403 E. Green), which one listing marks as closed for good and nothing from 2026 confirms as open.
 
 Not to be used, because they have closed: the Canopy Club (May 2026), Timpone's (December 2025), Firehaus, The Clybourne, the old Kam's on Daniel Street, and the Maize hut at First and Green, which was pulled down in July 2024.
 

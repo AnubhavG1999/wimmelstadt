@@ -185,7 +185,8 @@ L('flats-2', 'flats', -64, -13, -50, -3, 10, 'flats');
 L('flats-3', 'flats', -47, -26, -40, -6, 9, 'flats');
 
 // --- Fourth to Wright ---
-L('brothers', 'Brothers', -26, -75, -16, -68, 6.5, 'bar');
+// (the bar that stood here in the research has moved to First Street, so this one has no name)
+L('bar-grill', 'a bar and grill', -26, -75, -16, -68, 6.5, 'bar');
 L('shops-s2', 'shops', -14, -75, -5, -68, 6.5, 'shop');
 L('joes', "Joe's Brewery", -26, -66, -17, -58, 7);
 // (two floors of steel are up: the crane over them is too slender to hide anything)
