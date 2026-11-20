@@ -1,6 +1,6 @@
 # Delhi for the tile
 
-This note gathers what is needed to build Delhi as one tile. It builds on [delhi.md](delhi.md) (the catalogue) and [delhi-hauz-khas.md](delhi-hauz-khas.md) (Hauz Khas), and on the seven models in `prototype/island/models/delhi-models.ts`: Hauz Khas, the Qutub Minar, India Gate, the Lotus Temple, the Red Fort, Rashtrapati Bhavan and Connaught Place. It does not repeat them. Read on 2026-11-19.
+This note gathers what is needed to build Delhi as one tile. It builds on [delhi.md](delhi.md) (the catalogue) and [delhi-hauz-khas.md](delhi-hauz-khas.md) (Hauz Khas), and on the seven models that were then in `prototype/island/models/delhi-models.ts`, now in the repository's history: Hauz Khas, the Qutub Minar, India Gate, the Lotus Temple, the Red Fort, Rashtrapati Bhavan and Connaught Place. It does not repeat them. Read on 2026-11-19.
 
 How sure each statement is:
 
@@ -111,7 +111,7 @@ The catalogue and the island had Old Delhi's big three (the Red Fort, Jama Masji
 
 ## 3. Forty-eight things for the tile
 
-Heights at the city's scale of 3.2 m to a unit are given in the "units" column of section 4. Marked **[named]** are the four the collector named. "Model exists" means a model is in `delhi-models.ts`, in `prototype/island/models`.
+Heights at the city's scale of 3.2 m to a unit are given in the "units" column of section 4. Marked **[named]** are the four the collector named. "Model exists" means a model was in `delhi-models.ts`, in `prototype/island/models`, now in the repository's history; Delhi has models of its own of all seven.
 
 ### A. Old Delhi (north)
 
