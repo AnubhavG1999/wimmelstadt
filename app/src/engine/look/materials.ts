@@ -211,7 +211,10 @@ export function makeCityMaterial(look: TileLook): THREE.MeshToonMaterial {
           bool curtain = kind > 0.5 && kind < 1.5;
           if (curtain) { lo = vec2(0.06, 0.08); hi = vec2(0.94, 0.92); }
           if (kind > 3.5 && kind < 4.5) { lo = vec2(0.3, 0.3); hi = vec2(0.7, 0.72); }
-          if (kind > 5.5) { lo = vec2(0.3, 0.02); hi = vec2(0.7, 0.98); } // tall slits: a pinstripe facade
+          if (kind > 5.5 && kind < 6.5) { lo = vec2(0.3, 0.02); hi = vec2(0.7, 0.98); } // tall slits: a pinstripe facade
+          // a castle's arrow loops: narrow, and dark by day, for nothing in them catches the sky
+          bool loopSlit = kind > 6.5 && kind < 7.5;
+          if (loopSlit) { lo = vec2(0.44, 0.3); hi = vec2(0.56, 0.66); }
           bool shop = kind > 1.5 && kind < 3.5 && vWall.y < vWin.y;
           if (shop) { lo = vec2(0.07, 0.14); hi = vec2(0.93, 0.78); }
 
@@ -220,6 +223,7 @@ export function makeCityMaterial(look: TileLook): THREE.MeshToonMaterial {
 
           vec3 glass = mix(vec3(0.05, 0.08, 0.13), uSkyTint, 0.28 + 0.3 * r2);
           if (curtain) glass = mix(vec3(0.07, 0.13, 0.2), uSkyTint, 0.5 + 0.25 * r2);
+          if (loopSlit) glass = vec3(0.055, 0.05, 0.045);
           diffuseColor.rgb = mix(diffuseColor.rgb, glass, win);
 
           if (shop) {
@@ -235,8 +239,9 @@ export function makeCityMaterial(look: TileLook): THREE.MeshToonMaterial {
             float lit = step(1.0 - litProb, r1);
             float pickc = hash21(id * 0.71 + seed * 5.0);
             vec3 wcol = mix(vec3(1.0, 0.58, 0.24), vec3(1.0, 0.8, 0.5), r2);
-            if (pickc > 0.76) wcol = vec3(0.42, 0.78, 1.0);
-            if (pickc > 0.94) wcol = vec3(1.0, 0.32, 0.68);
+            // a loop is lit by a torch or a fire, never by a cool lamp
+            if (pickc > 0.76 && !loopSlit) wcol = vec3(0.42, 0.78, 1.0);
+            if (pickc > 0.94 && !loopSlit) wcol = vec3(1.0, 0.32, 0.68);
             wmEmis = wcol * win * lit * uNight * (0.5 + 0.9 * r2);
           }
         } else if (kind > 4.5 && kind < 5.5) {
