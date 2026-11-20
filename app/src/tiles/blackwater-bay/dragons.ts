@@ -92,8 +92,8 @@ const WAYS: Record<Key, { leave?: number; arrive: number; approach?: number; cli
   caraxes: { arrive: 90, approach: 14 },
   // she comes down onto High Tide from the north, over Driftmark, and turns to face the river's mouth
   meleys: { arrive: 90 },
-  // the largest off a ledge holds her wings in longest, to be clear of the caves below the summit before she opens them
-  meraxes: { arrive: 280, approach: 20, cliff: true, hold: 2.6 },
+  // on the summit, above every ledge, she springs up and opens her wings at once, and comes down onto it with them open
+  meraxes: { arrive: 280, approach: 20 },
   // he comes down from due south and turns round on his ledge with his tail out over the east flank, away from
   // Silverwing's ledge beside him to the west
   vermithor: { arrive: 270, cliff: true, round: -1 },
