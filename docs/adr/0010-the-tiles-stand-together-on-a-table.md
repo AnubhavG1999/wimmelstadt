@@ -1,5 +1,7 @@
 # The tiles stand together on a table
 
+Qualified by [0012](0012-the-board-holds-nine-tiles-at-a-time.md): the board holds nine tiles at a time, dealt onto it by chance at every load, and no longer every tile in the order they were built.
+
 [0009](0009-a-city-of-hand-built-tiles.md) left open how the tiles sit together. They stand edge to edge on one table, each on its own base with its name on a brass plate, in rows, in the order they were built, and that table is the board. No road joins two tiles, and no vehicle leaves its tile. We chose this because the base and the edge are what make a tile look like a model, because a tile that knows nothing of its neighbours can be built by itself and arrive complete, and because it is the picture the collector had: "the game of thrones intro or a catan board with the mini ecosystems in each tile", where square tiles show plainly where one place ends and the next begins.
 
 ## Considered Options

@@ -8,7 +8,9 @@ The pictures of each tile are in the [README at the top](../README.md).
 
 ## The board and its tiles
 
-Every tile stands on a base of its own, with its name on a brass plate on each side, and the bases stand edge to edge on one table. The tiles are put on it in rows of three, and shuffled anew each time the page loads, so that whoever opens the board finds them somewhere new. `?order=fixed` puts them in the order they were built.
+Every tile stands on a base of its own, with its name on a brass plate on each side, and the bases stand edge to edge on one table. The board has nine places, in three rows of three, and holds nine tiles at a time however many are built: see [0012](../docs/adr/0012-the-board-holds-nine-tiles-at-a-time.md). Each time the page loads, nine tiles are dealt onto it by chance, each to a place of chance, and any that are left out wait in the box. `?order=fixed` puts the first nine on it in the order they were built.
+
+**The picker.** The key with nine squares opens it. It shows the table from above, with a postcard of a tile on each of its nine places, and beside the table the box with the tiles that are not on the board. Drag a tile onto another and the two change places, or touch one and then the other. A tile from the box takes the place of the one it is put on, which goes into the box, so the board is always full. Shuffle deals afresh. Nothing happens to the city until Done, and then the page loads again with the board as it was set. Keep this board has the device open with that board every time, in place of a deal, until it is let go again. The picker is `src/ui/picker.ts`, and what a device keeps is in `src/tiles/index.ts`.
 
 | Tile | Things to find | What it is | Its notes |
 | --- | --- | --- | --- |
@@ -98,6 +100,7 @@ Then open http://localhost:5187.
 | Set the weather | Touch a token. The sky is clear when the page opens. The same token again gives the weather to the city, which then changes it by itself. |
 | Ride along with a hero | The key with the car on it, or F. |
 | Watch a day go by in 80 seconds | The key with two arrows, or T. |
+| Choose which tiles are on the board, and where | The key with nine squares, which opens the picker. |
 | Change the depth of field, turn the view by itself, see how it performs, unlock the heroes | The key with three dots. |
 
 The view stays wherever it is left. It may roam over the whole desk, not only the board, but it stays inside the room: it cannot be drawn back, turned or tilted far enough to show what is beyond the walls. The plate at the top left names the tile under it, or the city when the whole board is in view.
@@ -107,7 +110,8 @@ The address bar takes options:
 | Option | What it does |
 | --- | --- |
 | `?tiles=japan,hong-kong` | puts only those tiles on the board, in that order. A tile named twice stands there twice, and `sample` is the sample tile, which is hidden otherwise. |
-| `?order=fixed` | puts the tiles in the order they were built, in place of a new shuffle at every load. |
+| `?order=fixed` | puts the first nine tiles on the board in the order they were built, in place of a deal by chance or of a board the device keeps. |
+| `?motion=0` | keeps the picker's postcards from flying from place to place, and `?motion=1` lets them fly on a device that was asked for less motion. Without it the device decides. |
 | `?hour=21.5` | sets the hour. |
 | `?weather=rain` | sets the weather the page opens with: `clear`, `cloudy`, `rain`, `storm`, `fog` or `snow`, or `auto` for the city's own. Without it the sky is clear. |
 | `?drift=0` | stops the view turning by itself. |
@@ -124,12 +128,12 @@ The address bar takes options:
 | Folder | What it holds |
 | --- | --- |
 | `src/engine` | Everything a tile is built with and everything that runs it: the builder for shapes, ground, roads, rails, buildings, signs, traffic and heroes, the look, the camera, and the board and its table. It knows no tile. |
-| `src/tiles/<id>` | One tile: its plan as data, its landmarks, and its notes. A tile is found by its folder. `sample` uses every piece of the kit once. |
+| `src/tiles/<id>` | One tile: its plan as data, its landmarks, its notes, and its postcard for the picker. A tile is found by its folder. `sample` uses every piece of the kit once. |
 | `src/engine/room` | The collector's room round the table: the desk, the map on it, and the room the desk stands in. |
 | `src/music` | The link to Spotify, and what is playing on its way to the screens. |
 | `src/heroes` | The party tricks, one for each hero, by the name of its capture. |
 | `src/collection` | Where the heroes come from: the desk, or the backend behind its PIN, and the copy a device keeps. |
-| `src/ui` | The controls: the dial, the weather tokens, the keys, the plates and the card for the PIN. |
+| `src/ui` | The controls: the dial, the weather tokens, the keys, the plates and the card for the PIN. And the picker, where the board is set. |
 | `src/main.ts` | The page: it puts the tiles on the board, lights them by the hour and the weather, and draws them. |
 | `scripts` | `hero.ts` makes a hero from a generated model, `send-hero.ts` sends one to the backend, and `make-land.mjs` makes the map's coastlines. |
 
@@ -140,6 +144,7 @@ From the browser's console, `wimmel.shot('name', { hour: 21.5, weather: 'rain', 
 The same handle, `wimmel`, has more:
 
 - `wimmel.fights()` lists every pair of flat surfaces that lie in one plane and overlap, which flicker as the view moves, and `wimmel.fights('<id>')` looks at one tile. On the development server only. See [the page for tile builders](../docs/building-a-tile.md).
+- `wimmel.postcard()` takes the picture for a tile's postcard: the whole tile by day, as large as it fits a picture of four by three. It is for a tile that stands alone on the board, `?tiles=<id>&heroes=none`, and saves `screenshots/check-postcard-<id>.jpg`, which is copied into the tile's folder as `postcard.jpg`. On the development server only.
 - `wimmel.room` is the room, once it has arrived.
 - `wimmel.music` is the link to Spotify: how it stands, and what is playing.
 
@@ -148,6 +153,8 @@ The same handle, `wimmel`, has more:
 ### What it is not yet
 
 - No road joins two tiles, and a hero does not travel from one to the next.
+- The board is set by loading the page afresh. The tiles do not change places before the eyes.
+- Every tile's code arrives in one piece, whichever nine are dealt. That is right while nine are built, and each further tile will make the page heavier than it need be.
 - Vehicles follow fixed loops. They do not choose a way or turn at a junction, and where two loops share a lane they merge. Real driving comes with the road network.
 - There is no roster, no card and no bench. The one hero was carried through by hand.
 - Nothing has a name on screen but the tile in view and the places on the map.

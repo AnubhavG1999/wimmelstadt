@@ -37,6 +37,8 @@ export interface ControlsHandlers {
   lapse(): void;
   weather(w: WeatherName | 'auto'): void;
   follow(): void;
+  /** Opens the picker, where the board is set: which tiles stand on it, and where. */
+  tiles(): void;
   focus(): void;
   stats(): void;
   turning(): void;
@@ -125,6 +127,7 @@ export function buildControls(root: HTMLElement, on: ControlsHandlers): Controls
   <div class="keys">
     <button class="key" data-k="follow" title="Follow a hero (F)" aria-label="Follow a hero"><svg viewBox="0 0 24 24"><path d="M3.5 14.5l1.6-4.2a2 2 0 0 1 1.9-1.3h8.6a2 2 0 0 1 1.7.9l2.2 3.4v3.2h-16z"/><circle cx="7.8" cy="16.6" r="1.7"/><circle cx="16.2" cy="16.6" r="1.7"/></svg></button>
     <button class="key" data-k="lapse" title="Time-lapse: a day in 80 seconds (T)" aria-label="Time-lapse"><svg viewBox="0 0 24 24"><path d="M5 6.5l6 5.5-6 5.5zM12.5 6.5l6 5.5-6 5.5z"/></svg></button>
+    <button class="key" data-k="tiles" title="Choose the tiles on the board" aria-label="Choose the tiles on the board" aria-haspopup="dialog"><svg viewBox="0 0 24 24">${[5, 10.4, 15.8].map((y) => [5, 10.4, 15.8].map((x) => `<rect x="${x}" y="${y}" width="3.6" height="3.6" rx="0.8"/>`).join('')).join('')}</svg></button>
     <button class="key" data-k="more" title="Options" aria-label="Options" aria-haspopup="menu"><svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="18" cy="12" r="1.3"/></svg></button>
   </div>
   <div class="options" role="menu" aria-label="Options">
@@ -216,6 +219,7 @@ export function buildControls(root: HTMLElement, on: ControlsHandlers): Controls
 
   key('follow').addEventListener('click', () => { on.follow(); on.touched(); });
   key('lapse').addEventListener('click', () => { on.lapse(); on.touched(); });
+  key('tiles').addEventListener('click', () => { on.tiles(); on.touched(); });
   const openOptions = (open: boolean): void => {
     cluster.classList.toggle('open', open);
     key('more').classList.toggle('on', open);

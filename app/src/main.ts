@@ -14,11 +14,13 @@ import { Post, makeBackdrop } from './engine/look/post';
 import { WEATHER_NAMES, Weather, type WeatherName } from './engine/look/weather';
 import type { Room } from './engine/room';
 import { TABLE } from './engine/table';
+import { TILE } from './engine/tile';
 import { PARTY_TRICKS } from './heroes';
 import { openMusic } from './music';
 import { musicOnScreens } from './music/screens';
-import { tilesFor } from './tiles';
+import { BOARD_SIZE, POSTCARDS, keepBoard, keptBoard, setBoardOnce, tilesFor } from './tiles';
 import { buildControls } from './ui/controls';
+import { buildPicker } from './ui/picker';
 
 // --- options, from the address bar ---------------------------------------
 const query = new URLSearchParams(location.search);
@@ -246,6 +248,24 @@ const toggleLapse = (): void => {
   if (lapse && pinned === null) pinned = clockHour();
 };
 
+// The picker, where the board is set: which of the tiles stand on it, and where. See ui/picker.ts.
+const picker = buildPicker(document.getElementById('picker')!, POSTCARDS, BOARD_SIZE, {
+  done(tiles, keep, changed) {
+    keepBoard(keep ? tiles : null);
+    if (!changed) return;
+    // Other tiles on the table: the plainest way to set them out is to load the page afresh,
+    // with the board that was asked for, and without an address that asks for another.
+    setBoardOnce(tiles);
+    const next = new URL(location.href);
+    next.searchParams.delete('tiles');
+    next.searchParams.delete('order');
+    if (next.href === location.href) location.reload();
+    else location.replace(next.href);
+  },
+  touched: () => wake(),
+  // its postcards fly from place to place, unless the device was asked for less motion: ?motion=1 or ?motion=0 says which
+}, query.has('motion') ? !flag('motion', true) : matchMedia('(prefers-reduced-motion: reduce)').matches);
+
 // The controls: a dial for the hour, tokens for the weather and a few keys. See ui/controls.ts.
 const controls = buildControls(document.getElementById('ui')!, {
   hour(h) { pinned = h; lapse = false; },
@@ -253,6 +273,7 @@ const controls = buildControls(document.getElementById('ui')!, {
   lapse: toggleLapse,
   weather(w) { weather.choice = w; },
   follow: nextHero,
+  tiles() { picker.open(board.tiles.map((t) => t.def.id), keptBoard() !== null); },
   focus() { focusMode = (focusMode + 1) % FOCUS.length; },
   stats() { showStats = !showStats; },
   turning() { rig.drift = !rig.drift; },
@@ -286,6 +307,11 @@ function showControls(): void {
 }
 window.addEventListener('keydown', (e) => {
   const k = e.key.toLowerCase();
+  // while the board is being set, the keys are the picker's
+  if (picker.isOpen()) {
+    if (k === 'escape') picker.close();
+    return;
+  }
   if (k === 's') showStats = !showStats;
   else if (k === 't') toggleLapse();
   else if (k === 'l') { pinned = null; lapse = false; }
@@ -484,8 +510,8 @@ function frame(now: number): boolean {
   frames++;
   acc += elapsed;
   worst = Math.max(worst, elapsed);
-  // nothing fades away under somebody who is in the middle of typing the PIN
-  if (now - lastWake > 4500 && !controls.busy()) document.body.classList.add('idle');
+  // nothing fades away under somebody who is in the middle of typing the PIN, or of setting the board
+  if (now - lastWake > 4500 && !controls.busy() && !picker.isOpen()) document.body.classList.add('idle');
 
   if (now - hudAt > 400) {
     fps = (frames * 1000) / Math.max(1, acc);
@@ -540,6 +566,10 @@ interface ShotOptions {
   plan?: boolean;
   /** How steeply the picture looks down, in degrees. 38 unless this says otherwise. */
   elev?: number;
+  /** The picture is drawn at the size given and saved this many times smaller: a small picture with fine lines. */
+  shrink?: number;
+  /** How faithfully the picture is saved, from 0 to 1. 0.9 unless this says otherwise. */
+  quality?: number;
 }
 
 /**
@@ -587,12 +617,12 @@ async function shot(name: string, o: ShotOptions = {}): Promise<string> {
   draw();
   const drawnAt = `${bufSize.x}x${bufSize.y}`;
   const out = document.createElement('canvas');
-  out.width = w;
-  out.height = h;
+  out.width = Math.round(w / (o.shrink ?? 1));
+  out.height = Math.round(h / (o.shrink ?? 1));
   const ctx = out.getContext('2d')!;
   ctx.imageSmoothingQuality = 'high';
-  ctx.drawImage(canvas, 0, 0, w, h);
-  const blob = await new Promise<Blob | null>((done) => out.toBlob(done, 'image/jpeg', 0.9));
+  ctx.drawImage(canvas, 0, 0, out.width, out.height);
+  const blob = await new Promise<Blob | null>((done) => out.toBlob(done, 'image/jpeg', o.quality ?? 0.9));
   follow = keep;
   weather.choice = keepWeather;
   board.showHeroes(true);
@@ -605,6 +635,69 @@ async function shot(name: string, o: ShotOptions = {}): Promise<string> {
   const where = real ? `&capture=${encodeURIComponent(capture)}` : '';
   const res = await fetch(`./__shot?name=${encodeURIComponent(file)}${where}`, { method: 'POST', body: blob });
   return `${real ? `captures/${capture}/screenshots/` : 'screenshots/'}${file}: ${res.status}, ${Math.round(blob.size / 1024)} kB, drawn at ${drawnAt}`;
+}
+
+/**
+ * Takes the picture for a tile's postcard, which stands for the tile in the
+ * picker (ui/picker.ts): the whole tile by day, as large as it fits, with
+ * whatever flies over it at that moment. It is saved as
+ * screenshots/check-postcard-<id>.jpg, and a copy of that belongs in the
+ * tile's folder as postcard.jpg. Meant for a tile that stands alone on the
+ * board: ?tiles=<id>&heroes=none. Only works under `npm run dev`.
+ */
+async function postcard(id?: string): Promise<string> {
+  if (!import.meta.env.DEV) return 'only available on the development server';
+  const t = board.tiles.find((b) => b.def.id === id) ?? board.tiles[0];
+  // A picture is taken from 42 degrees round and 38 degrees down. What the tile covers
+  // of such a picture is measured across it and up it, in the units of the ground.
+  const az = THREE.MathUtils.degToRad(42), el = THREE.MathUtils.degToRad(38);
+  const across = new THREE.Vector3(Math.cos(az), 0, -Math.sin(az));
+  const upward = new THREE.Vector3(-Math.sin(az) * Math.sin(el), Math.cos(el), -Math.cos(az) * Math.sin(el));
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  const v = new THREE.Vector3(), m = new THREE.Matrix4();
+  const see = (): void => {
+    // only what stands or flies over the tile itself: a thing that was put out of sight somewhere far off is not in the picture
+    if (v.x < t.x + TILE.x0 - 30 || v.x > t.x + TILE.x1 + 30 || v.z < t.z + TILE.z0 - 30 || v.z > t.z + TILE.z1 + 30 || v.y < BASE.bottom - 1 || v.y > 700) return;
+    const x = v.dot(across), y = v.dot(upward);
+    x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y);
+  };
+  t.standing.group.updateMatrixWorld(true);
+  const walk = (o: THREE.Object3D): void => {
+    if (!o.visible) return;
+    const mesh = o as THREE.Mesh, copies = o as THREE.InstancedMesh;
+    const at = mesh.isMesh ? mesh.geometry.getAttribute('position') : undefined;
+    if (at && copies.isInstancedMesh) {
+      // every copy of a shape that is drawn many times, by the corners of the box it fits in
+      if (!mesh.geometry.boundingBox) mesh.geometry.computeBoundingBox();
+      const b = mesh.geometry.boundingBox!;
+      for (let i = 0; i < copies.count; i++) {
+        copies.getMatrixAt(i, m);
+        m.premultiply(copies.matrixWorld);
+        for (let c = 0; c < 8; c++) {
+          v.set(c & 1 ? b.max.x : b.min.x, c & 2 ? b.max.y : b.min.y, c & 4 ? b.max.z : b.min.z).applyMatrix4(m);
+          see();
+        }
+      }
+    } else if (at) {
+      for (let i = 0; i < at.count; i++) {
+        v.fromBufferAttribute(at, i).applyMatrix4(mesh.matrixWorld);
+        see();
+      }
+    }
+    for (const c of o.children) walk(c);
+  };
+  walk(t.standing.group);
+  if (x0 > x1) return 'nothing of the tile was found';
+  // A postcard's picture is four by three. The tile fills it, with a narrow margin, and its middle is the picture's.
+  const w = 960, h = 720;
+  const zoom = Math.max((x1 - x0) / ((w / h) * 0.95), (y1 - y0) / 0.93);
+  const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+  // the view looks at a point a little above the ground, the further out the higher: see IsoRig.update
+  const lookY = 28 * THREE.MathUtils.smoothstep(zoom, 110, 260);
+  const back = (lookY * Math.cos(el) - cy) / Math.sin(el);
+  const x = cx * Math.cos(az) + back * Math.sin(az), z = -cx * Math.sin(az) + back * Math.cos(az);
+  const said = await shot(`check-postcard-${t.def.id}`, { w, h, shrink: 2, quality: 0.82, hour: 13, x, z, zoom });
+  return `${said}, the tile ${Math.round(x1 - x0)} across and ${Math.round(y1 - y0)} up, seen from ${zoom.toFixed(0)}`;
 }
 
 /**
@@ -634,7 +727,7 @@ function seen(x: number, y: number, z: number): { seen: boolean; after?: number;
 // A handle for poking at the city from the console.
 Object.assign(window, {
   wimmel: {
-    opts, rig, renderer, atmo, board, weather, collection, music, bench, frame, shot, seen,
+    opts, rig, renderer, atmo, board, weather, collection, music, picker, bench, frame, shot, postcard, seen,
     get room() { return room; },
     setHour(h: number | null) { pinned = h; lapse = false; },
     /** Lets this many seconds pass at once, without drawing them: for looking at what happens later. */
