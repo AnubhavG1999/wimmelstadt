@@ -1,6 +1,6 @@
 # Delhi: notes
 
-What a later reader cannot see in the code. The tile is being built. The collector saw the plan on 19 November 2026 and answered it the same day: his answers are at the end.
+What a later reader cannot see in the code. The tile is built, and every check on the page for tile builders was run on it on 19 November 2026. The collector has not yet called it final. He saw the plan that day and answered it: his answers are at the end.
 
 The research is in `docs/districts/research/`: `delhi-for-the-tile.md`, and the two notes it builds on, `delhi.md` and `delhi-hauz-khas.md`.
 
@@ -10,13 +10,13 @@ The research is in `docs/districts/research/`: `delhi-for-the-tile.md`, and the 
 | --- | --- |
 | `plan.ts` | The tile as numbers: the river, the lines the roads run along, the list of things, the ground each is given, the plots of ordinary buildings |
 | `roads.ts` | The streets as they are laid, and the loops the traffic drives |
-| `index.ts` | The ground, the river, Raisina Hill, the streets, the flyovers, the bridge's deck, the ordinary buildings, and a plain box with its name for every thing that has no model yet |
-| `mughal.ts` | The parts every landmark is made of: a dome, a chhatri, an arch that is a dark opening, a row of arches, an arched way through a wall, a minaret, battlements, steps, the flag |
+| `index.ts` | The ground, the river, Raisina Hill, the streets, the flyovers, the bridge's deck with its ramps, abutments and piers, the ordinary buildings and the water tanks on their roofs, the screen for music, the buses at the terminal. A thing without a model would be a plain box with its name: none is left. |
+| `mughal.ts` | The parts every landmark is made of: a dome, a chhatri, an arch that is a dark opening, a plain opening, a row of arches, an arched way through a wall, a minaret, battlements, steps, the flag. A dome, a gate's faces and the flag may glow at night. |
 | `axis.ts` | Rashtrapati Bhavan and the Jaipur Column, North and South Block, Vijay Chowk, Kartavya Path, India Gate, the canopy, the War Memorial |
 | `old-delhi.ts`, `bazaar.ts`, `centre.ts`, `east.ts`, `south.ts`, `south-west.ts`, `metro.ts` | One file for each quarter and one for the Metro. Each hands over its models by the id of the thing in the plan, its signs, the lines its movers follow, and whatever else it builds. |
 | `traffic.ts` | The kinds of traffic that are Delhi's own |
 | `signs.ts` | What the shops say, the boards over the roads, and the screen with its own picture |
-| `life.ts` | People, trees along the avenues, autos at their stands, carts, a wedding, the boards' gantries: everything placed through one helper that refuses a lane, a lot, water and a hero's place |
+| `life.ts` | People, trees along the avenues, autos at their stands, carts, a wedding, a quiet park, a bungalow, the boards' gantries: everything placed through one helper that refuses a lane, a lot, water and a hero's place |
 
 ## How the tile lies
 
@@ -35,7 +35,7 @@ The lines everything is placed from are in `plan.ts`. In short, in the tile's ow
 
 | | |
 | --- | --- |
-| The river | x 70 to 88. Ghats 67.5 to 70. The east bank 88 to 104. |
+| The river | x 70 to 88. The ghats are built out over its west edge, from 70 to 74.5. The east bank 88 to 104. |
 | The Ring Road, south leg | z 59 from Dhaula Kuan's loop at x -82 to x 24, then down to z 74 by x 49, and the corner |
 | The Ring Road, by the river | x 60.5, north to the Signature Bridge at z -100, then south down the east bank along x 96 to z -14 |
 | Kartavya Path | z 6, from the turning place on Raisina Hill at x -76 to the hexagon |
@@ -51,7 +51,7 @@ A storey is 3.4 high on this tile, as on Hong Kong's: Delhi is a low city, and i
 
 ## The things on the tile
 
-Forty-four, numbered as in `THINGS` in `plan.ts`. None has its model yet: each is a box with its name.
+Forty-four, numbered as in `THINGS` in `plan.ts`. All are built. The file each is in is in the table above, and what each is made of is said at the head of its model.
 
 **Old Delhi and the river**
 
@@ -108,29 +108,30 @@ Forty-four, numbered as in `THINGS` in `plan.ts`. None has its model yet: each i
 
 The Ring Road's flyovers at Moti Bagh and AIIMS and Dhaula Kuan's loop are a thing to find too, and are built as roads.
 
-Small scenes that stand between them, in `life.ts`: a wedding by Aurobindo Marg, with the bride on a stage before a wall of marigolds in a tent of red and white, and the groom's procession arriving on a white mare with its band and its lamps; gully cricket on the open ground south of the AIIMS flyover; families, ice-cream carts and a balloon seller on Kartavya Path's lawns; chaat carts, sugarcane presses and auto stands; white Ambassadors on Raisina Hill and monkeys on its parapet. Every ordinary roof but a shed's carries Delhi's black water tanks. The quarters' own files stage the rest.
+Small scenes that stand between them, in `life.ts`: a wedding by Aurobindo Marg, with the bride on a stage before a wall of marigolds in a tent of red and white, and the groom's procession arriving on a white mare with its band and its lamps; a quiet park beside the Lotus Temple's garden, with a class on its mats; a bungalow of Lutyens' Delhi east of Agrasen ki Baoli, with a white saloon in its drive; three buses at the terminal north of the fort; families, ice-cream carts and a balloon seller on Kartavya Path's lawns; chaat carts, sugarcane presses and auto stands; white Ambassadors on Raisina Hill and monkeys on its parapet. Every ordinary roof but a shed's carries Delhi's black water tanks. The quarters' own files stage the rest.
 
-## How high things will stand
+## How high things stand
 
-The city's towers are roughly to one scale, about 3.2 metres to a unit. Delhi has no towers: its tall things are a bridge's pylon, a minaret and a flag. The heights in life are the research note's.
+The city's towers are roughly to one scale, about 3.2 metres to a unit. Delhi has no towers: its tall things are a bridge's pylon, a minaret and a flag. The heights in life are the research note's. "Built" is above the street, as the models reach it.
 
-| | In life | At that scale | Planned |
+| | In life | At that scale | Built |
 | --- | --- | --- | --- |
-| The Signature Bridge's pylon | 154 m above the deck | 48 | 46 |
+| The Signature Bridge's pylon | 154 m above the deck | 48 | 46 to the top of its glass head, 47.7 to the lamp on its rod |
 | The Qutub Minar | 72.5 m | 23 | 28 |
 | The flag's mast, Connaught Place | 63 m | 20 | 20 |
-| Rashtrapati Bhavan's dome | 55 m above the forecourt | 17 | 19, on a hill of 3 |
-| Jama Masjid's minarets | 41 m, on a plinth of 10 | 16 | 18 above the street |
+| Rashtrapati Bhavan's dome | 55 m above the forecourt | 17 | 18.7 above the hill, which is 3 high: 21.7 |
+| Jama Masjid's minarets | 41 m, on a plinth of 10 | 16 | 18, on a plinth of 3 |
 | Humayun's Tomb | 47 m | 15 | 17 |
 | India Gate | 42 m | 13 | 16 |
-| The statue of Hanuman | 33 m | 10 | 15 |
-| Akshardham | 43 m | 13 | 14 |
+| The statue of Hanuman | 33 m | 10 | 15.2, with the hall it stands on |
+| Akshardham | 43 m | 13 | 11.3 to the dome's crown, 12.6 to its gold pot, 14.3 to the pennant's staff |
 | Safdarjung's Tomb | about 28 m | 9 | 13 |
 | The Lotus Temple | 34 or 40.8 m | 11 to 13 | 12.5 |
-| The Red Fort's walls | 18 to 33 m | 6 to 10 | 9, its gates 13 and 15 |
+| The Red Fort's walls | 18 to 33 m | 6 to 10 | 9, the Lahori Gate about 15 and the Delhi Gate about 13 |
+| Bharat Mandapam | | | 11 |
 | The canopy | 22 m | 7 | 8 |
 
-They stand in the order they do in life, and India Gate stays under the dome on Raisina Hill. The Qutub Minar, India Gate, the statue and the tombs are small landmarks and stand a little over their scale height, so that they can be recognised.
+They stand in the order they do in life, and India Gate stays under the dome on Raisina Hill. The Qutub Minar, India Gate, the statue and the tombs are small landmarks and stand a little over their scale height, so that they can be recognised. A storey of an ordinary building is 3.4.
 
 ## Roads
 
@@ -145,15 +146,25 @@ Traffic keeps left. No road crosses another on the level, and no lane is shared.
 - **`chandni-chowk`** is cycle rickshaws only, east along the north half of the paved street and back west along the south half. No hero may take it. The lanes of Old Delhi carry nothing that drives.
 - **The Metro** runs on its viaduct along the Ring Road's verge, over both flyovers, and on across the Yamuna to a station on the east bank.
 
-How many vehicles each carries, reckoned as the page for tile builders says: the Ring Road 20 (a lap takes about 55 seconds, and its loops pass 0.65 a second: 26 would be the limit), the long drive 12 (limit 15), Shanti Path 7 (limit 9), Connaught Place's road 12 (limit 15), the hexagon's inner lane 5, the Inner Circle 3, Chandni Chowk 5 and the circuit 2. 66 vehicles in all.
+How many vehicles each carries, reckoned as the page for tile builders says: the Ring Road 20 (a lap takes about 55 seconds, and its loops pass 0.65 a second: 26 would be the limit), the long drive 12 (limit 15), Shanti Path 7 (limit 9), Connaught Place's road 12 (limit 15), the hexagon's inner lane 5, the Inner Circle 3, Chandni Chowk 5 and the circuit 2. 66 vehicles in all. The collector's heroes drive on these roads too. On the last check there were ten of them, three on the Ring Road and four on the long drive, which then carried 16: one over the limit reckoned here, and twenty minutes of it ran clean.
 
 **Traffic of the tile's own.** Every vehicle on the tile but the circuit's is one of ten kinds in `traffic.ts`, made with the engine's hook for it: an auto-rickshaw in green and yellow, a cycle rickshaw with its puller, a scooter with its rider, a city bus in green, red, orange or blue, a school's bus in yellow or in white, the white saloon of Lutyens' Delhi, a lorry in the colours of truck art, and the city's ordinary cars: a saloon, a small hatchback and a small van, mostly white and silver. A route's `paint` repaints every kind on it, the autos and the buses too, so no route here has one, and that is why the ordinary cars are kinds of the tile's own. None carries a maker's name or badge. Nothing in a shape moves: wheels do not turn and nobody pedals. Shanti Path carries the school's buses to the gate, the long drive the white saloons, the Ring Road the buses and the lorries.
 
 ## Places for heroes
 
-Five on show, each open to the south-east: the turntable in the Auto Expo's hall at Bharat Mandapam (`auto-expo`), the line of the vintage car rally at the National Stadium (`vintage-rally`), the fitting bay on Karol Bagh's accessory street (`karol-bagh`), a bay in Khan Market's car park (`khan-market`), and the dhaba on Aurobindo Marg (`dhaba`). None is at a place of worship, a tomb or a memorial.
+Five on show. They are one list, `HERO_PLACES` in `plan.ts`, and the quarters' files read their places from it, so that the paint under a hero follows its place.
 
-On the roads a hero is best seen on Kartavya Path, on the flyovers, beside the river, on the Signature Bridge, on the east bank, on Kaifi Azmi Marg in front of the school, and on the Buddh circuit's corner.
+| Place | Where | What it is |
+| --- | --- | --- |
+| `auto-expo` | (41, -30), 0.3 above the ground, turning | a turntable on the forecourt of Bharat Mandapam, before the hall's open side, where two show cars turn on tables of their own |
+| `vintage-rally` | (47, 31), nose to the east-south-east | a bay in the line of five vintage tourers before the National Stadium's pavilion, under the rally's banner |
+| `karol-bagh` | (-80, -47.2), nose to the east | the fitting bay on Karol Bagh's car accessory street, marked in yellow |
+| `khan-market` | (21.5, 38.5), nose to the east | the one bay of Khan Market's car park |
+| `dhaba` | (9.2, 85), nose to the south-south-east | a bay in the dhaba's yard on Aurobindo Marg, beside the painted lorry and the string beds |
+
+Each is open to the south-east. None is at a place of worship, a tomb or a memorial.
+
+On the roads a hero is best seen on Kartavya Path, on the flyovers, beside the river, on the Signature Bridge, on the east bank, on Kaifi Azmi Marg in front of the school, and on the Buddh circuit's corner, which a hero may drive.
 
 ## The screen for music
 
@@ -165,12 +176,35 @@ It is the tailboard of a lorry: HORN OK PLEASE in the colours of truck art, in t
 
 ## Checks
 
-On the blockout, 19 November 2026, and again as the tile grew:
+All on 19 November 2026, on the built tile, alone on the board, in the order the page for tile builders gives.
 
-- **Roads.** `checkRoads` on every load: no road crosses another on the level, and none runs through anything built. `clearOfStreets` is asked about every plot and every thing's box.
-- **Traffic.** Twenty minutes in steps of a twentieth of a second. On the blockout: 51 vehicles, none standing still, no vehicle nearer than 13.1 to the next on its own route, no lane shared, the nearest two at one height 4.99 apart, in the two lanes of the road through Connaught Place. The nearest two of all were 4.4 apart: one on the AIIMS flyover and one passing under it. With the tile's own kinds, after the merge: 66 vehicles, none standing still, none nearer than 9.8 to the next on its route (two cycle rickshaws, which are short), the nearest two at one height 4.91 apart, in the two lanes of Shanti Path, and no lane shared.
-- **Flicker.** `wimmel.fights('delhi')` came back empty on 19 November 2026 with the axis, the roads and the Metro's first tracks standing. It is asked again as each quarter is taken in.
-- **Sight lines.** `hiddenBy` on the plan, for 73 points: every place for a hero, the middle of every road worth watching, and the foot or the middle of every landmark. 65 are seen from the opening view. Not seen: the far side of Connaught Place's Outer Circle, behind its own blocks; the south half of Chandni Chowk behind its own south side, and a stretch of the north half behind the row of faiths; the foot of Jama Masjid's south steps behind the kebab lane; the foot of the statue of Hanuman behind Karol Bagh's shops; and the south edge of Bangla Sahib's tank behind Raisina Hill.
+- **Type check and build.** `npm run typecheck` passes. `vite build` builds, into a folder outside the checkout. It warns that the app's one chunk is 1,372 kB, over the 1,200 the app's settings allow: all tiles are bundled into it, and that is the app's to settle, not the tile's.
+- **The console** has no error and no warning of the tile's on a fresh load. Three quarters print how many triangles each of their models has, on the development server only. The only warnings are the engine's, about heroes.
+- **Roads.** `checkRoads` on every load: no road crosses another on the level, and none runs through anything built. It is given the lines of the Metro's two tracks, the boats' round and the ducks' as well. `clearOfStreets` is asked about every plot and every thing's lot.
+- **Flicker.** `wimmel.fights('delhi')` comes back empty.
+- **Traffic.** Twenty minutes in steps of a twentieth of a second, on the engine as merged at `15d4458`: 76 vehicles, ten of them heroes, none standing still, no lane shared. None came nearer than 9.8 to the next on its own route (two cycle rickshaws, which are short); on the long drive the least was 10.0 and on the Ring Road 13.3. The nearest two of all were 4.4 apart: one on a flyover and one passing under it.
+- **Places for heroes.** With `?place=<id>` a hero stood at each of the five places in turn, at the place and the height the plan gives, read from `wimmel.board.heroes[0].pos` and never pictured. `wimmel.seen` says seen from the opening view for seven points on a car at each place: its middle, its two ends, its two sides and two corners, 1.4 above the ground. Two things of the tile's own stood in the way at first and went: a house north-east of the hexagon, and the post of a road board. One of the stadium's lamp masts stood before Khan Market's bay and was moved by its builder.
+- **Sight lines, on what is built.** Not seen from the opening view, or seen in part:
+  - Bangla Sahib's tank, behind Raisina Hill and North Block (see the liberties);
+  - the foot of the statue of Hanuman, behind Karol Bagh's shops: the statue stands over them;
+  - the Delhi Gate's barbican, behind Bharat Mandapam;
+  - the south half of the Lodhi strip and Dilli Haat's court, behind the Metro's viaduct;
+  - Akshardham's garden, behind the Metro's station;
+  - the deep end of Agrasen ki Baoli, which faces west;
+  - the fronts of the row of faiths and the Lahori Gate, which face away, as in life;
+  - the far side of Connaught Place's Outer Circle, and the south half of Chandni Chowk.
+  The plan's own check, `hiddenBy`, did not know the Metro's viaduct or its stations, which stand above the ground: what they hide was found only on the built tile.
+- **Sides and weather.** Looked at from the south-east, the north-east, the north-west and the south-west by day, from the south-east and the north-west by night, in rain at dusk and by night, and in snow by day. Every builder looked at each of its things from two sides or more, by day and by night, and from 14 to 18 degrees.
+- **Undersides.** The flyovers, the bridge's span, the Metro's viaduct and stations, every canopy and eave have theirs. A chhatri's eave and a minaret's balcony got theirs late, in `mughal.ts`.
+- **Cost**, measured in one tab, one tile after the other in the same minute, in a window of 1,024 by 768 while the browser's pane was hidden, which makes the numbers rough but alike:
+
+  | | Stands still | People | Moving | A frame at 14 h | A frame at 21 h | Drawn in a frame | Draw calls |
+  | --- | --- | --- | --- | --- | --- | --- | --- |
+  | Delhi | 82,500 triangles | 597 | 76 | 4.3 to 5.0 ms | 4.4 to 5.3 ms | 888,000 triangles | 154 |
+  | Europe | 34,600 | 438 | 99 | 4.0 to 5.3 ms | 4.3 to 5.1 ms | 780,000 | 141 |
+  | Hong Kong | 44,800 | 521 | 71 | 5.6 to 6.6 ms | 5.8 to 6.3 ms (and one of 11.8) | 807,000 | 191 |
+
+  Delhi has about twice the triangles that stand still on the built tiles, which is the most the page allows, and its frame costs what Europe's does. Its own meshes are few: two trains, two boats, the ducks, three tables that turn, the kites and the pigeons.
 
 ## Liberties taken with the real place
 
@@ -223,6 +257,15 @@ On the blockout, 19 November 2026, and again as the tile grew:
 - The school: only the gate and the main block's look are from the collector's picture. The rest of the campus is invented and pressed together: the assembly court behind the gate, the football ground, the pool, the bus bay. The gate's canopy is large beside the block, so that its lettering can be read. Pupils wear white and bottle green, which are the school's colours by an encyclopaedia: its exact uniform was not found.
 - Hauz Khas, turned half round: the tomb's entrance and its railed court face north. A third doorway in a red frame, with steps to the water, is added on the tomb's east face, so that the opening view has a door in red stone. In life the sides towards the tank have openings and no such door. Nobody stands on the monuments or their steps.
 - The dhaba's lorry is the builder's own shape, 8.6 long.
+
+**The river and the east**, in `east.ts`:
+
+- The Signature Bridge's pylon stands by the east bank and leans back to the east, away from the river span, as in life. It has eight pairs of stays and three pairs of back-stays, where the real bridge has fifteen and four. The model reaches beyond its lot: the mast's head leans to x 95, and the block the back-stays come down to stands beyond the east turn.
+- The ghats are built out over the river's edge, from x 70 to 74.5. The bank itself is the Ring Road's sidewalk. The plan's lot says where they are built.
+- Akshardham faces east, as in life, so its steps and its porch face the board's edge and the opening view sees its south flank. The lot is longer from north to south, so the mandir is broader than it is deep. Nobody stands on its plinth, nothing is on its lake and it carries no board. The red and white pennant on its dome is the builder's addition. There is no colonnade on the east side, which is the board's edge.
+- Bharat Mandapam: the hall's south side is cut open up to its crown, because a lower lintel hid the show from where the tile is looked at. Two show cars turn inside, not three. The plaza's statue and the halls beside it are left out. The lamps of its forecourt are low, so that none stands before the hall's opening or the hero's table.
+- The National Stadium is its pavilion and one curved end of a stand, with the blue hockey pitch. The rally's line runs south in echelon, each tourer a little further west, and the hero's bay is wider on its south side, so that its neighbour hides none of it. The tourers are 5.6 long, smaller than the tile's cars: the forecourt is 8 wide. The stand steps down at its west end, so that Khan Market's bay is seen over it.
+- The Buddh circuit's banking is the builder's own and not the real circuit's.
 
 ## Real names on signs, and the Hindi on them
 
@@ -288,7 +331,16 @@ No place of worship carries a board, and neither does a tomb or a memorial.
 
 The village's boards say CAFE, BOUTIQUE and GALLERY in a painter's hand, in English only, as the village's do. The lorry at the dhaba carries HORN OK PLEASE, painted by the file. The buses say SCHOOL BUS and the cart ICE LOLLY.
 
-**Still to be entered**: the real names the river's file hangs, when it is taken in.
+**The hall, the show, the stadium and the circuit's town**, in `east.ts`:
+
+| On the board | Where | What confirmed it |
+| --- | --- | --- |
+| भारत मंडपम, BHARAT MANDAPAM | the hall's crown, cream letters on its dark red stone | its Wikipedia page, and a photograph on Wikimedia Commons with the name lettered on its front. The Hindi is the title of Hindi Wikipedia's page for it. |
+| AUTO EXPO | the crown over the hall's opening, black on yellow | the research note: the show is held at Bharat Mandapam. It is the show's own name, in plain letters. |
+| MAJOR DHYAN CHAND NATIONAL STADIUM | the pavilion's parapet | the Sports Authority of India's page, Wikipedia, and photographs of its lettered front |
+| ग्रेटर नोएडा, GREATER NOIDA | the board over the circuit's straight, white on green as the tile's road boards are | Hindi Wikipedia's page for the town, which is titled so and lists the circuit among its sights |
+
+VINTAGE CAR RALLY, on the banner, is what it is and nobody's name.
 
 ## Since `main` was merged
 
@@ -296,11 +348,46 @@ The village's boards say CAFE, BOUTIQUE and GALLERY in a painter's hand, in Engl
 
 - **The tile's place in the world.** The `TileDef` has `place: { lon: 77.2, lat: 28.6 }`, for its pin in the map the table stands on.
 - **`wimmel.fights('delhi')`** lists surfaces that lie in one plane, and has to come back empty. It found three kinds in what stood then, all mended: the verge under the flyovers lay on the two streets that pass under them, the pavilions of the two Blocks ended flush with their eaves, and the streets that meet the hexagon ran on across its inner kerb.
-- **The view tilts up and down.** The tile is looked at from low angles as well as from above, so whatever is seen from below needs its underside: the flyovers, the Metro's viaduct, the bridge's deck, every canopy. Still to be looked at once everything is built.
+- **The view tilts up and down.** The tile is looked at from low angles as well as from above, so whatever is seen from below needs its underside: the flyovers, the Metro's viaduct, the bridge's deck, every canopy. See "Checks".
 - **Traffic of a tile's own shape**: see "Roads".
 - **The screen for music** works, and shows the tile's own picture when nothing is playing. It is hung.
 
 `main` was merged in again the same evening at `15d4458` (the merge is `2682915`): a mend to how traffic takes turns where two routes share a lane. No route of Delhi shares a lane with another, and `vehicles.shared()` comes back empty.
+
+## How it was built
+
+The plan first, as numbers in `plan.ts`, with the roads and the traffic on it and a plain box with its name for each of the 44 things: the collector answered that. Then the axis, by the session that kept the plan. Then seven files at once, one for each quarter and one for the Metro, each by a builder of its own with one common brief (`tile-delhi-builders-brief.md` in the sessions' shared notes). The Metro and Old Delhi's street life were built by Opus, the five monument files by Fable. No builder committed. The session that kept the plan looked at each file from two sides by day and by night, mended what the builders asked for in the files that were not theirs, and committed it.
+
+What that way of working cost, and what would have saved it:
+
+- **Two builders staged the same scene**, and the session that kept the plan staged it a third time: gully cricket. The brief gave each thing to one file, but not the small scenes between them.
+- **Things at the edge of two lots met**: a lamp mast before another quarter's place for a hero, a tree before another's yard, a tent hard against a tomb's gate. Each builder checked its own lot. Only the one who keeps the plan can ask `wimmel.seen` about all five places at once, and has to, after every file.
+- **The places for heroes were typed into four files** before they were one list in the plan. They should be in `plan.ts` before the first builder starts.
+- **Every save by one builder reloads the page for all**, and a check that takes a minute is cut off. The long ones, traffic above all, wait until the builders are done.
+
+## For the engine
+
+Nothing in the engine was changed in this branch. What the tile worked round:
+
+- **A deck that climbs round a bend** is drawn with a line across the road at every stretch, because its stretches are twisted. `roadDeck` could say so. Delhi's bridge climbs on the straight and turns on the level.
+- **A deck that ends on a bend does not end square**, and where another deck goes on from there the two overlap by a sliver, which `wimmel.fights` finds. A unit of straight road at the end mends it.
+- **A route's `paint` repaints every kind on the route**, a tile's own kinds too. A route that mixes the engine's plain cars with kinds of its own cannot give the plain ones a palette. Delhi made its ordinary cars kinds of its own.
+- **The glass of a window is blue by day whatever the wall**, so a building of stone with the engine's windows reads as an office. Rashtrapati Bhavan's windows are built as openings of shade. A surface that is `interior` glows in its own colour at night, so a lamp-lit window is a dark warm colour with `lit` between 2 and 3, and a floodlit wall is its own colour with `lit` of 0.3 to 0.5.
+- **`cyl` takes `faces` and ignores it**, so a disc has no underside unless one is built.
+- **A sign is an upright rectangle.** The lettering on the school's curved canopy had to be built of strokes.
+- **`hiddenBy` knows only what stands on the ground.** A viaduct or a station on piers hides as much and is not in its solids.
+- **`positions()` does not say which kind a vehicle is**, so a picture of one kind has to be hunted for.
+- **All tiles are in one chunk**, and with this one it is over the size the app's settings warn at.
+- **How many heroes a route takes** is the engine's choice. A route that is reckoned for twelve of the tile's own vehicles carried sixteen with four heroes on it.
+
+## For the next tile
+
+- **Ask the sight lines again of what is built**, not only of the plan. A hill hides what is north-north-west of it for more than its own height: Bangla Sahib went into that shadow on the plan and could not come out of it.
+- **Give every sign a small `size`**: the tile's signs share one sheet, and a tile with 120 of them fills it.
+- **Check a Hindi word by reading a page written in Hindi**, not by a search's summary of pages in English. Hindi Wikipedia's titles and its own search settled most of this tile's words in three fetches.
+- **A place for a hero needs the whole car on its own ground**, 7.8 by 3.1 with room to spare, and nothing taller than a person in the strip between it and where the tile is looked at from. A tree is not counted by `wimmel.seen` and hides as well as a wall.
+- **A turntable's top is the hero's height.** The Auto Expo's place is at 0.3 because its table is.
+- **What costs is not triangles that stand still.** This tile has twice Europe's and its frame costs the same. Its own meshes are few, and its water is one river and four small tanks.
 
 ## What the collector said
 
