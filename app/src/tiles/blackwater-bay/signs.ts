@@ -19,9 +19,7 @@ export const GIVE_WAY: SignDef = { id: 'give-way', lines: ['GIVE WAY TO DRAGONS'
 /** The sign of a name board, by the name it carries. */
 export const boardOf = (name: string): string => `name-${name.toLowerCase().replace(/[^a-z]+/g, '-')}`;
 
-/** Names that have a board while the tile is blocked out: every lot that has a name, and the dragons' homes. */
+/** Names that have a board on a lot that stands as a box: every lot that has a name, so that a lot whose model fails still says what it is. */
 const NAMES = [...new Set(LOTS.filter((l) => l.name).map((l) => l.name))];
-/** The ten's names, in the order of `LENGTH` in plan.ts. */
-export const DRAGON_NAMES = ['Balerion', 'Vhagar', 'Meraxes', 'Vermithor', 'The Cannibal', 'Silverwing', 'Caraxes', 'Dreamfyre', 'Meleys', 'Sheepstealer'];
 
-export const SIGNS: SignDef[] = [GIVE_WAY, ...[...NAMES, ...DRAGON_NAMES].map((n) => nameSign(boardOf(n), n)), ...Object.values(REGIONS).flatMap((r) => r.SIGNS)];
+export const SIGNS: SignDef[] = [GIVE_WAY, ...NAMES.map((n) => nameSign(boardOf(n), n)), ...Object.values(REGIONS).flatMap((r) => r.SIGNS)];
