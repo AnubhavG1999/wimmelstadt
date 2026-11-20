@@ -16,7 +16,7 @@ import { lampsAlong, street } from '../../engine/roads';
 import type { Bench } from '../../engine/terrain';
 import type { Build, Route } from '../../engine/tile';
 import { setBenches } from './land';
-import { F, HAIRPIN_Y, LANE, LOOP, ROADS, TURNS, naturalAt, outOfTrench, type P2 } from './plan';
+import { F, HAIRPIN_Y, LANE, LOOP, LOTS, ROADS, TURNS, naturalAt, outOfTrench, type P2 } from './plan';
 import { KINDS } from './traffic';
 
 /** Half a road's width: two lanes. */
@@ -200,9 +200,12 @@ export function buildRoads(k: Build): Route[] {
     const y = groundRoadY(t.c[0], t.c[1]);
     street(k, pathOf(ringOf(t.c, t.r).map((p): P3 => [p[0], y, p[1]]), true), { lanes: 1, width: LANE + 1.2, sidewalk: 0, color: t === TURNS.field ? ROADWAY : CANYON_ROAD, zebras: false });
   }
-  lampsAlong(k, pathOf(AVENUE), HALF + 1.2, 18);
-  lampsAlong(k, pathOf(LOOP_MIDDLE, true), HALF + 1.2, 26);
-  lampsAlong(k, pathOf(SOUTH), HALF + 1.2, 24);
+  // lamps along the roads, but none inside a gate, whose own lights light it
+  const gates = LOTS.filter((l) => l.id === 'north-gate' || l.id === 'south-gate');
+  const lit: Build = { ...k, lamp: (x, z, yaw, y) => { if (!gates.some((g) => x > g.x0 - 1 && x < g.x1 + 1 && z > g.z0 - 1 && z < g.z1 + 1)) k.lamp(x, z, yaw, y); } };
+  lampsAlong(lit, pathOf(AVENUE), HALF + 1.2, 18);
+  lampsAlong(lit, pathOf(LOOP_MIDDLE, true), HALF + 1.2, 26);
+  lampsAlong(lit, pathOf(SOUTH), HALF + 1.2, 24);
   return routesOf();
 }
 

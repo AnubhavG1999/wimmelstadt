@@ -239,7 +239,9 @@ export function buildLand(k: Build): void {
 
   // the trench's floor, paved, with the river and the lake let into it
   const river = riverShape();
-  flat(k.street, floorOutline(0.6), F, PAVING, { win: GROUND, holes: [river, LAKE] });
+  // the hole for the river stops inside the paving's edge, or the paving is laid without it
+  const riverHole = river.map(([x, z]): P2 => [x, Math.max(z, TRENCH.z0 + 0.9)]);
+  flat(k.street, floorOutline(0.6), F, PAVING, { win: GROUND, holes: [riverHole, LAKE] });
 
   // the water: its own, at the floor, with banks of mud down to it
   const level = F - WATER_DROP;

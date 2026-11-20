@@ -256,7 +256,7 @@ export const LOTS: Lot[] = [
   onFloor('ragnar-gate', 'The Postern', -26, -52, -18, -47, 12),
   onFloor('wall-n-m', '', -18, -51, -11, -48, 10),
   onFloor('north-gate', 'North Gate', -11, -53, 3, -45, 15),
-  onFloor('grates', 'The Grates', 4, -52, 16, -47, 10),
+  onFloor('grates', 'The Grates', 3, -52, 16, -47, 10),
   onFloor('wall-n-e', '', 16, -51, 86, -48, 10),
   // The south wall stands on the trench's low south rim, and the road to the camp leaves through its gate.
   onFloor('wall-s-w', '', -82, 59, 60, 62, 8),
@@ -403,7 +403,7 @@ export const LANDINGS = {
 // ---------------------------------------------------------------------------
 
 export const SIGHT: { id: string; x: number; y: number; z: number }[] = [
-  { id: 'the North Gate', x: -4, y: F + 8, z: -46 },
+  { id: 'the North Gate', x: -4, y: F + 8, z: -44.9 },
   { id: 'the postern', x: -22, y: F + 6, z: -47 },
   { id: 'the grates', x: 10, y: F + 3, z: -47 },
   { id: 'the west ramp, halfway', x: -40, y: F + 3.5, z: -65 },
@@ -421,5 +421,5 @@ export const SIGHT: { id: string; x: number; y: number; z: number }[] = [
   { id: 'the mud banks', x: 11, y: F + 1, z: -42 },
   { id: 'the avenue', x: -4, y: F + 1.6, z: -20 },
   { id: 'the avenue, south', x: -4, y: F + 1.6, z: 10 },
-  { id: 'the south wall', x: 10, y: F + 6, z: 60 },
+  { id: 'the south wall', x: 10, y: F + 6, z: 62.4 },
 ];
