@@ -52,6 +52,15 @@ export class GeoBuilder {
   }
 
   /**
+   * What has been added so far, for a check that reads what is built: three
+   * numbers a corner for where it is and for its colour, and four for its
+   * window spec (cell, storey, lit, kind).
+   */
+  get added(): { readonly pos: readonly number[]; readonly col: readonly number[]; readonly win: readonly number[] } {
+    return { pos: this.pos, col: this.col, win: this.win };
+  }
+
+  /**
    * Everything added inside `fn` is turned by `yaw` about the vertical and then
    * moved by (x, y, z). Rows of windows stay where the shape itself has them.
    */

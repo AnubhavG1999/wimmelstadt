@@ -7,6 +7,7 @@
 // of models hands one over: models.ts gathers them.
 
 import { area, ground, rect } from '../../engine/ground';
+import { bench, bikes, bollards, furnish, lampPost, newsBoxes, planter, treeInGrate } from '../../engine/furnish';
 import { buildPath, type Path } from '../../engine/paths';
 import { track } from '../../engine/rail';
 import { clearOfStreets, lampsAlong, street } from '../../engine/roads';
@@ -71,7 +72,7 @@ export function buildCity(k: Build): TileParts {
   // The ground: paving, and the lawns, fields, car parks and creek on it
   // -------------------------------------------------------------------------
 
-  ground(k, { color: PAVING });
+  ground(k, { color: PAVING, flags: { size: 2, bond: 0 } });
   for (const a of AREAS) area(k, rect(a.x0, a.z0, a.x1, a.z1), SURFACE[a.surface], ON_ANOTHER.has(a.id) ? 0.027 : 0.02);
 
   // -------------------------------------------------------------------------
@@ -131,6 +132,20 @@ export function buildCity(k: Build): TileParts {
   }
   // and whatever the files of models build besides their lots
   extras(k);
+  // the open paving between it all, last of all: bicycles at racks, benches, boxes for newspapers, planters,
+  // trees in grates, lamps and bollards, and people about them
+  furnish(k, {
+    name: 'Urbana-Champaign', routes: ROUTES, heroes: HERO_SPOTS, parked: PARKED, seed: 0x1111,
+    fixtures: [
+      bikes([0x2f6b9a, 0xc8392b, 0x2b2f33, 0xe0a030, 0xe8e4da], 4),
+      bench(0x8a6446, 0x2b2f33, 3),
+      newsBoxes(undefined, 1),
+      planter(0xbdb8ad, [0xe84a27, 0xf2c81e, 0xe86fa0], 2),
+      treeInGrate(0.95, 0x3a3d40, 2),
+      lampPost(0x1b1c20, 3.4, 2),
+      bollards(0x5f666e, 0xe84a27, 1),
+    ],
+  });
 
   // -------------------------------------------------------------------------
   // The checks, which speak in the console on the development server

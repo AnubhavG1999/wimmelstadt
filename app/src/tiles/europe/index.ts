@@ -9,6 +9,7 @@ import * as THREE from 'three';
 import { placed } from '../../engine/build';
 import { ordinaryBuildings, type BuildingRules, type Lot } from '../../engine/buildings';
 import { LAWN, area, ground, onBoard, rect, terrace, water, type P2 } from '../../engine/ground';
+import { bench, bikes, bollards, cafe, fountain, furnish, kiosk, lampPost, planter, stall, treeInGrate } from '../../engine/furnish';
 import { buildPath, type Path } from '../../engine/paths';
 import { lampsAlong, roadDeck, street } from '../../engine/roads';
 import type { SignDef } from '../../engine/signs';
@@ -147,7 +148,7 @@ function build(k: Build): TileParts {
   // -------------------------------------------------------------------------
 
   const river = riverShape();
-  ground(k, { color: PAVING, holes: [river] });
+  ground(k, { color: PAVING, holes: [river], flags: { size: 1.6 } });
   water(k, river, { drop: WATER_DROP, color: WATER, quay: QUAY });
   // the Île de la Cité, shaped like a ship
   const { x0: ix0, x1: ix1, half: ih } = ISLAND;
@@ -357,6 +358,23 @@ function build(k: Build): TileParts {
   const parked: ParkedSpot[] = [{ x: -64.6, y: 0.03, z: 61.5, heading: Math.PI / 2 }, { x: -45.5, y: 0.03, z: 64.5, heading: -1.9 }];
   // Ace Cafe's forecourt: a line of cars beyond the motorbikes, with one bay of it kept for a hero
   for (const x of [-96.5, -88, -71]) parked.push({ x, y: 0.04, z: 18.2, heading: x < -90 ? Math.PI : 0 });
+
+  // the open paving between it all, last of all: café tables, benches, planters, trees in grates, lamps, a kiosk, a fountain, a stall, and people about them
+  furnish(k, {
+    name: 'Europe', routes: ROUTES, heroes: heroSpots, parked, seed: 0xe0a1,
+    fixtures: [
+      cafe([0xc8392b, 0xf2efe6, 0x2f6b4f, 0x1f4f8b], 0x8d8a83, 4),
+      bench(0x2f6b4f, 0x2b2f33, 3),
+      planter(0xcfc6b2, [0xd8432b, 0xe86fa0, 0xf2efe6], 2),
+      treeInGrate(0.9, 0x3a3d40, 3),
+      lampPost(0x1f3a2c, 3.2, 2),
+      bollards(0x2b2f33, 0xd9d4c8, 1),
+      kiosk(0x2f6b4f, 0x23272b, 0xc8392b, 1),
+      fountain(0xcfc6b2, 0x7fb8d6, 1),
+      stall([0xc8392b, 0x2f6b9a, 0xe0a030], undefined, 1),
+      bikes(undefined, 1),
+    ],
+  });
 
   return { routes: ROUTES, parked, heroSpots };
 }

@@ -8,6 +8,8 @@
 import { ordinaryBuildings, type BuildingRules, type Lot } from '../../engine/buildings';
 import { checkRoads, type Solid } from '../../engine/checks';
 import { LAWN, area, band, flat, ground, oval, rect, terrace, walls, water } from '../../engine/ground';
+import { bench, bollards, furnish, lampPost, planter, stall, treeInGrate } from '../../engine/furnish';
+import { auto, cart } from './life';
 import { lane, sample, toSegs, type Piece } from '../../engine/lines';
 import { buildPath, type Path } from '../../engine/paths';
 import { CONCRETE, clearOfStreets, lampsAlong, roadDeck, street } from '../../engine/roads';
@@ -84,7 +86,7 @@ function build(k: Build): TileParts {
 
   const river = rect(WEST_BANK, k.board.z0 + 0.2, EAST_BANK, k.board.z1 - 0.2);
   const tanks = Object.values(WATERS);
-  ground(k, { color: PAVING, holes: [river, ...tanks.map((w) => rect(...w.at))] });
+  ground(k, { color: PAVING, holes: [river, ...tanks.map((w) => rect(...w.at))], flags: { size: 1.4 } });
   water(k, river, { drop: 1.4, color: WATER, quay: QUAY });
   for (const w of tanks) if (w.wet) water(k, rect(...w.at), { color: 0x6f9a8c, quay: 0xb5ab98 });
 
@@ -339,6 +341,22 @@ function build(k: Build): TileParts {
   parked.push(...life(k, heroSpots));
   // three of the city's buses at the terminal north of the fort, their noses to the south
   for (const x of [43.6, 47.3, 51]) parked.push({ x, y: 0.03, z: -106.9, heading: Math.PI / 2, type: 'city-bus' });
+
+  // the open paving between it all, last of all: stalls under tarpaulins, autos at a stand, carts, stone benches,
+  // marigolds in clay planters, trees in grates, lamps and bollards, and people about them
+  furnish(k, {
+    name: 'Delhi', routes: ROUTES, heroes: heroSpots, parked, seed: 0xde1,
+    fixtures: [
+      stall([0x2f6b9a, 0xe58a2e, 0xd8432b, 0x3f8a4f], [0xe58a2e, 0xf2c81e, 0x6aa84f, 0xd8432b], 4),
+      { r: 2.2, h: 2.2, w: 2, people: 1, make: (kk, x, z, yaw) => auto(kk.b, x, z, yaw + Math.PI / 2) },
+      { r: 2.1, h: 2.8, w: 2, make: (kk, x, z, _yaw, t) => cart(kk, x, z, [0xe58a2e, 0xf2c81e, 0x6aa84f][Math.floor(t * 3)], [0xd8432b, 0x2f6b9a][Math.floor(t * 2)], 0xf2efe6) },
+      bench(0xc9a27e, 0x8a7a66, 3),
+      planter(0xb5653f, [0xf28c1e, 0xf2c81e, 0xd8432b], 3),
+      treeInGrate(1.0, 0x6f6a60, 3),
+      lampPost(0x2b2f33, 3.2, 2),
+      bollards(0xcfc7b6, 0xb5553c, 1),
+    ],
+  });
 
   return { routes: ROUTES, parked, heroSpots, kinds: KINDS };
 }
