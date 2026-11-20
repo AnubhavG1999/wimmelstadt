@@ -16,11 +16,13 @@
 // The middle of each road is in plan.ts. This file walks round each piece
 // along those middles, and lays the lane half a lane to the left of the walk.
 
+import * as THREE from 'three';
 import { eased, fine, pathOf, raised, rounded, segsOf, type P3 } from '../../engine/corners';
 import type { Path } from '../../engine/paths';
 import { street } from '../../engine/roads';
 import type { Build, Route } from '../../engine/tile';
 import { LANE, ROADS, TURNS, roadY, type P2 } from './plan';
+import { WAYSIDE, open } from './space';
 
 /** A ring that a road turns back in. */
 interface Turn { c: P2; r: number }
@@ -28,8 +30,15 @@ interface Turn { c: P2; r: number }
 type Step = P2 | Turn;
 
 const R = ROADS, K = R.kingsroad;
-/** The places where roads meet. */
-const T = K[6], X = K[7], Q = K[11], G = K[12], RS = K[13], FORK = K[14], W = R.gold[0], T2 = R.twins[3], O = R.rose[5];
+/** The places where roads meet, and the kingsroad's bend south of the Blackwater bridge. */
+const T = K[6], X = K[7], Q = K[11], G = K[12], BEND = K[13], FORK = K[14], W = R.gold[0], T2 = R.twins[3], O = R.rose[5];
+
+/**
+ * How tightly a lane turns: on a radius of 3.6, but of 2 at the fork before
+ * Storm's End. A lane that comes down from the castle turns hard left there,
+ * and on the wider radius it would begin its turn while still on the ramp.
+ */
+const TURN = 3.6, TURN_FORK = 2;
 
 /**
  * The four walks. Each goes round its piece with the piece on its left, so
@@ -42,7 +51,7 @@ const WALKS: Record<string, Step[]> = {
   // bridge, and north again to the Wall.
   kingsroad: [
     TURNS.wall, K[0], K[1], K[2], K[3], K[4], K[5], T, X, R.high[1], R.high[2], TURNS.moon, R.high[2], R.high[1], X,
-    K[8], K[9], K[10], Q, G, RS, FORK, TURNS.drum, FORK, R.sunspear[1], R.sunspear[2], TURNS.sun, R.sunspear[2], R.sunspear[1], FORK, RS,
+    K[8], K[9], K[10], Q, G, BEND, FORK, TURNS.drum, FORK, R.sunspear[1], R.sunspear[2], TURNS.sun, R.sunspear[2], R.sunspear[1], FORK,
     R.rose[1], R.rose[2], R.rose[3], R.rose[4], O, R.isle[1], R.isle[2], TURNS.tower, R.isle[2], R.isle[1], O,
     R.ocean[3], R.ocean[2], R.ocean[1], W, R.river[6], R.river[5], R.river[4], T2, R.twins[2], R.twins[1], T,
     K[5], K[4], K[3], K[2], K[1], K[0],
@@ -51,8 +60,8 @@ const WALKS: Record<string, Step[]> = {
   riverlands: [X, T, R.twins[1], R.twins[2], T2, R.river[2], R.river[1]],
   // West along the river road, south between the lake and the Rock, east along the goldroad and the river front, and north along the quays.
   westerlands: [X, R.river[1], R.river[2], T2, R.river[4], R.river[5], R.river[6], W, G, Q, K[10], K[9], K[8]],
-  // West along the goldroad, down the ocean road, back along the roseroad, and north over the Blackwater bridge.
-  reach: [G, W, R.ocean[1], R.ocean[2], R.ocean[3], O, R.rose[4], R.rose[3], R.rose[2], R.rose[1], RS],
+  // West along the goldroad, down the ocean road, back along the roseroad to the fork, and north over the Blackwater bridge.
+  reach: [G, W, R.ocean[1], R.ocean[2], R.ocean[3], O, R.rose[4], R.rose[3], R.rose[2], R.rose[1], FORK, BEND],
 };
 
 const isTurn = (s: Step): s is Turn => !Array.isArray(s);
@@ -63,8 +72,8 @@ const isTurn = (s: Step): s is Turn => !Array.isArray(s);
  * way out. At a ring it goes in on the left of the road, round with the clock,
  * and comes out on the left of the way back.
  */
-function laneCorners(walk: Step[], off: number): P2[] {
-  const n = walk.length, out: P2[] = [];
+function laneCorners(walk: Step[], off: number): { corners: P2[]; radii: number[] } {
+  const n = walk.length, out: P2[] = [], radii: number[] = [];
   const at = (i: number): P2 => {
     const s = walk[((i % n) + n) % n];
     return isTurn(s) ? s.c : s;
@@ -77,6 +86,7 @@ function laneCorners(walk: Step[], off: number): P2[] {
       for (let k = 0; k <= corners; k++) {
         const a = from + gap + ((2 * Math.PI - 2 * gap) * k) / corners;
         out.push([s.c[0] + Math.cos(a) * s.r, s.c[1] + Math.sin(a) * s.r]);
+        radii.push(TURN);
       }
       return;
     }
@@ -86,19 +96,21 @@ function laneCorners(walk: Step[], off: number): P2[] {
     // left of a way (dx, dz) is (dz, -dx): east, for someone going south
     const k = 1 + az * bz + ax * bx;
     out.push([s[0] + ((az + bz) * off) / k, s[1] + ((-ax - bx) * off) / k]);
+    radii.push(s === FORK ? TURN_FORK : TURN);
   });
-  return out;
+  return { corners: out, radii };
 }
 
 /** A line of corners as a road in space: rounded, a point every unit and a half, at the height the plan gives each place. */
-function inSpace(corners: P2[], r: number, closed: boolean): P3[] {
+function inSpace(corners: P2[], r: number | number[], closed: boolean): P3[] {
   return eased(raised(fine(rounded(corners, r, closed), 1.5), (_s, p) => roadY(p[0], p[1])), 2.5, closed);
 }
 
 /** The lane of each walk, as the engine takes it. */
 export const LANES: Record<string, P3[]> = Object.fromEntries(
   Object.entries(WALKS).map(([id, walk]) => {
-    const pts = inSpace(laneCorners(walk, LANE / 2), 3.6, true);
+    const { corners, radii } = laneCorners(walk, LANE / 2);
+    const pts = inSpace(corners, radii, true);
     // closed: its last point is not its first again
     return [id, pts];
   }),
@@ -165,6 +177,43 @@ export function buildRoads(k: Build): Route[] {
     street(k, path, { lanes: 0, width: LANE + 1.2, sidewalk: 0, color, zebras: false });
   });
 
+  return routesOf();
+}
+
+/**
+ * Fires by the wayside: an iron basket of burning wood on a post, to one side
+ * of the road and the other in turn, wherever a road runs through open
+ * country. They are what lamps are to another tile's streets: by night each
+ * lights its stretch of road. Put up when the castles stand and before the
+ * open country is planted, so that they keep off the first and the second
+ * keeps off them.
+ */
+export function buildWaysideFires(k: Build): number {
+  const p = new THREE.Vector3(), q = new THREE.Vector3();
+  WAYSIDE.length = 0;
+  let n = 0;
+  for (const id of Object.keys(R) as (keyof typeof ROADS)[]) {
+    const path = MIDDLES[id];
+    for (let s = 7; s < path.length - 5; s += 13.5) {
+      path.at(s, p);
+      path.at(s + 0.6, q);
+      const dx = q.x - p.x, dz = q.z - p.z, l = Math.hypot(dx, dz) || 1, side = n++ % 2 ? 1 : -1;
+      // beside the road: 1.1 off its edge
+      const x = p.x + (dz / l) * side * (LANE + 1.1), z = p.z - (dx / l) * side * (LANE + 1.1);
+      if (!open(x, z, 0.5)) continue;
+      const y = p.y;
+      k.b.box(x - 0.09, y, z - 0.09, x + 0.09, y + 2.7, z + 0.09, 0x4a4038, { faces: 'NESW' });
+      k.b.cyl(x, z, y + 2.7, y + 3.1, 0.2, 0.34, 5, 0x3c3f45, { cap: 0x26262a });
+      k.glows.push({ x, y: y + 3.35, z, sx: 0.26, sy: 0.4, sz: 0.26, color: '#ffb347' });
+      k.lights.push({ x, z, r: 8.5, color: '#ffbf75', k: 0.55 });
+      WAYSIDE.push([x, z]);
+    }
+  }
+  return WAYSIDE.length;
+}
+
+/** Who travels the roads. */
+function routesOf(): Route[] {
   // Who travels: no plain cars. Riders, carts and wains, sparse, and the heroes among them.
   const route = (id: string, speed: number, count: number, types: string[]): Route => ({ id, segs: segsOf(LANES[id], true), speed, count, types });
   return [

@@ -14,7 +14,7 @@ import { BOARDS } from './look';
 import type { Model } from './models';
 import { GATES, HERO_SPOTS, LOTS, WALL, type Lot } from './plan';
 import { REGIONS } from './regions';
-import { buildRoads } from './roads';
+import { buildRoads, buildWaysideFires } from './roads';
 import { buildShips } from './ships';
 import { checkSight } from './sight';
 import { WAYFARERS } from './wayfarers';
@@ -89,6 +89,8 @@ export function buildWesteros(k: Build): TileParts {
         console.error(`Westeros: what ${name} builds besides its lots failed.`, e);
       }
     }
+    // fires by the wayside: after the castles, whose boards they keep off, and before the country, which keeps off them
+    counted('the roads', () => buildWaysideFires(k));
     try {
       counted('the open country', () => buildCountry(k));
     } catch (e) {

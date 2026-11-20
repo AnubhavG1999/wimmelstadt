@@ -20,6 +20,9 @@ const KEPT: { what: string; x0: number; z0: number; x1: number; z1: number }[] =
   { what: "the foot of Casterly Rock and Lannisport's gate", x0: -74, z0: 6, x1: -71.4, z1: 48 },
 ];
 
+/** Where the fires by the wayside stand, as they are put up (roads.ts). What is built after them keeps off them. Emptied when the tile is built again. */
+export const WAYSIDE: P2[] = [];
+
 const d2 = (px: number, pz: number, a: P2, b: P2): number => {
   const vx = b[0] - a[0], vz = b[1] - a[1], l = vx * vx + vz * vz || 1;
   const t = Math.max(0, Math.min(1, ((px - a[0]) * vx + (pz - a[1]) * vz) / l));
@@ -85,6 +88,8 @@ export function open(x: number, z: number, room = 2): boolean {
     const ex = x - s.x, ez = z - s.z, along = ex * 0.669 + ez * 0.743, across = Math.abs(-ex * 0.743 + ez * 0.669);
     if (Math.hypot(ex, ez) < 7 + room || (along > 0 && along < 14 && across < 7)) return false;
   }
+  // nothing stands on a wayside fire
+  for (const w of WAYSIDE) if (Math.hypot(x - w[0], z - w[1]) < 0.7 + room) return false;
   // nothing stands in a name board or its posts
   for (const b of BOARDS) {
     const ex = x - b.x, ez = z - b.z, along = ex * 0.669 + ez * 0.743, across = Math.abs(-ex * 0.743 + ez * 0.669);

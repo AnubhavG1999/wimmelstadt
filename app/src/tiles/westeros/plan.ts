@@ -320,10 +320,19 @@ export const CIRCUIT: Waypoint[] = [
 /** How wide one lane is, and so half of how wide a road is. */
 export const LANE = 4;
 
+/**
+ * The fork before Storm's End, where four roads meet: the kingsroad from the
+ * north, the road up to the castle's gate, the road to Sunspear and the
+ * roseroad. It lies on the line of that climb, 28 from the middle of the
+ * castle: far enough out that a lane coming down has left the ramp, which
+ * begins 22.2 from the middle, before it turns.
+ */
+const FORK: P2 = [38.6, 72.6];
+
 /** The middle of each road, corner by corner. */
 export const ROADS = {
   /** From the Wall's north foot, through the gate in the ice at x 10, to the fork before Storm's End. */
-  kingsroad: [[10, -99], [10, -82], [16, -74], [16, -47], [21, -44], [21, -32], [22, -26], [40, -15], [41.5, -8.5], [44, -0.5], [70, 3], [70, 50.5], [40, 50.5], [40, 68], [43, 75.5]],
+  kingsroad: [[10, -99], [10, -82], [16, -74], [16, -47], [21, -44], [21, -32], [22, -26], [40, -15], [41.5, -8.5], [44, -0.5], [70, 3], [70, 50.5], [40, 50.5], [40, 66], FORK],
   /** East from the crossroads, through the Bloody Gate, to the yard before the Gates of the Moon. */
   high: [[40, -15], [52, -13], [67.5, -13]],
   /** West from the crossroads along the Trident, over the Red Fork below Riverrun, and south between the Gods Eye and Casterly Rock. */
@@ -334,12 +343,12 @@ export const ROADS = {
   gold: [[-67.5, 50.5], [40, 50.5]],
   /** Down the west coast to Oldtown. */
   ocean: [[-67.5, 50.5], [-67.5, 64], [-60, 80], [-56, 88], [-56, 103]],
-  /** From the Blackwater bridge south-west past Highgarden to Oldtown. */
-  rose: [[40, 68], [24, 80], [0, 94], [-20, 100], [-30, 103], [-56, 103]],
+  /** From the fork before Storm's End south-west past Highgarden to Oldtown. */
+  rose: [FORK, [24, 80], [0, 94], [-20, 100], [-30, 103], [-56, 103]],
   /** From Oldtown over the bridge to Battle Isle. */
   isle: [[-56, 103], [-63, 103], [-69, 100.2]],
   /** From the fork through Sunspear's three gates, one behind another on a straight road. */
-  sunspear: [[43, 75.5], [38.5, 85], [38, 98]],
+  sunspear: [FORK, [38.5, 85], [38, 98]],
 } satisfies Record<string, P2[]>;
 
 /**

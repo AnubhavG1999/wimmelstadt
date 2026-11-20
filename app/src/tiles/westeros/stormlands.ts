@@ -294,17 +294,23 @@ function stormsEndWall(k: Build, l: Lot): void {
   const st: number[] = [];
   for (let d = RAMP_FOOT; d > RI + 1.0; d -= 0.75) st.push(d);
   st.push(RI + 1.0, RAMP_END);
-  const RAMP = STONE.storm, RAMP_CAP = STONE.stormShade;
+  const RAMP = STONE.storm, RAMP_CAP = STONE.stormShade, WALL_FROM = RAMP_FOOT - 3;
   for (let i = 0; i + 1 < st.length; i++) {
     const d0 = st[i], d1 = st[i + 1], y0 = Math.max(-0.05, rampTop(d0)), y1 = Math.max(-0.05, rampTop(d1));
     q4(b, gp(-RAMP_WALL, d0, y0), gp(RAMP_WALL, d0, y0), gp(RAMP_WALL, d1, y1), gp(-RAMP_WALL, d1, y1), [0, 1, 0], EARTH_TOP);
     if (d1 < RI + 1.0 - 1e-6) continue; // under the gate it is only the bed of the road
     for (const s of [-1, 1]) {
       const side: V3 = [ET[0] * s, 0, ET[1] * s], inside: V3 = [-ET[0] * s, 0, -ET[1] * s], w = RAMP_WALL * s, e = RAMP_HALF * s, h = 0.85;
+      // the low walls begin a little way up: at the ramp's foot the lanes turn off it to the other roads, and
+      // there it has only its own flank, which is not yet a hand high
+      if (d0 > WALL_FROM + 1e-6) {
+        q4(b, gp(w, d0, -0.4), gp(w, d1, -0.4), gp(w, d1, y1), gp(w, d0, y0), side, RAMP);
+        continue;
+      }
       q4(b, gp(w, d0, y0), gp(w, d1, y1), gp(w, d1, y1 + h), gp(w, d0, y0 + h), inside, RAMP);
       q4(b, gp(w, d0, y0 + h), gp(w, d1, y1 + h), gp(e, d1, y1 + h), gp(e, d0, y0 + h), [0, 1, 0], RAMP_CAP);
       q4(b, gp(e, d0, -0.4), gp(e, d1, -0.4), gp(e, d1, y1 + h), gp(e, d0, y0 + h), side, RAMP);
-      if (i === 0) q4(b, gp(w, d0, -0.4), gp(e, d0, -0.4), gp(e, d0, y0 + h), gp(w, d0, y0 + h), [ER[0], 0, ER[1]], RAMP);
+      if (i === 0 || st[i - 1] > WALL_FROM + 1e-6) q4(b, gp(w, d0, -0.4), gp(e, d0, -0.4), gp(e, d0, y0 + h), gp(w, d0, y0 + h), [ER[0], 0, ER[1]], RAMP);
     }
   }
 
@@ -609,6 +615,9 @@ function windingWall(k: Build, l: Lot, idx: number): void {
   if (xe >= l.x1 - 0.01) wallTower(b, xe - 0.3, zm, l.top);
   gatehouse(k, xg, zm, (l.z1 - l.z0) / 2, true);
   if (idx !== 1) banner(b, xg + 2.4, zm, 6.9, 'martell', l.top + 3.9 - 6.9, idx === 0 ? 1 : 0.75);
+  // the place's name stands on the middle gate, over its arch, and faces into the city: every way beside the
+  // road before the first gate is another road's now
+  else nameBoard(k, 'stormlands-sunspear', xg, zm, 6.2, [0, 0, 1], 1.3);
 }
 
 /** The shadow city: mud-brick houses and shops between the walls, with alleys, awnings and stalls, and people. */
@@ -839,7 +848,4 @@ export function extras(k: Build): void {
   shadowCity(k);
   court(k);
   sandship(k);
-  const ra = ROADS.sunspear[0], rb = ROADS.sunspear[1], rl = Math.hypot(rb[0] - ra[0], rb[1] - ra[1]), ax = (rb[0] - ra[0]) / rl, az = (rb[1] - ra[1]) / rl;
-  // seven along the road from the fork, five and a half to its west, facing across it towards the view
-  nameBoard(k, 'stormlands-sunspear', ra[0] + ax * 7 - az * 5.4, ra[1] + az * 7 + ax * 5.4, 0, [az, 0, -ax], 1.3);
 }
