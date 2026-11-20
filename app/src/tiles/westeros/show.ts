@@ -16,10 +16,16 @@
 //   55 to 57  east along the south shore
 
 import { ABREAST, ASTERN, ECHELON_LEFT, TRAIL, VIC, type Formation, type ShowPlan } from './flight';
-import { CIRCUIT } from './plan';
+import { CIRCUIT, DRAGONMONT, lotOf, type Waypoint } from './plan';
 
 /** The echelon of the low pass: tighter than the usual one, to keep all three clear of Storm's End. */
 const ECHELON_PASS: Formation = [[0, 0, 0], [-5, 9, 0], [-10, 18, 0]];
+
+/**
+ * Where Drogon lands: the back rim of the Dragonmont's crater, at the height of the mountain's top.
+ * The places before and after it lie on the line he faces along, so that he comes down facing that way.
+ */
+const PERCH: Waypoint = [DRAGONMONT.perch[0], lotOf('dragonmont').top, DRAGONMONT.perch[1], 5];
 
 export const SHOW: ShowPlan = {
   circuit: CIRCUIT,
@@ -41,17 +47,17 @@ export const SHOW: ShowPlan = {
   ],
   solos: [
     // Drogon: down to the sea in the south-east corner, a long breath over open water, back north past
-    // Storm's End and up the west side of Dragonstone, round the north of the Dragonmont in a hard turn,
-    // and down its east rim onto the shelf at its south-east corner, where he stands a while and looks
-    // out over the bay, towards the city and the view the tile opens with. Then off the south edge and
-    // up to the others.
+    // Storm's End and up the west side of Dragonstone, round to the right in a hard turn north of the
+    // Dragonmont, and down over its back onto the high rim of its crater. There he stands a while, the
+    // crater before him, facing the view the tile opens with. Then off over the crater, round the south
+    // of the island and up to the others.
     {
       way: [
         [97, 100, 54, 22], [99, 72, 70, 44], [98, 40, 86, 50], [96, 24, 100, 46],
         [92, 24, 109, 34], [84, 27, 106, 30], [82, 30, 90, 30], [82, 30, 66, 30],
-        [81, 34, 46, 28], [78, 44, 27, 26], [82, 49, 6, 22], [94, 45, -2, 16], [101.5, 38, 7, 12], [101, 32, 17.5, 8],
-        [99.5, 30, 24.5, 5],
-        [97.5, 29, 31, 12], [92, 31, 41, 20], [84, 37, 34, 26], [77, 45, 22, 28], [69, 52, 16, 32],
+        [81, 34, 46, 28], [78, 44, 27, 26], [78.5, 46, 9, 22], [84.5, 43, 1, 17], [90.2, 38, 5.5, 12.5], [91.4, 33, 13.7, 8.5],
+        PERCH,
+        [99, 29, 26.9, 12], [99.6, 30, 34.5, 18], [95, 31.5, 43.5, 22], [83.5, 37, 42.5, 26], [75, 45, 28, 28], [69, 52, 16, 32],
       ],
       fire: [{ at: 2, seconds: 1.5 }],
       perch: { at: 14, seconds: 9 },

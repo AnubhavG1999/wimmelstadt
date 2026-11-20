@@ -98,7 +98,11 @@ export interface WallOpts {
 export function rampart(b: GeoBuilder, a: P2, c: P2, top: number, color: number, o: WallOpts = {}): void {
   const dx = c[0] - a[0], dz = c[1] - a[1], len = Math.hypot(dx, dz), yaw = Math.atan2(dz, dx);
   const half = (o.thick ?? 1.6) / 2, y0 = o.y0 ?? 0, shade = o.shade ?? color;
-  b.obox((a[0] + c[0]) / 2, (y0 + top) / 2, (a[1] + c[1]) / 2, len / 2, (top - y0) / 2, half, yaw, color, { top: shade, win: o.win, seed: a[0] * 0.13 + a[1] * 0.07 });
+  // as a box that is turned and moved: so its long faces know how long they are, and their loops come in a row
+  b.moved((a[0] + c[0]) / 2, 0, (a[1] + c[1]) / 2, yaw, () => {
+    b.box(-len / 2, y0, -half, len / 2, top, half, color, { top: shade, win: o.win, seed: a[0] * 0.13 + a[1] * 0.07, faces: 'NST' });
+    b.box(-len / 2, y0, -half, len / 2, top, half, color, { faces: 'EW' });
+  });
   if (o.merlons === false) return;
   // merlons: on the outer edge and the inner, a solid one for every gap
   const n = Math.max(1, Math.round(len / 1.9)), nx = -Math.sin(yaw), nz = Math.cos(yaw);
@@ -199,12 +203,20 @@ export function weirwood(k: Build, x: number, z: number, y = 0, size = 1): void 
 }
 
 /**
+ * Every name board that stands, as it is put up: where, and how wide. The open
+ * country, which is built last, plants nothing between a board and the view
+ * the tile opens with (see space.ts). Emptied when the tile is built again.
+ */
+export const BOARDS: { x: number; z: number; w: number }[] = [];
+
+/**
  * The board that says what a place is called: a painted board between two
  * posts, facing the view the tile opens with unless told otherwise. `id` is a
  * sign in the file's own `SIGNS`, made with `nameSign`.
  */
 export function nameBoard(k: Build, id: string, x: number, z: number, y = 0, facing: V3 = [0.669, 0, 0.743], h = 1.5): void {
   const w = k.sign(id, x, y + 2.3 + h / 2, z, facing[0], facing[2], h, 9);
+  BOARDS.push({ x, z, w });
   // across the board, level
   const ax = -facing[2], az = facing[0];
   for (const s of [-1, 1]) k.b.beam([x + ax * s * (w / 2 + 0.12) - facing[0] * 0.1, y, z + az * s * (w / 2 + 0.12) - facing[2] * 0.1], [x + ax * s * (w / 2 + 0.12) - facing[0] * 0.1, y + 2.5 + h, z + az * s * (w / 2 + 0.12) - facing[2] * 0.1], 0.13, 0.11, TIMBER);

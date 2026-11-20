@@ -1,6 +1,7 @@
 // Where the open country is: the ground that no castle, road, river or yard
 // has taken. Whoever plants a wood or stands a farm asks here first.
 
+import { BOARDS } from './look';
 import { GODS_EYE, HERO_SPOTS, ISLANDS, LAND_NORTH, LAND_SOUTH, DORNE, LOTS, NECK, RIVERS, ROADS, STORMS_END, TURNS, WET, inside, type P2 } from './plan';
 
 /** Ground that belongs to a place although no lot covers it: its yard, its square, its court, its quay. */
@@ -9,8 +10,9 @@ const KEPT: { what: string; x0: number; z0: number; x1: number; z1: number }[] =
   { what: "the apron before Winterfell's gate", x0: 8, z0: -66, x1: 13, z1: -54 },
   { what: "Winter Town's market square", x0: 22, z0: -66, x1: 44, z1: -42 },
   { what: 'the yard of the inn', x0: 42, z0: -29, x1: 62, z1: -17 },
-  { what: 'the yard of the Gates of the Moon', x0: 67, z0: -16, x1: 82.5, z1: -1 },
-  { what: 'the tourney ground', x0: -16, z0: 31, x1: 24, z1: 47.5 },
+  { what: 'the yard of the Gates of the Moon', x0: 67, z0: -16, x1: 83, z1: -1.5 },
+  // west of the stand as far as the herald's board on its frame; King's Landing's wall is its east end
+  { what: 'the tourney ground', x0: -20, z0: 31, x1: 15.5, z1: 47.5 },
   { what: "King's Landing's quays and river front", x0: 9, z0: 2, x1: 77, z1: 64 },
   { what: 'the court of roses', x0: -19, z0: 84.5, x1: -5, z1: 94 },
   { what: 'Oldtown', x0: -66, z0: 85, x1: -42, z1: 113 },
@@ -83,5 +85,26 @@ export function open(x: number, z: number, room = 2): boolean {
     const ex = x - s.x, ez = z - s.z, along = ex * 0.669 + ez * 0.743, across = Math.abs(-ex * 0.743 + ez * 0.669);
     if (Math.hypot(ex, ez) < 7 + room || (along > 0 && along < 14 && across < 7)) return false;
   }
+  // nothing stands in a name board or its posts
+  for (const b of BOARDS) {
+    const ex = x - b.x, ez = z - b.z, along = ex * 0.669 + ez * 0.743, across = Math.abs(-ex * 0.743 + ez * 0.669);
+    if (Math.abs(along) < 0.6 + room && across < b.w / 2 + 0.4 + room) return false;
+  }
   return true;
+}
+
+/**
+ * How tall a thing at a place may be without hiding a name board. A board is
+ * read from the south-east, and its lettering begins 2.3 above the ground: a
+ * thing before it may be the taller the farther before it it stands. Infinity
+ * where no board stands behind the place.
+ */
+export function underBoards(x: number, z: number, room = 1): number {
+  let h = Infinity;
+  for (const b of BOARDS) {
+    const ex = x - b.x, ez = z - b.z, along = ex * 0.669 + ez * 0.743, across = Math.abs(-ex * 0.743 + ez * 0.669);
+    // the view looks down at 38 degrees: what stands `along` before the board hides it up to its own height less 0.78 of that
+    if (along > 0 && along < 12 && across < b.w / 2 + room) h = Math.min(h, 1.9 + 0.78 * along);
+  }
+  return h;
 }

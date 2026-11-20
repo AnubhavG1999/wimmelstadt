@@ -30,13 +30,16 @@ const XW = BOARD.x0 + EDGE, XE = BOARD.x1 - EDGE, ZN = BOARD.z0 + EDGE, ZS = BOA
  * [x, z] corners. North of the Wall's west end the land runs off the board.
  */
 export const COAST_WEST: P2[] = [
-  [XW, ZN], [XW, -84], [-82, -80], [-78, -62], [-66, -48], [-44, -42.5], [-14, -42.5], [-14, -36], [-40, -33], [-64, -28], [-78, -22], [-78, 0],
+  // the shore steps north at x -21.5: the western castle of the Twins stands on that ground
+  [XW, ZN], [XW, -84], [-82, -80], [-78, -62], [-66, -48], [-44, -42.5], [-14, -42.5], [-14, -37.4], [-21.5, -37.4], [-40, -33], [-64, -28], [-78, -22], [-78, 0],
   [-72, 8], [-72, 34], [-86, 36], [-86, 46], [-80, 50], [-78, 66], [-70, 80], [-64, 86], [-64, ZS],
 ];
 /** Where the land ends to the east, from the north edge to the south. At the Vale it runs off the board. */
 export const COAST_EAST: P2[] = [
   [90, ZN], [90, -70], [88, -58], [80, -56], [60, -49], [42, -44], [42, -37.5], [XE, -37.5], [XE, 0.5],
-  [76, 2], [76, 56], [62, 56], [62, 59], [44, 59], [44, 56], [16, 56], [16, 63], [76, 63], [76, 98], [56, 100], [56, ZS],
+  // the Trident's mouth: the bay's corner is cut back to a funnel, and the river ends square on its far side
+  [79.5, 1.8], [76.87, 0.42], [74.81, 3.24], [76, 5.2],
+  [76, 56], [62, 56], [62, 59], [44, 59], [44, 56], [16, 56], [16, 63], [76, 63], [76, 98], [56, 100], [56, ZS],
 ];
 
 /** The Neck: the narrow land between two seas, which is bog. */
@@ -164,15 +167,17 @@ export const LOTS: Lot[] = [
   lot('deepwood', 'Deepwood Motte', -68, -60, -62, -54, 9),
   // --- the Neck: the causeway runs at x 21 ---
   lot('mc-children', "Children's Tower", 9, -47, 12.5, -43.5, 18),
-  lot('mc-gate', 'Gatehouse Tower', 16, -41.5, 26, -37.5, 9),
+  // the gatehouse: the road is 8 wide at x 21, its arch 9, and a tower 2 wide to each side of that
+  lot('mc-gate', 'Gatehouse Tower', 14.5, -42, 27.5, -37.5, 9),
   lot('mc-drunkard', "Drunkard's Tower", 8, -38, 12, -34, 14),
   lot('crannogs', 'Crannogs', 28, -42, 36, -36, 4),
-  // --- the Twins: the road at z -26 ---
-  lot('tw-east-keep', 'The Twins', 4, -38, 12, -30, 20),
-  lot('tw-east-gate', '', 4, -30, 14, -22, 9, true),
-  lot('tw-water', 'Water Tower', -10, -30, -4, -22, 17),
-  lot('tw-west-keep', 'The Twins', -26, -38, -18, -30, 20),
-  lot('tw-west-gate', '', -28, -30, -18, -22, 9, true),
+  // --- the Twins: the road at z -26. The two castles mirror each other about the Green Fork at x -7:
+  // a gatehouse on the road, 6 to each side of its middle, and a keep behind it to the north. ---
+  lot('tw-east-keep', 'The Twins', -2, -37.4, 6, -32, 20),
+  lot('tw-east-gate', '', 4, -32, 14, -20, 9, true),
+  lot('tw-water', 'Water Tower', -10, -32, -4, -20, 17),
+  lot('tw-west-keep', 'The Twins', -20, -37.4, -12, -32, 20),
+  lot('tw-west-gate', '', -28, -32, -18, -20, 9, true),
   // --- the crossroads at (40, -15), Riverrun, the Vale ---
   lot('inn', 'Inn at the Crossroads', 44, -28, 54, -21, 11),
   lot('inn-stable', 'Stable', 55, -27, 60, -22, 6),
@@ -183,8 +188,9 @@ export const LOTS: Lot[] = [
   lot('vale-summit', "Giant's Lance", 82, -30, 92, -22, 52),
   lot('vale-south', '', 82, -18, 104, -6, 14, true),
   lot('eyrie', 'The Eyrie', 76, -27, 82, -21, 47),
-  lot('bloody-gate-n', 'Bloody Gate', 63, -21, 67, -18, 11),
-  lot('bloody-gate-arch', '', 63, -18, 67, -10, 8, true),
+  // the Bloody Gate: the high road is 8 wide at z -13, its arch 9, and a pier to each side of that; the tower stands north of the north pier
+  lot('bloody-gate-n', 'Bloody Gate', 63, -22, 67, -19, 11),
+  lot('bloody-gate-arch', '', 63, -19, 67, -7.5, 8, true),
   lot('gates-moon', 'Gates of the Moon', 72, -19.5, 80, -15, 12),
   // --- Harrenhal, on the Gods Eye's east shore ---
   lot('hh-wall-n', 'Harrenhal', -38, 4, 2, 6, 11, true), lot('hh-wall-s', '', -38, 28, 2, 30, 11, true),
@@ -236,6 +242,24 @@ export const LOTS: Lot[] = [
   lot('ds-castle', 'Dragonstone', 88, 30, 96, 38, 20),
   lot('dragonmont', 'Dragonmont', 90, 12, 104, 28, 30),
 ];
+
+/**
+ * The Dragonmont's summit. It is a volcano: a cone with a crater, whose rim is
+ * highest at the back, to the north-north-west, and lowest at the front, so
+ * that the view the tile opens with looks into it. Drogon lands on the back
+ * rim and stands there facing that view, the crater before him. His stance
+ * is measured in his own frame: `facing` is forward, and across is to his left.
+ */
+export const DRAGONMONT = {
+  /** Where he stands, at the height of the lot's top: the middle of his stance. */
+  perch: [95.2, 20.3] as P2,
+  /** Which way he faces: 30 degrees east of south. */
+  facing: [0.5, 0.866] as P2,
+  /** The level ground under him: from so far behind him to so far before, and so far to each side. */
+  table: { back: 2.7, front: 0.9, half: 2.05 },
+  /** The crater: its middle, how far out its bowl and its rim reach, how high its rim is at the front, and its floor. */
+  crater: { x: 96.75, z: 22.98, bowl: 2.0, rim: 2.7, front: 25, floor: 23.5 },
+};
 
 /** A lot, by its name in the plan. */
 export const lotOf = (id: string): Lot => {
@@ -326,8 +350,8 @@ export const ROADS = {
 export const TURNS = {
   /** Round the weirwood in the clearing beyond the Wall. */
   wall: { c: [10, -106.2] as P2, r: 4.2 },
-  /** The yard before the Gates of the Moon. */
-  moon: { c: [75, -7.6] as P2, r: 4.3 },
+  /** The yard before the Gates of the Moon: clear of the castle to its north, and of the Trident, which runs between it and the kingsroad's bend. */
+  moon: { c: [76.2, -8.5] as P2, r: 3.8 },
   /** Round Storm's End's drum tower, inside its wall. */
   drum: { c: [62, 88] as P2, r: 6.75 },
   /** The court inside Sunspear's third gate. */
@@ -384,8 +408,12 @@ export const ISLANDS = {
  * each stays a shape of its own.
  */
 export const RIVERS = {
-  /** From Riverrun east past the crossroads to the bay. The kingsroad crosses it at x 42, by the inn. */
-  trident: { line: [[-53.6, -8.6], [-30, -7], [-2, -6], [30, -6], [42, -5], [50, -6.5], [64, -7], [72, -4], [75.7, 0.9]] as P2[], half: [1.5, 1.9] },
+  /**
+   * From Riverrun east past the crossroads to the bay. The kingsroad crosses it at x 42, by the inn. East of
+   * that it keeps between the high road and the kingsroad, south of the Bloody Gate's pier, and through the
+   * narrow place at (71, -1.6) between the yard of the Gates of the Moon and the kingsroad's bend.
+   */
+  trident: { line: [[-53.95, -8.6], [-30, -7], [-2, -6], [30, -6], [42, -5], [50, -6.5], [58, -5.6], [65, -4.6], [71.16, -1.58], [75.8, 1.8]] as P2[], half: [1.5, 1.65] },
   /** Out of the Neck, under the Twins' Water Tower at x -7, into the Trident. */
   greenFork: { line: [[-7, -37.1], [-7, -10], [-3.9, -8.1]] as P2[], half: [1.2, 1.5] },
   /** Along Highgarden's north wall to the Sunset Sea. The ocean road crosses it. */

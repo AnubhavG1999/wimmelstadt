@@ -20,7 +20,7 @@ import type { SignDef } from '../../engine/signs';
 import type { Build } from '../../engine/tile';
 import { DARK, DAUB, DOOR, HOUSE, HOUSE_WIN, ROCK, ROCK_DARK, ROOF, STONE, TIMBER, TIMBER_DARK, brazier, fire, squareTower, weirwood } from './look';
 import { COAST_EAST, COAST_WEST, LOTS, RIVERS, isWater, type P2 } from './plan';
-import { groundKind, open, toLine, toRiver, toRoad } from './space';
+import { groundKind, open, toLine, toRiver, toRoad, underBoards } from './space';
 
 export const SIGNS: SignDef[] = [];
 
@@ -69,9 +69,9 @@ function beforeLot(x: number, z: number): boolean {
   return false;
 }
 
-/** How tall a thing at a place may be: 9 at most, 5 before a lot, and low enough that what it hides behind it is not a road. */
+/** How tall a thing at a place may be: 9 at most, 5 before a lot, and low enough that what it hides behind it is not a road or a name board. */
 function cap(x: number, z: number): number {
-  let h = beforeLot(x, z) ? 5 : 9;
+  let h = Math.min(beforeLot(x, z) ? 5 : 9, underBoards(x, z));
   for (let t = 0.5; t <= 12; t += 0.75) {
     if (toRoad(x - VIEW[0] * t, z - VIEW[1] * t) < 4.3) { h = Math.min(h, t / 1.3); break; }
   }
@@ -1193,7 +1193,7 @@ function riverlands(k: Build): void {
   // a field of pasture north of the inn, under the Vale
   const pr = rng(3204);
   if (field(k, pr, 50, -35.4, 61.5, -30.6, 'pasture')) { flock(k, 55.5, -33, 6, 2.2, 3205, true, { x0: 50, z0: -35.4, x1: 61.5, z1: -30.6 }); haystack(k, 49, -33); }
-  hedgeKnight(k, [[-46, 6], [-74, -10], [-44, 38]]);
+  hedgeKnight(k, [[-46, 6], [-74, -10], [-48.5, 42.2], [-44, 38]]);
   // woods in clumps along the river and between the roads
   clumps(k, { x0: -46, z0: -3, x1: 38, z1: 3, count: 11, per: [3, 6], radius: [1.5, 3], seed: 1201, tall: false, size: [0.65, 1.0], gap: 2.3 });
   clumps(k, { x0: -70, z0: -31, x1: -44, z1: -22, count: 6, per: [4, 7], radius: [2, 3.5], seed: 1202, tall: false, size: [0.7, 1.05], gap: 2.3 });

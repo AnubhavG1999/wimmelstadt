@@ -10,6 +10,7 @@ import type { Build, TileParts } from '../../engine/tile';
 import { buildCountry } from './country';
 import { buildDragons } from './dragons';
 import { buildLand } from './land';
+import { BOARDS } from './look';
 import type { Model } from './models';
 import { GATES, HERO_SPOTS, LOTS, WALL, type Lot } from './plan';
 import { REGIONS } from './regions';
@@ -43,6 +44,7 @@ export function buildWesteros(k: Build): TileParts {
   // On the development server, `?bare` leaves the ground empty: a clear stage for looking at a dragon from every side.
   const bare = import.meta.env.DEV && new URLSearchParams(location.search).has('bare');
   const regions = Object.entries(REGIONS);
+  BOARDS.length = 0;
 
   buildLand(k, new Set(bare ? [] : regions.flatMap(([, r]) => r.FLOORED)));
   const routes = bare ? [] : buildRoads(k);

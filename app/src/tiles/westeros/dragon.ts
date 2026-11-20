@@ -586,6 +586,9 @@ export class Dragon {
     const lag = Math.min(0.055, (TAIL_L * L) / Math.max(p.speed, 10));
     // when it sits, how steeply the tail must run down from the hips to lie on the ground
     const lay = p.sit > 0 ? THREE.MathUtils.clamp(((at.y - p.floor) / L - 0.012) / 0.078, 0, 1.7) : 0;
+    // how high the end of each joint lies over level ground as the tail is laid out, and how steeply the joint before it runs down
+    let over = at.y - p.floor, before = Math.asin(THREE.MathUtils.clamp(fwd.y, -1, 1));
+    const len = TAIL_L * L;
     for (let j = 0; j < TAIL; j++) {
       this.remembered(p.time, lag * (j + 1) * (1 - p.sit), q1);
       // the last few joints swing with the fin, into the turn
@@ -593,10 +596,31 @@ export class Dragon {
       // and the whole tail sways as it flies: a slow wave that runs down it and grows towards its tip, each dragon's in its own time
       if (p.sit < 1) q1.multiply(turn((1 - p.sit) * (0.012 + 0.011 * j) * Math.sin(p.time * 1.9 - j * 0.6 + L), 0, q2));
       // laid out behind it when it sits: down to the ground, then along it, curling to one side
-      if (p.sit > 0) q1.slerp(this.q3.copy(this.qYaw).multiply(turn(CURL[j], LAY[j] * lay, q2)), p.sit);
+      if (p.sit > 0) {
+        let pitch = LAY[j] * lay;
+        over -= len * Math.sin(pitch);
+        // Where the ground falls away behind it, as on a rim, the tail hangs down over the edge and lies on
+        // the slope below: each joint runs down until its end is as far over the ground as it would be over level ground.
+        v2.copy(X).applyQuaternion(this.q3.copy(this.qYaw).multiply(turn(CURL[j], 0, q2)));
+        const bx = v2.x, bz = v2.z, ax = at.x, ay = at.y, az = at.z;
+        const clear = (a: number): number => ay - len * Math.sin(a) - ground(ax - bx * len * Math.cos(a), az - bz * len * Math.cos(a));
+        if (clear(pitch) > over + 0.03 * L) {
+          let lo = pitch, hi = Math.min(before + 0.8, 1.45);
+          if (clear(hi) < over) {
+            for (let n = 0; n < 6; n++) {
+              const mid = (lo + hi) / 2;
+              if (clear(mid) > over) lo = mid;
+              else hi = mid;
+            }
+          }
+          pitch = hi;
+        }
+        before = pitch;
+        q1.slerp(this.q3.copy(this.qYaw).multiply(turn(CURL[j], pitch, q2)), p.sit);
+      }
       this.tail[j].at.copy(at);
       this.tail[j].q.copy(q1);
-      at.addScaledVector(v2.copy(X).applyQuaternion(q1), -TAIL_L * L);
+      at.addScaledVector(v2.copy(X).applyQuaternion(q1), -len);
     }
     this.tailTip.copy(at);
 

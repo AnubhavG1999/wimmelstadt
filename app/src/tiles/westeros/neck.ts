@@ -18,7 +18,7 @@ import { interior, rng, type GeoBuilder, type QuadOpts, type V3, type WinSpec } 
 import { flat, water } from '../../engine/ground';
 import { figure, tri, type Dress } from '../../engine/parts';
 import { inStreet } from '../../engine/roads';
-import { gable, hip, slab } from '../../engine/shapes';
+import { hip, slab } from '../../engine/shapes';
 import type { SignDef } from '../../engine/signs';
 import type { Build } from '../../engine/tile';
 import { DARK, DOOR, LOOPS, ROOF, STONE, TIMBER, TIMBER_DARK, banner, brazier, fire, nameBoard, nameSign, rampart } from './look';
@@ -215,7 +215,7 @@ const POOLS: Pool[] = [
   { x: 3.9, z: -42.6, rx: 1.6, rz: 1.0, seed: 15 },
   { x: 5.5, z: -39.4, rx: 1.15, rz: 0.85, seed: 16 },
   // the lizard-lion's, by the causeway
-  { x: 13.35, z: -42.85, rx: 1.5, rz: 0.85, seed: 17 },
+  { x: 12.9, z: -42.85, rx: 1.4, rz: 0.85, seed: 17 },
   { x: -7.6, z: -43.0, rx: 1.4, rz: 0.7, seed: 18 },
   { x: 32.5, z: -43.1, rx: 1.8, rz: 0.72, seed: 19 },
   { x: 39.3, z: -41.6, rx: 1.8, rz: 1.4, seed: 20 },
@@ -241,8 +241,8 @@ const POOL_DROP = 0.55, POOL_Y = -POOL_DROP;
 
 /** Places in the Neck where nothing small is scattered: the causeway, the towers, the castles, the crannogs, the board. */
 const KEEP_CLEAR: [number, number, number, number][] = [
-  [CAUSEWAY_X - 5.7, -44, CAUSEWAY_X + 5.7, -37.5],
-  [8.5, -47, 12.6, -43.2], [7.6, -38.6, 12.2, -34], [3.8, -38.4, 12.2, -30], [27.6, -42.3, 36.3, -36], [26.8, -45, 31.2, -41.3],
+  [lotOf('mc-gate').x0 - 0.2, -44, lotOf('mc-gate').x1 + 0.2, -37.5],
+  [8.5, -47, 12.6, -43.2], [7.6, -38.6, 12.2, -34], [-2.2, -37.7, 6.2, -32], [-20.2, -37.7, -11.8, -32], [27.6, -42.3, 36.3, -36], [27.8, -46.6, 33.4, -41.9],
   [8.2, -43.0, 11.0, -40.4], [12.1, -41.6, 14.4, -38.9], [6.2, -43.8, 8.2, -42.0],
 ];
 
@@ -352,7 +352,7 @@ function bog(k: Build): void {
   trees.forEach(([x, z, y, h], i) => drownedTree(b, x, z, y, h, 700 + i));
 
   // a lizard-lion in the pool beside the causeway, and a smaller one further off
-  lizardLion(b, 13.5, -42.85, POOL_Y, 0.25, 0.85);
+  lizardLion(b, 13.05, -42.85, POOL_Y, 0.25, 0.8);
   lizardLion(b, 32.9, -43.15, POOL_Y, 2.9, 0.75);
 
   causeway(k);
@@ -442,7 +442,7 @@ const childrensTower: Model = (k, l) => {
 
 /** The Gatehouse Tower: squat and wide, the only one still whole, with the kingsroad through it and a tree growing out of its north face. */
 const gatehouseTower: Model = (k, l) => {
-  const b = k.b, x = CAUSEWAY_X, c0 = x - LANE - 0.5, c1 = x + LANE + 0.5, leg = 1.9, top = 8.2;
+  const b = k.b, x = CAUSEWAY_X, c0 = x - LANE - 0.5, c1 = x + LANE + 0.5, leg = Math.min(2, c0 - l.x0, l.x1 - c1), top = 8.2;
   gateway(b, 'z', l.z0, l.z1, c0, c1, leg, -0.5, 6, 0.9, top, BASALT, MOSS, 0x2d2a2f);
   crenelRect(b, c0 - leg, l.z0, c1 + leg, l.z1, top, BASALT, MOSS, 0.8, 2.1);
   // a ring of dressed stone round each arch, a little proud
@@ -463,7 +463,7 @@ const gatehouseTower: Model = (k, l) => {
   b.beam([tx, 5.0, l.z0 + 0.1], [tx + 0.5, 6.3, l.z0 - 0.9], 0.16, 0.1, TIMBER);
   k.tree(tx + 0.6, l.z0 - 1.0, 0.45, false, 6.1);
   // two northmen keep the gate, out of the way
-  figure(b, c1 + leg + 0.5, (l.z0 + l.z1) / 2 - 0.5, 0, NORTHMAN);
+  figure(b, c1 + leg + 0.4, (l.z0 + l.z1) / 2 - 0.5, 0, NORTHMAN);
   figure(b, c0 - leg - 0.5, l.z1 - 0.4, 0, NORTHMAN);
 };
 
@@ -592,26 +592,30 @@ const crannogs: Model = (k, l) => {
 /**
  * One of the two castles, the same on each bank. `s` is 1 for the eastern
  * and -1 for the western: everything is placed by `u`, how far it is from the
- * middle of the bridge. The keep stands north of the road, by the river, with
- * a turret at each corner; a hall stands beside it; the road comes in through
- * a barbican and a gatehouse with its portcullis, runs between two curtain
- * walls, and goes out onto the bridge through the castle's inner gate.
+ * middle of the bridge. The keep stands north of the road on the river's side
+ * of the gatehouse, square and tall, with a turret at each corner. The road
+ * comes in through a barbican and a gatehouse with its portcullis, runs
+ * between two curtain walls, and goes out onto the bridge through the
+ * castle's inner gate.
  */
 function twin(k: Build, l: Lot, gate: Lot, s: 1 | -1): void {
   const b = k.b, bx = CROSSING.x, zr = CROSSING.z;
   const X = (u: number): number => bx + s * u;
   const xs = (u0: number, u1: number): [number, number] => (s > 0 ? [X(u0), X(u1)] : [X(u1), X(u0)]);
-  const uIn = s > 0 ? l.x0 - bx : bx - l.x1, uKeep = s > 0 ? l.x1 - bx : bx - l.x0, uOut = s > 0 ? gate.x1 - bx : bx - gate.x0;
-  const c0 = zr - LANE - 0.5, c1 = zr + LANE + 0.5, leg = 0.9, N0 = c0 - leg, S1 = c1 + leg, Y0 = -1.6;
+  const uIn = s > 0 ? gate.x0 - bx : bx - gate.x1, uOut = s > 0 ? gate.x1 - bx : bx - gate.x0;
+  const uK = s > 0 ? (l.x0 + l.x1) / 2 - bx : bx - (l.x0 + l.x1) / 2;
+  const c0 = zr - LANE - 0.5, c1 = zr + LANE + 0.5, leg = Math.min(1.5, c0 - gate.z0), N0 = c0 - leg, S1 = c1 + leg, Y0 = -1.6;
 
-  // the keep, square and plain, with a turret at each corner, a walk round its top and a roof of slate within it
-  const [kx0, kx1] = xs(uIn + 0.7, uIn + 4.3), kz0 = l.z1 - 5.2, kz1 = l.z1 - 1.2;
+  // the keep, square and plain, on a battered foot, with a turret at each corner, a walk round its top and a roof of slate within it
+  const kd = (l.z1 - l.z0) / 2 - 0.8, kw = Math.min((l.x1 - l.x0) / 2 - 0.8, kd + 0.6), kc = (l.z0 + l.z1) / 2;
+  const [kx0, kx1] = xs(uK - kw, uK + kw), kz0 = kc - kd, kz1 = kc + kd;
   b.box(kx0, Y0, kz0, kx1, 16.8, kz1, GREY, { win: LOOPS, faces: 'NESW', seed: 3 + s });
+  b.box(kx0 - 0.3, Y0, kz0 - 0.3, kx1 + 0.3, 1.3, kz1 + 0.3, GREY_SHADE, { faces: 'NESWT' });
   b.box(kx0 - 0.15, 16.8, kz0 - 0.15, kx1 + 0.15, 17.6, kz1 + 0.15, GREY, { top: GREY_SHADE, faces: 'NESWTB' });
-  crenels(b, [kx0 + 0.9, kz1], [kx1 - 0.9, kz1], 17.6, GREY, GREY_SHADE, 0.8, 0.4, 1.7);
-  crenels(b, [kx0 + 0.9, kz0], [kx1 - 0.9, kz0], 17.6, GREY, GREY_SHADE, 0.8, 0.4, 1.7);
-  crenels(b, [kx0, kz0 + 0.9], [kx0, kz1 - 0.9], 17.6, GREY, GREY_SHADE, 0.8, 0.4, 1.7);
-  crenels(b, [kx1, kz0 + 0.9], [kx1, kz1 - 0.9], 17.6, GREY, GREY_SHADE, 0.8, 0.4, 1.7);
+  crenels(b, [kx0 + 0.9, kz1], [kx1 - 0.9, kz1], 17.6, GREY, GREY_SHADE, 0.8, 0.4, 1.6);
+  crenels(b, [kx0 + 0.9, kz0], [kx1 - 0.9, kz0], 17.6, GREY, GREY_SHADE, 0.8, 0.4, 1.6);
+  crenels(b, [kx0, kz0 + 0.9], [kx0, kz1 - 0.9], 17.6, GREY, GREY_SHADE, 0.8, 0.4, 1.6);
+  crenels(b, [kx1, kz0 + 0.9], [kx1, kz1 - 0.9], 17.6, GREY, GREY_SHADE, 0.8, 0.4, 1.6);
   hip(b, kx0 + 0.5, kz0 + 0.5, kx1 - 0.5, kz1 - 0.5, 17.65, 1.3, ROOF.slate, 0);
   for (const tx of [kx0, kx1]) {
     for (const tz of [kz0, kz1]) {
@@ -623,14 +627,12 @@ function twin(k: Build, l: Lot, gate: Lot, s: 1 | -1): void {
       }
     }
   }
-  banner(b, (kx0 + kx1) / 2, (kz0 + kz1) / 2, 18.85, 'frey', 3.2);
+  // its door, up a short stair from the yard by the gate
+  const dx = X(uK + kw * 0.35);
+  b.box(dx - 0.45, 1.3, kz1 + 0.02, dx + 0.45, 3.0, kz1 + 0.1, DOOR, { win: interior(0.5) });
+  banner(b, (kx0 + kx1) / 2, kc, 18.85, 'frey', 3.2);
   // a fire on the walk, where the watch stands
   fire(k, s > 0 ? kx1 - 0.9 : kx0 + 0.9, 18.0, kz1 - 0.1, 0.2, 0);
-
-  // the hall beside it, under a pitched roof
-  const [hx0, hx1] = xs(uIn + 4.3, uKeep - 0.3), hz0 = l.z1 - 3.6, hz1 = l.z1 - 0.6;
-  b.box(hx0, -0.3, hz0, hx1, 8.4, hz1, GREY, { win: LOOPS, faces: 'NESW', seed: 7 + s });
-  gable(b, hx0, hz0, hx1, hz1, 8.4, 2.0, ROOF.slate, GREY, 'x', 0.3);
 
   // the inner gate, onto the bridge
   const [ia, ib] = xs(uIn, uIn + 1.2);
@@ -642,21 +644,21 @@ function twin(k: Build, l: Lot, gate: Lot, s: 1 | -1): void {
   gateway(b, 'x', ga, gb, c0, c1, leg, -0.3, 6, 0.8, 8.2, GREY, GREY_SHADE);
   crenelRect(b, ga, N0, gb, S1, 8.2, GREY, GREY_SHADE, 0.8, 1.9);
   portcullis(b, 'x', X(uOut - 1.0), s, c0 + 0.6, c1 - 0.6, 6.95, 7.85);
-  const [ba, bb] = xs(uOut - 1.0, uOut + 0.4), [la, lb] = xs(uOut, uOut + 0.4);
+  const [ba, bb] = xs(uOut - 1.0, uOut), [la, lb] = xs(uOut - 0.4, uOut);
   for (const [z0, z1] of [[N0, c0], [c1, S1]]) {
     b.box(ba, -0.3, z0, bb, 7.0, z1, GREY, { top: GREY_SHADE, faces: 'NESWT' });
   }
   gateway(b, 'x', la, lb, c0, c1, 0, 0, 6, 0.35, 7.0, GREY, GREY_SHADE);
-  crenels(b, [X(uOut + 0.2), N0 + 0.2], [X(uOut + 0.2), S1 - 0.2], 7.0, GREY, GREY_SHADE, 0.75, 0.4, 1.9);
-  for (const z of [N0 + 0.2, S1 - 0.2]) crenels(b, [X(uOut - 0.8), z], [X(uOut - 0.1), z], 7.0, GREY, GREY_SHADE, 0.75, 0.4, 1.9);
+  crenels(b, [X(uOut - 0.2), N0 + 0.2], [X(uOut - 0.2), S1 - 0.2], 7.0, GREY, GREY_SHADE, 0.75, 0.4, 1.9);
+  for (const z of [N0 + 0.2, S1 - 0.2]) crenels(b, [X(uOut - 0.8), z], [X(uOut - 0.3), z], 7.0, GREY, GREY_SHADE, 0.75, 0.4, 1.9);
   // torches at the outer gate
-  for (const z of [c0 - 0.45, c1 + 0.45]) fire(k, X(uOut + 0.6), 5.0, z, 0.24, 7);
+  for (const z of [c0 - 0.45, c1 + 0.45]) fire(k, X(uOut + 0.2), 5.0, z, 0.24, 7);
 
   // the curtain walls on each side of the road between the gates
-  for (const z of [(N0 + c0) / 2, (c1 + S1) / 2]) rampart(b, [X(uIn + 1.2), z], [X(uOut - 4.6), z], 7.4, GREY, { thick: 0.9, shade: GREY_SHADE, win: undefined });
+  for (const z of [(N0 + c0) / 2, (c1 + S1) / 2]) rampart(b, [X(uIn + 1.2), z], [X(uOut - 4.6), z], 7.4, GREY, { thick: leg, shade: GREY_SHADE, win: undefined });
   k.lights.push({ x: X(uOut - 2.8), z: zr, r: 11, color: '#ffcf8a', k: 0.45 });
+  k.lights.push({ x: (kx0 + kx1) / 2, z: kz1 + 1.5, r: 9, color: '#ffcf8a', k: 0.4 });
 }
-
 /** The toll bar at the eastern gate: the pole raised on its post, and the toll keeper beside it with his box. */
 function tollBar(k: Build, gate: Lot): void {
   const b = k.b, zr = CROSSING.z, px = gate.x1 + 0.9, pz = zr + LANE + 0.5 + 0.7;
@@ -676,7 +678,7 @@ function tollBar(k: Build, gate: Lot): void {
   figure(b, px + 1.0, pz + 0.55, 0, FREY_MAN);
   b.box(px + 1.55, 0, pz + 0.35, px + 2.05, 0.38, pz + 0.75, TIMBER_DARK, { top: 0x6b5136 });
   b.box(px + 1.53, 0.24, pz + 0.33, px + 2.07, 0.3, pz + 0.77, 0xa9acb0);
-  k.person(px + 2.4, pz + 1.3);
+  k.person(px + 1.7, pz + 1.7);
 }
 
 const eastTwin: Model = (k, l) => {
@@ -688,7 +690,9 @@ const westTwin: Model = (k, l) => twin(k, l, lotOf('tw-west-gate'), -1);
 
 /** The Water Tower, astride the road in the middle of the bridge, over the river: murder holes, arrow slits, a portcullis each way. */
 const waterTower: Model = (k, l) => {
-  const b = k.b, zr = CROSSING.z, c0 = zr - LANE - 0.5, c1 = zr + LANE + 0.5, leg = 0.9, top = 8;
+  const b = k.b, zr = CROSSING.z, c0 = zr - LANE - 0.5, c1 = zr + LANE + 0.5, leg = Math.min(1.5, c0 - l.z0), top = 8;
+  // the tower stands square over the road, inside its legs
+  const gz0 = zr - LANE, gz1 = zr + LANE;
   // the deck that carries the road over the water, under the road and the vault
   b.box(CROSSING.x - 2.1, -1.6, c0, CROSSING.x + 2.1, -0.01, c1, GREY, { faces: 'T' });
   gateway(b, 'x', l.x0, l.x1, c0, c1, leg, -1.6, 6, 0.8, top, GREY, GREY_SHADE);
@@ -697,31 +701,31 @@ const waterTower: Model = (k, l) => {
   // murder holes in the vault
   for (const x of [l.x0 + 1.4, (l.x0 + l.x1) / 2, l.x1 - 1.4]) b.quad([x - 0.3, 6.78, zr - 0.3], [x + 0.3, 6.78, zr - 0.3], [x + 0.3, 6.78, zr + 0.3], [x - 0.3, 6.78, zr + 0.3], [0, -1, 0], DARK);
   // the tower itself, with arrow slits, and its gallery of murder holes overhanging all round
-  const ix0 = l.x0 + 0.4, ix1 = l.x1 - 0.4, iz0 = l.z0 + 0.4, iz1 = l.z1 - 0.4;
+  const ix0 = l.x0 + 0.4, ix1 = l.x1 - 0.4, iz0 = gz0 + 0.4, iz1 = gz1 - 0.4;
   b.box(ix0, top, iz0, ix1, 13.6, iz1, GREY, { win: SLITS, faces: 'NESW', seed: 5 });
-  b.box(l.x0, 13.6, l.z0, l.x1, 15.6, l.z1, GREY, { top: GREY_SHADE, faces: 'NESWTB' });
+  b.box(l.x0, 13.6, gz0, l.x1, 15.6, gz1, GREY, { top: GREY_SHADE, faces: 'NESWTB' });
   for (const t of [0.2, 0.5, 0.8]) {
-    const x = l.x0 + (l.x1 - l.x0) * t, z = l.z0 + (l.z1 - l.z0) * t;
-    for (const zz of [l.z0 + 0.2, l.z1 - 0.2]) b.quad([x - 0.22, 13.58, zz - 0.13], [x + 0.22, 13.58, zz - 0.13], [x + 0.22, 13.58, zz + 0.13], [x - 0.22, 13.58, zz + 0.13], [0, -1, 0], DARK);
+    const x = l.x0 + (l.x1 - l.x0) * t, z = gz0 + (gz1 - gz0) * t;
+    for (const zz of [gz0 + 0.2, gz1 - 0.2]) b.quad([x - 0.22, 13.58, zz - 0.13], [x + 0.22, 13.58, zz - 0.13], [x + 0.22, 13.58, zz + 0.13], [x - 0.22, 13.58, zz + 0.13], [0, -1, 0], DARK);
     for (const xx of [l.x0 + 0.2, l.x1 - 0.2]) b.quad([xx - 0.13, 13.58, z - 0.22], [xx + 0.13, 13.58, z - 0.22], [xx + 0.13, 13.58, z + 0.22], [xx - 0.13, 13.58, z + 0.22], [0, -1, 0], DARK);
   }
-  crenelRect(b, l.x0, l.z0, l.x1, l.z1, 15.6, GREY, GREY_SHADE, 0.8, 1.8);
-  hip(b, l.x0 + 0.6, l.z0 + 0.6, l.x1 - 0.6, l.z1 - 0.6, 15.62, 1.3, ROOF.slate, 0);
-  banner(b, (l.x0 + l.x1) / 2, (l.z0 + l.z1) / 2, 16.85, 'frey', 3);
+  crenelRect(b, l.x0, gz0, l.x1, gz1, 15.6, GREY, GREY_SHADE, 0.8, 1.8);
+  hip(b, l.x0 + 0.6, gz0 + 0.6, l.x1 - 0.6, gz1 - 0.6, 15.62, 1.3, ROOF.slate, 0);
+  banner(b, (l.x0 + l.x1) / 2, zr, 16.85, 'frey', 3);
   // a portcullis drawn up over each way through
   portcullis(b, 'x', l.x0, -1, c0 + 0.6, c1 - 0.6, 6.95, top - 0.3);
   portcullis(b, 'x', l.x1, 1, c0 + 0.6, c1 - 0.6, 6.95, top - 0.3);
   fire(k, l.x0 - 0.15, 4.8, c0 - 0.5, 0.22, 7);
   fire(k, l.x1 + 0.15, 4.8, c1 + 0.5, 0.22, 7);
   // guards on the terraces over its legs, and a brazier
-  figure(b, l.x1 - 1.0, c0 - 0.5, top, FREY_MAN);
-  figure(b, l.x0 + 1.2, c1 + 0.5, top, FREY_MAN);
-  brazier(k, l.x0 + 0.9, c0 - 0.45, top);
+  figure(b, l.x1 - 1.0, c0 - leg / 2, top, FREY_MAN);
+  figure(b, l.x0 + 1.2, c1 + leg / 2, top, FREY_MAN);
+  brazier(k, l.x0 + 0.9, c0 - leg / 2, top);
 };
 
 /** The bridge between the two castles and the Water Tower: its parapets and the piers along its sides. */
 function twinsBridge(k: Build): void {
-  const b = k.b, zr = CROSSING.z, water = lotOf('tw-water'), east = lotOf('tw-east-keep'), west = lotOf('tw-west-keep');
+  const b = k.b, zr = CROSSING.z, water = lotOf('tw-water'), east = lotOf('tw-east-gate'), west = lotOf('tw-west-gate');
   const spans: [number, number][] = [[water.x1, east.x0], [west.x1, water.x0]];
   for (const [x0, x1] of spans) {
     for (const s of [-1, 1]) {
@@ -782,7 +786,8 @@ export function extras(k: Build): void {
   twinsBridge(k);
   riverRoadBridge(k);
   // the names: Moat Cailin's beside the causeway north of its gatehouse, the Twins' between the road over their bridge and the kingsroad
-  nameBoard(k, 'neck-moat-cailin', 29.6, -43.6, 0, undefined, 0.9);
+  nameBoard(k, 'neck-moat-cailin', 30.6, -44.3, 0, undefined, 0.9);
   const gate = lotOf('tw-east-gate');
-  nameBoard(k, 'neck-twins', gate.x1 + 2.8, CROSSING.z + LANE + 3.4, 0, undefined, 1.1);
+  // between the Twins road and the river road, which lie only 4 apart here: so it faces south, along the gap
+  nameBoard(k, 'neck-twins', gate.x1 + 6, CROSSING.z + LANE + 1.8, 0, [0.25, 0, 0.968], 1.1);
 }

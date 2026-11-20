@@ -1,16 +1,18 @@
 // Dragonstone and the Dragonmont.
 //
 // The island in the mouth of Blackwater Bay: the smoking mountain on its north
-// end, with a level shelf of bare rock on its south-east rim where Drogon comes
-// down and stands, and the castle at its foot on the south end, of black stone
-// that looks poured and not laid, every tower of it a dragon. A small harbour
-// lies below the castle's gate on the west shore.
+// end, a volcano with a crater whose back rim is its highest place, where
+// Drogon comes down and stands facing the view the tile opens with, and the
+// castle at its foot on the south end, of black stone that looks poured and
+// not laid, every tower of it a dragon. A small harbour lies below the
+// castle's gate on the west shore.
 //
-// The mountain is a field of heights (terrain.ts's `Field`), drawn here in flat
-// facets clipped to the island's shore and to the lot's edges, so that it
-// falls into the sea, and stands in sheer cliffs where the lot leaves it no
-// room to slope. Everything here is this tile's own drawing from the books'
-// plain descriptions.
+// The mountain is a field of heights (terrain.ts's `Field`) laid out in
+// Drogon's own frame, so that its lines fall on the edges of the level table
+// he stands on (plan.ts, `DRAGONMONT`). It is drawn here in flat facets,
+// clipped to the island's shore, to the castle's lot and to the board's edge,
+// so that it falls into the sea. Everything here is this tile's own drawing
+// from the books' plain descriptions.
 
 import * as THREE from 'three';
 import { Smoke } from '../../engine/effects';
@@ -22,7 +24,7 @@ import { heightOn, type Field } from '../../engine/terrain';
 import type { Build } from '../../engine/tile';
 import { banner, brazier, DARK, fire, nameBoard, nameSign, STONE, TIMBER, TIMBER_DARK } from './look';
 import type { Model } from './models';
-import { BOARD, EDGE, ISLANDS, lotOf, type Lot, type P2 } from './plan';
+import { BOARD, DRAGONMONT, EDGE, ISLANDS, lotOf, type Lot, type P2 } from './plan';
 
 // ---------------------------------------------------------------------------
 // Colours of the island's own
@@ -34,7 +36,8 @@ const CARVED = 0x4d4853, GARG = 0x2b292f, MEMBRANE = 0x2a262c, PAVING = 0x4d4950
 /** The mountain: black rock, rust, ash, old flows of black glass, the bare shelf, and the glow in the crater. */
 const ROCK = {
   black: STONE.black, shade: STONE.blackShade, rust: 0x5b3427, brown: 0x47302a, ash: 0x6d6661, ashDark: 0x58514f,
-  glass: 0x16131b, glassHi: 0x2d2937, shelf: 0x524c4d, shelf2: 0x4a4547, ember: 0x6a1a0a, emberWall: 0x401611,
+  // the table he stands on faces the sky and takes the full light: it is kept dark, so that it reads as the rim's rock and not as a slab
+  glass: 0x16131b, glassHi: 0x2d2937, shelf: 0x2c2729, ember: 0x6a1a0a, emberWall: 0x401611, crack: 0x4e1a12,
 };
 /** Beds of rock in the mountain's cliffs and in its cut face at the board's edge. */
 const BEDS = [0x2c292e, 0x46302a, 0x232126, 0x524540, 0x1d1b20, 0x3b2a26];
@@ -202,21 +205,25 @@ function blackTower(b: GeoBuilder, x: number, z: number, r: number, y0: number, 
 // ---------------------------------------------------------------------------
 // The Dragonmont: its shape as numbers
 // ---------------------------------------------------------------------------
+//
+// A cone, wide at its foot and steep under its summit. On the summit, the
+// level table where Drogon stands, and before him the crater: its back rim is
+// the table's front, and its rim falls round both sides to a low front, so that
+// the view from the south-east looks over it into the glowing bowl.
 
 const MONT = lotOf('dragonmont');
 const ISLE = ISLANDS.dragonstone;
+const TOP = MONT.top;
 /** The board's east edge, where the mountain is cut off. */
 const CUT = BOARD.x1 - EDGE;
-/** The shelf where Drogon stands: level at the lot's top, on the south-east rim and on north along the east edge, where his tail lies. */
-const SHELF: [number, number, number, number][] = [
-  [95.5, 20.5, MONT.x1, MONT.z1],
-  [98, 14.5, MONT.x1, 20.5],
-];
-/** The crater, north-west of the shelf: its middle, the height of its rim, and how deep it is. */
-const CRATER = { x: 93.5, z: 16.5, rim: 27.6, deep: 4 };
-
-/** The grid the heights are worked out on: lines on every edge of the shelf, so that it is level in fact. */
-const GRID = { x0: SHELF[0][0] - 10 * 0.625, nx: 24, cx: 0.625, z1: MONT.z1, nz: 25, cz: 0.75 };
+const [PX, PZ] = DRAGONMONT.perch;
+/** Which way he faces, and the way across him. The grid runs along both. */
+const FL = Math.hypot(...DRAGONMONT.facing), FX = DRAGONMONT.facing[0] / FL, FZ = DRAGONMONT.facing[1] / FL, AX = -FZ, AZ = FX;
+const TABLE = DRAGONMONT.table, CR = DRAGONMONT.crater;
+/** How far out from the summit the cone reaches the ground. */
+const REACH = 6.6;
+/** The castle's lot: the mountain comes down to a low face before it. */
+const CASTLE = lotOf('ds-castle');
 
 const smooth01 = (t: number): number => {
   const v = Math.min(1, Math.max(0, t));
@@ -224,59 +231,86 @@ const smooth01 = (t: number): number => {
 };
 const clamp01 = (t: number): number => Math.min(1, Math.max(0, t));
 
-function distRect(x: number, z: number, r: [number, number, number, number]): number {
-  return Math.hypot(Math.max(r[0] - x, 0, x - r[2]), Math.max(r[1] - z, 0, z - r[3]));
-}
-const toShelf = (x: number, z: number): number => Math.min(...SHELF.map((r) => distRect(x, z, r)));
+/** Where a place is in his frame: how far before him, and how far to his left. */
+const along = (x: number, z: number): number => (x - PX) * FX + (z - PZ) * FZ;
+const across = (x: number, z: number): number => (x - PX) * AX + (z - PZ) * AZ;
+const toTable = (s: number, t: number): number => Math.hypot(Math.max(-TABLE.back - s, 0, s - TABLE.front), Math.max(Math.abs(t) - TABLE.half, 0));
 
-/** How high the mountain is at a place, before it is cut off at the shore and the lot's edges. */
+/** How high the crater's rim is, seen from its middle towards a place: low at the front, at the table's height behind. */
+function rimHeight(cx: number, cz: number, dc: number): number {
+  const front = dc > 1e-6 ? (cx * FX + cz * FZ) / dc : 0;
+  return CR.front + (TOP - CR.front) * ((1 - front) / 2) ** 0.8;
+}
+
+/** The old flows of black glass, and the cracks that glow, as directions out from the crater's middle. */
+const GLASS = [150, 205, 250, 300, 345].map((d) => (d * Math.PI) / 180);
+const FISSURES = [0, -35, 22].map((d) => Math.atan2(FZ, FX) + (d * Math.PI) / 180);
+const FISSURE_FROM = CR.rim + 0.3, FISSURE_TO = CR.rim + 2.6;
+/** How far a place lies from a line straight out from the crater in direction `a`, and how far out along it. */
+function offRay(x: number, z: number, a: number): { off: number; out: number } {
+  const cx = x - CR.x, cz = z - CR.z, out = cx * Math.cos(a) + cz * Math.sin(a);
+  return { off: Math.abs(-cx * Math.sin(a) + cz * Math.cos(a) - 0.22 * Math.sin(out * 2.1)), out };
+}
+
+/** How high the mountain is at a place. */
 function mountain(x: number, z: number): number {
-  const top = MONT.top;
-  const dL = toShelf(x, z);
-  if (dL === 0) return top;
-  const cx = x - CRATER.x, cz = z - CRATER.z, dC = Math.hypot(cx, cz), th = Math.atan2(cz, cx);
-  const floor = CRATER.rim - CRATER.deep;
-  let hK: number;
-  if (dC < 0.9) hK = floor;
-  else if (dC < 1.75) hK = floor + (CRATER.deep - 0.4) * smooth01((dC - 0.9) / 0.85);
-  else if (dC < 2.1) hK = CRATER.rim - 0.4 + 0.4 * smooth01((dC - 1.75) / 0.35);
-  else {
-    // the cone: gentler towards the shelf, steeper to the north, fissured by gullies that run down from the rim
-    const slope = 3.0 - 1.5 * Math.max(0, Math.cos(th)) + 0.6 * Math.max(0, -Math.sin(th));
-    hK = CRATER.rim - slope * (dC - 2.1);
-    hK -= 1.5 * Math.max(0, Math.sin(5 * th + 0.6)) ** 6 * clamp01((dC - 2.4) / 2);
+  const s = along(x, z), t = across(x, z), dT = toTable(s, t);
+  if (dT === 0) return TOP;
+  const cx = x - CR.x, cz = z - CR.z, dc = Math.hypot(cx, cz), rim = rimHeight(cx, cz, dc);
+  // the bowl: a floor, and walls up to the rim
+  if (dc < CR.bowl) return CR.floor + (rim - CR.floor) * smooth01((dc - 0.75) / (CR.bowl - 0.75)) ** 1.3;
+  const fall = (top: number, d: number): number => top * Math.max(0, 1 - d / REACH) ** 1.35;
+  let h = Math.max(fall(TOP, dT), dc < CR.rim ? rim - 0.3 * ((dc - CR.bowl) / (CR.rim - CR.bowl)) : fall(rim, dc - CR.rim));
+  // ribs and gullies down the flanks, but not on the summit, and fading out at the foot
+  const flank = clamp01(Math.min(dT, dc - CR.rim) / 1.3) * clamp01(h / 7) * clamp01((TOP - h) / 4);
+  if (flank > 0) {
+    const a = Math.atan2(cz, cx);
+    h -= 2.2 * Math.max(0, Math.sin(7 * a + 0.5)) ** 5 * flank;
+    h += flank * (0.5 * Math.sin(1.9 * x + 0.7 * z) + 0.4 * Math.sin(2.6 * z - 1.3 * x + 1) + 0.25 * Math.sin(4.1 * x + 3.3 * z));
+    // the cracks lie a little sunk
+    for (const f of FISSURES) {
+      const r = offRay(x, z, f);
+      if (r.out > FISSURE_FROM && r.out < FISSURE_TO) h -= 0.35 * clamp01(1 - r.off / 0.5);
+    }
   }
-  // the shelf stands on a cliff, and its flanks fall away below that
-  const g = Math.min(dL * 24, 6) + 3.2 * Math.max(0, dL - 0.25);
-  let h = Math.max(hK, top - g);
-  // the flanks are broken and ribbed, but not at the rims
-  const far = clamp01(dL / 1.5) * clamp01((dC - 2.4) / 1.2);
-  if (far > 0) h += far * Math.min(1, h / 4) * (0.55 * Math.sin(1.9 * x + 0.7 * z) + 0.45 * Math.sin(2.6 * z - 1.3 * x + 1) + 0.3 * Math.sin(4.1 * x + 3.3 * z));
-  // the south-west corner stays low: it stands between the Dragon Gate and the opening view
-  if (x < 95.25) {
-    const west = 0.9 * Math.max(0, 94 - x);
-    h = Math.min(h, z >= 20 ? 18 - 2.1 * (z - 20) - west : 18 + 7 * (20 - z) - west);
-  }
-  return Math.min(top, Math.max(0, h));
+  // before the castle the mountain comes down to a low face of rock
+  if (x < CASTLE.x1 + 1.3) h = Math.min(h, Math.max(0, CASTLE.z0 - 0.3 - z) * 8 + Math.max(0, x - CASTLE.x1 - 0.3) * 30);
+  return Math.min(TOP - 0.05, Math.max(0, h));
 }
 
-/** The heights over the grid, as terrain.ts keeps them. */
+/**
+ * The heights over a grid that runs along the way he faces and across it,
+ * with lines on every edge of the table, so that it is level in fact. It is
+ * kept as terrain.ts keeps a field, in his frame: `x` along, `z` across.
+ */
+const GRID = (() => {
+  const cs = (TABLE.back + TABLE.front) / 5, ct = (2 * TABLE.half) / 6;
+  const corners: P2[] = [[ISLE.x - ISLE.rx - 0.5, ISLE.z - ISLE.rz - 0.5], [CUT + 0.5, ISLE.z - ISLE.rz - 0.5], [CUT + 0.5, CASTLE.z0 + 3], [ISLE.x - ISLE.rx - 0.5, CASTLE.z0 + 3]];
+  const ss = corners.map(([x, z]) => along(x, z)), ts = corners.map(([x, z]) => across(x, z));
+  const i0 = Math.floor((Math.min(...ss) + TABLE.back) / cs), i1 = Math.ceil((Math.max(...ss) + TABLE.back) / cs);
+  const j0 = Math.floor((Math.min(...ts) + TABLE.half) / ct), j1 = Math.ceil((Math.max(...ts) + TABLE.half) / ct);
+  return { cs, ct, s0: -TABLE.back + i0 * cs, t0: -TABLE.half + j0 * ct, nx: i1 - i0, nz: j1 - j0 };
+})();
+
 const FIELD: Field = (() => {
-  const { x0, nx, cx, z1, nz, cz } = GRID;
-  const z0 = z1 - nz * cz, x1 = x0 + nx * cx;
+  const { cs, ct, s0, t0, nx, nz } = GRID;
   const y = new Float32Array((nx + 1) * (nz + 1));
-  for (let j = 0; j <= nz; j++) for (let i = 0; i <= nx; i++) y[j * (nx + 1) + i] = mountain(x0 + i * cx, z0 + j * cz);
-  return { x0, z0, x1, z1, nx, nz, y };
+  for (let j = 0; j <= nz; j++) {
+    for (let i = 0; i <= nx; i++) {
+      const s = s0 + i * cs, t = t0 + j * ct;
+      // on the table, exactly its height
+      y[j * (nx + 1) + i] = s >= -TABLE.back - 1e-9 && s <= TABLE.front + 1e-9 && Math.abs(t) <= TABLE.half + 1e-9 ? TOP : mountain(PX + FX * s + AX * t, PZ + FZ * s + AZ * t);
+    }
+  }
+  return { x0: s0, z0: t0, x1: s0 + nx * cs, z1: t0 + nz * ct, nx, nz, y };
 })();
 
 /** Where the mountain is cut off: a line, the side it stands on, and how far down its face goes there. */
 interface Edge { nx: number; nz: number; c: number; base: number; bed: number }
 const EDGES: Edge[] = (() => {
   const e: Edge[] = [
-    { nx: -1, nz: 0, c: -89.9, base: -0.3, bed: 4.2 }, // the west cliff, at the lot's edge
-    { nx: 0, nz: -1, c: -(MONT.z0 - 0.1), base: -0.3, bed: 4.2 }, // the north cliff, over the beach
-    { nx: 0, nz: 1, c: MONT.z1, base: -0.3, bed: 4.2 }, // the south cliff, under the shelf
-    { nx: 1, nz: 0, c: CUT, base: 0.01, bed: 3.6 }, // the cut face at the board's edge: the shore's own face is below it
+    { nx: 1, nz: 0, c: CUT, base: 0.01, bed: 2.6 }, // the cut face at the board's edge: the shore's own face is below it
+    { nx: 0, nz: 1, c: CASTLE.z0 + 2.2, base: -0.3, bed: 4.2 }, // a line the mountain never reaches, east of the castle
   ];
   // the shore, a hair outside the island's own, down into the sea
   const shore = oval(ISLE.x, ISLE.z, ISLE.rx, ISLE.rz, 22);
@@ -307,36 +341,24 @@ function clipTo(poly: V3[], e: Edge): V3[] {
   return out;
 }
 
-/** Old flows of black glass, down from the rims. */
-const FLOWS: P2[][] = [
-  [[92.6, 18.3], [92.0, 20.5], [91.3, 23.5], [90.6, 26.6]],
-  [[93.0, 14.6], [92.6, 13.0], [92.3, 11.9]],
-  [[91.7, 16.1], [89.9, 15.4]],
-  [[101.2, 14.3], [101.7, 11.9]],
-  [[96.2, 15.0], [97.0, 12.4]],
-];
-function onFlow(x: number, z: number): boolean {
-  for (const f of FLOWS) {
-    for (let i = 0; i + 1 < f.length; i++) {
-      const [ax, az] = f[i], [bx, bz] = f[i + 1], dx = bx - ax, dz = bz - az;
-      const t = clamp01(((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz));
-      if (Math.hypot(x - ax - dx * t, z - az - dz * t) < 0.55) return true;
-    }
-  }
-  return false;
-}
-
 /** The colour of a facet of the mountain, by where it is, how high and how steep. */
 function rockColor(y: number, level: number, x: number, z: number): { c: number; win?: WinSpec } {
-  if (y > MONT.top - 0.001 && toShelf(x, z) === 0) return { c: Math.sin(x * 0.9 + z * 0.4) + Math.sin(z * 1.3 - x * 0.5) > 0.4 ? ROCK.shelf : ROCK.shelf2 };
-  const dC = Math.hypot(x - CRATER.x, z - CRATER.z);
-  if (dC < 1.8 && y < CRATER.rim - 0.25) return dC < 1.05 ? { c: ROCK.ember, win: interior(1) } : { c: ROCK.emberWall, win: interior(0.6) };
-  if (onFlow(x, z) && y > 0.5) return { c: level > 0.55 ? ROCK.glassHi : ROCK.glass };
+  const cx = x - CR.x, cz = z - CR.z, dc = Math.hypot(cx, cz);
+  if (y > TOP - 0.001) return { c: ROCK.shelf };
+  if (dc < CR.bowl + 0.05 && y < rimHeight(cx, cz, dc) - 0.35) return dc < 1.0 ? { c: ROCK.ember, win: interior(1) } : { c: ROCK.emberWall, win: interior(0.65) };
+  for (const f of FISSURES) {
+    const r = offRay(x, z, f);
+    if (r.out > FISSURE_FROM && r.out < FISSURE_TO && r.off < 0.26) return { c: ROCK.crack, win: interior(0.7) };
+  }
+  for (const g of GLASS) {
+    const r = offRay(x, z, g);
+    if (r.out > CR.rim + 0.4 && r.off < 0.5 + r.out * 0.04 && y > 0.4) return { c: level > 0.55 ? ROCK.glassHi : ROCK.glass };
+  }
   const n = Math.sin(x * 2.1 + z * 0.7) + 0.6 * Math.sin(z * 3.1 - x * 1.7);
-  if (level < 0.4) return { c: n > 0 ? ROCK.black : ROCK.shade };
-  if (dC < 3.1) return { c: ROCK.rust };
-  if (level > 0.72 && y < 8) return { c: n > 0.3 ? ROCK.ash : ROCK.ashDark };
-  if (y > 18 && n > 0.6) return { c: ROCK.rust };
+  if (dc < CR.rim + 0.6) return { c: ROCK.rust };
+  if (level < 0.45) return { c: n > 0 ? ROCK.black : ROCK.shade };
+  if (y < 3.5) return { c: n > 0.2 ? ROCK.ash : ROCK.ashDark };
+  if (y > 17 && n > 0.5) return { c: ROCK.rust };
   return { c: n > 0.1 ? ROCK.brown : ROCK.black };
 }
 
@@ -345,19 +367,19 @@ function cliffFace(b: GeoBuilder, p: V3, q: V3, e: Edge): void {
   const top = Math.max(p[1], q[1]);
   if (top <= Math.max(0.03, e.base + 0.03)) return;
   const n: V3 = [e.nx, 0, e.nz];
-  const along = (v: V3): number => (Math.abs(e.nx) > Math.abs(e.nz) ? v[2] : v[0]) + (Math.abs(e.nx) > 0.01 && Math.abs(e.nz) > 0.01 ? v[0] + v[2] : 0);
-  const bedTop = (k: number, c: number): number => e.base + (k + 1) * e.bed + 0.8 * Math.sin(c * 0.37 + k * 1.9);
-  for (let k = 0; e.base + k * e.bed - 0.8 < top; k++) {
-    const a0 = k === 0 ? e.base : Math.max(e.base, bedTop(k - 1, along(p))), a1 = Math.max(a0, Math.min(p[1], bedTop(k, along(p))));
-    const c0 = k === 0 ? e.base : Math.max(e.base, bedTop(k - 1, along(q))), c1 = Math.max(c0, Math.min(q[1], bedTop(k, along(q))));
+  const at = (v: V3): number => v[0] * 0.6 + v[2];
+  const bedTop = (k: number, c: number): number => e.base + (k + 1) * e.bed + 0.6 * Math.sin(c * 0.37 + k * 1.9);
+  for (let k = 0; e.base + k * e.bed - 0.6 < top; k++) {
+    const a0 = k === 0 ? e.base : Math.max(e.base, bedTop(k - 1, at(p))), a1 = Math.max(a0, Math.min(p[1], bedTop(k, at(p))));
+    const c0 = k === 0 ? e.base : Math.max(e.base, bedTop(k - 1, at(q))), c1 = Math.max(c0, Math.min(q[1], bedTop(k, at(q))));
     if (a1 - a0 < 0.01 && c1 - c0 < 0.01) continue;
-    const color = BEDS[(k + (e.bed < 4 ? 0 : 1)) % BEDS.length];
+    const color = BEDS[k % BEDS.length];
     face3(b, [p[0], a0, p[2]], [q[0], c0, q[2]], [q[0], c1, q[2]], n, color);
     face3(b, [p[0], a0, p[2]], [q[0], c1, q[2]], [p[0], a1, p[2]], n, color);
   }
 }
 
-/** Draws one facet of the grid, cut off where the mountain is, with a cliff wherever it was cut. */
+/** Draws one facet of the grid, cut off where the mountain is, with a face wherever it was cut. */
 function facet(b: GeoBuilder, p: V3, q: V3, r: V3): void {
   let poly: V3[] = [p, q, r];
   const inside = poly.every((v) => onMountain(v[0], v[2]));
@@ -367,14 +389,12 @@ function facet(b: GeoBuilder, p: V3, q: V3, r: V3): void {
       if (poly.length < 3) return;
     }
   }
-  // the colour and the tilt are the whole facet's
   const ax = q[0] - p[0], ay = q[1] - p[1], az = q[2] - p[2], bx = r[0] - p[0], by = r[1] - p[1], bz = r[2] - p[2];
   let nx = ay * bz - az * by, ny = az * bx - ax * bz, nz = ax * by - ay * bx;
   const l = Math.hypot(nx, ny, nz) || 1;
   if (ny < 0) { nx = -nx; ny = -ny; nz = -nz; }
   const n: V3 = [nx / l, ny / l, nz / l];
-  const low = poly.every((v) => v[1] < 0.03);
-  if (!low) {
+  if (!poly.every((v) => v[1] < 0.03)) {
     const { c, win } = rockColor((p[1] + q[1] + r[1]) / 3, n[1], (p[0] + q[0] + r[0]) / 3, (p[2] + q[2] + r[2]) / 3);
     for (let i = 1; i + 1 < poly.length; i++) face3(b, poly[0], poly[i], poly[i + 1], n, c, { win });
   }
@@ -390,60 +410,62 @@ function facet(b: GeoBuilder, p: V3, q: V3, r: V3): void {
   }
 }
 
+/** A place in his frame, in the board's. */
+const world = (s: number, t: number, y: number): V3 => [PX + FX * s + AX * t, y, PZ + FZ * s + AZ * t];
+
 const dragonmont: Model = (k) => {
   const b = k.b, f = FIELD, W = f.nx + 1;
-  const at = (i: number, j: number): V3 => [f.x0 + i * GRID.cx, f.y[j * W + i], f.z0 + j * GRID.cz];
+  const at = (i: number, j: number): V3 => world(f.x0 + i * GRID.cs, f.z0 + j * GRID.ct, f.y[j * W + i]);
   for (let j = 0; j < f.nz; j++) {
     for (let i = 0; i < f.nx; i++) {
-      // each square is cut from its north-west corner to its south-east, as heightOn reads it
-      facet(b, at(i, j), at(i + 1, j), at(i + 1, j + 1));
-      facet(b, at(i, j), at(i + 1, j + 1), at(i, j + 1));
+      // each square is cut along the same diagonal heightOn reads it by
+      const p = at(i, j), q = at(i + 1, j), r = at(i + 1, j + 1), u = at(i, j + 1);
+      if (p[1] < 0.03 && q[1] < 0.03 && r[1] < 0.03 && u[1] < 0.03) continue;
+      facet(b, p, q, r);
+      facet(b, p, r, u);
     }
   }
 
   // the crater glows: a dull red by day, a fire by night, and a red pool on the rock round it
-  const floor = CRATER.rim - CRATER.deep;
-  k.glows.push({ x: CRATER.x, y: floor + 0.15, z: CRATER.z, sx: 1.1, sy: 0.25, sz: 1.1, color: EMBER });
-  k.glows.push({ x: CRATER.x + 0.2, y: floor + 0.6, z: CRATER.z - 0.1, sx: 0.6, sy: 0.35, sz: 0.6, color: RED });
-  k.lights.push({ x: CRATER.x, z: CRATER.z, r: 9, color: '#ff4a26', k: 0.6 });
+  k.glows.push({ x: CR.x, y: CR.floor + 0.12, z: CR.z, sx: 1.0, sy: 0.22, sz: 1.0, color: EMBER });
+  k.lights.push({ x: CR.x, z: CR.z, r: 9, color: '#ff4a26', k: 0.6 });
+  // the cracks down the front: a glow in each, like fire by night
+  for (const a of FISSURES) {
+    for (const d of [FISSURE_FROM + 0.5, (FISSURE_FROM + FISSURE_TO) / 2, FISSURE_TO - 0.4]) {
+      const x = CR.x + Math.cos(a) * d, z = CR.z + Math.sin(a) * d;
+      k.glows.push({ x, y: heightAt(x, z) + 0.04, z, sx: 0.2, sy: 0.1, sz: 0.2, color: RED });
+    }
+  }
+  k.lights.push({ x: CR.x + FX * 4.5, z: CR.z + FZ * 4.5, r: 7, color: '#ff5a2a', k: 0.4 });
 
-  // a thin plume, always, drifting east on the wind off the bay
+  // a thin plume from the front right of the bowl, drifting east on the wind off the bay
+  const VENT = { x: CR.x + FX * 0.7 - AX * 0.75, z: CR.z + FZ * 0.7 - AZ * 0.75 };
+  const vy = heightAt(VENT.x, VENT.z) + 0.3;
   const smoke = new Smoke(k.mat.prop({ vertexColors: false, color: 0xffffff }), 70);
   k.group.add(smoke.mesh);
-  const from = new THREE.Vector3(), drift = new THREE.Vector3(0.7, 1.4, 0.2);
+  const from = new THREE.Vector3(), drift = new THREE.Vector3(0.8, 1.4, 0.2);
   let due = 0, n = 0;
   k.each((dt) => {
     due -= dt;
     if (due <= 0) {
       due = 0.2;
       n++;
-      smoke.puff(from.set(CRATER.x + 0.35 * Math.sin(n * 1.7), floor + 1.2, CRATER.z + 0.35 * Math.cos(n * 2.3)), drift, 0.9 + 0.25 * Math.sin(n * 0.7), 0.3);
+      smoke.puff(from.set(VENT.x + 0.25 * Math.sin(n * 1.7), vy, VENT.z + 0.25 * Math.cos(n * 2.3)), drift, 0.85 + 0.25 * Math.sin(n * 0.7), 0.3);
     }
     smoke.update(dt);
   });
 
-  // columns of black rock against the sheer faces under the shelf, none of them higher than 22 within the dragon's air
-  const cols = rng(9113);
-  const column = (x: number, z: number, h: number, w: number, d: number, out: V3): void => {
-    const foot: V3 = [x + out[0] * d * 0.5, -0.2, z + out[2] * d * 0.5], head: V3 = [x + out[0] * 0.1, h, z + out[2] * 0.1];
-    taper(b, foot, head, out, w, d * 0.5, w * 0.6, 0.12, cols() > 0.5 ? ROCK.black : ROCK.shade);
-  };
-  for (let x = SHELF[0][0] + 0.35; x < CUT - 0.3; x += 0.55 + cols() * 0.35) column(x, MONT.z1, 7 + cols() * 14, 0.22 + cols() * 0.18, 0.7 + cols() * 1.2, [0, 0, 1]);
-  for (let z = SHELF[0][1] + 0.4; z < MONT.z1 - 0.3; z += 0.6 + cols() * 0.4) column(SHELF[0][0] - 0.5, z, 9 + cols() * 8, 0.2 + cols() * 0.15, 0.5 + cols() * 0.8, [-1, 0, 0]);
-
-  // fallen rock at the cliffs' feet, low, and only where the island is
+  // fallen rock at the foot, low, on the island and off the slope's steep parts
   const rand = rng(4407);
-  const rocks: [number, number, number, number][] = [
-    [96.6, 28.3, 103.2, 29.3], [88.5, 15.5, 89.7, 27.5], [91.6, 10.6, 101, 11.7],
-  ];
-  for (const [x0, z0, x1, z1] of rocks) {
-    for (let i = 0; i < 6; i++) {
-      const x = x0 + rand() * (x1 - x0), z = z0 + rand() * (z1 - z0), r = 0.35 + rand() * 0.45;
-      if (((x - ISLE.x) / ISLE.rx) ** 2 + ((z - ISLE.z) / ISLE.rz) ** 2 > 0.93) continue;
-      b.cyl(x, z, -0.1, 0.5 + rand() * 1.1, r, r * 0.45, 5, rand() > 0.5 ? ROCK.black : ROCK.brown, { cap: ROCK.shade, phase: rand() * 3 });
-    }
+  for (let i = 0; i < 26; i++) {
+    const a = rand() * Math.PI * 2, d = REACH + CR.rim - 1 + rand() * 2.5, x = CR.x + Math.cos(a) * d * 1.05, z = CR.z + Math.sin(a) * d * 1.15;
+    if (((x - ISLE.x) / ISLE.rx) ** 2 + ((z - ISLE.z) / ISLE.rz) ** 2 > 0.9 || x > CUT - 0.6 || z > CASTLE.z0 - 0.6) continue;
+    const y = heightAt(x, z), r = 0.3 + rand() * 0.4;
+    if (y > 2.5) continue;
+    b.cyl(x, z, y - 0.15, y + 0.4 + rand() * 0.8, r, r * 0.45, 5, rand() > 0.5 ? ROCK.black : ROCK.brown, { cap: ROCK.shade, phase: rand() * 3 });
   }
 };
+
 
 // ---------------------------------------------------------------------------
 // Dragonstone: the castle
@@ -634,12 +656,12 @@ function extras(k: Build): void {
   for (const [x, z] of [[c.x0 - 1.4, c.z0 + 6.6], [c.x0 - 0.6, c.z0 + 2.4], [c.x0 + 1.0, c.z1 + 2.2], [c.x0 + 3.4, c.z1 + 1.9], [c.x0 - 1.6, c.z1 + 1.2]]) k.person(x, z, qTop);
   ship(k, qx0 - 1.8, c.z0 + 1.0, c.z0 + 10.0);
 
-  // the names: the castle's beside it to the south-east, the mountain's at the foot of its cliff
-  nameBoard(k, 'dragonstone-name', c.x1 + 2.6, c.z1 - 1.0, 0, undefined, 1.1);
-  nameBoard(k, 'dragonstone-mont', MONT.x1 - 3.0, MONT.z1 + 2.9, 0, undefined, 1.0);
-  // two who have come to look up at the shelf
-  k.person(MONT.x1 - 5.6, MONT.z1 + 4.6);
-  k.person(MONT.x1 - 4.9, MONT.z1 + 5.2);
+  // the names: the castle's beside it to the south-east, the mountain's on the shore at its south-east foot
+  nameBoard(k, 'dragonstone-name', c.x1 + 2.2, c.z1 - 0.4, 0, undefined, 1.1);
+  nameBoard(k, 'dragonstone-mont', CUT - 2.3, MONT.z1 + 3.8, 0, undefined, 0.9);
+  // two who have come to look up at the mountain
+  k.person(CUT - 4.6, MONT.z1 + 6.4);
+  k.person(CUT - 3.9, MONT.z1 + 6.9);
 }
 
 export const MODELS: Record<string, Model> = { dragonmont, 'ds-castle': dsCastle };
@@ -648,7 +670,7 @@ export const SIGNS: SignDef[] = [nameSign('dragonstone-name', 'Dragonstone'), na
 export const FLOORED: string[] = [];
 
 export function heightAt(x: number, z: number): number {
-  return onMountain(x, z) ? heightOn(FIELD, x, z) : 0;
+  return onMountain(x, z) ? heightOn(FIELD, along(x, z), across(x, z)) : 0;
 }
 
 export { extras };

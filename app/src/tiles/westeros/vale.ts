@@ -75,9 +75,12 @@ const NXC = Math.max(1, Math.round((FX1 - FX0) / CELL)), NZC = Math.max(1, Math.
 /** How far round a corner of the grid the facets that meet at it reach: a corner is kept under every top within this. */
 const RX = ((FX1 - FX0) / NXC) * 1.02, RZ = ((FZ1 - FZ0) / NZC) * 1.02;
 
+/** The yard of the Gates of the Moon: the ring the high road turns in, which the mountain's foot keeps clear of by a little. */
+const RING = { x: TURNS.moon.c[0], z: TURNS.moon.c[1], clear: TURNS.moon.r + 2.6 + 0.45 };
+
 /** The highest a lot lets the rock stand at a place. The castle at the foot stands on level ground. */
 function capAt(x: number, z: number): number {
-  if (inLot(GM, x, z)) return 0;
+  if (inLot(GM, x, z) || Math.hypot(x - RING.x, z - RING.z) < RING.clear) return 0;
   let c = 0;
   for (const l of ROCKY) if (inLot(l, x, z)) c = Math.max(c, l.top);
   return c;
@@ -102,7 +105,7 @@ const LEVEL: [number, number, number, number][] = [
 ];
 /** How far a place is from the level ground. */
 function fromLevel(x: number, z: number): number {
-  let d = Infinity;
+  let d = Math.max(0, Math.hypot(x - RING.x, z - RING.z) - RING.clear);
   for (const [x0, z0, x1, z1] of LEVEL) d = Math.min(d, Math.hypot(Math.max(0, x0 - x, x - x1), Math.max(0, z0 - z, z - z1)));
   return d;
 }
@@ -399,18 +402,19 @@ const bloodyGateModel: Model = (k, l) => {
   const road = ROADS.high[ROADS.high.length - 1][1];
   const nz = road - 4.5, sz = road + 4.5, span = 6;
   const x0 = l.x0 + 0.3, x1 = l.x1 - 0.3;
-  // the north tower, the tall one: its foot runs south to the edge of the arch
-  block(b, x0, l.z0 + 0.3, x1, nz, 0, l.top - 0.8, G, GS, LOOPS);
-  banner(b, (x0 + x1) / 2, (l.z0 + nz) / 2, l.top - 0.8, 'arryn', 4, 0.8);
-  k.person(x0 + 0.6, nz - 0.6, l.top - 0.8);
-  // the south tower, the low one, on the river's edge: it goes down into the water
-  const s0 = sz, s1 = sz + 2.6;
-  block(b, x0 + 0.3, s0, x1 - 0.3, s1, -1.6, arch.top - 0.8, G, GS, LOOPS);
-  // the covered bridge between them: its floor is the arch's soffit
+  // the north tower, the tall one, in its own lot north of the arch
+  block(b, x0, l.z0 + 0.3, x1, l.z1, 0, l.top - 0.8, G, GS, LOOPS);
+  banner(b, (x0 + x1) / 2, (l.z0 + l.z1) / 2, l.top - 0.8, 'arryn', 4, 0.8);
+  k.person(x0 + 0.6, l.z1 - 0.6, l.top - 0.8);
+  // the north pier, from the tower to the arch's north face, as high as the soffit
   const by = span;
-  b.box(x0 + 0.4, by, nz, x1 - 0.4, by + 0.6, sz, GS, { faces: 'EWTB' });
-  b.box(x0 + 0.5, by + 0.6, nz, x1 - 0.5, arch.top - 0.6, sz, G, { faces: 'EW' });
-  gable(b, x0 + 0.5, nz, x1 - 0.5, sz, arch.top - 0.6, 0.55, ROOF.slate, G, 'z', 0.15);
+  b.box(x0, 0, arch.z0 - 0.05, x1, by, nz, G, { win: LOOPS, seed: 0.57, faces: 'ESW' });
+  // the south pier, the low tower, on the bank north of the river
+  block(b, x0, sz, x1, arch.z1 - 0.2, 0, arch.top - 0.8, G, GS, LOOPS);
+  // the covered bridge from the tall tower over the road to the low one: its floor is the arch's soffit
+  b.box(x0 + 0.4, by, arch.z0 - 0.05, x1 - 0.4, by + 0.6, sz, GS, { faces: 'EWTB' });
+  b.box(x0 + 0.5, by + 0.6, arch.z0 - 0.05, x1 - 0.5, arch.top - 0.6, sz, G, { faces: 'EW' });
+  gable(b, x0 + 0.5, arch.z0 - 0.05, x1 - 0.5, sz, arch.top - 0.6, 0.55, ROOF.slate, G, 'z', 0.15);
   for (const s of [-1, 1]) {
     const x = s < 0 ? x0 + 0.48 : x1 - 0.48;
     for (let i = 0; i < 4; i++) {
@@ -418,10 +422,11 @@ const bloodyGateModel: Model = (k, l) => {
       b.box(x - 0.03, by + 0.9, z - 0.22, x + 0.03, by + 1.55, z + 0.22, DARK, { win: interior(0.45), faces: s < 0 ? 'W' : 'E' });
     }
   }
-  // corbels under the bridge where it springs from each tower
-  for (const z of [nz + 0.25, sz - 0.25]) b.box(x0 + 0.4, by - 0.45, z - 0.25, x1 - 0.4, by, z + 0.25, GS, { faces: 'NESWB' });
-  // torches at the arch, and the light on the road under it
-  for (const x of [x0 - 0.1, x1 + 0.1]) fire(k, x, 3.4, nz + 0.25, 0.22, 0);
+  // torches on both piers, and the light on the road under the arch
+  for (const x of [x0 + 0.4, x1 - 0.4]) {
+    fire(k, x, 3.4, nz + 0.12, 0.2, 0);
+    fire(k, x, 3.4, sz - 0.12, 0.2, 0);
+  }
   k.lights.push({ x: (x0 + x1) / 2, z: road, r: 9, color: '#ffcf8a', k: 0.5 });
   // the pass: rocks at the foot of the north tower
   boulder(b, l.x0 - 0.9, l.z0 - 0.5, 1.0, 1.8, 11);
@@ -481,12 +486,13 @@ const gatesModel: Model = (k, l) => {
   }
   area(k, arc, PAVE, 0.035);
   area(k, rect(g0 - 0.3, l.z1 - 0.02, g1 + 0.3, rz - Math.sqrt((ring.r + 2.6) ** 2 - 1.45 ** 2) - 0.15), PAVE, 0.035);
-  // the well: a stone ring, two posts and a little roof, no more than 1.5 across
-  b.cyl(rx, rz, 0, 0.8, 0.62, 0.62, 10, STONE.river, { cap: 0x2c3a40 });
-  b.cyl(rx, rz, 0.8, 0.92, 0.7, 0.7, 10, STONE.riverShade, { cap: false });
-  for (const s of [-1, 1]) b.box(rx + s * 0.52 - 0.06, 0.8, rz - 0.06, rx + s * 0.52 + 0.06, 2.0, rz + 0.06, TIMBER, { faces: 'NESW' });
-  gable(b, rx - 0.6, rz - 0.42, rx + 0.6, rz + 0.42, 2.0, 0.45, ROOF.shingle, TIMBER, 'x', 0.08);
-  b.beam([rx - 0.5, 1.6, rz], [rx + 0.5, 1.6, rz], 0.05, 0.05, TIMBER_DARK);
+  // the well: a stone ring, two posts and a little roof, no more than the ring's middle allows across
+  const wr = Math.min(0.75, (ring.r - 2.8) / 2) - 0.02;
+  b.cyl(rx, rz, 0, 0.8, wr * 0.86, wr * 0.86, 10, STONE.river, { cap: 0x2c3a40 });
+  b.cyl(rx, rz, 0.8, 0.92, wr, wr, 10, STONE.riverShade, { cap: false });
+  for (const s of [-1, 1]) b.box(rx + s * (wr - 0.14) - 0.06, 0.8, rz - 0.06, rx + s * (wr - 0.14) + 0.06, 2.0, rz + 0.06, TIMBER, { faces: 'NESW' });
+  gable(b, rx - wr + 0.08, rz - wr * 0.6, rx + wr - 0.08, rz + wr * 0.6, 2.0, 0.4, ROOF.shingle, TIMBER, 'x', 0.06);
+  b.beam([rx - wr + 0.14, 1.6, rz], [rx + wr - 0.14, 1.6, rz], 0.05, 0.05, TIMBER_DARK);
 };
 
 // ---------------------------------------------------------------------------
@@ -748,9 +754,11 @@ export function extras(k: Build): void {
   const inn = lotOf('inn'), gate = lotOf('bloody-gate-n');
   nameBoard(k, 'vale-inn', inn.x0 - 4.0, inn.z0 + 1.8, 0, undefined, 1.2);
   nameBoard(k, 'vale-bloody-gate', gate.x0 - 1.9, gate.z0 + 1.0, 0, undefined, 0.9);
-  nameBoard(k, 'vale-gates-moon', VSO.x0 + 0.0, VSO.z1 + 3.4, 0, undefined, 1.1);
-  nameBoard(k, 'vale-eyrie', VSO.x0 + 8.0, VSO.z1 + 3.1, 0, undefined, 1.2);
-  nameBoard(k, 'vale-lance', VSO.x0 + 16.5, VSO.z1 + 3.4, 0, undefined, 1.0);
+  // east of the river's mouth, on the strip of shore under the south foot
+  // (the westernmost stands where Dragonmont, south of it, hides it from the opening view: the mountain's own name goes there)
+  nameBoard(k, 'vale-lance', VSO.x0 + 3.6, VSO.z1 + 3.4, 0, undefined, 1.0);
+  nameBoard(k, 'vale-gates-moon', VSO.x0 + 11.3, VSO.z1 + 3.4, 0, undefined, 1.1);
+  nameBoard(k, 'vale-eyrie', VSO.x0 + 18.6, VSO.z1 + 3.1, 0, undefined, 1.2);
 
   // smoke from two of the inn's chimneys, and the spray of Alyssa's Tears
   const puffs = new Smoke(k.mat.prop({ vertexColors: false, color: 0xffffff }), 90);

@@ -8,7 +8,8 @@
 
 import * as THREE from 'three';
 import { interior, rng, type GeoBuilder, type V3, type WinSpec } from '../../engine/geo';
-import { area, flat, rect, walls, water } from '../../engine/ground';
+import { area, flat, rect, walls } from '../../engine/ground';
+import { makeWaterMaterial } from '../../engine/look/materials';
 import { archway, figure, lathe, roundel } from '../../engine/parts';
 import { face3, prism, slab } from '../../engine/shapes';
 import type { SignDef } from '../../engine/signs';
@@ -97,7 +98,25 @@ export const SIGNS: SignDef[] = [
 
 const HH = { black: STONE.black, shade: STONE.blackShade, glaze: 0x2b282f, scorch: 0x1d1b1f, inside: 0x1f1d21, ash: 0x5d5750 };
 /** Arrow loops far apart, and very few of them lit: Harrenhal is nearly empty. */
-const HH_LOOPS: WinSpec = { cell: 5.6, storey: 4.2, lit: 0.12, kind: 6 };
+/** No engine windows on Harrenhal: its loops are built, as `slit` below. */
+const HH_NONE: WinSpec = { cell: 0, storey: 5, lit: 0, kind: 0 };
+
+/**
+ * An arrow slit: a dark upright strip a hair proud of a wall that faces
+ * (nx, nz), `h` high from `y0`. A few are lit at night; most stay dark.
+ */
+function slit(b: GeoBuilder, x: number, y0: number, z: number, nx: number, nz: number, h: number, lit: boolean): void {
+  const ax = -nz * 0.15, az = nx * 0.15, ox = x + nx * 0.03, oz = z + nz * 0.03;
+  b.quad([ox - ax, y0, oz - az], [ox + ax, y0, oz + az], [ox + ax, y0 + h, oz + az], [ox - ax, y0 + h, oz - az], [nx, 0, nz], DARK, lit ? { win: interior(0.6) } : {});
+}
+
+/** Slits on the flat faces of a round shaft of `sides` faces, as `cyl` draws it: on the faces numbered in `faces`, at heights `ys`. */
+function shaftSlits(b: GeoBuilder, cx: number, cz: number, r: number, sides: number, faces: number[], ys: number[], R: () => number, litShare: number): void {
+  faces.forEach((i, n) => {
+    const am = Math.PI / sides + ((i + 0.5) / sides) * Math.PI * 2, d = r * Math.cos(Math.PI / sides);
+    slit(b, cx + Math.cos(am) * d, ys[n % ys.length], cz + Math.sin(am) * d, Math.cos(am), Math.sin(am), 1.8 + R() * 0.6, R() < litShare);
+  });
+}
 /** The wall's body, which carries the loops, ends at two storeys; the band above it carries the walk. */
 const HH_BODY = 8.4, HH_WALK = 9.9;
 
@@ -133,7 +152,14 @@ function hhWall(k: Build, l: Lot): void {
   const ends = alongX ? 'e' : '';
   for (const [s0, s1] of spans) {
     // the body, with loops, and the band above it that carries the walk, a little proud of the face
-    bx(s0, s1, 0, HH_BODY, cLo, cHi, HH.black, 'oi' + ends, HH_LOOPS);
+    bx(s0, s1, 0, HH_BODY, cLo, cHi, HH.black, 'oi' + ends);
+    // a few arrow slits, far apart, on the outer face and one to the ward
+    const RS = rng(hash(l.id) + Math.round(s0 * 10));
+    for (let n = 0; n < Math.max(1, Math.round((s1 - s0) / 12)); n++) {
+      const a = s0 + 3 + RS() * (s1 - s0 - 6);
+      slit(b, ...P(a, 3.2 + RS() * 3, cOut), outN[0], outN[2], 1.9 + RS() * 0.5, RS() < 0.2);
+    }
+    slit(b, ...P(s0 + (s1 - s0) * (0.3 + RS() * 0.4), 2.6 + RS() * 3, cIn), -outN[0], -outN[2], 2.0, RS() < 0.3);
     bx(s0, s1, HH_BODY, HH_WALK, cOut + out * 0.22, cIn, HH.black, 'oitb' + ends, undefined, HH.shade);
     // the inner parapet, low and unbroken
     bx(s0, s1, HH_WALK, HH_WALK + 0.55, cIn, cIn + out * 0.32, HH.black, 'oit' + ends, undefined, HH.shade);
@@ -175,7 +201,10 @@ function hhWall(k: Build, l: Lot): void {
 /** A square bastion on a corner of the curtain wall, reaching out past both walls. `sx` and `sz` say which way is out. */
 function hhBastion(k: Build, x: number, z: number, sx: number, sz: number, R: () => number): void {
   const b = k.b, h = 1.9, x0 = x - h, x1 = x + h, z0 = z - h, z1 = z + h;
-  b.box(x0, 0, z0, x1, HH_BODY, z1, HH.black, { faces: 'NESW', win: HH_LOOPS, seed: x * 0.1 + z * 0.3 });
+  b.box(x0, 0, z0, x1, HH_BODY, z1, HH.black, { faces: 'NESW' });
+  const RS = rng(hash('bastion') + Math.round(x * 7 + z * 13));
+  slit(b, x + sx * (h + 0.02), 3.4 + RS() * 2.5, z + (RS() - 0.5) * 1.6, sx, 0, 2.0, RS() < 0.25);
+  slit(b, x + (RS() - 0.5) * 1.6, 3.4 + RS() * 2.5, z + sz * (h + 0.02), 0, sz, 2.0, RS() < 0.25);
   b.box(x0 - 0.15, HH_BODY, z0 - 0.15, x1 + 0.15, 10.25, z1 + 0.15, HH.black, { faces: 'NESWTB', top: HH.shade });
   // two merlons on each outer side, and one of them melted to a lump
   const xo = sx > 0 ? x1 + 0.15 : x0 - 0.15, zo = sz > 0 ? z1 + 0.15 : z0 - 0.15;
@@ -201,11 +230,13 @@ function hhGatehouse(k: Build, gx: number, S: Lot): void {
   b.box(gx - 2, crown, z0, gx + 2, top, z1, HH.black, { faces: 'NSEWT', top: HH.shade });
   for (const t of [-1.45, 0, 1.45]) b.box(gx + t - 0.45, top, z1 - 0.5, gx + t + 0.45, 11, z1, HH.black, { top: HH.shade });
   // two arrow slits over the arch, dark
-  for (const t of [-0.8, 0.8]) b.box(gx + t - 0.12, 6.2, z1, gx + t + 0.12, 7.8, z1 + 0.04, DARK, { faces: 'S' });
+  for (const [t, y, lit] of [[-0.6, 6.0, true], [0.6, 6.0, false], [0, 8.1, false]] as const) slit(b, gx + t, y, z1, 0, 1, 1.9, lit);
+  for (const [t, y] of [[-1.2, 5.6], [1.2, 6.4]]) slit(b, gx + t, y, z0, 0, -1, 2.0, false);
   // the drums
   for (const s of [-1, 1]) {
     const x = gx + s * 2.5, z = S.z1 - 0.4;
-    roundTower(b, x, z, 1.9, 10.2, HH.black, { shade: HH.shade, win: HH_LOOPS, sides: 10, seed: x * 0.2 });
+    roundTower(b, x, z, 1.9, 10.2, HH.black, { shade: HH.shade, win: HH_NONE, sides: 10, seed: x * 0.2 });
+    shaftSlits(b, x, z, 1.9, 10, s < 0 ? [2, 3, 1, 2] : [1, 0, 2, 1], [2.4, 5.4, 3.9, 6.6], rng(hash('drum') + s), 0.35);
   }
   // the portcullis, drawn up so that only its teeth show under the arch: painted lighter than iron looks
   const pz = z1 - 0.5, iron = 0x8e9196, arch = (dx: number): number => spring + Math.sqrt(Math.max(0, r * r - dx * dx));
@@ -280,7 +311,16 @@ function meltedTower(k: Build, l: Lot, m: Melt): void {
 
   // the foot, a skirt of fallen and fused stone, and the shaft that still stands whole
   b.cyl(cx, cz, 0, 1.5, r + 0.6, r + 0.05, N, HH.shade, { cap: HH.shade });
-  b.cyl(cx, cz, 0, m.base, r, r, N, HH.black, { win: HH_LOOPS, seed: cx * 0.17 + cz * 0.05, cap: false });
+  b.cyl(cx, cz, 0, m.base, r, r, N, HH.black, { cap: false });
+  // arrow slits on the storeys that still stand whole: the most on the sides the view sees first
+  {
+    const RS = rng(hash(l.id) + 99), n = m.base > 10 ? 6 : 5, faces: number[] = [], ys: number[] = [];
+    for (let i = 0; i < n; i++) {
+      faces.push(i < n - 2 ? Math.floor(RS() * 4) : Math.floor(RS() * N));
+      ys.push(2.0 + RS() * (m.base - 4.6));
+    }
+    shaftSlits(b, cx, cz, r, N, faces, ys, RS, 0.2);
+  }
 
   // the melted storeys
   const G: V3[][] = [];
@@ -491,7 +531,8 @@ function harrenhalWard(k: Build): void {
   k.person(sx1 - 3.4, sz1 + 0.5);
   k.lights.push({ x: (ward.x0 + ward.x1) / 2, z: (ward.z0 + ward.z1) / 2 + 3, r: 13, color: '#ffcf8a', k: 0.35 });
 
-  nameBoard(k, 'riverlands-harrenhal', Wl.x0 + 5, S.z1 + 4.8);
+  // at the south-west corner, between the wall and the lake: the farm south of the wall keeps its ground
+  nameBoard(k, 'riverlands-harrenhal', Wl.x0 - 4, S.z1 + 4);
 }
 
 // ---------------------------------------------------------------------------
@@ -650,6 +691,35 @@ function waterWheel(b: GeoBuilder, u: number, yc: number, z0: number, z1: number
   b.box(u - 0.14, yc - 0.14, z0 - 1.0, u + 0.14, yc + 0.14, z1 + 0.15, TIMBER_DARK, { faces: 'NESWTB' });
 }
 
+/**
+ * Water as `water` in ground.ts lays it, but with no quay wall along the edge
+ * that starts at corner `open`: there the river runs on out of the lot.
+ */
+function openWater(k: Build, shape: P2[], open: number, drop: number, color: number, quay: number): void {
+  const level = -drop, pos: number[] = [];
+  for (const t of THREE.ShapeUtils.triangulateShape(shape.map((p) => new THREE.Vector2(p[0], p[1])), [])) {
+    const [a, b, c] = t.map((n) => shape[n]);
+    const over = (b[1] - a[1]) * (c[0] - a[0]) - (b[0] - a[0]) * (c[1] - a[1]);
+    for (const p of over >= 0 ? [a, b, c] : [a, c, b]) pos.push(p[0], level, p[1]);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.computeVertexNormals();
+  const mesh = new THREE.Mesh(geo, makeWaterMaterial(k.look, color));
+  mesh.receiveShadow = true;
+  mesh.layers.set(1);
+  k.group.add(mesh);
+  k.mirrors = true;
+  // the walls round it, all but the open edge: as one shape that leaves that edge out, facing in
+  const n = shape.length, cw = shape.reduce((s, p, i) => s + p[0] * shape[(i + 1) % n][1] - shape[(i + 1) % n][0] * p[1], 0) > 0 ? 1 : -1;
+  for (let i = 0; i < n; i++) {
+    if (i === open) continue;
+    const p = shape[i], q = shape[(i + 1) % n], len = Math.hypot(q[0] - p[0], q[1] - p[1]) || 1;
+    const nx = -((q[1] - p[1]) / len) * cw, nz = ((q[0] - p[0]) / len) * cw;
+    k.b.quad([p[0], -1.6, p[1]], [q[0], -1.6, q[1]], [q[0], 0, q[1]], [p[0], 0, p[1]], [nx, 0, nz], quay);
+  }
+}
+
 function riverrun(k: Build, l: Lot): void {
   const b = k.b, W = l.x1 - l.x0, H = l.z1 - l.z0;
   const at = (u: number, v: number): P2 => [l.x0 + u * W, l.z0 + v * H];
@@ -667,8 +737,8 @@ function riverrun(k: Build, l: Lot): void {
   const Hh: P2 = [l.x1 - 3, l.z1], I: P2 = [l.x1 - 3.8, l.z1 - 0.55], J: P2 = [l.x0 + 3.6, l.z1 - 0.55], K: P2 = [l.x0 + 2.8, l.z1];
   const river: P2[] = [[l.x0, l.z0], B, C, D, E, F, [l.x1, l.z1], Hh, I, J, K, [l.x0, l.z1]];
   flat(b, rect(l.x0, l.z0, l.x1, l.z1), -1.6, 0x46524a);
-  walls(b, river, -1.6, -1.3, BANK, { inward: true });
-  water(k, river, { color: FRESH, quay: BANK, drop: 0.7 });
+
+  openWater(k, river, river.indexOf(F), 0.7, FRESH, BANK);
   area(k, [B, [l.x1, l.z0], F, E, D, C], GRASS, 0);
   area(k, [Hh, I, J, K], GRASS, 0);
 

@@ -1040,7 +1040,8 @@ export const SIGNS: SignDef[] = [
 function names(k: Build): void {
   const E: V3 = [1, 0, 0], S: V3 = [0, 0, 1], q = WL.x1 + 11.25, f = KL.quayZ + 4.85;
   // the city's own name, by the kingsroad where it comes down to the bay, across the bend from the Dragon Gate
-  nameBoard(k, SIGN.city, KL.quayX + 11, DG.z0 - 7.8, 0, [0.669, 0, 0.743], 1.1);
+  // the city's name stands on the Blackwater's south bank, before the city as the opening view sees it
+  nameBoard(k, SIGN.city, 51, 67.5, 0, [0.669, 0, 0.743], 1.1);
   nameBoard(k, SIGN.dragon, q, DG.z1 + 5.2, 0, E, 1.2);
   nameBoard(k, SIGN.pit, q, PC.z + 7.5, 0, E, 1.4);
   nameBoard(k, SIGN.keep, q, (RK.z0 + RK.z1) / 2 - 0.5, 0, E, 1.4);
