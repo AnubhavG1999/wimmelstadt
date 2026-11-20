@@ -8,8 +8,13 @@
 import { DEVANAGARI, EN, fit, type SignDef } from '../../engine/signs';
 import type { Quarter } from './plan';
 
-const shop = (id: string, hindi: string, english: string, color: string, ink: string, kind: 'board' | 'box' = 'board'): SignDef =>
-  ({ id: `shop-${id}`, lines: [hindi, english], color, ink, aspect: Math.max(2.4, english.length * 0.42), kind, font: DEVANAGARI });
+/** A sign's size on the sheet, for its shape: small, so that the tile's many signs fit on one sheet. */
+const sized = (aspect: number, h: number): [number, number] => [Math.round(h * aspect), h];
+
+const shop = (id: string, hindi: string, english: string, color: string, ink: string, kind: 'board' | 'box' = 'board'): SignDef => {
+  const aspect = Math.max(2.4, english.length * 0.42);
+  return { id: `shop-${id}`, lines: [hindi, english], color, ink, aspect, size: sized(aspect, 104), kind, font: DEVANAGARI };
+};
 
 /** What is over the shopfronts of each quarter. */
 export const SHOPS: Record<Quarter, SignDef[]> = {
@@ -21,16 +26,18 @@ export const SHOPS: Record<Quarter, SignDef[]> = {
     shop('tyres', 'टायर', 'TYRES', '#1b1b20', '#f2c14e'), shop('parts', 'ऑटो पार्ट्स', 'AUTO PARTS', '#f2c14e', '#1b1b20', 'box'), shop('sweets-2', 'मिठाई', 'SWEETS', '#7a1f5e', '#fbe9b7'),
     shop('tea-2', 'चाय', 'TEA', '#f4f1e8', '#1f5d48', 'box'),
   ],
-  south: [shop('chaat-2', 'चाट', 'CHAAT', '#b3202a', '#fbe9b7', 'box'), shop('tea-3', 'चाय', 'TEA', '#1f5d48', '#f4f1e8'), shop('puncture', 'पंक्चर', 'PUNCTURE', '#1b1b20', '#f4f1e8')],
+  south: [shop('chaat-2', 'चाट', 'CHAAT', '#b3202a', '#fbe9b7', 'box'), shop('tea-3', 'चाय', 'TEA', '#1f5d48', '#f4f1e8'), shop('puncture', 'पंचर', 'PUNCTURE', '#1b1b20', '#f4f1e8')],
   river: [shop('tea-4', 'चाय', 'TEA', '#1f5d48', '#f4f1e8')],
 };
 
 /** A board over a road, as Delhi's are: white lettering on green, Hindi above and English below. */
-const road = (id: string, hindi: string, english: string): SignDef =>
-  ({ id: `road-${id}`, lines: [hindi, english], color: '#12784a', ink: '#ffffff', aspect: Math.max(2.6, english.length * 0.46), kind: 'board', font: DEVANAGARI, real: true });
+const road = (id: string, hindi: string, english: string): SignDef => {
+  const aspect = Math.max(2.6, english.length * 0.46);
+  return { id: `road-${id}`, lines: [hindi, english], color: '#12784a', ink: '#ffffff', aspect, size: sized(aspect, 120), kind: 'board', font: DEVANAGARI, real: true };
+};
 
 export const ROAD_SIGNS: SignDef[] = [
-  road('ring-road', 'रिंग रोड', 'RING ROAD'), road('moti-bagh', 'मोती बाग', 'MOTI BAGH'), road('aiims', 'एम्स', 'AIIMS'), road('dhaula-kuan', 'धौला कुआं', 'DHAULA KUAN'),
+  road('ring-road', 'रिंग रोड', 'RING ROAD'), road('moti-bagh', 'मोती बाग', 'MOTI BAGH'), road('aiims', 'एम्स', 'AIIMS'), road('dhaula-kuan', 'धौला कुआँ', 'DHAULA KUAN'),
   road('kartavya-path', 'कर्तव्य पथ', 'KARTAVYA PATH'), road('chandni-chowk', 'चांदनी चौक', 'CHANDNI CHOWK'), road('connaught-place', 'कनॉट प्लेस', 'CONNAUGHT PLACE'),
   road('kashmere-gate', 'कश्मीरी गेट', 'KASHMERE GATE'), road('karol-bagh', 'करोल बाग', 'KAROL BAGH'), road('india-gate', 'इंडिया गेट', 'INDIA GATE'),
 ];

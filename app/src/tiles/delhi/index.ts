@@ -8,7 +8,7 @@
 import { ordinaryBuildings, type BuildingRules, type Lot } from '../../engine/buildings';
 import { checkRoads, type Solid } from '../../engine/checks';
 import { LAWN, area, band, flat, ground, oval, rect, terrace, walls, water } from '../../engine/ground';
-import { lane, toSegs, type Piece } from '../../engine/lines';
+import { lane, sample, toSegs, type Piece } from '../../engine/lines';
 import { buildPath, type Path } from '../../engine/paths';
 import { CONCRETE, clearOfStreets, lampsAlong, roadDeck, street } from '../../engine/roads';
 import type { SignDef } from '../../engine/signs';
@@ -18,6 +18,7 @@ import {
   type Quarter, type Thing,
 } from './plan';
 import { AXIS } from './axis';
+import { life } from './life';
 import * as bazaar from './bazaar';
 import * as centre from './centre';
 import * as east from './east';
@@ -40,7 +41,10 @@ const BOX: Record<Quarter, number> = { 'old-delhi': 0xc98a6b, centre: 0xe6dcc6, 
 // ---------------------------------------------------------------------------
 
 /** A board for each thing that is still a plain box, with its name on it. */
-const BOARDS: SignDef[] = THINGS.map((t) => ({ id: `board-${t.id}`, lines: [t.name], color: '#fbf6e6', ink: '#2a1d14', aspect: Math.max(2.6, t.name.length * 0.6), kind: 'board' }));
+const BOARDS: SignDef[] = THINGS.map((t): SignDef => {
+  const aspect = Math.max(2.6, t.name.length * 0.6);
+  return { id: `board-${t.id}`, lines: [t.name], color: '#fbf6e6', ink: '#2a1d14', aspect, size: [Math.round(64 * aspect), 64], kind: 'board' };
+});
 
 const SIGNS: SignDef[] = [...Object.values(SHOPS).flat(), ...ROAD_SIGNS, SCREEN, ...BOARDS, ...QUARTERS.flatMap((q) => q.SIGNS)];
 
@@ -128,10 +132,22 @@ function build(k: Build): TileParts {
       }
     }
   }
+  // each flyover's outer wall is painted as Delhi's crash barriers are, in blocks of yellow and black, and carries its lamps
+  for (const side of [1, -1]) {
+    const pts = sample(lane(RING_PARTS.fly, RING.off * side), 1.5), out = -side * (RING.half + 0.02);
+    for (let i = 0; i + 1 < pts.length; i++) {
+      const [x0, y0, z0] = pts[i], [x1, y1] = pts[i + 1], z = z0 + out;
+      b.quad([x0, y0 + 0.12, z], [x1, y1 + 0.12, z], [x1, y1 + 0.62, z], [x0, y0 + 0.62, z], [0, 0, -side], i % 2 ? 0x1b1c20 : 0xf2c81e);
+      if (i % 9 === 4) k.lamp(x0, z0 - side * (RING.half - 0.3), (side * Math.PI) / 2, y0 + 0.04);
+    }
+  }
   const verge = (pieces: Piece[]): void => {
-    const shape = band(pathOf(pieces), RING.verge, 2);
+    const path = pathOf(pieces), shape = band(path, RING.verge, 2);
     flat(b, shape, 0.35, VERGE);
     walls(b, shape, 0, 0.35, KERB);
+    // shrubs down the middle of it
+    const p = sample(pieces, 6.5);
+    for (let i = 1; i + 1 < p.length; i++) k.tree(p[i][0], p[i][2], 0.3, false, 0.35);
   };
   {
     const x0 = RING.x0 + 2, x1 = FLYOVERS[1].x1 + RING.ramp;
@@ -261,6 +277,9 @@ function build(k: Build): TileParts {
 
   // (the Buddh circuit's ground, until it is built)
   area(k, rect(BUDDH.x0 - 3.2, BUDDH.z0 - 5.5, BUDDH.x1 + 3.2, BUDDH.z1 + 5.5), 0x86a866);
+
+  // what stands between the things: people, trees along the avenues, autos, carts, boards over the roads
+  life(k, heroSpots);
 
   return { routes: ROUTES, parked, heroSpots };
 }

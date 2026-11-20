@@ -223,12 +223,12 @@ export const ROUTES: Route[] = [
   {
     id: 'ring-road',
     segs: toSegs([...RING_LANES.out, ...RING_LANES.far, ...RING_LANES.home, ...RING_LANES.near]),
-    speed: 19, count: 16, types: MIX.ring, paint: RING_PAINT,
+    speed: 19, count: 20, types: MIX.ring, paint: RING_PAINT,
   },
-  { ...lanes('long-drive', LONG_DRIVE, { speed: 15, count: 10, types: MIX.avenue, paint: WHITE }), hump: RAISINA_HUMP },
-  { id: 'hexagon', segs: hexagon(HEX_IN, 4), speed: 13, count: 4, types: MIX.town, paint: STREET },
-  lanes('shanti-path', SHANTI_PATH, { speed: 13, count: 6, types: MIX.town, paint: STREET }),
-  lanes('connaught-place', CP_ROAD, { speed: 14, count: 10, types: MIX.town, paint: STREET }),
+  { ...lanes('long-drive', LONG_DRIVE, { speed: 15, count: 12, types: MIX.avenue, paint: WHITE }), hump: RAISINA_HUMP },
+  { id: 'hexagon', segs: hexagon(HEX_IN, 4), speed: 13, count: 5, types: MIX.town, paint: STREET },
+  lanes('shanti-path', SHANTI_PATH, { speed: 13, count: 7, types: MIX.town, paint: STREET }),
+  lanes('connaught-place', CP_ROAD, { speed: 14, count: 12, types: MIX.town, paint: STREET }),
   { id: 'inner-circle', segs: ringOf(CP, CP_R.inner), speed: 11, count: 3, types: MIX.town, paint: STREET },
   {
     id: 'buddh',

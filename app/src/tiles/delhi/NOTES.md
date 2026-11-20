@@ -176,9 +176,35 @@ On the blockout, 19 November 2026:
 - **The statue of Hanuman stands north of Karol Bagh's shops.** The Metro that passes it in life is the Blue Line, which this tile does not have.
 - **Left out for care**, as the research note's section 8 says: the Taj Mahal, the new Parliament and the Central Vista's new blocks, the old Parliament, the mosque at the Qutub Minar's foot, Rajghat, Nizamuddin's shrine, and any parade.
 
-## Real names on signs
+## Real names on signs, and the Hindi on them
 
-None yet. Each is checked as it is written, and entered here with what confirmed it.
+Each is checked as it is written, and entered here with what confirmed it. A shop's board says what is sold and not whose shop it is, in Hindi above and English below. All checks were made by web searches on 19 November 2026.
+
+**Hindi words for trades**, on the shop boards in `signs.ts`:
+
+| On the board | Meaning | What confirmed the spelling |
+| --- | --- | --- |
+| मिठाई | sweets | Hindi Wikipedia's list of Indian sweets, भारतीय मिठाइयों की सूची |
+| चाट | chaat | Hindi Wikipedia's page on papri chaat, पापड़ी |
+| चाय | tea | Hindi Wikipedia's category of Indian food, which lists मसाला चाय |
+| मसाले | spices | Hindi Wikipedia's list of Indian spices, भारतीय मसालों की सूची |
+| जलेबी | jalebi | the same list of sweets |
+| पंचर | puncture repair | two listings of puncture shops under that word: पंचर बनाने की दुकान, पंचर दुकान (explurger.com) |
+| टायर, ऑटो पार्ट्स | tyres, auto parts | the usual spelling of the two loan words. Not confirmed by a source read in full: to be looked at again before the tile is final. |
+| पतंग | kites | the ordinary Hindi word. Not confirmed by a source: to be looked at again. |
+
+**Names of places**, on the green boards over the roads in `signs.ts`. Names of places are safe on road and Metro boards:
+
+| On the board | What confirmed the spelling |
+| --- | --- |
+| चांदनी चौक, कश्मीरी गेट | the Hindi pages of a Metro route finder (yometro.com) for the stations of those names, which also write लाल किला and जामा मस्जिद |
+| कर्तव्य पथ, इंडिया गेट, कनॉट प्लेस | a report in Hindi by DNA India on Kartavya Path opening to the public |
+| मोती बाग, धौला कुआँ, एम्स | the titles of Hindi Wikipedia's pages for the three places. Its page on Moti Bagh also says that Shanti Path crosses the Ring Road there, which is how this tile has it. |
+| रिंग रोड, करोल बाग | Hindi Wikipedia's page on Dhaula Kuan writes रिंग मार्ग and करोल बाग. रिंग रोड is what boards say. To be looked at again. |
+
+**On the screen**: HORN OK PLEASE is what lorries all over India carry on their tailboards, and फिर मिलेंगे ("we'll meet again") is, by The Patriot's piece "Messages on the highway", a very common message on lorries in Hindi. Neither is anybody's name. A food festival in Delhi trades as Horn OK Please: the screen has nothing of its lettering or its look.
+
+**Still to be entered**: every real name the quarters' files hang, as each file is taken in.
 
 ## When `main` is merged
 
@@ -195,6 +221,7 @@ The main session is changing the engine while this tile is built, and says when 
 To the plan, on 19 November 2026:
 
 - **The school.** "The main gate for DPs rkp is a green arch supported on two pillars with a gate in between the green arch has DPS RK PURAM on it, The main blocks are Gray and about 2-3 storeys each, yes sounds good, busses are a mixture of yellow and white". So: a green arch on two pillars, lettered DPS RK PURAM, grey blocks of two and three storeys, the assembly ground, the pool, the football ground and the bus bay all shown, and buses in yellow and in white.
+- **The school's gate, in a picture** he sent the same day. It shows a broad, shallow arched canopy in teal-green over the whole driveway, with white capitals along its curved front: D. P. S., a gap where the school's emblem is, and R. K. PURAM. It stands on slatted pillars. Under it is a steel-grey gate of four leaves with diagonal bars. To one side a wall faced in grey granite carries a dark plaque, DELHI PUBLIC SCHOOL over R. K. PURAM, with hedges and potted palms before it. The block behind is grey-beige concrete with a teal band at every floor and pale lattice screens over its upper windows. The emblem is not drawn.
 - **The Buddh circuit.** "east bank south end sounds good".
 - **Old Delhi.** "Kites for sure, and i leave the rest upto you".
 - **What is missing.** "I think we have a lot will tweak after".

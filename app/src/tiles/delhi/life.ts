@@ -242,4 +242,15 @@ export function life(k: Build, heroes: HeroSpot[]): void {
   for (const [x, z] of [[-9.5, -46.5], [26, -43], [-47, 20.5], [9, 53.5]]) if (places.free(x, z, 1.2)) cart(k, x, z, 0xd9a25f, 0xd8432b, 0xe9dcc4);
   for (const [x, z] of [[-63, 66.5], [4.5, 20.5]]) if (places.free(x, z, 1.2)) canePress(k, x, z);
 
+  // --- boards over the roads: the way each faces is the way its traffic comes from ---
+  gantry(k, 'road-kashmere-gate', 60.5, 34, 0, 1, 9.2);
+  gantry(k, 'road-ring-road', 60.5, -46, 0, -1, 9.2);
+  gantry(k, 'road-aiims', 25.2, 59.3, 1, 0, 9.4);
+  gantry(k, 'road-dhaula-kuan', -28, 59, 1, 0, 9.4);
+  gantry(k, 'road-chandni-chowk', 19.5, -50, 0, 1, 7.7);
+  gantry(k, 'road-karol-bagh', -70, -38, 1, 0, 7.7);
+  gantry(k, 'road-india-gate', -2, 78, 0, 1, 7.7);
+  gantry(k, 'road-moti-bagh', -54, 82, 0, 1, 7.7);
+  gantry(k, 'road-connaught-place', 4, -38, 1, 0, 7.7);
+
 }
