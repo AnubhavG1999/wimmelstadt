@@ -651,8 +651,9 @@ function crater(k: Build, f: Field, lairs: Lair[], regions: Region[]): void {
     const a = ((i + (r() - 0.5) * 0.6) / 22) * Math.PI * 2, rr = 2.4 + r() * 2.0;
     const x = c.x + Math.cos(a) * rr, z = c.z + Math.sin(a) * rr;
     if (atLair(lairs, x, z, 0.6) || underPerch(x, z, 0.9)) continue;
-    // long round the rim, so that together they ring it
-    const h = Math.min(capAt(lairs, x, z), 0.35 + r() * 0.4);
+    // long round the rim, so that together they ring it; within 6 of Meraxes's chest no higher than 44.5, which her body clears
+    const nearHer = Math.hypot(x - HOMES.meraxes.x, z - HOMES.meraxes.z) < 6;
+    const h = Math.min(capAt(lairs, x, z), 0.35 + r() * 0.4, nearHer ? Math.max(0.12, 44.5 - heightOn(f, x, z)) : Infinity);
     rock(b, x, z, 0.45 + r() * 0.3, 0.28 + r() * 0.14, h, a + Math.PI / 2, r, i % 3 ? ROCK.rim : ROCK.black, ROCK.rimHi);
     if (r() < 0.5) {
       const ex = c.x + Math.cos(a + 0.12) * (rr - 0.45), ez = c.z + Math.sin(a + 0.12) * (rr - 0.45);
@@ -717,7 +718,7 @@ function offRoads(x: number, z: number): number {
  * largest, a little farther. Each keeps clear of where a dragon lies, head to
  * tail, as well (clearOnSlope).
  */
-const VENT_CLEAR = 15, GHOST_CLEAR = 16;
+const VENT_CLEAR = 15, GHOST_CLEAR = 15;
 
 /**
  * Where the vents are, found when the tile is built: Grey Ghost's, as high on

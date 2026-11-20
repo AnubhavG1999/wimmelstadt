@@ -2,7 +2,7 @@
 
 This file records what a later reader cannot see in the code.
 
-**Where the tile stands.** Built, and ready for the collector to judge. Every lot has its model, the ten dragons fly from the homes their show asked for, the roads carry their travellers, two boats move on the water and the tide rises and falls. The checks under "What was checked" were run on the tile as it stands. It is not on the board yet: standing it there, and the documents, the READMEs and the public pictures, are the main session's when it merges the branch. Two fits between the dragons and the Dragonmont are left to the main session's show: the summit's tip (49.3) shows through Meraxes's back between her wings, and Vermithor lies across the slope, so the last of his tail lies past the rock over his cave, above the open slope. Raising her a little or capping the summit as a crater floor mends the one; turning him to face out of the mountain, or raising rock over the whole of each cave, the other.
+**Where the tile stands.** Built, and ready for the collector to judge. Every lot has its model, the ten dragons fly from the homes their show asked for, the roads carry their travellers, two boats move on the water and the tide rises and falls. The checks under "What was checked" were run on the tile as it stands. It is not on the board yet: standing it there, and the documents, the READMEs and the public pictures, are the main session's when it merges the branch. The last two fits between the dragons and the Dragonmont were settled with the main session: the summit is cut level at 44 as a crater's floor that Meraxes lies over, and a rib of rock runs over each cave, so that Vermithor's tail, which lies along the flank, lies in rock.
 
 ## Choices made while the collector slept
 
@@ -37,7 +37,7 @@ Nothing comes from the television series: not its dragons, its Dragonpit, its ca
 
 **Dragonstone** (`dragonstone.ts`), at the Dragonmont's south-west foot: the castle of black stone with gargoyles for merlons and its buildings shaped as the books say, the Windwyrm rearing, the Sea Dragon watching the water, the Great Hall a dragon on its belly whose mouth is the door and whose tail is the Dragon's Tail arch, the kitchens a dragon coiled round a steaming dome; the Stone Drum with the Painted Table's four windows; Aegon's Garden; the town, the quay and the old inn with its worn gargoyle.
 
-**The Dragonmont** (`dragonmont.ts`): a cone 50 high, black where steep and ash where level, a ragged crater rim glowing at night; four lairs, each a level shelf before a cave mouth of rough rock; vents with steam, each 15 or more from every dragon; Grey Ghost's vent on the north-east flank; Sheepstealer's sheep penned below his ledge; the camp of the Sowing at the foot, onlookers pointing up. **Vhagar's rock** lies in the bay under King's Landing's east wall (`land.ts`).
+**The Dragonmont** (`dragonmont.ts`): a cone rising to a crater at 44, black where steep and ash where level, a ragged rim round the crater glowing at night, Meraxes lying over it; four lairs, each a level shelf before a cave mouth of rough rock; vents with steam, each 15 or more from every dragon; Grey Ghost's vent on the north-east flank; Sheepstealer's sheep penned below his ledge; the camp of the Sowing at the foot, onlookers pointing up. **Vhagar's rock** lies in the bay under King's Landing's east wall (`land.ts`).
 
 **Driftmark** (`driftmark.ts`): Castle Driftmark, damp and cramped on its rock under seahorse banners; Hull's quay and warehouses; the shipyards with a ship half built on the stocks and the hero's empty slip; Spicetown's warehouses, counting house and quay of bales from the east; the strand by the causeway; fields, farms and flocks.
 
@@ -64,7 +64,7 @@ Nothing comes from the television series: not its dragons, its Dragonpit, its ca
 - **The causeway** stands on a low dyke of stone across the sands (`DYKE` in `plan.ts`, built in `high-tide.ts`), its top just under the road and its kerbs no higher than the road, so that the road does not float over the sand and the tide covers both. Marker posts show the way across at high water.
 - **The sands** lie at -0.35 (`SANDS_Y`): over the bay, under the tide. The sandbar rises to 0.16.
 - **King's Landing's hills**: the Dragonpit's terrace at 6 over the Hill of Rhaenys, Visenya's Hill at 6, Aegon's High Hill at 8, terraced and cliffed by the Red Keep's builder.
-- **The Dragonmont** (`DRAGONMONT`, `mountAt`) is a cone 50 high. At each lair the plan cuts a level shelf into it and builds one out over it (`mountBuilt`), and a cave runs back into the rock that a dragon's body lies in (`lairAt`); the caves may meet inside. Meraxes's perch on the summit is cut nothing: she lies on the mountain as it is. `landAt` over a cave gives the cave's floor, so whatever stands on the slope above one takes its height from `heightOn(MOUNT)`.
+- **The Dragonmont** (`DRAGONMONT`, `mountAt`) is a cone that would be 50 high, its top cut level at 44 as the crater's floor: Meraxes stands at 42 on the south side of it and her body lies back over it, clear. At each lair the plan cuts a level shelf into the slope and builds one out over it, and a cave runs back into the rock that a dragon's body lies in (`lairAt`); the caves may meet inside. Over each cave the plan raises a rib of rock (`RIB`, in `mountBuilt`): where a cave runs into the mountain the rib is buried, but Vermithor's runs along the east flank, and there it stands up as a spur, up to 13 over the slope at its far end, with his tail in it. `mountAt` is the cone cut at the crater, and the ribs are in `mountBuilt` and `groundAt` only. `landAt` over a cave gives the cave's floor, so whatever stands on the slope above one takes its height from `heightOn(MOUNT)`.
 - **Vhagar's rock** (`VHAGAR_ROCK`): a low dark rock 18 by 13, top at 3, at (2, -14).
 - **Crackclaw Point's hills and Claw Isle's rock** are the north shore's own (`heightAt` in `north-shore.ts`).
 - **The Wendwater** ends a little short of the south edge and of the bay: the river is a hole in the south shore's ground, and a hole that touches its outline will not triangulate. Reeds stand on the strip at its mouth.
@@ -111,7 +111,7 @@ The tide; the ferry, poled across the Rush between the city's water stairs and t
 
 | | Top |
 | --- | --- |
-| The Dragonmont | 50 |
+| The Dragonmont, at the crater's floor (Meraxes over it) | 44 |
 | The Dragonpit's dome (Balerion on its crown at 39.4) | 40 |
 | The Red Keep's great tower (Caraxes) | 30 |
 | Maegor's Holdfast | 27 |
@@ -162,7 +162,7 @@ On the tile as it stands, on a development server with hot reload off:
 
 ## What it costs
 
-On the development server, the pane not in front and the canvas small, so a frame's numbers are rough and mostly the processor's: 8.3 ms a frame by day with everything, 4.6 ms with the tile's own moving things set aside. About 3.7 ms of it is the dragons, the boats, the tide and the smoke, most of it the ten dragons' show.
+On the development server, the pane not in front and the canvas small, so a frame's numbers are rough and mostly the processor's: with everything, 4 to 8 ms a frame, depending on how many dragons are in the air; 4.5 ms with the tile's own moving things set aside. The show was 8.3 ms by day until the main session had a dragon at rest posed on every third frame, each on a frame of its own, and on every frame only while it turns, yawns, watches one fly near or rises to spread its wings.
 
 About 89,100 triangles stand still, just within the 90,000 asked: the ships 9,300, the north shore 9,300, houses 8,900, the Dragonmont 8,400, walls 8,000, the south shore 8,000, the Dragonpit 7,900, Dragonstone 7,400, the Red Keep 7,000, Driftmark 6,800, High Tide 5,300, the land 1,900 and the roads 800. About 170 draw calls. 430 people and 260 trees.
 

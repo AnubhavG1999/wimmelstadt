@@ -74,7 +74,7 @@ interface Home { x: number; y: number; z: number; facing: number; leave: number 
  * on the board; and whether its home is a ledge on the Dragonmont, which it drops off and drops onto with its wings
  * drawn in, because others lie near it.
  */
-const WAYS: Record<Key, { leave?: number; arrive: number; approach?: number; cliff?: boolean }> = {
+const WAYS: Record<Key, { leave?: number; arrive: number; approach?: number; cliff?: boolean; hold?: number }> = {
   balerion: { arrive: 135, approach: 18 },
   // she rests looking out over the bay towards Driftmark, and turns north to leave over the open water
   vhagar: { leave: 270, arrive: 90, approach: 13 },
@@ -84,7 +84,8 @@ const WAYS: Record<Key, { leave?: number; arrive: number; approach?: number; cli
   caraxes: { arrive: 90, approach: 14 },
   // she comes down onto High Tide from the north, over Driftmark, and turns to face the river's mouth
   meleys: { arrive: 90 },
-  meraxes: { arrive: 270, approach: 20, cliff: true },
+  // the largest off a ledge holds her wings in longest, to be clear of the caves below the summit before she opens them
+  meraxes: { arrive: 280, approach: 20, cliff: true, hold: 2.6 },
   // he comes down from due south and turns round on his ledge away from Silverwing, beside him to the west
   vermithor: { arrive: 270, cliff: true },
   // she comes home after a last turn over Driftmark, past him on his ledge with her wings drawn in, and turns round on
@@ -161,6 +162,8 @@ interface Part {
   cliff: boolean;
   /** How long it keeps its wings spread once it is home, before it folds them: for a shriek on its tower. */
   mantle: number;
+  /** Off a ledge, how long after it drops it holds its wings in before it opens them. */
+  hold: number;
 }
 
 interface Moment {
@@ -236,14 +239,14 @@ function part(
   const way = [...head, ...route, ...tail], first = head.length;
   const hold = o.perch ? { at: first + o.perch.at, seconds: o.perch.seconds } : undefined;
   const track = new Track(way, false, 1, 1, hold);
-  const p: Part = { key, wait: 0, track, events: [], perches: [], arrive: ways.arrive, end: 0, turn: 0, cliff, mantle: o.mantle ?? 0 };
+  const p: Part = { key, wait: 0, track, events: [], perches: [], arrive: ways.arrive, end: 0, turn: 0, cliff, mantle: o.mantle ?? 0, hold: ways.hold ?? 1.6 };
   const when = (i: number): number => p.wait + 1.2 + track.tAt(track.wayS[i]);
   const marks = o.marks ?? {};
   const at = (mark: string): number => when(first + marks[mark]);
   const touch = 1.2 + track.duration;
   p.perches.push({ tA: -Infinity, tD: 1.2, y: h.y });
   // off a ledge it beats only once its wings are open
-  const beat = kind.flight.beat, n = o.beatsOut ?? 3, b0 = cliff ? 2.6 : 0.9;
+  const beat = kind.flight.beat, n = o.beatsOut ?? 3, b0 = cliff ? (ways.hold ?? 1.6) + 1.0 : 0.9;
   p.events.push({ kind: 'beats', t0: b0, t1: b0 + n * beat, n });
   if (o.perch) {
     const tA = when(first + o.perch.at), tD = tA + o.perch.seconds;
@@ -331,7 +334,7 @@ function cueOf(p: Part, t: number, out: Cue): Cue {
   // little before it is down
   if (p.cliff) {
     const off = p.perches[0].tD, on = p.perches[p.perches.length - 1].tA;
-    if (t < off + 2.6) out.tuck = t < off + 1.6 ? 1 : 1 - smooth((t - off - 1.6) / 1.0);
+    if (t < off + p.hold + 1.0) out.tuck = t < off + p.hold ? 1 : 1 - smooth((t - off - p.hold) / 1.0);
     if (t > on - 4.0) out.tuck = Math.max(out.tuck ?? 0, smooth((t - (on - 4.0)) / 1.4));
   }
   for (const e of p.events) {
@@ -513,7 +516,7 @@ function moments(H: Record<Key, Home>): Moment[] {
   {
     const route: Waypoint[] = [
       P(56, 62, 14, 26), P(20, 82, 8, 28), P(-20, 88, 0, 28), P(-56, 90, -6, 28), P(-72, 90, -24, 26), P(-68, 88, -54, 26),
-      P(-40, 86, -76, 28), P(0, 84, -74, 28), P(36, 80, -72, 28), P(76, 78, -76, 28), P(96, 70, -40, 28), P(92, 60, 2, 28), P(76, 52, 22, 26),
+      P(-40, 86, -76, 28), P(0, 84, -74, 28), P(36, 80, -72, 28), P(76, 78, -76, 28), P(96, 70, -40, 28), P(88, 60, 6, 28), P(70, 54, 28, 26),
     ];
     const m = part('meraxes', H, route, { marks: { west: 4 } });
     m.part.events.push({ kind: 'look', t0: m.at('west') - 2, t1: m.at('west') + 2, n: 0.5 });
@@ -535,7 +538,7 @@ function moments(H: Record<Key, Home>): Moment[] {
     ];
     const b = part('balerion', H, [P(-10, 74, -24, 22), P(10, 84, -40, 22), ...round(90), P(-12, 78, -70, 22)], { marks: { join: 2, over: 8 }, beatsOut: 4 });
     const v = part('vhagar', H, [P(10, 40, -74, 22), P(24, 56, -60, 24), P(16, 66, -40, 24), ...round(72).slice(0, 8), P(30, 60, -40, 24), P(26, 46, -64, 22), P(10, 34, -74, 22)], { marks: { join: 3, over: 9 } });
-    const m = part('meraxes', H, [P(44, 66, 18, 26), P(24, 80, 6, 26), P(16, 94, -26, 26), ...round(108).slice(0, 7), P(40, 96, 30, 26), P(60, 70, 26, 26)], { marks: { join: 3, over: 9 } });
+    const m = part('meraxes', H, [P(44, 66, 18, 26), P(24, 80, 6, 26), P(16, 94, -26, 26), ...round(108).slice(0, 7), P(40, 96, 30, 26), P(66, 70, 34, 26)], { marks: { join: 3, over: 9 } });
     together([b, v, m], 'join', [0, 2.9, 5.8]);
     b.part.events.push({ kind: 'jaw', t0: b.at('join') + 3, t1: b.at('join') + 4.8 }, { kind: 'fire', t0: b.at('over') + 0.3, t1: b.at('over') + 1.6 });
     v.part.events.push({ kind: 'jaw', t0: v.at('over') - 0.5, t1: v.at('over') + 1.6 });
@@ -597,7 +600,7 @@ export function buildDragons(k: Build): void {
   const nextStretch = KEYS.map((_, i) => 20 + i * 11), stretchAt = KEYS.map(() => -1e9);
   const held: Held[] = KEYS.map((key) => ({ x: H[key].x, y: H[key].y, z: H[key].z, heading: H[key].facing, sit: 1, speed: 18 }));
 
-  let clock = 0, gap = 1.2, last = '', hushed = false;
+  let clock = 0, gap = 1.2, last = '', hushed = false, frameNo = 0;
   let seed = 4021;
   const rand = (): number => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
   // the first few are chosen, so that whoever opens the tile sees dragons in the air at once
@@ -629,6 +632,7 @@ export function buildDragons(k: Build): void {
 
   k.each((dt, time, night) => {
     clock += dt;
+    frameNo++;
 
     // --- the director ---
     for (let i = playing.length - 1; i >= 0; i--) if (clock - playing[i].start > playing[i].m.length) playing.splice(i, 1);
@@ -707,10 +711,12 @@ export function buildDragons(k: Build): void {
         // again: never while another flies near, and it folds them at once if one comes.
         hd.sit = 1;
         hd.beat = 0;
+        let stretching = false;
         if (STRETCH[key]) {
           if (clock > nextStretch[i] && near > 100 && clock - turnAt[i] > 8) { stretchAt[i] = clock; nextStretch[i] = clock + 40 + rand() * 50; }
           const st = (clock - stretchAt[i]) / 6;
           if (st > 0 && st < 1) {
+            stretching = true;
             if (near < 75) stretchAt[i] = Math.min(stretchAt[i], clock - 6 * 0.75);
             hd.sit = 1 - 0.5 * smooth(Math.min(st / 0.2, (1 - st) / 0.25, 1));
             if (st > 0.36 && st < 0.6) hd.beat = (st - 0.36) / 0.24;
@@ -718,7 +724,10 @@ export function buildDragons(k: Build): void {
             if (roar > 0 && roar < 1) hd.jaw = Math.max(hd.jaw, Math.min(1, roar / 0.2, (1 - roar) / 0.3));
           }
         }
-        pilot.hold(hd, time, groundAt);
+        // Posing a dragon is most of what the show costs, and one at rest changes slowly: it is posed on every third
+        // frame, each on a frame of its own, unless it is turning round, yawning, watching one fly near or rising.
+        const busy = frameNo <= 3 || clock - turnAt[i] < 3.6 || (y > 0 && y < 1) || near < 85 || stretching;
+        if (busy || (frameNo + i) % 3 === 0) pilot.hold(hd, time, groundAt);
       }
       const ribbon = pilot.ribbons(dt, !flying[i]);
       trails.feed(i * 2, d.tips[0], ribbon, dt);

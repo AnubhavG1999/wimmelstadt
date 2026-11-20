@@ -190,21 +190,24 @@ export function hillAt(x: number, z: number): number {
  * with broad flanks where the lairs are. Its natural shape is a cone whose
  * height at a place is `top × (1 − d) ^ fall`, where d runs from 0 at the
  * summit to 1 at its foot, which lies `reach` out from the summit each way.
- * Its builder carves a level shelf before each lair and a crater at the top.
+ * Its top is cut off level at `crater`, a crater's floor that Meraxes lies
+ * over: her body stands clear of it, and its rim is drawn no higher than 44.5
+ * near her. The plan cuts a level shelf before each lair and raises a rib of
+ * rock over each cave (`mountBuilt`).
  */
 export const DRAGONMONT = {
-  summit: [64, -44] as P2, top: 50, fall: 1.25,
+  summit: [64, -44] as P2, top: 50, fall: 1.25, crater: 44,
   reach: { w: 30, e: 28, n: 34, s: 26 },
 };
 
 /** How far out from the summit the mountain stands `y` high, as a share of its reach. */
 export const shareAt = (y: number): number => 1 - (Math.min(DRAGONMONT.top, Math.max(0, y)) / DRAGONMONT.top) ** (1 / DRAGONMONT.fall);
 
-/** The Dragonmont's natural height at a place: 0 off it. */
+/** The Dragonmont's natural height at a place, its top cut off at the crater's floor: 0 off it. */
 export function mountAt(x: number, z: number): number {
   const M = DRAGONMONT, dx = x - M.summit[0], dz = z - M.summit[1];
   const d = Math.hypot(dx / (dx < 0 ? M.reach.w : M.reach.e), dz / (dz < 0 ? M.reach.n : M.reach.s));
-  return d >= 1 ? 0 : M.top * (1 - d) ** M.fall;
+  return d >= 1 ? 0 : Math.min(M.crater, M.top * (1 - d) ** M.fall);
 }
 
 /** The place on the mountain's natural slope that is `y` high, out from the summit on a bearing in degrees (0 east, 90 south). */
@@ -448,7 +451,7 @@ export const HOMES: Record<string, Home> = {
   caraxes: { x: -22.5, z: 48.5, y: 30, facing: 0, where: "the flat top of the Red Keep's great tower, his tail laid west over Maegor's Holdfast" },
   meleys: { x: 30, z: 80, y: 16, facing: 180, where: "High Tide's roofs, facing the river's mouth" },
   // on the Dragonmont: Meraxes on the summit as it is (where lair(90, 42, 80) puts her: the slope there is 41.9), and four lairs round the mountain at 20
-  meraxes: { x: 64, z: -40.6, y: 42, facing: 80, where: "a perch on the Dragonmont's summit, crowning it" },
+  meraxes: { x: 64, z: -40.6, y: 42, facing: 100, where: "a perch on the Dragonmont's summit, crowning it" },
   vermithor: lair(15, 20, 85, 'his smoking cavern on the south-east face'),
   silverwing: lair(85, 20, 70, 'her cavern beside his, on the south face'),
   sheepstealer: lair(180, 20, 190, 'his cave on the west face over the bay, a sheep penned on the slope below it'),
@@ -545,7 +548,34 @@ export function mountBuilt(x: number, z: number): number {
   if (d < cut) return 0;
   if (d < cut + ease) { const t = (d - cut) / ease; y *= t * t * (3 - 2 * t); }
   const at = lairAt(x, z);
-  return at && at.part === 'shelf' ? at.home.y : y;
+  return at && at.part === 'shelf' ? at.home.y : Math.max(y, ribAt(x, z));
+}
+
+/**
+ * A rib of rock over each cave, as shares of its dragon's length: its crest
+ * `over` above the cave's roof at the mouth, where the dragon's body is, and
+ * lowering to `end` over the cave's floor at its far end, where only the tip
+ * of the tail lies; its flanks falling `slope` for every unit out from the
+ * cave's sides and its far end, till they meet the slope. Where the mountain
+ * stands higher than the crest it is buried; where a cave runs along the
+ * flank, it stands up as a ridge with the dragon's body and tail in it.
+ */
+export const RIB = { over: 0.06, end: 0.1, slope: 2.4 };
+
+/** How high the rock over the caves stands at a place: 0 where there is none. */
+function ribAt(x: number, z: number): number {
+  let y = 0;
+  for (const id of Object.keys(LAIR_IDS)) {
+    const h = HOMES[id], L = LENGTH[id], a = (h.facing * Math.PI) / 180, dx = x - h.x, dz = z - h.z;
+    const behind = -(dx * Math.cos(a) + dz * Math.sin(a)), side = Math.abs(-dx * Math.sin(a) + dz * Math.cos(a));
+    // from the shelf's back, where the mouth is, to the cave's end and beyond it by the flank
+    if (behind < LAIR.back * L) continue;
+    const out = Math.hypot(Math.max(0, side - LAIR.caveHalf * L), Math.max(0, behind - LAIR.cave * L));
+    const t = Math.min(1, (behind - LAIR.back * L) / ((LAIR.cave - LAIR.back) * L));
+    const crest = h.y + L * (LAIR.roof + RIB.over + (RIB.end - LAIR.roof - RIB.over) * t);
+    y = Math.max(y, crest - RIB.slope * out);
+  }
+  return y;
 }
 
 /**
