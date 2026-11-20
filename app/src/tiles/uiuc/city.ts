@@ -13,6 +13,7 @@ import { track } from '../../engine/rail';
 import { clearOfStreets, lampsAlong, street } from '../../engine/roads';
 import type { Build, TileParts } from '../../engine/tile';
 import { roadFaults, throughSolids, unseen } from './checks';
+import { union } from './union';
 import {
   AREAS, BOARD, CARR, HERO_SPOTS, LOTS, MUST_SEE, PARKED, RAIL, ROUTES, STREETS, TALL, VIADUCTS,
   type LotDef, type Surface,
@@ -35,7 +36,7 @@ const SURFACE: Record<Surface, number> = {
 const ON_ANOTHER = new Set(['volleyball', 'cemetery']);
 
 /** What builds each lot that has a model of its own. A lot that is not here is a box with its name on it. */
-const MODELS: Record<string, (k: Build, l: LotDef) => void> = {};
+const MODELS: Record<string, (k: Build, l: LotDef) => void> = { union };
 
 /** Towards the camera of the opening view: the way a box's board faces. */
 const VIEW = { x: Math.sin((42 * Math.PI) / 180), z: Math.cos((42 * Math.PI) / 180) };

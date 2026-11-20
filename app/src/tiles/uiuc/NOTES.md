@@ -2,13 +2,21 @@
 
 What a later reader cannot see in the code.
 
-**Where it stands.** The plan was put to the collector on 19 November 2026. He answered the same day, and this is the plan with what he asked for worked in. The tile is blocked out: its ground, its streets, the railway's embankment with its two viaducts, its routes and its places for heroes are built, and every lot is a plain box with its name on a board. No model is built yet. The research is in [docs/districts/research/uiuc.md](../../../../docs/districts/research/uiuc.md). Where this file and that note disagree, this file is the later: see "What the research note has wrong".
+**Where it stands.** The plan was put to the collector on 19 November 2026. He answered the same day, and this is the plan with what he asked for worked in. The tile is blocked out: its ground, its streets, the railway's embankment with its two viaducts, its routes and its places for heroes are built, and every lot is a plain box with its name on a board until its model is built. One model is built: the Illini Union. The research is in [docs/districts/research/uiuc.md](../../../../docs/districts/research/uiuc.md). Where this file and that note disagree, this file is the later: see "What the research note has wrong".
 
 ## Where things are
 
 - `plan.ts` is the tile as data: the streets as middle lines, the ground between them, the lawns and car parks, every lot as a rectangle with a height, the routes, the parked vehicles, the places for heroes, and the places the opening view must see. Nothing in it draws.
 - `city.ts` builds the ground, the streets and the embankment, and whatever stands on each lot: its model, once that is entered in `MODELS`, and until then a box.
 - `checks.ts` looks at the routes and at the sight lines on every load of the development server, and says what it finds in the console.
+- `look.ts` is what the campus is made of: its brick, trim and roofs as colours, how its walls are glazed, and the small parts its buildings share (a dormer, a chimney, a column, steps, a weathervane). A storey on this tile is 2.9 high, and every model takes that from here.
+- `union.ts` builds the Illini Union. A model is a function of its lot, so it moves with the plan.
+
+## The models
+
+**The Illini Union** (`union.ts`). In plan a capital I: a long block on Green Street, a long block on the Quad, and a link between them, all three storeys of red brick under slate, with a white band at the foot of the second storey, a white cornice, dormers and chimneys. Each block carries a clock tower with a cap of green copper and a weathervane. The one over Green Street is open, with a bell in it, and the one over the Quad is glazed and lit at night. The Green Street front has a porch of four columns with the name on the band over them. The Quad front has no columns: three tall bays of glass, the name over them, and a terrace 4 deep with steps down to the lawn, four tables under blue umbrellas and people at them. The vanes stand at 20.3.
+
+Not checked against a picture: whether the Green Street porch has columns, and how many. The collector is asked.
 
 ## How the tile lies
 
@@ -166,7 +174,7 @@ Seven, each open to the south-east. A hero on show faces east, south, or between
 
 | Id | Where |
 | --- | --- |
-| `quad-day` | on the Quad's west walk in front of the Union, beside the car teams' stand |
+| `quad-day` | on the Quad's west walk in front of the Union, beside the car teams' stand. Its middle line is 2.5 south of the foot of the terrace's steps. |
 | `basil-thai` | in a slanted bay in front of Basil Thai, on Gregory Street, backed in so that it faces the street |
 | `move-in` | on the lawn before Wassaja Hall's door, where cars are unloaded |
 | `tailgate-1`, `tailgate-2` | in lot E-14, among the pickups and tents |
@@ -298,10 +306,11 @@ The near lane is the one on the camera's side of the buildings that hide it: the
 
 ## Real names on signs
 
-None is on a sign yet. These are the names the plan would use, each as plain lettering on a plain board, with what the research found on 19 November 2026. Each is checked again as its sign is written.
+One is on a sign: ILLINI UNION, on both fronts of the Union. The rest are the names the plan would use, each as plain lettering on a plain board, with what the research found on 19 November 2026. Each is checked again as its sign is written.
 
 | Name | Where | What confirmed it |
 | --- | --- | --- |
+| Illini Union | 1401 W. Green Street, Urbana | the research note, from the university's own pages. On the tile. |
 | Basil Thai | 701 S. Gregory Street, Urbana | OpenStreetMap, checked on site 26 May 2026; reviews into autumn 2026. Its awning is white and reads BASIL THAI, with "at Urbana" under it, as the collector describes it. |
 | Manolo's | 1115 W. Oregon Street, Urbana | Its last day was 20 October 2026 (Smile Politely; the Daily Illini, 16 November 2026). It is on the tile because the collector asked for it by name. |
 | KAMS | 102 E. Green Street | The Daily Illini's Best of CU, 5 March 2026 |

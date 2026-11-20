@@ -364,7 +364,7 @@ const EAST = 0, SOUTH = Math.PI / 2, WEST = Math.PI, NORTH = -Math.PI / 2;
 
 /** Each is empty until a hero is given it. Each is open to the south-east, and its hero faces east or south. */
 export const HERO_SPOTS: HeroSpot[] = [
-  { id: 'quad-day', x: 29, y: 0.03, z: -48, heading: EAST },
+  { id: 'quad-day', x: 29, y: 0.03, z: -45.5, heading: EAST },
   { id: 'basil-thai', x: 90.7, y: 0.03, z: -17, heading: SOUTH },
   { id: 'move-in', x: -73, y: 0.03, z: 26.2, heading: EAST },
   { id: 'tailgate-1', x: LOT.bays[1], y: 0.03, z: LOT.row, heading: SOUTH },
@@ -398,9 +398,10 @@ export interface SightPoint { name: string; x: number; y: number; z: number; ski
 const see = (name: string, x: number, y: number, z: number, ...skip: string[]): SightPoint => ({ name, x, y, z, skip });
 
 export const MUST_SEE: SightPoint[] = [
-  see("the Union's Quad front, west end", 28.5, 0.5, -52.8, 'union'),
-  see("the Union's Quad front, middle", 35.5, 0.5, -52.8, 'union'),
-  see("the Union's Quad front, east end", 42.5, 0.5, -52.8, 'union'),
+  // (its Quad front is seen from the floor of its terrace up)
+  see("the Union's Quad front, west end", 28.5, 0.7, -52.8, 'union'),
+  see("the Union's Quad front, middle", 35.5, 0.7, -52.8, 'union'),
+  see("the Union's Quad front, east end", 42.5, 0.7, -52.8, 'union'),
   see("the Union's glass cupola", 35.5, 15, -56, 'union'),
   see("Basil Thai's shopfront", 88.2, 0.5, -17.2, 'gregory-place'),
   see("Basil Thai's awning", 88.2, 3.5, -17.2, 'gregory-place'),
@@ -429,4 +430,9 @@ const board = (l: LotDef): SignDef => {
 
 export const BOX_SIGNS: SignDef[] = LOTS.map(board);
 
-export const SIGNS: SignDef[] = [...BOX_SIGNS];
+/** The names that built things carry: plain lettering on a plain board, each as the place writes it. */
+export const NAME_SIGNS: SignDef[] = [
+  { id: 'union', lines: ['ILLINI UNION'], color: '#f3f0e7', ink: '#13294b', aspect: 7.2, kind: 'board', real: true },
+];
+
+export const SIGNS: SignDef[] = [...BOX_SIGNS, ...NAME_SIGNS];
