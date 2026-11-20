@@ -3,7 +3,7 @@
 
 import type { TileDef } from '../../engine/tile';
 import { buildCity } from './city';
-import { SIGNS } from './plan';
+import { SIGNS } from './models';
 
 export const uiuc: TileDef = {
   id: 'uiuc',

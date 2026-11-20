@@ -12,7 +12,7 @@ import type { Tall } from '../../engine/checks';
 import type { Seg } from '../../engine/paths';
 import type { StreetOpts } from '../../engine/roads';
 import type { SignDef } from '../../engine/signs';
-import { TILE, type HeroSpot, type ParkedSpot, type Rect, type Route, type TrafficType } from '../../engine/tile';
+import { TILE, type Build, type HeroSpot, type ParkedSpot, type Rect, type Route, type TrafficType } from '../../engine/tile';
 
 export const BOARD = TILE;
 
@@ -430,9 +430,16 @@ const board = (l: LotDef): SignDef => {
 
 export const BOX_SIGNS: SignDef[] = LOTS.map(board);
 
-/** The names that built things carry: plain lettering on a plain board, each as the place writes it. */
-export const NAME_SIGNS: SignDef[] = [
-  { id: 'union', lines: ['ILLINI UNION'], color: '#f3f0e7', ink: '#13294b', aspect: 7.2, kind: 'board', real: true },
-];
+// ---------------------------------------------------------------------------
+// Models
+// ---------------------------------------------------------------------------
 
-export const SIGNS: SignDef[] = [...BOX_SIGNS, ...NAME_SIGNS];
+/** What builds a lot once it is more than a box: a function of the lot, so that it moves and grows with the plan. */
+export type Model = (k: Build, l: LotDef) => void;
+
+/**
+ * What each file of models hands over: its models by the id of their lot, every
+ * sign it hangs, and `extras` for whatever it builds that is not a lot. The
+ * files are gathered in models.ts.
+ */
+export interface ModelFile { MODELS: Record<string, Model>; SIGNS: SignDef[]; extras(k: Build): void }

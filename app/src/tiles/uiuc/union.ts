@@ -11,9 +11,10 @@
 import { interior } from '../../engine/geo';
 import { lantern, lathe, parasol, roundel } from '../../engine/parts';
 import { gable, hip } from '../../engine/shapes';
+import type { SignDef } from '../../engine/signs';
 import type { Build } from '../../engine/tile';
 import { BASE, BRICK, BRONZE, DARK, GLASS, HALL, IRON, LIMESTONE, SLATE, STOREY, TRIM, VERDIGRIS, chimney, column, dormer, steps, weathervane } from './look';
-import type { LotDef } from './plan';
+import type { LotDef, Model } from './plan';
 
 /** How deep each of the two long blocks is, and half the width of the link between them. */
 const BLOCK = 6, LINK = 4.5;
@@ -24,7 +25,12 @@ const UMBRELLA = 0x2f66b3;
 /** How high the terrace stands, and how far it reaches out from the Quad front. */
 export const TERRACE = { y: 0.6, deep: 4 };
 
-export function union(k: Build, l: LotDef): void {
+/** Its name, as plain lettering on a plain board: on the band over the porch, and over the bays on the Quad. */
+export const SIGNS: SignDef[] = [
+  { id: 'union', lines: ['ILLINI UNION'], color: '#f3f0e7', ink: '#13294b', aspect: 7.2, kind: 'board', real: true },
+];
+
+function union(k: Build, l: LotDef): void {
   const b = k.b;
   const { x0, z0, x1, z1 } = l, cx = (x0 + x1) / 2;
   const wall = { win: HALL, seed: 0.31 };
@@ -183,5 +189,10 @@ export function union(k: Build, l: LotDef): void {
   };
   tower(z0 + BLOCK / 2, true);
   tower(z1 - BLOCK / 2, false);
+}
 
+export const MODELS: Record<string, Model> = { union };
+
+export function extras(k: Build): void {
+  void k;
 }

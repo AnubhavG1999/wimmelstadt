@@ -3,8 +3,8 @@
 // whatever stands on each lot. The shapes come from plan.ts.
 //
 // A lot whose model is not built yet is a plain box with its name on a board
-// that faces the opening view. A box gives way to its model the moment the
-// model is entered in MODELS below.
+// that faces the opening view. A box gives way to its model the moment a file
+// of models hands one over: models.ts gathers them.
 
 import type { Solid } from '../../engine/checks';
 import { area, ground, rect } from '../../engine/ground';
@@ -13,7 +13,7 @@ import { track } from '../../engine/rail';
 import { clearOfStreets, lampsAlong, street } from '../../engine/roads';
 import type { Build, TileParts } from '../../engine/tile';
 import { roadFaults, throughSolids, unseen } from './checks';
-import { union } from './union';
+import { MODELS, extras } from './models';
 import {
   AREAS, BOARD, CARR, HERO_SPOTS, LOTS, MUST_SEE, PARKED, RAIL, ROUTES, STREETS, TALL, VIADUCTS,
   type LotDef, type Surface,
@@ -34,9 +34,6 @@ const SURFACE: Record<Surface, number> = {
 };
 /** Patches that lie on another patch are laid a hair higher than it, so that the two are never in one plane. */
 const ON_ANOTHER = new Set(['volleyball', 'cemetery']);
-
-/** What builds each lot that has a model of its own. A lot that is not here is a box with its name on it. */
-const MODELS: Record<string, (k: Build, l: LotDef) => void> = { union };
 
 /** Towards the camera of the opening view: the way a box's board faces. */
 const VIEW = { x: Math.sin((42 * Math.PI) / 180), z: Math.cos((42 * Math.PI) / 180) };
@@ -120,9 +117,20 @@ export function buildCity(k: Build): TileParts {
 
   for (const l of LOTS) {
     clearOfStreets(k, l.name, l.x0, l.z0, l.x1, l.z1);
-    (MODELS[l.id] ?? box)(k, l);
+    const model = MODELS[l.id];
+    if (!model) box(k, l);
+    else {
+      // a model that fails says so, and the rest of the tile is still built
+      try {
+        model(k, l);
+      } catch (e) {
+        console.warn(`Urbana-Champaign: the model of ${l.id} failed: ${e instanceof Error ? e.stack ?? e.message : String(e)}`);
+      }
+    }
     solids.push({ id: l.name, x0: l.x0, z0: l.z0, x1: l.x1, z1: l.z1, y0: 0, y1: l.h });
   }
+  // and whatever the files of models build besides their lots
+  extras(k);
 
   // -------------------------------------------------------------------------
   // The checks, which speak in the console on the development server
