@@ -191,9 +191,11 @@ function planting(k: Build, pts: Point[]): void {
   // the South Quad: a row down each side, clear of the bell tower's foot
   const sq = areaOf('south-quad');
   if (sq) {
+    // (the walk that crosses the quad from west to east, south of the tower, is kept clear)
+    const tower = lot('bell-tower'), across = (tower.z0 + tower.z1) / 2 + 6.9;
     for (let z = sq.z0 + 2; z < sq.z1 - 0.5; z += 3.9) {
-      tree(sq.x0 + 1.2, z, size(0.5, 0.62));
-      tree(sq.x1 - 1.2, z + 1.2, size(0.5, 0.62));
+      if (Math.abs(z - across) >= 1.8) tree(sq.x0 + 1.2, z, size(0.5, 0.62));
+      if (Math.abs(z + 1.2 - across) >= 1.8) tree(sq.x1 - 1.2, z + 1.2, size(0.5, 0.62));
     }
     for (const z of [sq.z0 + 4, sq.z1 - 3]) {
       lantern(k, sq.x0 + 3, z, 0, 2.6, IRON);
