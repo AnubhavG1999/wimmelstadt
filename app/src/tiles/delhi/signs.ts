@@ -5,7 +5,7 @@
 // and English below, as most of Delhi's boards do. Every Hindi word here was
 // checked in its own script before it was written: NOTES.md says against what.
 
-import { DEVANAGARI, EN, fit, type SignDef } from '../../engine/signs';
+import { DEVANAGARI, type SignDef } from '../../engine/signs';
 import type { Quarter } from './plan';
 
 /** A sign's size on the sheet, for its shape: small, so that the tile's many signs fit on one sheet. */
@@ -47,94 +47,139 @@ export const ROAD_SIGNS: SignDef[] = [
 // ---------------------------------------------------------------------------
 
 /**
- * The tailboard of a lorry, in the colours of truck art: HORN OK PLEASE in
- * three panels, lotus flowers, a painted pair of eyes, and under it the line
- * lorries carry too: "we'll meet again". It draws the whole rectangle each
- * time and keeps nothing between calls.
+ * Words bent along a circle. They are written once, straight, on a canvas of
+ * their own, and then laid round the circle strip by strip: Devanagari joins
+ * its letters, so a word cannot be set down a letter at a time. `over` puts
+ * them over the top of the circle, and otherwise they run under its foot.
  */
-function paintTailboard(ctx: CanvasRenderingContext2D, _s: SignDef, w: number, h: number): void {
-  const BLUE = '#1b3f8f', RED = '#c8202c', YELLOW = '#ffd23f', GREEN = '#1f8f4f', WHITE = '#fff8e6', BLACK = '#15161c', PINK = '#ff7fb0';
-  ctx.fillStyle = BLUE;
+function bent(ctx: CanvasRenderingContext2D, words: string, size: number, cx: number, cy: number, radius: number, over: boolean, fill: string, edge: string): void {
+  const font = `900 ${size}px ${DEVANAGARI}`, off = document.createElement('canvas'), o = off.getContext('2d');
+  if (!o) return;
+  o.font = font;
+  const tw = Math.ceil(o.measureText(words).width + size * 0.5), th = Math.ceil(size * 2);
+  off.width = tw;
+  off.height = th;
+  o.font = font;
+  o.textAlign = 'center';
+  o.textBaseline = 'middle';
+  o.lineJoin = 'round';
+  o.lineWidth = size * 0.2;
+  o.strokeStyle = edge;
+  o.strokeText(words, tw / 2, th / 2);
+  o.fillStyle = fill;
+  o.fillText(words, tw / 2, th / 2);
+  const step = 2;
+  for (let x = 0; x < tw; x += step) {
+    const a = (x + step / 2 - tw / 2) / radius;
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(over ? a : -a);
+    ctx.drawImage(off, x, 0, Math.min(step + 1, tw - x), th, -step / 2, (over ? -radius : radius) - th / 2, Math.min(step + 1, tw - x), th);
+    ctx.restore();
+  }
+}
+
+/**
+ * दिल्ली दिलवालों की, "Delhi belongs to the big-hearted", written round a
+ * heart: the first word over it and the other two under it. Behind it a
+ * sunburst, either side of it a marigold and small hearts, in the colours a
+ * lorry is painted in. It draws the whole rectangle each time and keeps
+ * nothing between calls.
+ */
+function paintDilwale(ctx: CanvasRenderingContext2D, _s: SignDef, w: number, h: number): void {
+  const NAVY = '#16296b', BLUE = '#20409c', RED = '#d81e3a', RED_DARK = '#8f1026', YELLOW = '#ffd23f', ORANGE = '#ff8a24', WHITE = '#fff8e6', PINK = '#ff7fb0', INK = '#0e1a47';
+  const cx = w / 2, cy = h / 2;
+  // the ground, and a sunburst behind the heart
+  ctx.fillStyle = NAVY;
   ctx.fillRect(0, 0, w, h);
-  // a frame of yellow, and a band of scallops along the top
+  const far = Math.hypot(w, h);
+  ctx.fillStyle = BLUE;
+  for (let i = 0; i < 14; i++) {
+    const a0 = (i / 14) * Math.PI * 2 + 0.11, a1 = a0 + Math.PI / 14;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + Math.cos(a0) * far, cy + Math.sin(a0) * far);
+    ctx.lineTo(cx + Math.cos(a1) * far, cy + Math.sin(a1) * far);
+    ctx.closePath();
+    ctx.fill();
+  }
+  // a frame of yellow with scallops along its top and its foot, as on a lorry's boards
   ctx.strokeStyle = YELLOW;
   ctx.lineWidth = h * 0.03;
   ctx.strokeRect(h * 0.03, h * 0.03, w - h * 0.06, h - h * 0.06);
   ctx.fillStyle = YELLOW;
-  for (let i = 0; i < 16; i++) {
+  for (let i = 0; i < 18; i++) {
+    const x = h * 0.06 + ((i + 0.5) * (w - h * 0.12)) / 18, r = (w - h * 0.12) / 36;
     ctx.beginPath();
-    ctx.arc(h * 0.06 + ((i + 0.5) * (w - h * 0.12)) / 16, h * 0.06, (w - h * 0.12) / 32, 0, Math.PI);
+    ctx.arc(x, h * 0.06, r, 0, Math.PI);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x, h * 0.94, r, Math.PI, Math.PI * 2);
     ctx.fill();
   }
-  // three panels: red, green, red
-  const top = h * 0.2, ph = h * 0.44, gap = w * 0.015, x0 = w * 0.05, pw = (w - 2 * x0 - 2 * gap) / 3;
-  const panels = [RED, GREEN, RED], words = ['HORN', 'OK', 'PLEASE'];
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  panels.forEach((color, i) => {
-    const x = x0 + i * (pw + gap);
-    ctx.fillStyle = color;
-    ctx.fillRect(x, top, pw, ph);
-    ctx.strokeStyle = YELLOW;
-    ctx.lineWidth = h * 0.014;
-    ctx.strokeRect(x + h * 0.02, top + h * 0.02, pw - h * 0.04, ph - h * 0.04);
-    if (i === 1) {
-      // OK stands in a ring of lotus petals
-      const cx = x + pw / 2, cy = top + ph / 2, r = ph * 0.36;
-      for (let p = 0; p < 12; p++) {
-        const a = (p / 12) * Math.PI * 2;
-        ctx.fillStyle = p % 2 ? PINK : WHITE;
-        ctx.beginPath();
-        ctx.ellipse(cx + Math.cos(a) * r, cy + Math.sin(a) * r, r * 0.34, r * 0.17, a, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.fillStyle = YELLOW;
+
+  /** A heart whose middle is (x, y): `r` is about half its width. */
+  const heart = (x: number, y: number, r: number): void => {
+    ctx.beginPath();
+    ctx.moveTo(x, y + r * 0.62);
+    ctx.bezierCurveTo(x - r * 1.25, y - r * 0.2, x - r * 0.6, y - r, x, y - r * 0.42);
+    ctx.bezierCurveTo(x + r * 0.6, y - r, x + r * 1.25, y - r * 0.2, x, y + r * 0.62);
+    ctx.closePath();
+  };
+  // the heart: red, with a darker shadow under it, a yellow line round it and a shine on its left side
+  const hy = cy + h * 0.045, hr = h * 0.33;
+  ctx.fillStyle = INK;
+  heart(cx + h * 0.012, hy + h * 0.018, hr);
+  ctx.fill();
+  ctx.fillStyle = RED;
+  heart(cx, hy, hr);
+  ctx.fill();
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = YELLOW;
+  ctx.lineWidth = h * 0.02;
+  ctx.stroke();
+  ctx.strokeStyle = RED_DARK;
+  ctx.lineWidth = h * 0.008;
+  heart(cx, hy, hr * 0.84);
+  ctx.stroke();
+  ctx.strokeStyle = WHITE;
+  ctx.lineCap = 'round';
+  ctx.lineWidth = h * 0.022;
+  ctx.beginPath();
+  ctx.arc(cx - hr * 0.42, hy - hr * 0.28, hr * 0.26, Math.PI * 1.05, Math.PI * 1.5);
+  ctx.stroke();
+
+  // a marigold either side, with a small heart over it and one under it
+  for (const side of [-1, 1]) {
+    const mx = cx + side * h * 0.64, r = h * 0.085;
+    for (let p = 0; p < 12; p++) {
+      const a = (p / 12) * Math.PI * 2;
+      ctx.fillStyle = p % 2 ? YELLOW : ORANGE;
       ctx.beginPath();
-      ctx.arc(cx, cy, r * 0.82, 0, Math.PI * 2);
+      ctx.ellipse(mx + Math.cos(a) * r * 0.78, cy + Math.sin(a) * r * 0.78, r * 0.44, r * 0.26, a, 0, Math.PI * 2);
       ctx.fill();
     }
-    const size = fit(ctx, words[i], EN, ph * (i === 1 ? 0.34 : 0.4), pw * (i === 1 ? 0.42 : 0.82));
-    ctx.font = `900 ${size}px ${EN}`;
-    ctx.fillStyle = BLACK;
-    ctx.fillText(words[i], x + pw / 2 + size * 0.05, top + ph / 2 + size * 0.09);
-    ctx.fillStyle = i === 1 ? RED : YELLOW;
-    ctx.fillText(words[i], x + pw / 2, top + ph / 2 + size * 0.04);
-  });
-  // a painted eye at either end of the lower band, and the line between them
-  const by = top + ph + h * 0.04, bh = h - by - h * 0.07;
-  for (const ex of [w * 0.12, w * 0.88]) {
-    const ey = by + bh / 2;
-    ctx.fillStyle = WHITE;
+    ctx.fillStyle = ORANGE;
     ctx.beginPath();
-    ctx.ellipse(ex, ey, bh * 0.62, bh * 0.34, 0, 0, Math.PI * 2);
+    ctx.arc(mx, cy, r * 0.62, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = BLACK;
+    ctx.fillStyle = YELLOW;
     ctx.beginPath();
-    ctx.arc(ex, ey, bh * 0.22, 0, Math.PI * 2);
+    ctx.arc(mx, cy, r * 0.3, 0, Math.PI * 2);
     ctx.fill();
-    ctx.strokeStyle = BLACK;
-    ctx.lineWidth = h * 0.012;
-    ctx.beginPath();
-    ctx.ellipse(ex, ey, bh * 0.62, bh * 0.34, 0, Math.PI, 0);
-    ctx.stroke();
+    ctx.fillStyle = PINK;
+    for (const dy of [-0.25, 0.25]) {
+      heart(mx + side * h * 0.055, cy + h * dy, h * 0.045);
+      ctx.fill();
+    }
   }
-  const line = 'फिर मिलेंगे';
-  const size = fit(ctx, line, DEVANAGARI, bh * 0.78, w * 0.5);
-  ctx.font = `900 ${size}px ${DEVANAGARI}`;
-  ctx.fillStyle = BLACK;
-  ctx.fillText(line, w / 2 + size * 0.04, by + bh / 2 + size * 0.08);
-  ctx.fillStyle = WHITE;
-  ctx.fillText(line, w / 2, by + bh / 2 + size * 0.03);
-  // red and yellow diamonds, as reflectors, between the line and the eyes
-  for (const dx of [w * 0.23, w * 0.77]) {
-    ctx.fillStyle = dx < w / 2 ? RED : YELLOW;
-    ctx.beginPath();
-    ctx.moveTo(dx, by + bh * 0.2); ctx.lineTo(dx + bh * 0.3, by + bh / 2); ctx.lineTo(dx, by + bh * 0.8); ctx.lineTo(dx - bh * 0.3, by + bh / 2);
-    ctx.fill();
-  }
+
+  // the words round the heart: Delhi over it in yellow, "of the big-hearted" under it in white
+  bent(ctx, 'दिल्ली', h * 0.17, cx, cy, h * 0.335, true, YELLOW, INK);
+  bent(ctx, 'दिलवालों की', h * 0.128, cx, cy, h * 0.365, false, WHITE, INK);
 }
 
 /** The big screen on Connaught Place. The engine fills it with what is playing: this is what it shows when nothing is. */
 export const SCREEN: SignDef = {
-  id: 'delhi-screen', lines: ['NOW PLAYING', 'Horn OK Please', 'Delhi'], color: '#ffd23f', aspect: 16 / 9, kind: 'screen', paint: paintTailboard,
+  id: 'delhi-screen', lines: ['NOW PLAYING', 'Dilli Dilwalon Ki', 'Delhi'], color: '#ffd23f', aspect: 16 / 9, kind: 'screen', paint: paintDilwale,
 };

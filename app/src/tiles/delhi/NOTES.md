@@ -185,7 +185,11 @@ One, on the roof of Connaught Place's south-east block, where its hoardings stan
 
 **Its own picture.** When nothing is playing, and for everyone who has not linked their music, the screen shows a picture the tile paints itself, so that picture is what most people see. The sign gets a `paint(ctx, s, w, h)` of its own, into 640 by 360 pixels. It draws the whole rectangle each time and keeps nothing between calls.
 
-It is the tailboard of a lorry: HORN OK PLEASE in the colours of truck art, in three panels, with lotus flowers and a painted pair of eyes, and under it फिर मिलेंगे, "we'll meet again", which lorries carry too. No brand and no logo is on it. The Hindi is checked in its own script before it is painted, like every other sign. The collector was offered दिल्ली दिलवालों की round a heart as the other idea, and did not choose between them.
+It is दिल्ली दिलवालों की, "Delhi belongs to the big-hearted", written round a heart. The ground is navy with a blue sunburst, in a yellow frame that is scalloped along its top and its foot. The heart is red, with a yellow line round it and a shine on its left side. दिल्ली runs over the heart in yellow and दिलवालों की under it in white, both bent along a circle, and either side are a marigold and two small pink hearts: the colours a lorry is painted in. No brand and no logo is on it. The Hindi is checked in its own script before it is painted, like every other sign.
+
+Devanagari joins its letters, so a word cannot be set down round a circle a letter at a time. Each line is written once, straight, on a canvas of its own, and then laid round the circle in strips two pixels wide.
+
+The first picture was a lorry's tailboard, HORN OK PLEASE over फिर मिलेंगे. The collector was shown both ideas and chose this one on 19 November 2026. HORN OK PLEASE is still on the lorry at the dhaba, in `south-west.ts`.
 
 ## Checks
 
@@ -220,6 +224,8 @@ All on 19 November 2026, on the built tile, alone on the board, in the order the
   Measured again the same evening, with the jets, India Gate's inscription and the fort's battlements built, and with more heroes on the roads than before: Delhi 84,400 triangles standing still, a frame of 5.8 to 6.0 ms at 14 h and 4.4 to 5.0 at 21 h, 174 draw calls; Europe in the same minute 5.0 to 6.4 and 4.9 to 5.3, 164 draw calls. By day Delhi's frame is a little over Europe's, by night a little under.
 
   Delhi has about twice the triangles that stand still on the built tiles, which is the most the page allows, and its frame costs what Europe's does. Its own meshes are few: two trains, two boats, the ducks, three tables that turn, the kites and the pigeons.
+
+- **After the screen's picture changed**, the same evening: the type check passes, `wimmel.fights('delhi')` is empty, and the screen was looked at head-on at 13 h and from the opening view at 21 h. Nothing else was run again: the change is one sign's picture, and it adds no mesh.
 
 ## Liberties taken with the real place
 
@@ -257,7 +263,7 @@ All on 19 November 2026, on the built tile, alone on the board, in the order the
 - Jantar Mantar: the Samrat Yantra's slope is about 40 degrees, not 28.6. The Ram Yantra's two drums are on the west side, not at the south end. The Jai Prakash bowls stand above the ground.
 - Agrasen ki Baoli is turned a quarter, so that the mosque beside the way in comes to the west end. Its deep end faces west, away from the opening view: from there the steps, the top two tiers of the north wall, the mosque and the well are seen.
 - Bangla Sahib: the arcade is on the tank's north side only, and is a wall of arches and not an open verandah. In life it runs round three sides. The pennant on the Nishan Sahib is plain.
-- **Bangla Sahib stands in the shadow of Raisina Hill.** From the opening view North Block hides the tank's middle and its south walk. The hall, the dome, the mast and the arcade on the north are seen, and all of it is seen from the north and the west. Only moving its lot would show the rest, and there is no ground for it between the road to Karol Bagh and the hill.
+- **Bangla Sahib stands in the shadow of Raisina Hill.** From the opening view North Block hides the tank's middle and its south walk. The hall, the dome, the mast and the arcade on the north are seen, and all of it is seen from the north and the west. Only moving its lot would show the rest, and there is no ground for it between the road to Karol Bagh and the hill. The collector was asked and said it is all right as it is.
 - The statue of Hanuman: the way in, a monster's open mouth in life, is a plain arch, and the chest that opens is not shown. The statue is turned to face the opening view. Which way the real one faces was not confirmed, and of its look the sources found confirm only the saffron colour, the arms at the chest and a decorated crown.
 
 **The south**, in `south.ts`:
@@ -272,7 +278,7 @@ All on 19 November 2026, on the built tile, alone on the board, in the order the
 
 **The south-west**, in `south-west.ts`:
 
-- The school: only the gate and the main block's look are from the collector's picture. The rest of the campus is invented and pressed together: the assembly court behind the gate, the football ground, the pool, the bus bay. The gate's canopy is large beside the block, so that its lettering can be read. Pupils wear white and bottle green, which are the school's colours by an encyclopaedia: its exact uniform was not found.
+- The school: only the gate and the main block's look are from the collector's picture. The rest of the campus is invented and pressed together: the assembly court behind the gate, the football ground, the pool, the bus bay. The gate's canopy is large beside the block, so that its lettering can be read. Pupils wear white and bottle green, which are the school's colours by an encyclopaedia. Its exact uniform was not found. The collector was asked and said the colours are right.
 - Hauz Khas, turned half round: the tomb's entrance and its railed court face north. A third doorway in a red frame, with steps to the water, is added on the tomb's east face, so that the opening view has a door in red stone. In life the sides towards the tank have openings and no such door. Nobody stands on the monuments or their steps.
 - The dhaba's lorry is the builder's own shape, 8.6 long.
 
@@ -318,7 +324,9 @@ Each is checked as it is written, and entered here with what confirmed it. A sho
 | मोती बाग, धौला कुआँ, एम्स | the titles of Hindi Wikipedia's pages for the three places. Its page on Moti Bagh also says that Shanti Path crosses the Ring Road there, which is how this tile has it. |
 | रिंग रोड, करोल बाग | Hindi Wikipedia's page on Dhaula Kuan writes करोल बाग, and its page on the Pink Line calls that line the रिंग रोड line. |
 
-**On the screen**: HORN OK PLEASE is what lorries all over India carry on their tailboards, and फिर मिलेंगे ("we'll meet again") is, by The Patriot's piece "Messages on the highway", a very common message on lorries in Hindi. Neither is anybody's name. A food festival in Delhi trades as Horn OK Please: the screen has nothing of its lettering or its look.
+**On the screen**: दिल्ली दिलवालों की, "Delhi belongs to the big-hearted", is a saying about the city and nobody's name. दिल्ली is as every board on this tile writes it. दिलवालों की is as Hindi Wikipedia's own search shows it: in the title दुनिया दिलवालों की, and in a line on Hindi Wikisource, पर यह कहानी दिलवालों की है. The saying whole was not on the page that was read. It is as the collector wrote it himself, in Devanagari, when he chose it.
+
+The screen's first picture was a lorry's tailboard: HORN OK PLEASE, which lorries all over India carry, over फिर मिलेंगे ("we'll meet again"), which The Patriot's piece "Messages on the highway" calls a very common message on lorries in Hindi. That picture is gone. HORN OK PLEASE is still on the lorry at the dhaba. A food festival in Delhi trades as Horn OK Please: the lorry's board is a tailboard as lorries carry it, and has nothing of the festival's lettering or its look.
 
 **The Metro's two stations**, on lit boards on their walls and over their platforms, in `metro.ts`:
 
@@ -333,6 +341,8 @@ Each is checked as it is written, and entered here with what confirmed it. A sho
 | --- | --- | --- |
 | दिल्ली हाट, DILLI HAAT | both faces of the bazaar's gate, in `south.ts` | Delhi Tourism's own page for Dilli Haat INA, a fair held there in January 2026, and the tourism corporation's auction of its stalls for July to September 2026. The Hindi is the title of Hindi Wikipedia's page for it. |
 | WENGER'S | the inner front of Connaught Place's west block, in `centre.ts`: plain dark lettering on cream | Outlook Traveller Eats, 14 August 2026, "Wenger's: 100 years of Delhi's original sweet spot", which places the bakery in Block A of the Inner Circle, trading under the family's third generation |
+
+The collector was asked whether to keep both names or to make Wenger's a plain BAKERY, and kept both.
 
 **Boards in English only.** Connaught Place's shops and hoardings say what is sold and not whose shop it is, in English, as most of its boards do: OPTICIANS, JEWELLERS, CAFE, TAILORS, CHEMIST, TRAVEL AGENTS, EMPORIUM, COFFEE, CAMERAS, HANDLOOMS, STATIONERS, SPORTS GOODS, LUGGAGE; SHOES, BOOKS, SAREES, WATCHES, SUITINGS SHIRTINGS, ICE CREAM; MARKET over Palika's doorway. Karol Bagh: CAR ACCESSORIES, ALLOY WHEELS, SEAT COVERS, CAR AUDIO, LED LIGHTS. Khan Market: BOOKS, CAFE, KEBABS, FLOWERS. Dilli Haat's stalls: POTTERY, RUGS, MOMOS. Sarojini Nagar: SHOES, BAGS, JEANS. None is anybody's name.
 
@@ -424,3 +434,7 @@ To the built tile, the same day:
 - **Something in the air.** "love it any suggestions for an aerial element of sorts?" He was offered the flypast, Delhi's black kites with a cut paper kite, an airliner on approach, and a flight of parakeets, and told that the flypast is of the parade, which the research note says to ask about. "I like the jets as an idea, make sure the jets look cool themselves".
 - **The jets' look.** "Can we make the fighter jets grey witha  small indian flag on tail so they look kinda realistic". Then, of the grey ones: "canopy a bit too bulbous, i like the color but maybe make it a bit more sleek on the jets".
 - **More detail.** "Also maybe we can give india gate and the wallks fo the red fort slgihtly more detail?"
+- **Bangla Sahib's tank.** Asked whether it is all right that most of the tank is hidden behind Raisina Hill from the opening view: "yup".
+- **Wenger's.** Asked whether to keep the two real trading names, or to make Wenger's a plain BAKERY: "yeah i like it". Both stay.
+- **The pupils' colours.** Asked whether white and bottle green are right: "yup".
+- **The screen's picture.** Asked to choose between the lorry's tailboard and the saying round a heart: "Let's do दिल्ली दिलवालों की round a heart". It is built so.
