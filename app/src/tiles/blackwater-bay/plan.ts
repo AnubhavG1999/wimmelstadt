@@ -430,24 +430,27 @@ export const LENGTH: Record<string, number> = {
  * Balerion, the greatest, lies on the crown of the Dragonpit's dome, his
  * tail draped down it. Vhagar lies on a low dark rock in the bay
  * (`VHAGAR_ROCK`), her tail over its edge into the water. Dreamfyre lies in
- * the bronze doors, with her tail in the dark of the pit. On the Dragonmont
- * each lies at the mouth of a lair: a level shelf at its height, and behind
- * it a cave, dark inside, that its body and tail go into (`LAIR`). The
- * dragons' show, which flies them, is the main session's (`dragons.ts`).
+ * the bronze doors, with her tail in the dark of the pit. Caraxes lies on the
+ * flat top of the Red Keep's great tower, his tail laid west over Maegor's
+ * Holdfast, and Meleys along High Tide's roofs, facing the river's mouth. On
+ * the Dragonmont each of the other five lies at the mouth of a lair: a level
+ * shelf at its height, and behind it a cave, dark inside, that its body and
+ * tail go into (`LAIR`); the caves may meet inside the mountain. These are
+ * the dragons' show's numbers (`dragons.ts`), checked there against
+ * everything built and dragon against dragon.
  */
 export const HOMES: Record<string, Home> = {
   balerion: { x: R.c[0], z: R.c[1], y: R.dome - 0.6, facing: 45, where: "the crown of the Dragonpit's dome" },
-  vhagar: { x: 12, z: -30, y: 3, facing: 45, where: 'a low dark rock in the bay' },
+  vhagar: { x: 2, z: -14, y: 3, facing: 70, where: 'a low dark rock in the bay' },
   dreamfyre: { x: R.c[0], z: R.c[1] + R.drum + 1.5, y: R.y, facing: 90, where: 'in the bronze doors, her tail in the dark of the pit' },
-  // the lower lairs, on the south-west and south faces and at the back
-  sheepstealer: lair(150, 8, 120, 'his cave on the south-west flank, a sheep penned on the slope below it'),
-  vermithor: lair(125, 11, 110, 'his smoking cavern on the south-west flank'),
-  silverwing: lair(100, 9, 95, 'her cavern beside his'),
-  cannibal: lair(-30, 10, -10, 'his lair at the back of the mountain, facing the Narrow Sea'),
-  // the higher lairs, on the south and east faces
-  meraxes: lair(80, 18, 80, 'a high lair on the south face'),
-  caraxes: lair(40, 21, 45, 'a high lair on the south-east face'),
-  meleys: lair(5, 18, 15, 'a high lair on the east face'),
+  caraxes: { x: -22.5, z: 48.5, y: 30, facing: 0, where: "the flat top of the Red Keep's great tower, his tail laid west over Maegor's Holdfast" },
+  meleys: { x: 30, z: 80, y: 16, facing: 180, where: "High Tide's roofs, facing the river's mouth" },
+  // the lairs on the Dragonmont: a high ledge under the summit, and four round the mountain at 20
+  meraxes: lair(90, 42, 80, 'a high ledge under the summit, on the south face'),
+  vermithor: lair(15, 20, 85, 'his smoking cavern on the south-east face'),
+  silverwing: lair(85, 20, 70, 'her cavern beside his, on the south face'),
+  sheepstealer: lair(180, 20, 190, 'his cave on the west face over the bay, a sheep penned on the slope below it'),
+  cannibal: lair(250, 20, 210, 'his lair on the north face, away from the rest'),
 };
 
 /**
@@ -455,7 +458,7 @@ export const HOMES: Record<string, Home> = {
  * sizes, and how high its level top stands. Its sides fall steeply to the
  * water. Ships and anything tall keep 16 from it.
  */
-export const VHAGAR_ROCK = { x: 12, z: -30, hx: 9, hz: 6.5, top: 3 };
+export const VHAGAR_ROCK = { x: 2, z: -14, hx: 9, hz: 6.5, top: 3 };
 
 /** How high Vhagar's rock is at a place: its top over most of it, falling to the water at its edge; below the water where it is not. */
 export function rockAt(x: number, z: number): number {
@@ -509,7 +512,7 @@ export function lairAt(x: number, z: number): { id: string; home: Home; part: 's
   return null;
 }
 /** The dragons whose homes are lairs on the Dragonmont. */
-export const LAIR_IDS: Record<string, true> = { sheepstealer: true, vermithor: true, silverwing: true, cannibal: true, meraxes: true, caraxes: true, meleys: true };
+export const LAIR_IDS: Record<string, true> = { sheepstealer: true, vermithor: true, silverwing: true, cannibal: true, meraxes: true };
 
 /** How far a place is from the middle of the road at the Dragonmont's foot, and from its ring at the camp of the Sowing. */
 function fromFootRoad(x: number, z: number): number {
