@@ -7,24 +7,58 @@
 // is what its name says: they are drawn plainly, nothing drives through them
 // and no hero is put on show near them.
 
-import { interior, type WinSpec } from '../../engine/geo';
+import { interior, type GeoBuilder } from '../../engine/geo';
 import { area, oval, rect } from '../../engine/ground';
 import { figure, lathe } from '../../engine/parts';
 import type { Build } from '../../engine/tile';
-import { BUFF, BUFF_SHADE, CREAM, GOLD, MARBLE, RECESS, RED, RED_DARK, RED_LIGHT, arcade, archThrough, chhatri, dome, drum, niche, steps, tiranga } from './mughal';
+import {
+  BUFF, BUFF_SHADE, CREAM, GOLD, MARBLE, RECESS, RED, RED_DARK, RED_LIGHT, arcade, archThrough, chhatri, dome, drum, niche, slot, steps, tiranga,
+  type Facing,
+} from './mughal';
 import { AXIS_Z, HEX, RAISINA, type Thing } from './plan';
 
 const GRAVEL = 0xc9906f, COPPER = 0x4b5257, STONE = 0xd8cfbb, CANAL = 0x7fa6a0;
-/** Two storeys of tall windows, as on all three buildings on the hill. Their walls start a whole number of storeys above the ground. */
-const TALL: WinSpec = { cell: 1.45, storey: 2.7, lit: 0.42, kind: 6 };
+/** How softly a floodlit wall glows at night: the buildings on the hill, and India Gate more brightly. */
+const FLOOD = interior(0.3), FLOOD_GATE = interior(0.5);
+/** A window by day: deep shade, a little warm, so that a lamp-lit one glows amber at night. */
+const SHADE = 0x4f3a26, LAMPLIT = 3.2;
 const BASE = 2.4, BODY = 5.4;
 
-/** A wing of the palace or of a Block: a red base, two cream storeys, a deep red eave and a parapet. `y` is the hill's top. */
-function wing(k: Build, x0: number, z0: number, x1: number, z1: number, y: number, seed: number, faces = 'NESW'): number {
+/** The same number between 0 and 1 for the same window on every load. */
+const chance = (i: number, row: number, seed: number): number => {
+  const s = Math.sin((i + 1) * 12.9898 + row * 78.233 + seed * 43.7) * 43758.5453;
+  return s - Math.floor(s);
+};
+
+/**
+ * Two storeys of windows along a wall, from `a0` to `a1`, above the height
+ * `y`: tall round-headed ones below and square ones above, as on all three
+ * buildings on the hill. By day they are shade between piers of stone, and
+ * not panes of glass. At night something under half of them are lamp-lit.
+ */
+function windows(b: GeoBuilder, f: Facing, plane: number, a0: number, a1: number, y: number, seed: number): void {
+  const n = Math.max(1, Math.round((a1 - a0) / 1.5)), bay = (a1 - a0) / n, w = Math.min(0.72, bay * 0.46);
+  for (let i = 0; i < n; i++) {
+    const a = a0 + (i + 0.5) * bay;
+    niche(b, f, plane, a, y + 0.45, w, 2.15, SHADE, { round: true, lit: chance(i, 0, seed) < 0.45 ? LAMPLIT : 0 });
+    slot(b, f, plane, a, y + 3.3, w, 1.5, SHADE, { lit: chance(i, 1, seed) < 0.4 ? LAMPLIT : 0 });
+  }
+}
+
+/**
+ * A wing of the palace or of a Block: a red base, two cream storeys, a deep
+ * red eave and a parapet. `y` is the hill's top. `east` says which stretches
+ * of its east side have windows, where something stands against the rest.
+ */
+function wing(k: Build, x0: number, z0: number, x1: number, z1: number, y: number, seed: number, faces = 'NESW', east: [number, number][] = [[z0, z1]]): number {
   const b = k.b, y1 = y + BASE, y2 = y1 + BODY;
-  b.box(x0, y, z0, x1, y1, z1, RED, { faces });
+  b.box(x0, y, z0, x1, y1, z1, RED, { faces, win: FLOOD });
   b.box(x0 - 0.12, y1 - 0.25, z0 - 0.12, x1 + 0.12, y1, z1 + 0.12, RED_DARK, { faces: 'NESW' });
-  b.box(x0, y1, z0, x1, y2, z1, CREAM, { win: TALL, seed, faces });
+  b.box(x0, y1, z0, x1, y2, z1, CREAM, { faces, win: FLOOD });
+  if (faces.includes('N')) windows(b, 'N', z0, x0 + 0.5, x1 - 0.5, y1, seed);
+  if (faces.includes('S')) windows(b, 'S', z1, x0 + 0.5, x1 - 0.5, y1, seed + 1);
+  if (faces.includes('W')) windows(b, 'W', x0, z0 + 0.5, z1 - 0.5, y1, seed + 2);
+  if (faces.includes('E')) for (const [a, c] of east) windows(b, 'E', x1, a + 0.5, c - 0.5, y1, seed + 3);
   // the chajja: a deep eave that throws a shadow, with its underside
   b.box(x0 - 0.5, y2, z0 - 0.5, x1 + 0.5, y2 + 0.3, z1 + 0.5, RED, { faces: 'NESWTB' });
   b.box(x0, y2 + 0.3, z0, x1, y2 + 0.95, z1, CREAM, { top: 0xcfc4ae });
@@ -34,19 +68,20 @@ function wing(k: Build, x0: number, z0: number, x1: number, z1: number, y: numbe
 function rashtrapatiBhavan(k: Build, t: Thing): void {
   const b = k.b, y = t.y ?? 0, x0 = t.x + 0.5, x1 = t.x + t.w, z0 = t.z, z1 = t.z + t.d, cz = (z0 + z1) / 2;
   const xm = x0 + 7.5; // the front of the main block: the two wings reach forward from here
-  const roof = wing(k, x0, z0, xm, z1, y, 0.3);
+  const p0 = cz - 9, p1 = cz + 9; // the portico, in the middle of the front
+  const roof = wing(k, x0, z0, xm, z1, y, 0.3, 'NESW', [[z0 + 8, p0], [p1, z1 - 8]]);
   wing(k, xm, z0, x1, z0 + 8, y, 0.5, 'NES');
   wing(k, xm, z1 - 8, x1, z1, y, 0.7, 'ESN');
 
-  // the portico in the middle of the front: twelve columns on a floor at the head of the steps, and deep shade behind them
-  const p0 = cz - 9, p1 = cz + 9, floor = y + BASE, head = floor + BODY - 0.7, px = xm + 2.6;
-  b.box(xm, y, p0, px, floor, p1, RED, { faces: 'ENS' });
+  // the portico: twelve columns on a floor at the head of the steps, and deep shade behind them
+  const floor = y + BASE, head = floor + BODY - 0.7, px = xm + 2.6;
+  b.box(xm, y, p0, px, floor, p1, RED, { faces: 'ENS', win: FLOOD });
   b.box(xm + 0.04, floor, p0 + 0.3, xm + 0.1, head, p1 - 0.3, RECESS, { win: interior(0.9), faces: 'E' });
   for (let i = 0; i < 12; i++) {
     const z = p0 + 0.6 + (i / 11) * (p1 - p0 - 1.2);
-    b.box(px - 0.75, floor, z - 0.26, px - 0.23, head, z + 0.26, CREAM, { faces: 'NESW' });
+    b.box(px - 0.75, floor, z - 0.26, px - 0.23, head, z + 0.26, CREAM, { faces: 'NESW', win: FLOOD });
   }
-  b.box(xm, head, p0, px, head + 0.7, p1, CREAM, { faces: 'ENSB' });
+  b.box(xm, head, p0, px, head + 0.7, p1, CREAM, { faces: 'ENSB', win: FLOOD });
   b.box(xm - 0.1, head + 0.7, p0 - 0.4, px + 0.45, head + 1.0, p1 + 0.4, RED, { faces: 'NESWTB' });
   b.box(xm, head + 1.0, p0, px, head + 1.65, p1, CREAM, { top: 0xcfc4ae });
   steps(b, 'E', px, cz - 7.5, cz + 7.5, y, floor, 7, 0.42, STONE);
@@ -102,17 +137,20 @@ const RAISINA_GATE = -84;
 function block(k: Build, t: Thing): void {
   const b = k.b, y = t.y ?? 0, x0 = t.x, x1 = t.x + t.w, z0 = t.z, z1 = t.z + t.d, cz = (z0 + z1) / 2;
   const north = cz < AXIS_Z; // North Block looks south onto the avenue, South Block north
-  const roof = wing(k, x0, z0, x1, z1, y, north ? 0.2 : 0.6);
+  const roof = wing(k, x0, z0, x1, z1, y, north ? 0.2 : 0.6, 'NESW', [[z0, cz - 3.2], [cz + 3.2, z1]]);
   // an arcade along both long sides, at the foot of the wall
   for (const f of ['N', 'S'] as const) arcade(b, f, f === 'N' ? z0 : z1, x0 + 1, x1 - 1, y + 0.15, 9, 1.9, RECESS, { round: true, lit: 0.5 });
   // the pavilion at the east end, which looks down the hill: four columns and a pediment of shade
-  b.box(x1, y, cz - 3.2, x1 + 1.4, y + BASE, cz + 3.2, RED, { faces: 'ENS' });
+  b.box(x1, y, cz - 3.2, x1 + 1.4, y + BASE, cz + 3.2, RED, { faces: 'ENS', win: FLOOD });
   b.box(x1 + 0.04, y + BASE, cz - 2.8, x1 + 0.1, y + BASE + BODY - 0.6, cz + 2.8, RECESS, { win: interior(0.8), faces: 'E' });
-  for (let i = 0; i < 4; i++) b.box(x1 + 0.75, y + BASE, cz - 2.7 + i * 1.8 - 0.24, x1 + 1.25, y + BASE + BODY - 0.6, cz - 2.7 + i * 1.8 + 0.24, CREAM, { faces: 'NESW' });
-  b.box(x1, y + BASE + BODY - 0.6, cz - 3.2, x1 + 1.4, y + BASE + BODY + 0.46, cz + 3.2, CREAM, { faces: 'ENSTB' });
+  for (let i = 0; i < 4; i++) b.box(x1 + 0.75, y + BASE, cz - 2.7 + i * 1.8 - 0.24, x1 + 1.25, y + BASE + BODY - 0.6, cz - 2.7 + i * 1.8 + 0.24, CREAM, { faces: 'NESW', win: FLOOD });
+  b.box(x1, y + BASE + BODY - 0.6, cz - 3.2, x1 + 1.4, y + BASE + BODY + 0.46, cz + 3.2, CREAM, { faces: 'ENSTB', win: FLOOD });
   // the tower: square, then eight-sided, then a dome of red stone
   const tx = x0 + (x1 - x0) * 0.62, tz = north ? z1 - 3 : z0 + 3;
-  b.box(tx - 2.2, roof - 0.4, tz - 2.2, tx + 2.2, roof + 2.6, tz + 2.2, CREAM, { win: { cell: 1.4, storey: 2.7, lit: 0.4, kind: 6 }, seed: 0.4 });
+  b.box(tx - 2.2, roof - 0.4, tz - 2.2, tx + 2.2, roof + 2.6, tz + 2.2, CREAM, { win: FLOOD });
+  for (const [f, plane, a] of [['N', tz - 2.2, tx], ['S', tz + 2.2, tx], ['E', tx + 2.2, tz], ['W', tx - 2.2, tz]] as const) {
+    for (const d of [-1.15, 0, 1.15]) niche(b, f, plane, a + d, roof + 0.55, 0.62, 1.7, SHADE, { round: true, lit: d === 0 ? LAMPLIT : 0 });
+  }
   b.box(tx - 2.6, roof + 2.6, tz - 2.6, tx + 2.6, roof + 2.9, tz + 2.6, RED, { faces: 'NESWTB' });
   drum(b, tx, tz, roof + 2.9, roof + 4.5, 1.9, CREAM, { sides: 8, arches: 8, lit: 0.7 });
   b.cyl(tx, tz, roof + 4.5, roof + 4.75, 2.2, 2.2, 8, RED, { cap: CREAM });
@@ -162,29 +200,31 @@ function kartavyaPath(k: Build, t: Thing): void {
 function indiaGate(k: Build, t: Thing): void {
   const b = k.b, x0 = t.x, x1 = t.x + t.w, z0 = t.z, z1 = t.z + t.d, cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
   const way = 5.2, pier = (t.d - way) / 2, y0 = 0.7, body = t.h * 0.69, side = 1.9;
+  // It is floodlit at night: every face of it glows a little, in its own stone's colour.
+  const lit = { win: FLOOD_GATE };
   // its low base of red stone, in two steps
   b.box(x0 - 1.2, 0, z0 - 1.2, x1 + 1.2, 0.35, z1 + 1.2, RED_LIGHT);
-  b.box(x0 - 0.6, 0.35, z0 - 0.6, x1 + 0.6, y0, z1 + 0.6, RED_LIGHT);
+  b.box(x0 - 0.6, 0.35, z0 - 0.6, x1 + 0.6, y0, z1 + 0.6, RED_LIGHT, { win: FLOOD });
   // two piers, each of two legs with a small arch through it from north to south
   for (const pz of [z0, z1 - pier]) {
     const pc = pz + pier / 2;
-    for (const [a, c] of [[x0, cx - side / 2], [cx + side / 2, x1]]) b.box(a, y0, pz, c, body, pz + pier, BUFF, { faces: 'NESW' });
-    archThrough(b, 'z', cx, pc, pier, side, y0, 5.2, body, BUFF, BUFF_SHADE, true);
+    for (const [a, c] of [[x0, cx - side / 2], [cx + side / 2, x1]]) b.box(a, y0, pz, c, body, pz + pier, BUFF, { faces: 'NESW', ...lit });
+    archThrough(b, 'z', cx, pc, pier, side, y0, 5.2, body, BUFF, BUFF_SHADE, true, FLOOD_GATE.lit);
     b.box(cx - side / 2, y0, pz + 0.5, cx + side / 2, y0 + 0.02, pz + pier - 0.5, BUFF_SHADE, { faces: 'T' });
     // a tall niche on each leg's east and west face, with a band at the springing of the great arch
-    for (const f of ['E', 'W'] as const) niche(b, f, f === 'E' ? x1 : x0, pc, y0 + 0.6, pier * 0.42, 4.6, BUFF_SHADE, { round: true });
-    b.box(x0 - 0.15, body * 0.62, pz - 0.15, x1 + 0.15, body * 0.62 + 0.3, pz + pier + 0.15, BUFF_SHADE, { faces: 'NESW' });
+    for (const f of ['E', 'W'] as const) niche(b, f, f === 'E' ? x1 : x0, pc, y0 + 0.6, pier * 0.42, 4.6, BUFF_SHADE, { round: true, lit: 0.35 });
+    b.box(x0 - 0.15, body * 0.62, pz - 0.15, x1 + 0.15, body * 0.62 + 0.3, pz + pier + 0.15, BUFF_SHADE, { faces: 'NESW', ...lit });
   }
   // the great arch, from east to west, and the wall over it
-  archThrough(b, 'x', cx, cz, t.w, way, y0, body * 0.86 - y0, body, BUFF, BUFF_SHADE, true);
+  archThrough(b, 'x', cx, cz, t.w, way, y0, body * 0.86 - y0, body, BUFF, BUFF_SHADE, true, FLOOD_GATE.lit);
   b.box(x0, y0, cz - way / 2, x1, y0 + 0.02, cz + way / 2, 0xd8cfbb, { faces: 'T' });
   // the cornice, the attic stepping in twice, and the shallow bowl on top
-  b.box(x0 - 0.45, body, z0 - 0.45, x1 + 0.45, body + 0.6, z1 + 0.45, BUFF_SHADE, { faces: 'NESWTB' });
-  b.box(x0 + 0.35, body + 0.6, z0 + 0.9, x1 - 0.35, body + 2.6, z1 - 0.9, BUFF);
-  for (const f of ['E', 'W'] as const) b.box(f === 'E' ? x1 - 0.35 : x0 + 0.29, body + 1.2, cz - 3.4, f === 'E' ? x1 - 0.29 : x0 + 0.35, body + 2.1, cz + 3.4, BUFF_SHADE, { faces: f });
-  b.box(x0 + 0.1, body + 2.6, z0 + 0.65, x1 - 0.1, body + 2.95, z1 - 0.65, BUFF_SHADE, { faces: 'NESWTB' });
-  b.box(x0 + 0.9, body + 2.95, z0 + 2.2, x1 - 0.9, body + 3.9, z1 - 2.2, BUFF);
-  b.box(x0 + 0.65, body + 3.9, z0 + 1.95, x1 - 0.65, body + 4.15, z1 - 1.95, BUFF_SHADE, { faces: 'NESWTB' });
+  b.box(x0 - 0.45, body, z0 - 0.45, x1 + 0.45, body + 0.6, z1 + 0.45, BUFF_SHADE, { faces: 'NESWTB', ...lit });
+  b.box(x0 + 0.35, body + 0.6, z0 + 0.9, x1 - 0.35, body + 2.6, z1 - 0.9, BUFF, lit);
+  for (const f of ['E', 'W'] as const) b.box(f === 'E' ? x1 - 0.35 : x0 + 0.29, body + 1.2, cz - 3.4, f === 'E' ? x1 - 0.29 : x0 + 0.35, body + 2.1, cz + 3.4, BUFF_SHADE, { faces: f, win: interior(0.35) });
+  b.box(x0 + 0.1, body + 2.6, z0 + 0.65, x1 - 0.1, body + 2.95, z1 - 0.65, BUFF_SHADE, { faces: 'NESWTB', ...lit });
+  b.box(x0 + 0.9, body + 2.95, z0 + 2.2, x1 - 0.9, body + 3.9, z1 - 2.2, BUFF, lit);
+  b.box(x0 + 0.65, body + 3.9, z0 + 1.95, x1 - 0.65, body + 4.15, z1 - 1.95, BUFF_SHADE, { faces: 'NESWTB', ...lit });
   b.cyl(cx, cz, body + 4.15, t.h, 1.35, 2.0, 12, BUFF_SHADE, { cap: 0x8a7a66 });
   // the walk through it along the axis, and light on its two faces
   area(k, rect(HEX[0] - 13, AXIS_Z - 1.6, HEX[0] + 5, AXIS_Z + 1.6), 0xd9c2a4, 0.025);

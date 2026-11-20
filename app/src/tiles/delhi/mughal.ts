@@ -59,6 +59,12 @@ export function niche(b: GeoBuilder, f: Facing, plane: number, a: number, y: num
   for (let i = 1; i + 1 < pts.length; i++) tri(b, pts[0], pts[i], pts[i + 1], NORMAL[f], color, q);
 }
 
+/** A plain upright opening on a wall: a rectangle of shade, a hair proud of the wall's plane. `a` is the middle of its foot. */
+export function slot(b: GeoBuilder, f: Facing, plane: number, a: number, y: number, w: number, h: number, color: number = RECESS, o: ArchOpts = {}): void {
+  const p = (u: number, v: number): V3 => onWall(f, plane, a + u, y + v, o.proud ?? 0.06);
+  b.quad(p(-w / 2, 0), p(w / 2, 0), p(w / 2, h), p(-w / 2, h), NORMAL[f], color, o.lit ? { win: interior(o.lit) } : {});
+}
+
 /** A row of `n` arches along a wall, from `a0` to `a1`, each `h` high, with `gap` of wall between them. */
 export function arcade(b: GeoBuilder, f: Facing, plane: number, a0: number, a1: number, y: number, n: number, h: number, color: number = RECESS, o: ArchOpts & { gap?: number } = {}): void {
   const bay = (a1 - a0) / n, w = bay - (o.gap ?? bay * 0.28);
@@ -69,15 +75,17 @@ export function arcade(b: GeoBuilder, f: Facing, plane: number, a0: number, a1: 
  * An arched way through a wall: the wall above the arch on both of its faces,
  * and the vault between them. The way runs along `axis` through the middle
  * (cx, cz), `len` long, `w` wide and `h` high, and the wall is built up to
- * `top`. The piers either side of the way are the caller's.
+ * `top`. The piers either side of the way are the caller's. `lit` is how
+ * brightly its two faces glow at night, for a gate that is floodlit.
  */
-export function archThrough(b: GeoBuilder, axis: 'x' | 'z', cx: number, cz: number, len: number, w: number, y: number, h: number, top: number, color: number, soffit: number, round = false): void {
+export function archThrough(b: GeoBuilder, axis: 'x' | 'z', cx: number, cz: number, len: number, w: number, y: number, h: number, top: number, color: number, soffit: number, round = false, lit = 0): void {
   const head = archOutline(w, h, !round).slice(2);
   const at = (u: number, v: number, along: number): V3 => (axis === 'z' ? [cx + u, y + v, cz + along] : [cx + along, y + v, cz + u]);
   const out = (s: number): V3 => (axis === 'z' ? [0, 0, s] : [s, 0, 0]);
+  const q = lit ? { win: interior(lit) } : {};
   for (let i = 0; i + 1 < head.length; i++) {
     const [u0, v0] = head[i], [u1, v1] = head[i + 1];
-    for (const s of [-1, 1]) b.quad(at(u0, v0, (s * len) / 2), at(u1, v1, (s * len) / 2), at(u1, top - y, (s * len) / 2), at(u0, top - y, (s * len) / 2), out(s), color);
+    for (const s of [-1, 1]) b.quad(at(u0, v0, (s * len) / 2), at(u1, v1, (s * len) / 2), at(u1, top - y, (s * len) / 2), at(u0, top - y, (s * len) / 2), out(s), color, q);
     // the vault looks down and inwards
     const du = u1 - u0, dv = v1 - v0, l = Math.hypot(du, dv) || 1;
     const n: V3 = axis === 'z' ? [dv / l, -du / l, 0] : [0, -du / l, dv / l];
