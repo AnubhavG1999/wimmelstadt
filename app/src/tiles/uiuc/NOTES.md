@@ -97,10 +97,10 @@ The south-west:
 
 26. The Six Pack's four halls of 1958 to 1961: Hopkins, Scott, Snyder and Weston, each round a courtyard.
 27. The halls built round them, Nugent, Wassaja with its baskets lit from inside, and Bousfield; the Ikenberry Dining Center; and cars being unloaded on Peabody Drive.
-28. Gies Memorial Stadium: its two rows of columns, its press box and its video board.
+28. Gies Memorial Stadium: its two rows of columns, its press box, and its video board over the south end, which is one of the tile's two screens.
 29. Grange Grove: tents, the drumline, and the statue at the stadium's west gate.
 30. The parking deck at Fourth and Pennsylvania, across the street from the stadium.
-31. State Farm Center, the saucer.
+31. State Farm Center, the saucer, with its board on Kirby Avenue, which is the other screen.
 32. The tailgate in lot E-14, beside the saucer: pickups, tents, grills that smoke.
 
 Urbana:
@@ -157,6 +157,26 @@ Seven, each open to the south-east. A hero on show faces east, south, or between
 | `tailgate-1`, `tailgate-2` | in lot E-14, among the pickups and tents |
 | `car-teams` | on the forecourt of the workshop, north of Green Street |
 | `deck-roof` | on the roof of the parking deck at Fourth and Pennsylvania |
+
+## Screens
+
+Two boards show what the collector is playing. Each is an ordinary sign of the engine's kind `screen`, as North America's on its gate tower is, and the engine fills it: the tile builds nothing for the music.
+
+| Where | Size | Faces |
+| --- | --- | --- |
+| The stadium's video board, on a frame over the south end, its top at about 16.5 | 12 wide and 6.75 high | north to the field, and south to Kirby Avenue and the tailgate |
+| The saucer's board, on a post where its east car park meets Kirby Avenue, its top at about 8.5 | 8 wide and 4.5 high | south-east and north-west |
+
+Both are in sight from the opening view by the sums, from end to end. The stadium's board hides nothing that was in sight before. The saucer's board hides a few units of Kirby Avenue's near lane behind it.
+
+## When `main` is merged
+
+Told by the main session on 19 November 2026, and not on `main` yet. Until the word comes to merge, the plan only leaves room.
+
+- The `TileDef` gets `place: { lon: -88.2, lat: 40.1 }`, for the tile's pin in the map of the world that the table stands on.
+- `wimmel.fights('uiuc')` lists surfaces that lie in one plane, and the tile has to pass it.
+- The view tilts up and down, so the tile is looked at from low down as well as from above. What is seen from below gets built: the undersides of the two railway bridges, of canopies and of the stadium's upper decks, and the backs of boards. The sums under "What the opening view sees" are for the view the tile opens with, and say nothing of a low one.
+- The engine clears road markings wherever two streets overlap, not only where they cross.
 
 ## How high things stand
 
@@ -233,6 +253,7 @@ The near lane is the one on the camera's side of the buildings that hide it: the
 - **The Activities and Recreation Center**, between Peabody Drive and the stadium, is left out, and so are the halls along Fourth Street on the Six Pack's east side.
 - **The saucer's car parks** are a lot on either side of it. In life four lots stand round it, with their aisles slanted towards it, and drives that ring it.
 - **It is game day and the streets are open.** In life First, Fourth, Kirby and Peabody are closed round the stadium on a game day.
+- **The stadium's video board shows on both its faces.** The real one faces the field.
 - **Altgeld Hall and Illini Hall.** Altgeld is drawn finished, without the scaffolding of its renovation. Illini Hall is drawn as the building site it is in 2026.
 - **A hero on the Quad.** Quad Day's rules keep vehicles off the Quad. The solar car and a formula car have stood at their teams' tables, and that is the stand the hero's place is beside.
 - **The embankment is 6 high**, where 5 m would be less than 2.
