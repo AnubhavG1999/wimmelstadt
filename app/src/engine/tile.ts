@@ -118,5 +118,14 @@ export interface TileDef {
   signs: SignDef[];
   /** Left off the board unless it is asked for by name. */
   hidden?: boolean;
+  /**
+   * Where in the world its place is, in degrees: east and north are positive.
+   * The map on the desk under the table has a pin there, and a thread from
+   * the pin to the tile. A place that is in no atlas can bring its own land:
+   * `land` is its coast, as corners so many degrees east and north of the
+   * place, and it is drawn there as the real coasts are, so put it in open
+   * sea. `words` are lettered beside it.
+   */
+  place?: { lon: number; lat: number; land?: [number, number][]; words?: string };
   build(k: Build): TileParts;
 }

@@ -8,6 +8,7 @@ export const hongKong: TileDef = {
   id: 'hong-kong',
   name: 'Hong Kong',
   seed: 852,
+  place: { lon: 114.2, lat: 22.3 },
   signs: SIGNS,
   build: buildCity,
 };
