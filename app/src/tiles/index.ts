@@ -18,14 +18,27 @@ export const TILES: TileDef[] = Object.values(found)
   .sort((a, b) => rank(a) - rank(b) || a.id.localeCompare(b.id));
 
 /**
- * The tiles to put on the board: all of them, or the ones the address asks for
- * by name, as in `?tiles=north-america`. A name may be given twice, which puts
- * two of that tile on the board. A hidden tile, such as the sample, stands on
- * the board only when it is asked for by name.
+ * The tiles to put on the board: all of them, in an order of chance that is new
+ * at every load, so that whoever opens the board finds them somewhere new, or in
+ * the order above with `?order=fixed`, for pictures and checks; or the ones the
+ * address asks for by name, in that order, as in `?tiles=north-america`. A name
+ * may be given twice, which puts two of that tile on the board. A hidden tile,
+ * such as the sample, stands on the board only when it is asked for by name.
  */
 export function tilesFor(query: URLSearchParams): TileDef[] {
   const asked = query.get('tiles');
-  if (!asked) return TILES.filter((t) => !t.hidden);
+  const shown = TILES.filter((t) => !t.hidden);
+  if (!asked) return query.get('order') === 'fixed' ? shown : shuffled(shown);
   const named = asked.split(',').flatMap((id) => TILES.filter((t) => t.id === id.trim()));
-  return named.length > 0 ? named : TILES.filter((t) => !t.hidden);
+  return named.length > 0 ? named : shown;
+}
+
+/** A list in a new order of chance. */
+function shuffled<T>(list: T[]): T[] {
+  const out = list.slice();
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
 }
