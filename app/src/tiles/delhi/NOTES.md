@@ -218,6 +218,12 @@ On the blockout, 19 November 2026, and again as the tile grew:
 - Khan Market's car park holds the hero's bay and a scooter, and no other car: none fits beside the bay.
 - The Metro's viaduct hides the south half of the Lodhi strip and Dilli Haat's court from the opening view. Both are seen from the other sides.
 
+**The south-west**, in `south-west.ts`:
+
+- The school: only the gate and the main block's look are from the collector's picture. The rest of the campus is invented and pressed together: the assembly court behind the gate, the football ground, the pool, the bus bay. The gate's canopy is large beside the block, so that its lettering can be read. Pupils wear white and bottle green, which are the school's colours by an encyclopaedia: its exact uniform was not found.
+- Hauz Khas, turned half round: the tomb's entrance and its railed court face north. A third doorway in a red frame, with steps to the water, is added on the tomb's east face, so that the opening view has a door in red stone. In life the sides towards the tank have openings and no such door. Nobody stands on the monuments or their steps.
+- The dhaba's lorry is the builder's own shape, 8.6 long.
+
 ## Real names on signs, and the Hindi on them
 
 Each is checked as it is written, and entered here with what confirmed it. A shop's board says what is sold and not whose shop it is, in Hindi above and English below. All checks were made by web searches on 19 November 2026.
@@ -234,6 +240,7 @@ Each is checked as it is written, and entered here with what confirmed it. A sho
 | पंचर | puncture repair | two listings of puncture shops under that word: पंचर बनाने की दुकान, पंचर दुकान (explurger.com) |
 | टायर | tyres | the title of Hindi Wikipedia's page on the tyre, टायर |
 | ऑटो पार्ट्स | auto parts | Hindi Wikipedia's pages on the TVS group, on Kongu Nadu and on cargo, which all write the two loan words so |
+| ढाबा | dhaba | the title of Hindi Wikipedia's page on the roadside eating place, ढाबा |
 | बैटरी | batteries | Hindi Wikipedia's page on the electric cell, विद्युत कोष, which writes लेड-एसिड बैटरी. The board has the singular, as a shop's board does. |
 | पतंग | kites | the title of Hindi Wikipedia's page on the kite, पतंग |
 | परांठे | parathas | a piece in Patrika on the lane, which it writes परांठे वाली गली |
@@ -270,7 +277,18 @@ Each is checked as it is written, and entered here with what confirmed it. A sho
 
 No place of worship carries a board, and neither does a tomb or a memorial.
 
-**Still to be entered**: the real names the river's and the south-west's files hang, as each is taken in.
+**The school, the colony and the park**, in `south-west.ts`:
+
+| On the board | Where | What confirmed it |
+| --- | --- | --- |
+| DELHI PUBLIC SCHOOL, R. K. PURAM | the dark plaque on the granite wall beside the school's gate, in English as on the real one, with no emblem | the collector's picture of the gate, and the research note's verified address |
+| D. P. S. and R. K. PURAM | white capitals along the gate's curved canopy, with a gap where the emblem is in life. They are built of flat strokes and are not a sign: a sign is an upright rectangle, and the canopy's front is curved. | the collector's picture of the gate |
+| आर.के. पुरम, R. K. PURAM SECTOR 12 | the colony's board by the park | The school's address is in Sector 12 (the research note). The Hindi is as the title of Hindi Wikipedia's page for the Metro station of that name writes it. |
+| डियर पार्क, DEER PARK | the park's board, white on green | Hindi Wikipedia's page on the Hauz Khas complex writes the park's name so |
+
+The village's boards say CAFE, BOUTIQUE and GALLERY in a painter's hand, in English only, as the village's do. The lorry at the dhaba carries HORN OK PLEASE, painted by the file. The buses say SCHOOL BUS and the cart ICE LOLLY.
+
+**Still to be entered**: the real names the river's file hangs, when it is taken in.
 
 ## Since `main` was merged
 

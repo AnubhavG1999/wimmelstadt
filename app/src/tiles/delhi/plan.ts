@@ -237,7 +237,8 @@ export const HERO_PLACES: HeroPlace[] = [
   { id: 'vintage-rally', x: 47, y: 0.03, z: 31, heading: 0.4 },
   { id: 'karol-bagh', x: -80, y: 0.03, z: -47.2, heading: 0 },
   { id: 'khan-market', x: 21.5, y: 0.03, z: 38.5, heading: 0 },
-  { id: 'dhaba', x: 8, y: 0.03, z: 85, heading: 0.3 },
+  // (nose to the south-south-east: turned further east, a car's tail stood on Aurobindo Marg's sidewalk)
+  { id: 'dhaba', x: 9.2, y: 0.03, z: 85, heading: 1.15 },
 ];
 
 export const heroPlace = (id: string): HeroPlace => {

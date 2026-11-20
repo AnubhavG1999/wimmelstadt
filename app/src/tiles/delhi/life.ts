@@ -204,7 +204,8 @@ function park(k: Build, places: Places): void {
     for (const dz of [-0.65, 0.65]) b.box(14.15, 0, z + dz - 0.06, 14.55, 0.38, z + dz + 0.06, 0x3a3d46);
     k.person(15.6, z + 0.5);
   }
-  for (const [x, z, size] of [[15, 80.4, 0.66], [34.6, 80.3, 0.58], [21.5, 69.3, 0.6], [29.5, 79.6, 0.55], [16.4, 68.9, 0.5], [25.5, 80.2, 0.5]]) k.tree(x, z, size);
+  // (none in the south-west corner: a tree there stood before the dhaba's yard in the opening view)
+  for (const [x, z, size] of [[34.6, 80.3, 0.58], [21.5, 69.3, 0.6], [29.5, 79.6, 0.55], [16.4, 68.9, 0.5], [25.5, 80.2, 0.5]]) k.tree(x, z, size);
   k.person(31.6, 77.2);
   k.person(23.2, 79);
 }

@@ -20,7 +20,7 @@ import {
   BUFF, BUFF_SHADE, MARBLE, MARBLE_SHADE, RECESS, RED, RED_DARK, RUBBLE, RUBBLE_LIGHT,
   archThrough, chhatri, dome, steps, type Facing,
 } from './mughal';
-import { GROUNDS, type Thing } from './plan';
+import { GROUNDS, heroPlace, type Thing } from './plan';
 
 export type Model = (k: Build, t: Thing) => void;
 
@@ -688,7 +688,7 @@ function safdarjungsTomb(k: Build, t: Thing): void {
 // ---------------------------------------------------------------------------
 
 /** Where a hero stands in Khan Market's car park, facing east: index.ts declares the place, and nothing of this file's may hide it. */
-const KHAN_BAY: P2 = [21.5, 38.5];
+const KHAN_BAY: P2 = [heroPlace('khan-market').x, heroPlace('khan-market').z];
 /** The way from anything on the tile towards the camera of the opening view, on the ground. */
 const VIEW: P2 = [0.672, 0.742];
 

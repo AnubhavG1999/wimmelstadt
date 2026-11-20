@@ -180,7 +180,8 @@ const CP_ROAD: Step[] = [
 
 export interface Laid { id: string; segs: Seg[]; closed?: boolean; opts?: StreetOpts; lamps?: number; hump?: Hump }
 
-const TURNING: StreetOpts = { lanes: 1, width: 6, sidewalk: 1.5, zebras: false };
+/** A turning circle at a road's end: one lane round, and a narrow sidewalk. */
+export const TURNING: StreetOpts = { lanes: 1, width: 6, sidewalk: 1.5, zebras: false };
 /** How far from the hexagon's middle a street that meets it at a corner runs: just across the middle of the hexagon's own road, so that the junction is found, and no further. */
 const HEX_KERB = (HEX_MID - 1.5) / Math.cos(Math.PI / 6);
 
