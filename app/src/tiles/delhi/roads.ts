@@ -177,7 +177,7 @@ export const STREETS: Laid[] = [
   // --- the axis ---
   { id: 'hexagon', segs: hexagon(HEX_MID, 5), closed: true, opts: { sidewalk: 2, zebras: false }, lamps: 0 },
   // (Kartavya Path as far as the foot of the hill: the ramp is a deck, and the road on the hill is laid at its height)
-  { id: 'kartavya-path', segs: straight(towards(HEX, RAISINA_TURN, HEX_KERB), [RAISINA.foot, AXIS_Z]), opts: { sidewalk: 2 } },
+  { id: 'kartavya-path', segs: straight(towards(HEX, RAISINA_TURN, HEX_KERB), [RAISINA.foot, AXIS_Z]), opts: { sidewalk: 2 }, lamps: 0 },
   { id: 'raisina-hill', segs: straight([RAISINA.top, AXIS_Z], [RAISINA_TURN[0] + 1, AXIS_Z], RAISINA.y), opts: { sidewalk: 2 }, lamps: 0 },
   { id: 'raisina-turn', segs: ringOf(RAISINA_TURN, TURN_R, RAISINA.y), closed: true, opts: TURNING, lamps: 0 },
   // --- Aurobindo Marg, and the road from it to the hexagon ---

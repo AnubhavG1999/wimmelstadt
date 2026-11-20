@@ -17,7 +17,11 @@ import {
   AXIS_Z, AUROBINDO_X, BUDDH, CHANDNI, CP, CP_R, EAST_BANK, GROUNDS, HEX_LANES, PLOTS, RAISINA, RING, SHANTI_X, STOREY, THINGS, WEST_BANK, hexCorner,
   type Quarter, type Thing,
 } from './plan';
+import { AXIS } from './axis';
 import { FLYOVERS, METRO_LINE, RAISINA_HUMP, RING_LANES, RING_PARTS, ROUTES, STREETS } from './roads';
+
+/** The models that are built, by the id of the thing in the plan. A thing without one is a plain box with its name. */
+const MODELS: Record<string, (k: Build, t: Thing) => void> = { ...AXIS };
 
 const PAVING = 0xb9ae9c, QUAY = 0x9c9482, WATER = 0x6f8468, PLAZA = 0xd9cdb4, SANDSTONE = 0xb5553c, BUFF = 0xdcc096, VERGE = 0x6f9a52, KERB = 0xcfc7b6;
 const BOX: Record<Quarter, number> = { 'old-delhi': 0xc98a6b, centre: 0xe6dcc6, south: 0xcdd3c2, river: 0xd9c8b0 };
@@ -211,7 +215,9 @@ function build(k: Build): TileParts {
   };
   for (const t of THINGS) {
     if (t.h > 0 && t.id !== 'connaught-place' && (t.y ?? 0) <= RAISINA.y) clearOfStreets(k, t.name, t.x, t.z, t.x + t.w, t.z + t.d);
-    boxed(t);
+    const model = MODELS[t.id];
+    if (model) model(k, t);
+    else boxed(t);
   }
 
   // -------------------------------------------------------------------------
