@@ -141,11 +141,13 @@ mirror.layers.set(0);
 const post = new Post({ bloom: opts.bloom, outline: opts.outline, tilt: opts.tilt, taps: coarse ? 14 : 20 });
 const atmo = makeAtmo();
 
-// The weather is the city's own unless one kind is asked for: ?weather=rain
+// The page opens under a clear sky. Another kind can be asked for, or the city's own, which
+// comes and goes by itself: ?weather=rain, ?weather=auto
 const weather = new Weather();
 {
   const asked = query.get('weather');
-  if (asked && (WEATHER_NAMES as string[]).includes(asked)) weather.choice = asked as WeatherName;
+  const known = asked === 'auto' || (asked !== null && (WEATHER_NAMES as string[]).includes(asked));
+  weather.choice = known ? (asked as WeatherName | 'auto') : 'clear';
 }
 
 // How shallow the focus is: gentle by default, or off, or deep.

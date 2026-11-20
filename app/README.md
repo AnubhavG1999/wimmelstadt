@@ -48,6 +48,8 @@ node scripts/hero.ts countach-lb-works-black rodin-1 --name "Lamborghini Countac
 
 This cuts the model to 12,000 triangles and a 1,024-pixel picture, about 1.5 MB, and writes it as `hero/hero.glb` in its capture's folder with a small `hero.json` beside it. Captures are private and are not in this repository, so neither are heroes. A hero is drawn in the city's own hand: flat bands of light, the photographed shine ironed out of its colours, and a dark outline. Each has a party trick of its own, in `src/heroes`.
 
+A party trick is told how its hero is doing on every frame: its speed, how much clear road is ahead of it and behind it, how tight the next bend is and which way it goes, how far the road runs straight on before that, how wet the road is, whether it is night, and how far round its road it is. It answers with how fast it wants to go. It can show flame at the exhaust, yellow or blue, as a burst or as a long jet; smoke at the exhaust and from the rear tyres; a smoke screen; mist behind it on a wet road; jets of vapour from its bonnet; sparks from under it; a flash of its lamps; its hazard lamps; the glow of its brake discs; and a glow on the road under it. The tile's own figures can take its picture as it passes, with a flash for each, and a trick is told how many of them stand near. It can leave black marks on the road with its tyres, which fade in under a minute, and draw ribbons through the air from the corners of its tail. It can lift or dip its nose, lean or turn right over, swing its tail out in a slide, weave within its lane and leave the road altogether. Where a hero's exhaust or its lamps are not where most cars have them, its trick says where they are. `src/engine/tricks.ts` has the whole of it. A trick cannot make a hero run into anything: the engine still slows it for bends and for whoever is ahead.
+
 Where the heroes come from depends on where the app runs:
 
 - **On the collector's desk,** the development server hands the page every hero it finds among the captures, and there is no lock.
@@ -88,7 +90,7 @@ Then open http://localhost:5187.
 | Zoom | Scroll or pinch. |
 | Go to a tile, or back to the whole board | Double-click the tile, or the table. Escape also goes back to the board, and to the tilt the view opens with. |
 | Set the hour | Drag the sun round the dial. Touch the middle of the dial to follow the clock again. |
-| Set the weather | Touch a token. The same one again gives the weather back to the city. |
+| Set the weather | Touch a token. The sky is clear when the page opens. The same token again gives the weather to the city, which then changes it by itself. |
 | Ride along with a hero | The key with the car on it, or F. |
 | Watch a day go by in 80 seconds | The key with two arrows, or T. |
 | Change the depth of field, turn the view by itself, see how it performs, unlock the heroes | The key with three dots. |
@@ -101,7 +103,7 @@ The address bar takes options:
 | --- | --- |
 | `?tiles=japan,hong-kong` | puts only those tiles on the board, in that order. A tile named twice stands there twice, and `sample` is the sample tile, which is hidden otherwise. |
 | `?hour=21.5` | sets the hour. |
-| `?weather=rain` | sets the weather: `clear`, `cloudy`, `rain`, `storm`, `fog` or `snow`. |
+| `?weather=rain` | sets the weather the page opens with: `clear`, `cloudy`, `rain`, `storm`, `fog` or `snow`, or `auto` for the city's own. Without it the sky is clear. |
 | `?drift=0` | stops the view turning by itself. |
 | `?x=..&z=..&az=..&zoom=..` | starts with a view of its own. |
 | `?elev=24` | starts the view at a tilt, in degrees. |

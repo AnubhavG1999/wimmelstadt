@@ -6,8 +6,8 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { rng } from './geo';
 import { buildPath, type Path } from './paths';
 import type { Build, HeroSpot, ParkedSpot, Route, TrafficKind, TrafficType } from './tile';
-import { Flames, Smoke } from './effects';
-import type { PartyTrick, TrickFx, TrickRun } from './tricks';
+import { Bulbs, Discs, Flames, Lamps, Smoke, Sparks, Strips } from './effects';
+import type { Lamp, PartyTrick, Pipe, TrickFx, TrickRun } from './tricks';
 
 type P2 = [number, number];
 
@@ -210,11 +210,35 @@ export interface Hero {
   pos: THREE.Vector3;
   fwd: THREE.Vector3;
   up: THREE.Vector3;
+  /** Which way it is going, which in a slide is not the way it points. */
+  way: THREE.Vector3;
+  /** Where it is on the road, which is under it when it is off the road. */
+  road: THREE.Vector3;
+  /** Its own nose, top and right flank, as its trick has tilted and leant it: what is fixed to it is placed by these. */
+  nose: THREE.Vector3;
+  top: THREE.Vector3;
+  flank: THREE.Vector3;
+  /** How far it is off the road. */
+  rise: number;
+  /** Where each wheel last laid a mark, front left, front right, rear left, rear right; and where each corner of its tail last drew a ribbon. */
+  wheel: { p: THREE.Vector3; live: boolean }[];
+  tip: { p: THREE.Vector3; live: boolean }[];
   /** Its party trick, running, and what the trick can show. */
   run: TrickRun | null;
   fx: TrickFx;
-  /** What it is putting into the air: how many seconds of each are left, and how strong. */
-  air: { flame: number; flamePower: number; tyres: number; tyrePower: number; exhaust: number; exhaustPower: number; was: number };
+  /** Where its exhaust comes out, if its trick says that is not at its tail. */
+  pipes: Pipe[] | null;
+  /** Where its headlamps are, if its trick says. */
+  lamps: Lamp | null;
+  /** What it is putting into the air and showing: how many seconds of each are left, and how strong. */
+  air: {
+    flame: number; flamePower: number; flameBlue: boolean; tyres: number; tyrePower: number; exhaust: number; exhaustPower: number;
+    screen: number; screenPower: number; under: number; underPower: number; underColour: number;
+    purge: number; purgePower: number; bulbs: number; bulbsPower: number; hazards: number;
+    lamps: number; lampsPower: number; lampsColour: number; mist: number; mistPower: number; was: number;
+    sparks: number; sparksPower: number; sparksNose: boolean; glow: number; marks: number; marksAll: boolean;
+    streaks: number; streaksPower: number; streaksColour: number; streaksUp: number;
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -410,6 +434,16 @@ const TYPE_NAMES: TrafficType[] = ['sedan', 'hatch', 'van', 'pickup', 'bus'];
 const HERO_ROOM = 40;
 /** How much room a spot counts for, next to a road's length, when a hero is put somewhere at random. */
 const SPOT_ROOM = 80;
+/** Where a hero's exhaust comes out unless its trick says otherwise: two pipes at its tail. */
+const TAIL_PIPES: Pipe[] = [{ along: -0.5, across: -0.145, points: 'back' }, { along: -0.5, across: 0.145, points: 'back' }];
+/** How far a hero's axles are from its middle, as shares of its length. It stands on the rear one to lift its nose and on the front one to dip it. */
+const AXLE_FRONT = 0.29, AXLE_REAR = 0.26;
+/** How high a hero's middle is, as a share of its length: it is what it turns about when it leans or goes right over. */
+const MIDDLE = 0.11;
+/** How far a trick may move its hero sideways in its lane, which leaves room beside whoever is in the next one. */
+const SWAY = 1.1;
+/** Where a hero's headlamps are unless its trick says otherwise: at the corners of its nose. */
+const NOSE_LAMPS: Lamp = { along: 0.43, across: 0.33, up: 1, wide: 0.17 };
 
 export function buildVehicles(k: Build, routes: Route[], parked: ParkedSpot[], heroSpots: HeroSpot[], kinds: TrafficKind[] = []): Vehicles {
   const group = new THREE.Group();
@@ -459,6 +493,38 @@ export function buildVehicles(k: Build, routes: Route[], parked: ParkedSpot[], h
     loops.set(def.id, { def, path, list, shares: [] });
   }
   findShares([...loops.values()]);
+
+  // Who stands near a place: the tile's figures, sorted into squares, so that the few near a
+  // hero are found without going through all of them. The squares are laid out the first
+  // time anything asks, by when the tile has stood every figure it has.
+  type Figure = { x: number; y: number; z: number };
+  const SQUARE = 8, NEAR = 17;
+  const square = (cx: number, cz: number): number => (cx + 4096) * 8192 + cz + 4096;
+  let crowds: Map<number, Figure[]> | null = null;
+  const nearby: Figure[] = [];
+  /** The figures that stand near enough to a place on a road to see what is there. The list is the same one each time. */
+  const onlookers = (p: THREE.Vector3): Figure[] => {
+    if (!crowds) {
+      crowds = new Map();
+      for (const who of k.people) {
+        const key = square(Math.floor(who.x / SQUARE), Math.floor(who.z / SQUARE));
+        const list = crowds.get(key);
+        if (list) list.push(who);
+        else crowds.set(key, [who]);
+      }
+    }
+    nearby.length = 0;
+    for (let cx = Math.floor((p.x - NEAR) / SQUARE); cx <= Math.floor((p.x + NEAR) / SQUARE); cx++) {
+      for (let cz = Math.floor((p.z - NEAR) / SQUARE); cz <= Math.floor((p.z + NEAR) / SQUARE); cz++) {
+        for (const who of crowds.get(square(cx, cz)) ?? []) {
+          const d2 = (who.x - p.x) ** 2 + (who.z - p.z) ** 2;
+          // not one it would have to run over, and not one on a level far above it or below
+          if (d2 <= NEAR * NEAR && d2 >= 9 && Math.abs(who.y - p.y) < 7) nearby.push(who);
+        }
+      }
+    }
+    return nearby;
+  };
 
   for (const spot of parked) {
     const v = blank();
@@ -537,7 +603,8 @@ export function buildVehicles(k: Build, routes: Route[], parked: ParkedSpot[], h
     }
   });
   const shadowMat = new THREE.MeshBasicMaterial({ color: 0x05060a, alphaMap: shadowTex, transparent: true, opacity: 0.42, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
-  const poolMat = new THREE.MeshBasicMaterial({ color: 0xffe2b0, map: poolTex, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 });
+  // the beams are light added to the road: the haze of distance is left out of them, or it would show as a pale square round each
+  const poolMat = new THREE.MeshBasicMaterial({ color: 0xffe2b0, map: poolTex, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false, fog: false, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 });
   const sprayMat = new THREE.MeshBasicMaterial({ color: 0xc8d6ff, alphaMap: sprayTex, transparent: true, opacity: 0, depthWrite: false, toneMapped: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
 
   // Heroes arrive after the tile is built, so there is room kept for them.
@@ -556,8 +623,15 @@ export function buildVehicles(k: Build, routes: Route[], parked: ParkedSpot[], h
   }
 
   const flames = new Flames();
-  const smoke = new Smoke(k.mat.prop({ vertexColors: false, color: 0xffffff }));
-  group.add(flames.mesh, smoke.mesh);
+  const smoke = new Smoke(k.mat.prop({ vertexColors: false, color: 0xffffff }), 420);
+  const flashes = new Lamps(poolTex, shadowTex);
+  const bulbs = new Bulbs();
+  const sparks = new Sparks();
+  const discs = new Discs();
+  // tyre marks stay whole for most of a minute; a ribbon in the air is gone in under a second
+  const marks = new Strips(2400, 0.62, true, 0.6);
+  const streaks = new Strips(360, 0.8, false, 0);
+  group.add(flames.mesh, smoke.mesh, flashes.mesh, flashes.beams, flashes.glows, bulbs.mesh, sparks.mesh, discs.mesh, marks.mesh, streaks.mesh);
 
   // --- placing things ---
   const A = new THREE.Vector3(), B = new THREE.Vector3();
@@ -573,13 +647,39 @@ export function buildVehicles(k: Build, routes: Route[], parked: ParkedSpot[], h
     up.crossVectors(right, fwd).normalize();
     const h = v.hero;
     if (h) {
-      // a party trick may lift the nose or dip it
-      const pitch = h.run?.pitch ?? 0;
+      h.way.copy(fwd);
+      const run = moving ? h.run : null;
+      // A party trick may move it sideways in its lane.
+      const sway = Math.max(-SWAY, Math.min(SWAY, run?.sway ?? 0));
+      if (sway !== 0) pos.addScaledVector(right, sway);
+      // A party trick may swing its tail out. It turns about a place just ahead of its
+      // middle, so that its nose keeps near its line and its tail does the travelling.
+      // Its shadow and the beam of its lamps turn with it.
+      const slide = run?.slide ?? 0;
+      if (slide !== 0) {
+        const ahead = v.len * 0.15;
+        pos.addScaledVector(fwd, ahead);
+        fwd.multiplyScalar(Math.cos(slide)).addScaledVector(right, Math.sin(slide)).normalize();
+        right.crossVectors(fwd, WORLD_UP).normalize();
+        up.crossVectors(right, fwd).normalize();
+        pos.addScaledVector(fwd, -ahead);
+      }
+      // A party trick may lift its nose or dip it, lean it to one side, and take it off the
+      // road. It stands on its rear wheels to lift its nose and on its front ones to dip
+      // it, so that neither end sinks into the road. Its shadow stays on the road.
+      const pitch = h.run?.pitch ?? 0, roll = h.run?.roll ?? 0;
       tilted.copy(fwd).multiplyScalar(Math.cos(pitch)).addScaledVector(up, Math.sin(pitch));
       tiltedUp.copy(up).multiplyScalar(Math.cos(pitch)).addScaledVector(fwd, -Math.sin(pitch));
-      h.group.matrix.makeBasis(tilted, tiltedUp, right).setPosition(pos);
+      h.nose.copy(tilted);
+      h.top.copy(tiltedUp).multiplyScalar(Math.cos(roll)).addScaledVector(right, Math.sin(roll));
+      h.flank.copy(right).multiplyScalar(Math.cos(roll)).addScaledVector(tiltedUp, -Math.sin(roll));
+      h.rise = Math.max(0, run?.rise ?? 0);
+      h.road.copy(pos);
+      h.pos.copy(pos).addScaledVector(up, h.rise + Math.abs(Math.sin(pitch)) * v.len * (pitch > 0 ? AXLE_REAR : AXLE_FRONT));
+      // it leans about its own middle, not about the road under it
+      if (roll !== 0) h.pos.addScaledVector(up, MIDDLE * v.len).addScaledVector(h.top, -MIDDLE * v.len);
+      h.group.matrix.makeBasis(h.nose, h.top, h.flank).setPosition(h.pos);
       h.group.matrixWorldNeedsUpdate = true;
-      h.pos.copy(pos);
       h.fwd.copy(fwd);
       h.up.copy(up);
     } else {
@@ -620,7 +720,7 @@ export function buildVehicles(k: Build, routes: Route[], parked: ParkedSpot[], h
     sprays.setMatrixAt(v.fx, m4);
   };
 
-  const carry = new THREE.Vector3(), at = new THREE.Vector3(), side = new THREE.Vector3(), back = new THREE.Vector3(), drift = new THREE.Vector3();
+  const carry = new THREE.Vector3(), at = new THREE.Vector3(), side = new THREE.Vector3(), back = new THREE.Vector3(), drift = new THREE.Vector3(), out = new THREE.Vector3();
 
   /** What a hero puts into the air on this frame. */
   const breathe = (v: Veh, h: Hero, dt: number): void => {
@@ -630,13 +730,30 @@ export function buildVehicles(k: Build, routes: Route[], parked: ParkedSpot[], h
     if (!h.group.visible) return;
     side.crossVectors(h.fwd, h.up).normalize();
     back.copy(h.fwd).negate();
-    carry.copy(h.fwd).multiplyScalar(v.path ? v.v : 0);
-    const pipe = (off: number): THREE.Vector3 => at.copy(h.pos).addScaledVector(h.fwd, -(v.len / 2 - 0.1)).addScaledVector(h.up, 0.6).addScaledVector(side, off);
+    // it is carried the way it is going, which in a slide is not the way it points
+    carry.copy(h.way).multiplyScalar(v.path ? v.v : 0);
+    // Where its exhaust comes out: two pipes at its tail, unless its trick says otherwise.
+    // `pipe` gives the place and leaves the way the pipe points in `out`: one in a
+    // flank points sideways and a little back.
+    const pipes = h.pipes ?? TAIL_PIPES;
+    const pipe = (p: Pipe): THREE.Vector3 => {
+      if (p.points === 'back') out.copy(back);
+      else out.copy(side).multiplyScalar(p.points === 'left' ? -1 : 1).addScaledVector(back, 0.4).normalize();
+      return at.copy(h.pos).addScaledVector(h.fwd, p.along * (v.len - 0.2)).addScaledVector(h.up, p.up ?? 0.6).addScaledVector(side, p.across * v.wid);
+    };
 
     // flame, for as long as a burst lasts: a couple of tongues from each pipe on every frame
     if (a.flame > 0) {
       a.flame -= dt;
-      for (const off of [-0.42, 0.42]) for (let i = 0; i < 2; i++) flames.tongue(pipe(off), back, h.up, carry, a.flamePower);
+      for (const p of pipes) {
+        const bore = p.bore ?? 1;
+        for (let i = 0; i < Math.round(2 * bore); i++) {
+          const from = pipe(p);
+          // a jet reaches further the harder it is blown
+          const reach = p.reach ? p.reach * v.len * (0.5 + 0.5 * Math.min(1, a.flamePower)) : 0;
+          flames.tongue(from, out, h.up, carry, a.flamePower * (1 + 0.5 * (bore - 1)), a.flameBlue, reach);
+        }
+      }
     }
 
     // exhaust: a wisp whenever it pulls away, and a cloud when its trick asks for one
@@ -648,8 +765,9 @@ export function buildVehicles(k: Build, routes: Route[], parked: ParkedSpot[], h
       size = 0.55 + 0.5 * a.exhaustPower;
     }
     if (Math.random() < rate * dt) {
-      drift.copy(carry).multiplyScalar(0.35).addScaledVector(back, 2.2);
-      smoke.puff(pipe(Math.random() < 0.5 ? -0.42 : 0.42), drift, size, 0.8);
+      const from = pipe(pipes[Math.floor(Math.random() * pipes.length)]);
+      drift.copy(carry).multiplyScalar(0.35).addScaledVector(out, 2.2);
+      smoke.puff(from, drift, size, 0.8);
     }
 
     // tyre smoke, from both rear wheels
@@ -662,6 +780,142 @@ export function buildVehicles(k: Build, routes: Route[], parked: ParkedSpot[], h
         smoke.puff(at, drift, 0.8 + 0.7 * a.tyrePower, 0.97);
       }
     }
+
+    // Mist, from behind both rear wheels: it stands higher the harder it is thrown. It is left
+    // where it was thrown up, so that it hangs behind the hero and not about it.
+    if (a.mist > 0) {
+      a.mist -= dt;
+      for (const off of [-1, 1]) {
+        if (Math.random() > 20 * a.mistPower * dt) continue;
+        at.copy(h.pos).addScaledVector(h.fwd, -v.len * 0.62).addScaledVector(h.up, 0.5).addScaledVector(side, off * (v.wid / 2 - 0.35));
+        drift.copy(carry).multiplyScalar(0.12).addScaledVector(h.up, 2.2 + 2.4 * a.mistPower).addScaledVector(side, off * 0.4);
+        smoke.puff(at, drift, 0.75 + 0.7 * a.mistPower, 1);
+      }
+    }
+
+    // its lamps, for as long as a flash lasts: a slab of light lying over each, and their light on the road ahead
+    if (a.lamps > 0) {
+      a.lamps -= dt;
+      const lamp = h.lamps ?? NOSE_LAMPS;
+      for (const off of [-1, 1]) {
+        at.copy(h.pos).addScaledVector(h.nose, lamp.along * v.len).addScaledVector(h.top, lamp.up).addScaledVector(h.flank, off * lamp.across * v.wid);
+        flashes.lamp(at, h.nose, h.top, h.flank, lamp.wide * v.wid * (0.85 + 0.15 * a.lampsPower), a.lampsColour);
+      }
+      sx.copy(h.fwd).multiplyScalar(11);
+      sz.copy(side).multiplyScalar(v.wid + 3);
+      p2.copy(h.road).addScaledVector(h.fwd, v.len / 2 + 5.3).addScaledVector(h.up, 0.1);
+      m4.makeBasis(sx, h.up, sz).setPosition(p2);
+      flashes.beam(m4, a.lampsColour);
+    }
+
+    // a smoke screen: thick smoke from the whole width of its tail, left hanging where it was laid
+    if (a.screen > 0) {
+      a.screen -= dt;
+      const n = Math.floor(70 * a.screenPower * dt + Math.random());
+      for (let i = 0; i < n; i++) {
+        at.copy(h.pos).addScaledVector(h.fwd, -(v.len / 2 + 0.2)).addScaledVector(h.up, 0.5 + Math.random() * 0.5).addScaledVector(side, (Math.random() - 0.5) * v.wid);
+        drift.copy(carry).multiplyScalar(0.08).addScaledVector(back, 1.5);
+        smoke.puff(at, drift, 1.5 + Math.random() * 1.1, 0.86);
+      }
+    }
+
+    // two jets of white vapour from its bonnet, one to each side: they shoot up and out, and stay with it
+    if (a.purge > 0) {
+      a.purge -= dt;
+      for (const off of [-1, 1]) {
+        const n = Math.floor(90 * a.purgePower * dt + Math.random());
+        for (let i = 0; i < n; i++) {
+          at.copy(h.pos).addScaledVector(h.nose, v.len * 0.27).addScaledVector(h.top, v.len * 0.15).addScaledVector(h.flank, off * v.wid * 0.3);
+          drift.copy(carry).addScaledVector(side, off * 4.5).addScaledVector(h.up, 9);
+          smoke.jet(at, drift, 0.34 + 0.2 * Math.random());
+        }
+      }
+    }
+
+    // a glow on the road under it and round it
+    if (a.under > 0) {
+      a.under -= dt;
+      sx.copy(h.fwd).multiplyScalar(v.len + 5.5);
+      sz.copy(side).multiplyScalar(v.wid + 5.5);
+      p2.copy(h.road).addScaledVector(h.up, 0.085);
+      m4.makeBasis(sx, h.up, sz).setPosition(p2);
+      flashes.glow(m4, a.underColour, a.underPower);
+    }
+
+    // Flashbulbs: the cameras of the figures that stand near it, each held at its owner's
+    // head. Where nobody stands there are none.
+    if (a.bulbs > 0) {
+      a.bulbs -= dt;
+      let n = Math.floor(6 * a.bulbsPower * dt + Math.random());
+      const near = n > 0 ? onlookers(h.road) : nearby;
+      for (; n > 0 && near.length > 0; n--) {
+        const who = near[Math.floor(Math.random() * near.length)];
+        at.set(who.x + (Math.random() - 0.5) * 0.7, who.y + 2 + Math.random() * 0.5, who.z + (Math.random() - 0.5) * 0.7);
+        bulbs.flash(at, who.y + 0.25);
+      }
+    }
+
+    // its four hazard lamps: the two at its nose where its lamps are, and two at its tail
+    if (a.hazards > 0) {
+      a.hazards -= dt;
+      const lamp = h.lamps ?? NOSE_LAMPS;
+      for (const end of [1, -1]) {
+        for (const off of [-1, 1]) {
+          at.copy(h.pos).addScaledVector(h.nose, end * lamp.along * v.len).addScaledVector(h.top, end > 0 ? lamp.up : lamp.up * 0.8).addScaledVector(h.flank, off * lamp.across * v.wid);
+          flashes.lamp(at, h.nose, h.top, h.flank, lamp.wide * v.wid * 0.9, 0xffa31a);
+        }
+      }
+    }
+
+    // --- what its wheels, its tail and its belly leave behind ---
+    const front = v.len * AXLE_FRONT, rear = -v.len * AXLE_REAR, half = v.wid / 2 - 0.3;
+
+    // black marks under its tyres, for as long as its trick asks and it is on the road
+    if (a.marks > 0 && h.rise < 0.05) {
+      a.marks -= dt;
+      for (let w = 0; w < 4; w++) {
+        const was = h.wheel[w];
+        if (w < 2 && !a.marksAll) { was.live = false; continue; }
+        at.copy(h.road).addScaledVector(h.fwd, w < 2 ? front : rear).addScaledVector(side, (w % 2 ? 1 : -1) * half).addScaledVector(h.up, 0.075);
+        if (!was.live) { was.p.copy(at); was.live = true; }
+        else if (was.p.distanceToSquared(at) > 0.5) { marks.add(was.p, at, h.up, 0.44, 0x0c0c0e, 45); was.p.copy(at); }
+      }
+    } else {
+      for (const was of h.wheel) was.live = false;
+    }
+
+    // ribbons through the air from the corners of its tail
+    if (a.streaks > 0) {
+      a.streaks -= dt;
+      for (let n = 0; n < 2; n++) {
+        const was = h.tip[n];
+        at.copy(h.pos).addScaledVector(h.nose, -v.len * 0.47).addScaledVector(h.flank, (n ? 1 : -1) * (v.wid / 2 - 0.1)).addScaledVector(h.top, a.streaksUp);
+        if (!was.live) { was.p.copy(at); was.live = true; }
+        else if (was.p.distanceToSquared(at) > 0.16) { streaks.add(was.p, at, h.up, 0.3 + 0.2 * a.streaksPower, a.streaksColour, 0.5 + 0.45 * a.streaksPower); was.p.copy(at); }
+      }
+    } else {
+      for (const was of h.tip) was.live = false;
+    }
+
+    // sparks: from under its nose, where a splitter touches the road, or from under the whole of it
+    if (a.sparks > 0) {
+      a.sparks -= dt;
+      const n = Math.floor(260 * a.sparksPower * dt + Math.random());
+      for (let i = 0; i < n; i++) {
+        const along = a.sparksNose ? v.len / 2 - 0.15 : (Math.random() - 0.5) * v.len * 0.8;
+        at.copy(h.road).addScaledVector(h.fwd, along).addScaledVector(side, (Math.random() - 0.5) * (v.wid - 0.5)).addScaledVector(h.up, 0.1);
+        sparks.spark(at, back, carry, a.sparksPower, a.sparksNose);
+      }
+    }
+
+    // its brake discs, glowing through its wheels: they cool by themselves
+    if (a.glow > 0.03) {
+      for (let w = 0; w < 4; w++) {
+        at.copy(h.pos).addScaledVector(h.nose, w < 2 ? front : rear).addScaledVector(h.flank, (w % 2 ? 1 : -1) * (v.wid / 2 - 0.1)).addScaledVector(h.top, v.len * 0.072);
+        discs.disc(at, h.nose, h.top, h.flank, v.len * 0.043, a.glow);
+      }
+    }
+    a.glow = Math.max(0, a.glow - dt * 0.5);
   };
 
   const placeParked = (v: Veh, time: number): void => {
@@ -672,10 +926,20 @@ export function buildVehicles(k: Build, routes: Route[], parked: ParkedSpot[], h
   for (const v of vehs) if (!v.path) placeParked(v, 0);
 
   const update = (dt: number, time: number, night: number, wet: number): void => {
+    flashes.begin();
+    discs.begin();
     for (const { path, list, shares } of loops.values()) {
       const n = list.length, L = path.length;
       for (let i = 0; i < n; i++) {
         const v = list[i];
+        // Whoever is behind it on its own route: how far. A trick may want to know.
+        let behind = L;
+        if (n > 1) {
+          const tail = list[(i + n - 1) % n];
+          behind = v.s - tail.s;
+          if (behind <= 0) behind += L;
+          behind -= (tail.len + v.len) / 2;
+        }
         // Whoever is ahead of it on its own route: how far, and how fast that one is going.
         let ahead = n > 1, aheadV = 0, gap = L;
         if (ahead) {
@@ -753,7 +1017,10 @@ export function buildVehicles(k: Build, routes: Route[], parked: ParkedSpot[], h
         const run = v.hero?.run;
         if (run?.drive && v.hero) {
           // a party trick has a say in how fast its hero goes, within what the bend allows
-          const want = run.drive({ dt, time, night, speed: v.v, cruise: target, gap: ahead ? gap : L, bend: r }, v.hero.fx);
+          // which way the bend goes that `r` is the radius of: the one it is in, or the one half a second ahead
+          const here = v.s + v.len * 0.5, soon = here + v.v * 0.5;
+          const turn = path.turnAt(path.radiusAt(soon) < path.radiusAt(here) ? soon : here);
+          const want = run.drive({ dt, time, night, wet, speed: v.v, cruise: target, gap: ahead ? gap : L, behind, bend: r, turn, straight: path.straightAt(here), crowd: onlookers(v.hero.road).length, lap: v.s / L }, v.hero.fx);
           target = Math.min(want.speed, bend * 1.3);
           pull = want.accel ?? 9;
         }
@@ -792,6 +1059,16 @@ export function buildVehicles(k: Build, routes: Route[], parked: ParkedSpot[], h
     }
     flames.update(dt, night);
     smoke.update(dt);
+    // the light of each flashbulb on the ground round it
+    bulbs.update(dt, night, (x, y, z, wide, strength) => {
+      m4.makeScale(wide, 1, wide).setPosition(x, y, z);
+      flashes.glow(m4, 0xfff6e0, strength * 0.6);
+    });
+    flashes.update(night);
+    sparks.update(dt, night);
+    discs.update(night);
+    marks.update(dt);
+    streaks.update(dt);
     for (const b of batches) b.instanceMatrix.needsUpdate = true;
     shadows.instanceMatrix.needsUpdate = true;
     pools.instanceMatrix.needsUpdate = true;
@@ -826,17 +1103,38 @@ export function buildVehicles(k: Build, routes: Route[], parked: ParkedSpot[], h
     g.add(body);
     group.add(g);
     const v = blank();
-    const air = { flame: 0, flamePower: 0, tyres: 0, tyrePower: 0, exhaust: 0, exhaustPower: 0, was: 0 };
+    const air = {
+      flame: 0, flamePower: 0, flameBlue: false, tyres: 0, tyrePower: 0, exhaust: 0, exhaustPower: 0, lamps: 0, lampsPower: 0, lampsColour: 0xfff4d6, mist: 0, mistPower: 0, was: 0,
+      screen: 0, screenPower: 0, under: 0, underPower: 0, underColour: 0x2a6bff, purge: 0, purgePower: 0, bulbs: 0, bulbsPower: 0, hazards: 0,
+      sparks: 0, sparksPower: 0, sparksNose: false, glow: 0, marks: 0, marksAll: false, streaks: 0, streaksPower: 0, streaksColour: 0xffffff, streaksUp: 0.8,
+    };
+    const laid = (): { p: THREE.Vector3; live: boolean } => ({ p: new THREE.Vector3(), live: false });
     const hero: Hero = {
       name: info.name, capture: info.capture, place: at, group: g,
-      pos: new THREE.Vector3(), fwd: new THREE.Vector3(1, 0, 0), up: new THREE.Vector3(0, 1, 0),
+      pos: new THREE.Vector3(), fwd: new THREE.Vector3(1, 0, 0), up: new THREE.Vector3(0, 1, 0), way: new THREE.Vector3(1, 0, 0),
+      road: new THREE.Vector3(), nose: new THREE.Vector3(1, 0, 0), top: new THREE.Vector3(0, 1, 0), flank: new THREE.Vector3(0, 0, 1), rise: 0,
+      wheel: [laid(), laid(), laid(), laid()], tip: [laid(), laid()],
       run: trick ? trick.start() : null,
+      pipes: trick?.pipes ?? null,
+      lamps: trick?.lamps ?? null,
       air,
       // each of these lasts a moment, and longer the stronger it is
       fx: {
-        flame(strength) { air.flame = Math.max(air.flame, 0.1 + 0.22 * strength); air.flamePower = strength; },
+        flame(strength, blue = false) { air.flame = Math.max(air.flame, 0.1 + 0.22 * strength); air.flamePower = strength; air.flameBlue = blue; },
+        screen(strength) { air.screen = Math.max(air.screen, 0.1 + 0.2 * strength); air.screenPower = strength; },
+        under(strength, colour = 0x2a6bff) { air.under = Math.max(air.under, 0.1); air.underPower = strength; air.underColour = colour; },
+        purge(strength) { air.purge = Math.max(air.purge, 0.08 + 0.1 * strength); air.purgePower = strength; },
+        bulbs(strength) { air.bulbs = Math.max(air.bulbs, 0.12); air.bulbsPower = strength; },
+        hazards() { air.hazards = Math.max(air.hazards, 0.06); },
         tyreSmoke(strength) { air.tyres = Math.max(air.tyres, 0.25 + 0.6 * strength); air.tyrePower = strength; },
         exhaust(strength) { air.exhaust = Math.max(air.exhaust, 0.2 + 0.5 * strength); air.exhaustPower = strength; },
+        lamps(strength, colour = 0xfff4d6) { air.lamps = Math.max(air.lamps, 0.07 + 0.07 * strength); air.lampsPower = strength; air.lampsColour = colour; },
+        mist(strength) { air.mist = Math.max(air.mist, 0.15 + 0.3 * strength); air.mistPower = strength; },
+        sparks(strength, from = 'under') { air.sparks = Math.max(air.sparks, 0.08 + 0.2 * strength); air.sparksPower = strength; air.sparksNose = from === 'nose'; },
+        glow(heat) { air.glow = Math.max(air.glow, Math.min(1, heat)); },
+        // these two last only as long as the trick goes on asking, so that a mark ends where the slide does
+        marks(strength, all = false) { air.marks = Math.max(air.marks, 0.05 + 0.05 * strength); air.marksAll = all; },
+        streaks(strength, colour = 0xffffff, up = 0.8) { air.streaks = Math.max(air.streaks, 0.08); air.streaksPower = strength; air.streaksColour = colour; air.streaksUp = up; },
       },
     };
     v.hero = hero;

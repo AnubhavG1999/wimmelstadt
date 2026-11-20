@@ -27,12 +27,18 @@ export function humpHeight(h: Hump, x: number): number {
 }
 
 const STEP = 0.5;
+/** A turn tighter than this radius is a bend. Anything wider counts as straight. */
+const BEND = 300;
 
 export class Path {
   readonly pts: THREE.Vector3[] = [];
   readonly length: number;
   /** Turning radius at each sample; very large on straights. */
   readonly radius: Float32Array;
+  /** Which way the line turns at each sample: 1 to the right, -1 to the left, 0 where it is straight. */
+  readonly turn: Int8Array;
+  /** How far the line runs straight on from each sample, before its next bend. */
+  private readonly clear: Float32Array;
   private readonly ds: number;
   readonly closed: boolean;
   /** How fast each sample is driven, where a stretch says so. Null if none does. */
@@ -63,15 +69,30 @@ export class Path {
 
     // Turning radius from the change of heading over a couple of units of travel.
     this.radius = new Float32Array(n);
+    this.turn = new Int8Array(n);
     const k = 3;
     for (let i = 0; i < n; i++) {
       const a = this.pts[this.index(i - k)], m = this.pts[i], c = this.pts[this.index(i + k)];
       const h1 = Math.atan2(m.z - a.z, m.x - a.x);
       const h2 = Math.atan2(c.z - m.z, c.x - m.x);
-      let d = Math.abs(h2 - h1);
-      if (d > Math.PI) d = 2 * Math.PI - d;
+      // the heading grows where the line turns to the right, seen the way it runs
+      let by = h2 - h1;
+      if (by > Math.PI) by -= 2 * Math.PI;
+      else if (by < -Math.PI) by += 2 * Math.PI;
+      const d = Math.abs(by);
       const chord = k * this.ds;
       this.radius[i] = d < 1e-3 ? 1e4 : chord / d;
+      this.turn[i] = d < 1e-3 ? 0 : by > 0 ? 1 : -1;
+    }
+
+    // How far it runs straight on from each sample, counted back from every bend: twice
+    // round a closed line, so that a straight which crosses its start is counted whole.
+    this.clear = new Float32Array(n);
+    for (let pass = 0; pass < (closed ? 2 : 1); pass++) {
+      for (let i = n - 1; i >= 0; i--) {
+        const next = closed ? this.clear[(i + 1) % n] : i + 1 < n ? this.clear[i + 1] : 0;
+        this.clear[i] = this.radius[i] < BEND ? 0 : Math.min(total, next + this.ds);
+      }
     }
   }
 
@@ -93,6 +114,16 @@ export class Path {
 
   radiusAt(s: number): number {
     return this.radius[this.index(Math.round(this.wrap(s) / this.ds))];
+  }
+
+  /** How far the line runs straight on from here, before its next bend. */
+  straightAt(s: number): number {
+    return this.clear[this.index(Math.round(this.wrap(s) / this.ds))];
+  }
+
+  /** Which way the line turns here: 1 to the right, -1 to the left, 0 where it is straight. */
+  turnAt(s: number): number {
+    return this.turn[this.index(Math.round(this.wrap(s) / this.ds))];
   }
 
   /** How fast this place is driven, if its stretch says so, and 0 if it does not. */

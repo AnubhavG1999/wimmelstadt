@@ -42,7 +42,7 @@ It is the starting point for building. Terms are used as [CONTEXT.md](../CONTEXT
 - By day, a bright, warm miniature.
 - By night, neon in the vein of Blade Runner 2049, Cyberpunk 2077 and Tokyo Drift: haze, wet-look streets, signs reflected softly in vehicle paint, a little spray behind the wheels. Some traffic has underglow. Heroes never do.
 - Time follows the device's clock. A dial lets the collector drag to any hour and pin it. The controls are made to look like things of brass lying on the table: the dial, a token for each kind of weather, and a few keys. They are out of sight until the screen is touched.
-- Weather is the city's own and never follows the real forecast. Clear skies, cloud, rain, storms, fog and snow come and go in spells, and each changes the light: lamps and windows come on under a dark sky, streets turn wet, snow settles on roofs and lawns.
+- Weather is the city's own and never follows the real forecast. Clear skies, cloud, rain, storms, fog and snow come and go in spells, and each changes the light: lamps and windows come on under a dark sky, streets turn wet, snow settles on roofs and lawns. The page opens under a clear sky, and the city's own weather begins when the collector gives it over, by touching the token that is lit.
 - The bar for reflections and effects is that they feel right, not that they are physically accurate.
 - Straight edges should be clean. Where the device has power to spare, the picture is drawn larger than the screen and scaled down, and frames are capped at about 60 a second rather than drawn as fast as possible.
 

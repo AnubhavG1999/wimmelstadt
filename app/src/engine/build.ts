@@ -133,6 +133,7 @@ export function startBuild(def: TileDef, ox: number, oz: number): { k: Build; fi
     sign: (id, x, y, z, nx, nz, h, maxW) => signs.addFacing(id, x, y, z, nx, nz, h, maxW),
     tree: (x, z, s, tall = false, y = 0) => void trees.push({ x, y, z, s, tall }),
     person: (x, z, y = 0) => void people.push({ x, y, z }),
+    people,
     lamp: (x, z, yaw, y = 0) => {
       lamps.push({ x, y, z, yaw });
       // the lamp hangs at the end of the arm, and throws a pool of light below it
