@@ -99,6 +99,30 @@ export function steps(b: GeoBuilder, a0: number, a1: number, edge: number, y: nu
   }
 }
 
+/**
+ * A shop's awning on a wall that looks `out`: a slope of cloth from the wall
+ * down to a front edge, and a valance that hangs from that edge. It runs from
+ * `a0` to `a1` along the wall, which stands at `wall`, and meets the wall at
+ * height `y`. Hands back the middle of the valance's face, a hair in front of
+ * it, which is where its lettering hangs.
+ */
+export function awning(b: GeoBuilder, out: 'N' | 'S' | 'E' | 'W', a0: number, a1: number, wall: number, y: number, reach: number, fall: number, drop: number, color: number): { x: number; y: number; z: number; nx: number; nz: number } {
+  const s = out === 'S' || out === 'E' ? 1 : -1, along = out === 'N' || out === 'S';
+  const at = (a: number, o: number, h: number): V3 => (along ? [a, h, wall + s * o] : [wall + s * o, h, a]);
+  const n: V3 = along ? [0, 0, s] : [s, 0, 0], end: V3 = along ? [1, 0, 0] : [0, 0, 1];
+  const yf = y - fall, l = Math.hypot(fall, reach);
+  // the cloth, the level underside that closes it, and its two ends
+  b.quad(at(a0, 0, y), at(a0, reach, yf), at(a1, reach, yf), at(a1, 0, y), [(n[0] * fall) / l, reach / l, (n[2] * fall) / l], color);
+  b.quad(at(a0, 0, yf), at(a0, reach, yf), at(a1, reach, yf), at(a1, 0, yf), [0, -1, 0], color);
+  face3(b, at(a0, 0, y), at(a0, reach, yf), at(a0, 0, yf), [-end[0], 0, -end[2]], color);
+  face3(b, at(a1, 0, y), at(a1, reach, yf), at(a1, 0, yf), end, color);
+  // the valance
+  const [p, q] = [at(a0, reach - 0.07, yf - drop), at(a1, reach, yf)];
+  b.box(Math.min(p[0], q[0]), yf - drop, Math.min(p[2], q[2]), Math.max(p[0], q[0]), yf, Math.max(p[2], q[2]), color, { faces: 'NESWB' });
+  const c = at((a0 + a1) / 2, reach + 0.03, yf - drop / 2);
+  return { x: c[0], y: c[1], z: c[2], nx: n[0], nz: n[2] };
+}
+
 /** A weathervane: a rod, a ball, and an arrow that points east. */
 export function weathervane(b: GeoBuilder, x: number, z: number, y: number, h: number): void {
   b.cyl(x, z, y, y + h, 0.07, 0.05, 4, BRONZE, { cap: false });

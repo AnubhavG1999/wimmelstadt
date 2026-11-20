@@ -2,7 +2,7 @@
 
 What a later reader cannot see in the code.
 
-**Where it stands.** The plan was put to the collector on 19 November 2026. He answered the same day, and this is the plan with what he asked for worked in. The tile is blocked out: its ground, its streets, the railway's embankment with its two viaducts, its routes and its places for heroes are built, and every lot is a plain box with its name on a board until its model is built. One model is built: the Illini Union. The research is in [docs/districts/research/uiuc.md](../../../../docs/districts/research/uiuc.md). Where this file and that note disagree, this file is the later: see "What the research note has wrong".
+**Where it stands.** The plan was put to the collector on 19 November 2026. He answered the same day, and this is the plan with what he asked for worked in. The tile is blocked out: its ground, its streets, the railway's embankment with its two viaducts, its routes and its places for heroes are built, and every lot is a plain box with its name on a board until its model is built. Built so far: the Illini Union, and Gregory Place with Basil Thai and Manolo's. The rest of the lots are being built a file at a time (see "The models"). The research is in [docs/districts/research/uiuc.md](../../../../docs/districts/research/uiuc.md). Where this file and that note disagree, this file is the later: see "What the research note has wrong".
 
 ## Where things are
 
@@ -10,13 +10,18 @@ What a later reader cannot see in the code.
 - `city.ts` builds the ground, the streets and the embankment, and whatever stands on each lot: its model, once that is entered in `MODELS`, and until then a box.
 - `checks.ts` looks at the routes and at the sight lines on every load of the development server, and says what it finds in the console.
 - `look.ts` is what the campus is made of: its brick, trim and roofs as colours, how its walls are glazed, and the small parts its buildings share (a dormer, a chimney, a column, steps, a weathervane). A storey on this tile is 2.9 high, and every model takes that from here.
-- `union.ts` builds the Illini Union. A model is a function of its lot, so it moves with the plan.
+- `models.ts` gathers the files of models. Each file builds one group of lots and hands over its models by the id of their lot, the signs it hangs, and `extras` for whatever it builds that is not a lot. A lot no file has a model for is a box. A model is a function of its lot, so it moves with the plan.
+- `union.ts` builds the Illini Union, and `gregory-place.ts` Gregory Place and Manolo's. The other files of models are named for their part of the tile.
 
 ## The models
 
 **The Illini Union** (`union.ts`). In plan a capital I: a long block on Green Street, a long block on the Quad, and a link between them, all three storeys of red brick under slate, with a white band at the foot of the second storey, a white cornice, dormers and chimneys. Each block carries a clock tower with a cap of green copper and a weathervane. The one over Green Street is open, with a bell in it, and the one over the Quad is glazed and lit at night. The Green Street front has a porch of four columns with the name on the band over them. The Quad front has no columns: three tall bays of glass, the name over them, and a terrace 4 deep with steps down to the lawn, four tables under blue umbrellas and people at them. The vanes stand at 20.3.
 
 Not checked against a picture: whether the Green Street porch has columns, and how many. The collector is asked.
+
+**Gregory Place** (`gregory-place.ts`). A block of brick with a stone base, three storeys, a cornice and a flat roof behind a low wall. Its front on Gregory Street is four shops, each under an awning that says what is sold: KOREAN, GRILL and SUBS in dark cloth, and between them Basil Thai's, which is white and half as wide again, and reads BASIL THAI with "at Urbana" under it, as the collector describes it. The lettering is black: its real colour is not known. Two bays at the kerb lie in front: the hero's, before Basil Thai's door, and one south of it with a parked car. They lie south of where a street lamp stands at the kerb, which is why the second bay is not to the north. The head of the stairs stands at the south end of the roof, so that it hides nothing of Manolo's.
+
+**Manolo's** (`gregory-place.ts`). One storey of cream brick with a red band and a red awning, its door on the lane to its north. Its name is on a board on two posts over the west of its roof, turned to face the opening view, and no wider than 4.4, because the block of shops hides everything east of that. The name is on its awning too. What its front really looked like is not known: the collector is asked.
 
 ## How the tile lies
 
@@ -175,7 +180,7 @@ Seven, each open to the south-east. A hero on show faces east, south, or between
 | Id | Where |
 | --- | --- |
 | `quad-day` | on the Quad's west walk in front of the Union, beside the car teams' stand. Its middle line is 2.5 south of the foot of the terrace's steps. |
-| `basil-thai` | in a slanted bay in front of Basil Thai, on Gregory Street, backed in so that it faces the street |
+| `basil-thai` | in a bay at the kerb in front of Basil Thai's door, on Gregory Street, facing south |
 | `move-in` | on the lawn before Wassaja Hall's door, where cars are unloaded |
 | `tailgate-1`, `tailgate-2` | in lot E-14, among the pickups and tents |
 | `car-teams` | on the forecourt of the workshop, north of Green Street |
@@ -290,6 +295,8 @@ The near lane is the one on the camera's side of the buildings that hide it: the
 - **The stadium's video board shows on both its faces.** The real one faces the field.
 - **The grove south of Pennsylvania Avenue.** In life Roselawn and Mount Hope cemeteries fill that ground from Fourth Street to Maryland Drive. Here it is a grove of trees with one small cemetery in it.
 - **Manolo's is open.** It closed on 20 October 2026. It stands as it stood, and carries its name on a board above its roof, where the opening view can read it.
+- **Gregory Place has three storeys.** In life the block Basil Thai is in has four. A fourth would hide Manolo's board behind it.
+- **Bays at the kerb before Gregory Place**, where the sidewalk would be. In life cars park there too, at a slant.
 - **Altgeld Hall and Illini Hall.** Altgeld is drawn finished, without the scaffolding of its renovation. Illini Hall is drawn as the building site it is in 2026.
 - **A hero on the Quad.** Quad Day's rules keep vehicles off the Quad. The solar car and a formula car have stood at their teams' tables, and that is the stand the hero's place is beside.
 - **The embankment is 6 high**, where 5 m would be less than 2.
@@ -306,7 +313,7 @@ The near lane is the one on the camera's side of the buildings that hide it: the
 
 ## Real names on signs
 
-One is on a sign: ILLINI UNION, on both fronts of the Union. The rest are the names the plan would use, each as plain lettering on a plain board, with what the research found on 19 November 2026. Each is checked again as its sign is written.
+On signs so far: ILLINI UNION, on both fronts of the Union; BASIL THAI, with "at Urbana" under it, on its awning; and MANOLO'S, with PIZZA & EMPANADAS under it, on its board and on its awning. The rest are the names the plan would use, each as plain lettering on a plain board, with what the research found on 19 November 2026. Each is checked again as its sign is written.
 
 | Name | Where | What confirmed it |
 | --- | --- | --- |
@@ -324,7 +331,7 @@ Open in 2026 and free to use on Green Street's shops, each to be checked as its 
 
 Not to be used, because they have closed: the Canopy Club (May 2026), Timpone's (December 2025), Firehaus, The Clybourne, the old Kam's on Daniel Street, and the Maize hut at First and Green, which was pulled down in July 2024.
 
-Basil Thai's neighbours in Gregory Place in 2026, from north to south, are Kaja, Rosati's Pizza, Basil Thai and Subway. Their fronts carry trades, not names. The university's buildings carry their own names. The chains on Green Street are trades too: TACOS, COFFEE, NOODLES.
+Basil Thai's neighbours in Gregory Place in 2026, from north to south, are Kaja, Rosati's Pizza, Basil Thai and Subway, and the county's list of new restaurants has a Dubai Grill at the same address. Their awnings carry trades, not names: KOREAN, GRILL, SUBS. The university's buildings carry their own names. The chains on Green Street are trades too: TACOS, COFFEE, NOODLES.
 
 ## What the research note has wrong
 

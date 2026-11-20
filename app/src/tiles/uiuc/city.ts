@@ -33,7 +33,7 @@ const SURFACE: Record<Surface, number> = {
   cemetery: 0x7fae68,
 };
 /** Patches that lie on another patch are laid a hair higher than it, so that the two are never in one plane. */
-const ON_ANOTHER = new Set(['volleyball', 'cemetery']);
+const ON_ANOTHER = new Set(['volleyball', 'cemetery', 'boneyard']);
 
 /** Towards the camera of the opening view: the way a box's board faces. */
 const VIEW = { x: Math.sin((42 * Math.PI) / 180), z: Math.cos((42 * Math.PI) / 180) };

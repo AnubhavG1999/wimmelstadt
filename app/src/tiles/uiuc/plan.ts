@@ -383,10 +383,10 @@ export const PARKED: ParkedSpot[] = [];
   const c7 = lot('deck-c7'), e15 = lot('deck-e15');
   for (const z of [c7.z0 + 2.6, c7.z0 + 7.4]) PARKED.push({ x: c7.x0 + 5, y: c7.h + 0.05, z, heading: EAST });
   for (const x of [e15.x0 + 3, e15.x1 - 3]) PARKED.push({ x, y: e15.h + 0.05, z: e15.z0 + 4, heading: SOUTH });
-  // beside Basil Thai, at the kerb
-  PARKED.push({ x: 90.7, y: 0.03, z: -25, heading: SOUTH });
-  // behind Gregory Place
-  for (const z of [-17.5, -13]) PARKED.push({ x: 74.6, y: 0.03, z, heading: NORTH });
+  // beside Basil Thai, at the kerb, in the bay south of the hero's
+  PARKED.push({ x: 90.7, y: 0.03, z: -9, heading: SOUTH });
+  // behind Gregory Place, side by side
+  for (const x of [73.2, 76.3]) PARKED.push({ x, y: 0.03, z: -14, heading: NORTH });
 }
 
 // ---------------------------------------------------------------------------
