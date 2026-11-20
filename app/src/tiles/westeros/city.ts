@@ -6,12 +6,11 @@
 // file of its own (regions.ts lists them), and then the open country between
 // them. A lot whose model fails stands as a plain box.
 
-import { checkRoads, type Solid } from '../../engine/checks';
+import { checkLanes, checkRoads, type Solid } from '../../engine/checks';
 import type { Build, TileParts } from '../../engine/tile';
 import { buildCountry } from './country';
 import { buildDragons } from './dragons';
 import { buildKraken } from './kraken';
-import { checkLanes } from './lanes';
 import { buildLand } from './land';
 import { BOARDS } from './look';
 import type { Model } from './models';
