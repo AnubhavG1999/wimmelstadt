@@ -382,7 +382,9 @@ function naturalHistory(k: Build, l: LotDef): void {
   }
   hip(b, x0, z0, x1, z1, EAVE, RISE, SLATE, 0.45);
 
-  // The four gables: of stone over the entrance bays east and west, of brick to the south and north.
+  // Three gables: of stone over the entrance bays east and west, and of brick to the south. In life there is one to
+  // the north as well. It is left off here: from where the tile is first looked at it stood exactly before the east
+  // end of the Union's terrace, which the plain slope of the roof does not.
   const GW = 3.0, GR = 3.3, OV = 0.3, BAY = 0.5;
   const coping = (d: Dir, ox: number, oz: number): void => onWall(b, ox, oz, d, () => {
     const top = EAVE + (GR * (GW / 2)) / (GW / 2 + OV);
@@ -392,13 +394,10 @@ function naturalHistory(k: Build, l: LotDef): void {
   gable(b, cx - 0.3, cz - GW / 2, x1 + BAY, cz + GW / 2, EAVE, GR, SLATE, LIMESTONE, 'x', OV);
   gable(b, x0 - BAY, cz - GW / 2, cx + 0.3, cz + GW / 2, EAVE, GR, SLATE, LIMESTONE, 'x', OV);
   gable(b, cx - GW / 2, cz - 0.3, cx + GW / 2, z1, EAVE, GR, SLATE, BRICK.red, 'z', OV);
-  gable(b, cx - GW / 2, z0, cx + GW / 2, cz + 0.3, EAVE, GR, SLATE, BRICK.red, 'z', OV);
   coping('E', x1 + BAY, cz);
   coping('W', x0 - BAY, cz);
   coping('S', cx, z1);
-  coping('N', cx, z0);
-  // a tall pointed window in each brick gable, and under the south one the name, where the opening view sees it over Noyes
-  onWall(b, cx, z0, 'N', () => archWin(b, 0, EAVE + 0.25, 1.0, 1.8, { pointed: true, sill: false }));
+  // a tall pointed window in the brick gable, and under it the name, where the opening view sees it over Noyes
   onWall(b, cx, z1, 'S', () => archWin(b, 0, EAVE + 0.9, 0.8, 1.4, { pointed: true, sill: false }));
   nameBoard(k, 'quad-east-natural-history', cx, EAVE + 0.44, z1, 'S', 1.9, 0.44);
 

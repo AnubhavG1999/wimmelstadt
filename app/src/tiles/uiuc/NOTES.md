@@ -2,7 +2,7 @@
 
 What a later reader cannot see in the code.
 
-**Where it stands.** The plan was put to the collector on 19 November 2026. He answered the same day, and this is the plan with what he asked for worked in. The tile is blocked out: its ground, its streets, the railway's embankment with its two viaducts, its routes and its places for heroes are built, and every lot is a plain box with its name on a board until its model is built. Built so far: the Illini Union, Gregory Place with Basil Thai and Manolo's, the Six Pack, the blocks between Fourth Street and Wright Street, both rows of the Main Quad with Foellinger Auditorium, the stadium with the saucer, the engineering campus, Green Street's south side, the screen on the stadium's board, the scenes on the ground, and what moves on a line of its own: the train, a tractor and an aeroplane. The rest of the lots are being built a file at a time (see "The models"). The research is in [docs/districts/research/uiuc.md](../../../../docs/districts/research/uiuc.md). Where this file and that note disagree, this file is the later: see "What the research note has wrong".
+**Where it stands.** The plan was put to the collector on 19 November 2026. He answered the same day, and this is the plan with what he asked for worked in. The tile is blocked out: its ground, its streets, the railway's embankment with its two viaducts, its routes and its places for heroes are built, and every lot is a plain box with its name on a board until its model is built. Built so far: the Illini Union, Gregory Place with Basil Thai and Manolo's, the Six Pack, the blocks between Fourth Street and Wright Street, both rows of the Main Quad with Foellinger Auditorium, the stadium with the saucer, the engineering campus, both sides of Green Street, Quad Day on the Quad, the trees, the screen on the stadium's board, the scenes on the ground, and what moves on a line of its own: the train, a tractor and an aeroplane. The rest of the lots are being built a file at a time (see "The models"). The research is in [docs/districts/research/uiuc.md](../../../../docs/districts/research/uiuc.md). Where this file and that note disagree, this file is the later: see "What the research note has wrong".
 
 ## Where things are
 
@@ -11,6 +11,7 @@ What a later reader cannot see in the code.
 - `checks.ts` looks at the routes and at the sight lines on every load of the development server, and says what it finds in the console.
 - `look.ts` is what the campus is made of: its brick, trim and roofs as colours, how its walls are glazed, and the small parts its buildings share (a dormer, a chimney, a column, steps, a weathervane). A storey on this tile is 2.9 high, and every model takes that from here.
 - `models.ts` gathers the files of models. Each file builds one group of lots and hands over its models by the id of their lot, the signs it hangs, and `extras` for whatever it builds that is not a lot. A lot no file has a model for is a box. A model is a function of its lot, so it moves with the plan.
+- `planting.ts` is built last: Quad Day on the Main Quad, and the tile's trees and garden lamps, each put down through a function that refuses a road, a lot, a hero's place, and any place that would stand before something the opening view is to see.
 - `scenes.ts` holds the screen and the small scenes on the ground between the lots, and `moving.ts` what moves on a line of its own.
 - `union.ts` builds the Illini Union, `gregory-place.ts` Gregory Place and Manolo's, and `six-pack.ts` the halls of the Six Pack. The other files of models are named for their part of the tile.
 
@@ -82,6 +83,25 @@ Not checked against a picture: what Wassaja Hall looks like (its brick, its stor
 - *Everitt Laboratory* and *Talbot Laboratory.* Two brick laboratories of three storeys, Talbot with a high bay between two wings.
 - *The laboratories south of Green Street.* Two storeys of red brick with four ridges of skylight and loading doors at the back.
 - *Boneyard Creek*, from the line of Wright Street east to the Siebel Center: two courses of stone on each bank, three arched footbridges, walks, benches, and the bronze man who sits on a bench with a laptop in front of Grainger.
+
+**Green Street's north side** (`green-north.ts`, built by an Opus builder and looked at from four sides by day and by night). The fronts on this side face south, towards the opening view.
+
+- *Illinois Terminal.* Three storeys of red brick on a stone base with buff bands, round-headed windows in the top storey, a dark green hipped roof with white dormers, and a buff clock tower with a green pyramid cap at its south-east corner, to 15.3. A door at the height of the embankment on its west side opens onto a short glazed bridge that reaches the platform.
+- *The buses.* Two of the town's white buses stand in painted bays south of the creek, each with a block of blue at the front of its roof and a band of black windows, beside a shelter with five people.
+- *KAMS.* Two storeys of dark red brick with a black ground floor and roll-up glass doors, KAMS in orange neon over the street and on a blade at the corner, and a fenced patio with a bar on its west side.
+- *Burnham 310.* A slab of eighteen storeys of 1.25 in tan and brown, with stacks of glass and balconies, and the grocery hall against its east side.
+- *HERE Champaign.* White, 27 storeys of 1.0 over a recessed shop of glass, with about 115 panels in four blues and greys scattered over its faces. Its shop sells RAMEN.
+- *A tower of flats*, of twelve storeys on a brick podium, with no name.
+- *The two rows of shops.* TACOS, CHOPSTIX and COFFEE; BUBBLE TEA, THAI, PIZZA and BARBER. Each front has its own colour, its own height, and an awning or a board.
+- *Legends.* Tan brick behind a patio with a black fence, two parasols and about ten people, LEGENDS in red neon on its parapet and BAR & GRILL on its awning.
+- *Murphy's Pub.* Old red brick with a corbelled cornice, a ground floor painted green with two wide open windows, its name on a board, and MURPHY'S on a sign hung out over the street.
+- *Boneyard Creek*, from the railway east to the line of Wright Street: a stone edge on each bank and three arched footbridges.
+
+**Quad Day** (`planting.ts`). Two rows of six stalls face each other across an aisle down the middle of the Main Quad's lawn. Each has a table under a cloth, a board on two legs that says what its club does (CHESS, ROBOTS, BAND, SAILING, COOKING, FILM, HIKING, RADIO, DANCE, DEBATE, GARDEN, CYCLING), two people who keep it, and whoever has stopped. Every other one has a canopy, unless a canopy there would stand before something the opening view is to see. A banner that says QUAD DAY hangs over the north end of the aisle. The car teams' table stands by itself beside the hero's place, with a small model of a car on it. About forty more people are in the aisle and on the grass. Nobody stands on the hero's place or just south or east of it.
+
+**The trees** (`planting.ts`). Ninety: a row down each long side of the Main Quad and of the South Quad, about fifty in the grove, tall dark ones at the cemetery's corners and gate, rows along two sides of Illini Grove and of Washington Park, three on the lawn before Wassaja Hall, and a small one in the courtyard of each of the four old halls. Lamps on posts stand along the two quads and the grove's walk.
+
+Not confirmed by any source found: what Illinois Terminal, KAMS, Legends and Murphy's Pub look like from the street (the terminal is "multistory, along classical lines", Legends has seats outside, and Murphy's has wide windows that open onto Green Street), and Burnham 310's colours. HERE Champaign's blue and white panels are from one caption.
 
 **Green Street's south side** (`campustown.ts`, built by an Opus builder and looked at from four sides by day and by night). The fronts on this side face north, so the opening view sees their backs first: every back has its doors, stairs, bins and roof units, and each real name is hung twice, once on the front and once where the opening view can read it.
 
@@ -392,6 +412,7 @@ The near lane is the one on the camera's side of the buildings that hide it: the
 - **Gregory Place has three storeys.** In life the block Basil Thai is in has four. A fourth would hide Manolo's board behind it.
 - **Bays at the kerb before Gregory Place**, where the sidewalk would be. In life cars park there too, at a slant.
 - **Altgeld Hall and Illini Hall.** Altgeld is drawn finished, without the scaffolding of its renovation. Illini Hall is drawn as the building site it is in 2026: the campus's construction map for 2026 has structural steel rising from the foundation, set by a crane that came in November 2025.
+- **The Natural History Building has three gables.** In life it has one to the north as well. From where the tile is first looked at, that one stood exactly before the east end of the Union's terrace, so it is left off, and the building is a little shorter from north to south and half a unit lower than first planned.
 - **Storeys on the Quad.** The English Building and Lincoln Hall have four storeys in life and three here, at the heights the plan gives them, and the English Building's colonnade is three storeys high in life. Henry Administration's storeys are 2.6, so that its three stand 8 high. Its addition of 1964 is left out, and so are Smith Hall's backstage wings of 1985 and Foellinger's additions at the back.
 - **The stadium.** Its columns are 26 a side, not 100. The plaques to the dead of the Second World War and of Korea on its north and south sides are left out. Its seats are full, and the crowd stands.
 - **The towers' storeys.** Illini Tower has 17 floors in life and shows 16 rows of windows. The bookstore is four storeys above the ground with a fifth set back, as its builder's page and a university page between them say.
@@ -412,7 +433,7 @@ The near lane is the one on the camera's side of the buildings that hide it: the
 
 ## Real names on signs
 
-On signs so far: RED LION and JOE'S BREWERY, each twice; CRACKED and MIA ZA'S, each twice; 309 GREEN and THE TOWER AT THIRD, each over its door and high on its east face; ENGINEERING HALL, GRAINGER ENGINEERING LIBRARY, THOMAS M. SIEBEL CENTER FOR COMPUTER SCIENCE, EVERITT LABORATORY and TALBOT LABORATORY, each on its building; CHAMPAIGN-URBANA, the name of the railway's station, on the platform; ALTGELD HALL, HENRY ADMINISTRATION BUILDING, ENGLISH BUILDING, LINCOLN HALL and GREGORY HALL, each over its door on the Quad; FOELLINGER AUDITORIUM, HARKER HALL, NATURAL HISTORY BUILDING, NOYES LABORATORY, DAVENPORT HALL, SMITH MEMORIAL HALL (the university's full name for it is Tina Weedon Smith Memorial Hall) and ASTRONOMICAL OBSERVATORY, each where the opening view can read it; GIES MEMORIAL STADIUM (so named on 9 September 2025) on the stadium's south wall, and ILLINOIS FIELD on its grandstand; ARMORY, ICE ARENA, SHERMAN HALL, ILLINI TOWER and ILLINI UNION BOOKSTORE, each on its building (Illini Tower is a private hall: its own leasing pages and the university's list of certified housing have it under that name for 2026 to 2027), and a P on the parking deck; the names of the Six Pack's seven halls and of the Ikenberry Dining Center, each over its door, as the research note gives them; ILLINI UNION, on both fronts of the Union; BASIL THAI, with "at Urbana" under it, on its awning; and MANOLO'S, with PIZZA & EMPANADAS under it, on its board and on its awning. The rest are the names the plan would use, each as plain lettering on a plain board, with what the research found on 19 November 2026. Each is checked again as its sign is written.
+On signs so far: ILLINOIS TERMINAL; KAMS, twice; LEGENDS, with BAR & GRILL on its awning, as its listings write its name; MURPHY'S PUB, and MURPHY'S on its hung sign; CHOPSTIX; RED LION and JOE'S BREWERY, each twice; CRACKED and MIA ZA'S, each twice; 309 GREEN and THE TOWER AT THIRD, each over its door and high on its east face; ENGINEERING HALL, GRAINGER ENGINEERING LIBRARY, THOMAS M. SIEBEL CENTER FOR COMPUTER SCIENCE, EVERITT LABORATORY and TALBOT LABORATORY, each on its building; CHAMPAIGN-URBANA, the name of the railway's station, on the platform; ALTGELD HALL, HENRY ADMINISTRATION BUILDING, ENGLISH BUILDING, LINCOLN HALL and GREGORY HALL, each over its door on the Quad; FOELLINGER AUDITORIUM, HARKER HALL, NATURAL HISTORY BUILDING, NOYES LABORATORY, DAVENPORT HALL, SMITH MEMORIAL HALL (the university's full name for it is Tina Weedon Smith Memorial Hall) and ASTRONOMICAL OBSERVATORY, each where the opening view can read it; GIES MEMORIAL STADIUM (so named on 9 September 2025) on the stadium's south wall, and ILLINOIS FIELD on its grandstand; ARMORY, ICE ARENA, SHERMAN HALL, ILLINI TOWER and ILLINI UNION BOOKSTORE, each on its building (Illini Tower is a private hall: its own leasing pages and the university's list of certified housing have it under that name for 2026 to 2027), and a P on the parking deck; the names of the Six Pack's seven halls and of the Ikenberry Dining Center, each over its door, as the research note gives them; ILLINI UNION, on both fronts of the Union; BASIL THAI, with "at Urbana" under it, on its awning; and MANOLO'S, with PIZZA & EMPANADAS under it, on its board and on its awning. The rest are the names the plan would use, each as plain lettering on a plain board, with what the research found on 19 November 2026. Each is checked again as its sign is written.
 
 | Name | Where | What confirmed it |
 | --- | --- | --- |
@@ -424,19 +445,21 @@ On signs so far: RED LION and JOE'S BREWERY, each twice; CRACKED and MIA ZA'S, e
 | Mia Za's | 629 E. Green Street | the same map, and a sale listing for 629 E. Green that names it as the tenant. On the tile. |
 | 309 Green | 309 E. Green Street | its owner's current listing of the building under that name. On the tile. |
 | The Tower at Third | Third Street | current listings of student housing under that name. On the tile. |
+| Chopstix | 202 E. Green Street | the Experience C-U map of July 2026, and live listings for delivery. On the tile. |
+| Illinois Terminal | 45 E. University Avenue | the research note. On the tile. |
 | Legends | 522 E. Green Street | The Daily Illini, 5 December 2025; OpenStreetMap, March 2026 |
 | Murphy's Pub | 604 E. Green Street | The Daily Illini's Best of CU, 5 March 2026 |
 | The Red Lion | 211 E. Green Street | The Daily Illini's Best of CU, 5 March 2026 |
 | Joe's Brewery | 706 S. Fifth Street | The Daily Illini, 5 December 2025; OpenStreetMap, August 2026 |
 | Illini Union Bookstore | 809 S. Wright Street | its own site, with hours for 2026 |
 
-Open in 2026 and free to use on Green Street's shops, each to be checked as its sign is written: Chopstix (202 E. Green) and Bangkok Thai (410 E. Green).
+Bangkok Thai (410 E. Green) is not used: the map of July 2026 lists it as "Bangkok Thai & Pho 911" and another listing marks it closed, so its front says THAI.
 
 Not used: Brothers, which the research had at 613 E. Green Street. Listings and the Experience C-U map of July 2026 have it at 601 S. First Street, so the bar on its lot here has no name. And Sakanaya (403 E. Green), which one listing marks as closed for good and nothing from 2026 confirms as open.
 
 Not to be used, because they have closed: the Canopy Club (May 2026), Timpone's (December 2025), Firehaus, The Clybourne, the old Kam's on Daniel Street, and the Maize hut at First and Green, which was pulled down in July 2024.
 
-Basil Thai's neighbours in Gregory Place in 2026, from north to south, are Kaja, Rosati's Pizza, Basil Thai and Subway, and the county's list of new restaurants has a Dubai Grill at the same address. Their awnings carry trades, not names: KOREAN, GRILL, SUBS. The university's buildings carry their own names. The chains on Green Street are trades too: TACOS, COFFEE, NOODLES.
+Basil Thai's neighbours in Gregory Place in 2026, from north to south, are Kaja, Rosati's Pizza, Basil Thai and Subway, and the county's list of new restaurants has a Dubai Grill at the same address. Their awnings carry trades, not names: KOREAN, GRILL, SUBS. So do the other fronts on Green Street: TACOS, COFFEE, BUBBLE TEA, THAI, PIZZA, BARBER, RAMEN, GROCERY, SHAWARMA, BIKES. The stalls of Quad Day say what each club does, and no club's name. The university's buildings carry their own names. The chains on Green Street are trades too: TACOS, COFFEE, NOODLES.
 
 ## What the research note has wrong
 

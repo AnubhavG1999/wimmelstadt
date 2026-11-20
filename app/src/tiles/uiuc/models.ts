@@ -15,6 +15,7 @@ import * as gregoryPlace from './gregory-place';
 import * as houses from './houses';
 import * as moving from './moving';
 import { BOX_SIGNS, type Model, type ModelFile } from './plan';
+import * as planting from './planting';
 import * as quadEast from './quad-east';
 import * as quadWest from './quad-west';
 import * as scenes from './scenes';
@@ -40,6 +41,8 @@ const FILES: Record<string, ModelFile> = {
   'six-pack': sixPack,
   scenes,
   moving,
+  // (last, because it plants round everything else)
+  planting,
 };
 
 export const MODELS: Record<string, Model> = {};

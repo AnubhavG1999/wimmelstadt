@@ -155,7 +155,7 @@ const L = (id: string, name: string, x0: number, z0: number, x1: number, z1: num
 const part = (id: string, x0: number, z0: number, x1: number, z1: number, h: number, y0?: number): PartDef => ({ id, x0, z0, x1, z1, h, y0 });
 
 // --- north of Green Street: Campustown's north side, the engineering campus, the Siebel Center ---
-L('terminal', 'Illinois Terminal', -95, -113, -80, -105, 12);
+L('terminal', 'Illinois Terminal', -95, -113, -80, -105, 12, 'thing', [part('terminal-tower', -83.6, -108.6, -80, -105, 15.3)]);
 L('kams', 'KAMS', -83, -99, -72, -90, 7);
 L('burnham', 'Burnham 310', -70, -113, -60, -105, 25);
 L('shops-n1', 'shops', -70, -98, -59, -90, 7, 'shop');
@@ -210,7 +210,8 @@ L('henry', 'Henry Administration', 9.5, -55, 21.5, -47, 8);
 L('english', 'The English Building', 9.5, -45, 21.5, -36, 9.5);
 L('lincoln-hall', 'Lincoln Hall', 9.5, -34, 21.5, -23, 10);
 L('gregory-hall', 'Gregory Hall', 9.5, -20, 22, -10, 9);
-L('natural-history', 'Natural History', 48, -43, 57, -35, 10);
+// (a little shorter and lower than its neighbours, so that its roof does not stand before the east end of the Union's terrace)
+L('natural-history', 'Natural History', 48, -41.5, 57, -35, 9.5);
 L('noyes', 'Noyes Laboratory', 48, -33, 57, -25, 9.5);
 L('davenport', 'Davenport Hall', 48, -23, 57, -15, 9);
 L('smith', 'Smith Hall', 47, -13, 57, -7, 8);

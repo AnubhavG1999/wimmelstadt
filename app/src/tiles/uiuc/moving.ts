@@ -130,12 +130,14 @@ function amtrak(k: Build): void {
   });
 
   // the platform: a slab on the embankment's east side, with a yellow line along its edge
-  const top = EMBANKMENT.top, deck = top + 0.72, x0 = RAIL.track + 1.58, x1 = RAIL.x1 - 0.02;
+  // (a low platform, as this railway's are: a step up into the train, and level with the bridge from the terminal)
+  const top = EMBANKMENT.top, deck = top + 0.18, x0 = RAIL.track + 1.58, x1 = RAIL.x1 - 0.02;
   const { z0, z1 } = PLATFORM;
   b.box(x0, top, z0, x1, deck, z1, 0xbdb8ae, { faces: 'NESWT' });
   b.box(x0 + 0.05, deck, z0 + 0.1, x0 + 0.33, deck + 0.02, z1 - 0.1, 0xe9c94a, { faces: 'T' });
-  // a roof over the middle of it, on posts along its east edge, with lamps under it
-  const r0 = z0 + 3, r1 = z1 - 3.5, roof = deck + 3.3;
+  // a roof over the south of it, on posts along its east edge, with lamps under it. It begins south of the
+  // terminal, so that the bridge from the terminal's upper floor is under the open sky and can be seen.
+  const r0 = lot('terminal').z1 + 0.8, r1 = z1 - 2, roof = deck + 3.5;
   b.box(x0 + 0.1, roof, r0, x1 + 0.35, roof + 0.22, r1, 0xe9e3d6, { faces: 'NESWTB', top: 0x3f5f58 });
   const posts = 5;
   for (let i = 0; i <= posts; i++) {
