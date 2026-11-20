@@ -571,7 +571,8 @@ function stories(Wd: World): StoryDef[] {
         inf.forEach((id, i) => {
           const a = P.from(id), t0 = 26.5 + Math.floor(i / 2) * 0.9;
           if (tb < t0) { P.put(id, still(a, {}, { shown: false })); return; }
-          const s = span(tb, t0, t0 + 6.5), x = a.x, z = lerp(-52.4, -34, s);
+          // through the postern and into the square inside it, short of the towers that stand south of it
+          const s = span(tb, t0, t0 + 6.5), x = a.x, z = lerp(-52.4, -38.4, s);
           P.put(id, still(at(x, F, z, S), walk(((tb - t0) * 1.3) % 1), { shown: s < 0.98 }));
         });
       },
@@ -584,12 +585,13 @@ function stories(Wd: World): StoryDef[] {
   // ---------------------------------------------------------------- 4. Sevro and the last boots
   {
     const howlers = ['clown', 'pebble', 'screwface'];
-    const roofs = [at(-23.4, F + 28, -38.6, S), at(-23.4, F + 24, -15.4, S), at(-19, F + 1.2, -10, S)];
+    // from the roof of the Howlers' tower, to the stage on Temptation's rim, to the podium's edge
+    const roofs = [at(-38.6, F + 40, -18.6, S), at(-23.4, F + 24, -15.4, S), at(-19, F + 1.2, -10, S)];
     const wall = at(-32.4, F + 7, 1.5, W);
     const marks: Record<Id, Spot | 'post'> = { sevro: roofs[0], darrow: at(-9.5, F, -38, S) };
     howlers.forEach((id, i) => (marks[id] = at(-10.5 + i * 1.2, F, -40 - i * 1.4, S)));
     out.push({
-      id: 'boots', name: 'Sevro and the last boots', cast: ['sevro', 'darrow', ...howlers], holds: ['roofs', 'citadelWall'], weight: 1, marks, body: 30,
+      id: 'boots', name: 'Sevro and the last boots', cast: ['sevro', 'darrow', ...howlers], holds: ['roofs', 'citadelWall', 'howl'], weight: 1, marks, body: 30,
       play(tb, P) {
         // Sevro hops from roof to roof, waving the others on below
         const hop = (a: Spot, b: Spot, t0: number, t1: number): void => {
