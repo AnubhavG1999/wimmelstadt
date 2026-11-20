@@ -1136,8 +1136,8 @@ function stories(Wd: World): StoryDef[] {
   }
 
   // ---------------------------------------------------------------- 11. The leeches on the Warchild, and 13. the chase: the fleet's
-  out.push({ id: 'leeches', name: 'the leeches on the Warchild', cast: [], holds: ['sky'], weight: 0.7, marks: {}, body: 40, play() {}, sky: () => Wd.fleet?.leeches() ?? 0 });
-  out.push({ id: 'chase', name: 'the Charybdis chases the Archimedes', cast: [], holds: ['sky'], weight: 0.7, marks: {}, body: 30, play() {}, sky: () => Wd.fleet?.chase() ?? 0 });
+  out.push({ id: 'leeches', name: 'the leeches on the Warchild', cast: [], holds: ['sky'], weight: 0.7, marks: {}, body: 50, play() {}, sky: () => Wd.fleet?.leeches() ?? 0 });
+  out.push({ id: 'chase', name: 'the Charybdis chases the Archimedes', cast: [], holds: ['sky'], weight: 0.7, marks: {}, body: 32, play() {}, sky: () => Wd.fleet?.chase() ?? 0 });
 
   // ---------------------------------------------------------------- 12. The Howlers' howl
   {

@@ -419,11 +419,8 @@ export const SPIDER_PATROL: P2[] = [[46, 90], [58, 86], [66, 94], [58, 104], [46
 /** The shield over the city: an ellipsoid, its middle on the floor, and how far it reaches each way. */
 export const SHIELD = { c: [0, F, -2] as P3, rx: 86, ry: 84, rz: 64 };
 
-/** Where the fleets fly: the Augustans over the east, the Bellona over the south. Boxes in the air, low corner and high corner. */
-export const FLEET = {
-  augustan: { x0: 74, x1: 100, z0: -70, z1: 100, y0: 54, y1: 82 },
-  bellona: { x0: -40, x1: 66, z0: 74, z1: 108, y0: 50, y1: 72 },
-};
+// Where the fleets fly is fleet.ts's own: every ship has a station between 87 and 135 up, laid so that no stage is lost
+// behind a hull from the opening view, and `rrFleet.check()` flies every path whole.
 
 /** Where the Iron Rain lands while the shield stands, and where it lands once it is down. */
 export const LANDINGS = {
