@@ -3,7 +3,7 @@
 // (Kaiju Karaoke, Tornado Ramen, Dream Electric, Neon Sushi, Doughnut Galaxy,
 // Cat Cola), and the rest say only what a shop sells.
 
-import { JAPANESE, fit, type SignDef } from '../../engine/signs';
+import { JAPANESE, fit, roundRect, type SignDef } from '../../engine/signs';
 import type { SignPool } from '../../engine/buildings';
 
 const neon = (id: string, lines: string[], color: string, aspect: number): SignDef => ({ id, lines, color, aspect, font: JAPANESE });
@@ -202,6 +202,170 @@ function paintYume(ctx: Ctx, _s: SignDef, w: number, h: number): void {
   letter(ctx, '電気', w * 0.66, h * 0.72, h * 0.36, w * 0.56, '#d8ffe0');
 }
 
+/**
+ * What the big screen at the scramble shows when no music plays: a giant
+ * calico cat peeking over the bottom edge of the screen at the street, with its
+ * paws hooked over the edge, saying "meow", and in a corner, as a channel's
+ * caption would, "on a break right now". It draws the whole screen every time.
+ */
+function paintCatBreak(ctx: Ctx, _s: SignDef, w: number, h: number): void {
+  const INK = '#23232b', WHITE = '#fbfaf4', ORANGE = '#ff9a3c', PINK = '#ff8fb1';
+  // a soft sky, and two clouds in it
+  const sky = ctx.createLinearGradient(0, 0, 0, h);
+  sky.addColorStop(0, '#7cc8f2');
+  sky.addColorStop(1, '#cdeeff');
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, w, h);
+  ctx.fillStyle = 'rgba(255,255,255,0.8)';
+  for (const [x, y, r] of [[0.1, 0.5, 0.05], [0.9, 0.62, 0.045]]) {
+    for (const dx of [-1, 0, 1]) {
+      ctx.beginPath();
+      ctx.arc(w * (x + dx * r * 0.9), h * y - (dx === 0 ? w * r * 0.4 : 0), w * r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  // the head: wide and round, with two ears, rising from below the edge
+  const cx = w * 0.5, cy = h * 0.9, rx = w * 0.29, ry = h * 0.47;
+  const head = (): void => {
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+    for (const s of [-1, 1]) {
+      ctx.moveTo(cx + s * rx * 0.88, cy - ry * 0.5);
+      ctx.lineTo(cx + s * rx * 0.78, cy - ry * 1.12);
+      ctx.lineTo(cx + s * rx * 0.3, cy - ry * 0.9);
+      ctx.closePath();
+    }
+  };
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = INK;
+  ctx.lineWidth = 10;
+  head();
+  ctx.stroke();
+  ctx.fillStyle = WHITE;
+  head();
+  ctx.fill();
+  // an orange patch over the left ear and a black one over the right, kept inside the head
+  ctx.save();
+  head();
+  ctx.clip();
+  ctx.fillStyle = ORANGE;
+  ctx.beginPath();
+  ctx.ellipse(cx - rx * 0.72, cy - ry * 0.85, rx * 0.42, ry * 0.4, 0.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = INK;
+  ctx.beginPath();
+  ctx.ellipse(cx + rx * 0.7, cy - ry * 0.88, rx * 0.34, ry * 0.32, -0.4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+  // pink inside the ear that is not black
+  ctx.fillStyle = PINK;
+  ctx.beginPath();
+  ctx.moveTo(cx - rx * 0.8, cy - ry * 0.62);
+  ctx.lineTo(cx - rx * 0.75, cy - ry * 0.98);
+  ctx.lineTo(cx - rx * 0.45, cy - ry * 0.84);
+  ctx.closePath();
+  ctx.fill();
+
+  // big eyes, their pupils low in them, so that the cat looks down at the street
+  for (const s of [-1, 1]) {
+    const ex = cx + s * rx * 0.36, ey = cy - ry * 0.42;
+    ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.ellipse(ex, ey, rx * 0.17, ry * 0.21, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = INK;
+    ctx.beginPath();
+    ctx.ellipse(ex + s * rx * 0.02, ey + ry * 0.07, rx * 0.12, ry * 0.14, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(ex - rx * 0.03, ey + ry * 0.01, rx * 0.04, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // a pink nose, a mouth like a small w, and the whiskers
+  const ny = cy - ry * 0.17;
+  ctx.fillStyle = PINK;
+  ctx.beginPath();
+  ctx.moveTo(cx - rx * 0.07, ny);
+  ctx.lineTo(cx + rx * 0.07, ny);
+  ctx.lineTo(cx, ny + ry * 0.07);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = INK;
+  ctx.lineWidth = 4;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.arc(cx - rx * 0.07, ny + ry * 0.08, rx * 0.07, 0.1, Math.PI - 0.1);
+  ctx.moveTo(cx + rx * 0.14, ny + ry * 0.08);
+  ctx.arc(cx + rx * 0.07, ny + ry * 0.08, rx * 0.07, 0.1, Math.PI - 0.1);
+  for (const s of [-1, 1]) {
+    for (const t of [-0.06, 0.06]) {
+      ctx.moveTo(cx + s * rx * 0.3, ny + ry * t);
+      ctx.lineTo(cx + s * rx * 0.95, ny + ry * (t * 2.6 - 0.04));
+    }
+  }
+  ctx.stroke();
+
+  // the bottom edge of the screen, and the two paws hooked over it
+  const edge = h * 0.86;
+  ctx.fillStyle = '#3a4150';
+  ctx.fillRect(0, edge, w, h - edge);
+  ctx.fillStyle = '#4c5466';
+  ctx.fillRect(0, edge, w, h * 0.025);
+  for (const s of [-1, 1]) {
+    const px = cx + s * rx * 0.5, pw = rx * 0.38, top = edge - h * 0.07, bottom = h * 0.97;
+    ctx.fillStyle = WHITE;
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 6;
+    roundRect(ctx, px - pw / 2, top, pw, bottom - top, pw * 0.4);
+    ctx.fill();
+    ctx.stroke();
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    for (const t of [-1 / 6, 1 / 6]) {
+      ctx.moveTo(px + t * pw, bottom - h * 0.01);
+      ctx.lineTo(px + t * pw, bottom - h * 0.06);
+    }
+    ctx.stroke();
+  }
+
+  // the speech bubble, its tail towards the cat
+  const bx = w * 0.865, by = h * 0.2, bw = w * 0.2, bh = h * 0.2;
+  ctx.fillStyle = '#ffffff';
+  ctx.strokeStyle = INK;
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.ellipse(bx, by, bw / 2, bh / 2, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(bx - bw * 0.3, by + bh * 0.3);
+  ctx.lineTo(bx - bw * 0.52, by + bh * 0.8);
+  ctx.lineTo(bx - bw * 0.08, by + bh * 0.42);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(bx - bw * 0.3, by + bh * 0.4);
+  ctx.lineTo(bx - bw * 0.52, by + bh * 0.8);
+  ctx.lineTo(bx - bw * 0.12, by + bh * 0.47);
+  ctx.stroke();
+  letter(ctx, 'にゃー', bx, by + bh * 0.03, bh * 0.52, bw * 0.78, INK);
+
+  // the caption in the top corner, as a channel's would be
+  const capW = w * 0.33, capH = h * 0.11;
+  ctx.fillStyle = 'rgba(20,20,28,0.78)';
+  roundRect(ctx, w * 0.03, h * 0.05, capW, capH, capH * 0.3);
+  ctx.fill();
+  ctx.fillStyle = ORANGE;
+  ctx.beginPath();
+  ctx.arc(w * 0.03 + capH * 0.5, h * 0.05 + capH / 2, capH * 0.18, 0, Math.PI * 2);
+  ctx.fill();
+  letter(ctx, 'ただいま休憩中', w * 0.03 + capH * 0.85 + (capW - capH) / 2, h * 0.05 + capH / 2, capH * 0.62, capW - capH * 1.1, '#ffffff');
+}
+
 /** The board at a hairpin: black arrows on yellow. */
 function paintChevron(ctx: Ctx, _s: SignDef, w: number, h: number): void {
   ctx.fillStyle = '#ffd23f';
@@ -235,6 +399,8 @@ function paintKonbini(ctx: Ctx, _s: SignDef, w: number, h: number): void {
  * rest say what is sold. The plate under the dog is what the real one says.
  */
 export const SCENE_SIGNS: SignDef[] = [
+  // the big screen, which shows what is playing; its own picture is a cat on its break
+  { id: 'screen', lines: ['ただいま休憩中', 'にゃー'], color: '#ffb35c', aspect: 16 / 9, kind: 'screen', paint: paintCatBreak, font: JAPANESE },
   { id: 'ad-neko', lines: ['ネココーラ'], color: '#35e0ff', aspect: 0.54, size: [270, 500], paint: paintNeko, font: JAPANESE },
   { id: 'ad-donut', lines: ['ドーナツ銀河'], color: '#ffd23f', aspect: 0.54, size: [270, 500], paint: paintDonut, font: JAPANESE },
   { id: 'ad-yume', lines: ['ゆめ電気'], color: '#7dff9b', aspect: 1.35, size: [351, 260], paint: paintYume, font: JAPANESE },

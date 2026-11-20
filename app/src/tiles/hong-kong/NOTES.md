@@ -128,6 +128,7 @@ The towers are within a tenth of the scale and stand in the order they do in lif
 - **Choi Hung Estate.** Each storey is one colour of the rainbow. That the real blocks are banded storey by storey was not confirmed: the sources found say only that they are painted in the colours of the rainbow. Its car park stands in front of the flats, as in the photograph everybody takes.
 - **Temple Street Night Market** is at the front of the board, on Kowloon's south edge, where it can be seen. It is in Yau Ma Tei.
 - **M+** shows its screen on both its faces. The real one has it on the face to the harbour.
+- **The big screen** hangs on the east face of the tall neon block at the east end of Nathan Road's north side (`nathan-n3`), 10 high, under its roof; that face has no shop signs, to leave it room. The waterfront's faces look west, away from the opening view, so the screen is on Nathan Road instead. It shows what is playing on Spotify, and otherwise its own picture: yum cha in neon, a bamboo steamer with three dumplings and steam rising, with 飲茶 ("yum cha") and 休息一下 ("taking a break"). Those words are plain phrases and nobody's name.
 - **Kai Tak** closed in 1998. The jumbo goes round over Kowloon and the harbour like a toy aeroplane on a wire, and never lands.
 - **Left out:** the Big Buddha (it stands on Lantau), the Golden Bauhinia and anything with a flag, a liner at Ocean Terminal (the harbour was too narrow with it).
 

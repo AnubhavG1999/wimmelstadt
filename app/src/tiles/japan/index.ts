@@ -9,6 +9,8 @@ export const japan: TileDef = {
   id: 'japan',
   name: 'Japan',
   seed: 20261119,
+  // Tokyo
+  place: { lon: 139.7, lat: 35.7 },
   signs: [...SIGNS, ...ROAD_SIGNS, ...PLACE_SIGNS, ...SCENE_SIGNS],
   build: buildJapan,
 };

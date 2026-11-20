@@ -27,6 +27,8 @@ export interface ControlsState {
   focus: string;
   stats: boolean;
   turning: boolean;
+  /** How things stand with the link to Spotify. `off` is a city without one, and nothing is said about music there. */
+  music: 'off' | 'disconnected' | 'connecting' | 'connected';
 }
 
 export interface ControlsHandlers {
@@ -42,6 +44,8 @@ export interface ControlsHandlers {
   unlock(pin: string): Promise<Unlock>;
   /** Locks the heroes on this device again. */
   lock(): void;
+  /** Makes the link to Spotify, or ends it if there is one. */
+  music(): void;
   /** Called whenever a control is touched, so that the page keeps them in sight. */
   touched(): void;
 }
@@ -129,6 +133,7 @@ export function buildControls(root: HTMLElement, on: ControlsHandlers): Controls
     <button data-m="turning" role="menuitemcheckbox"><span>Auto-rotate</span><b></b></button>
     <button data-m="stats" role="menuitemcheckbox"><span>Performance stats</span><b></b></button>
     <button data-m="heroes" role="menuitem" aria-haspopup="dialog" hidden><span>Heroes</span><b></b></button>
+    <button data-m="music" role="menuitem" hidden><span>Music</span><b></b></button>
   </div>
   ${dialSvg()}
 </div>
@@ -220,6 +225,7 @@ export function buildControls(root: HTMLElement, on: ControlsHandlers): Controls
   option('focus').addEventListener('click', () => { on.focus(); on.touched(); });
   option('turning').addEventListener('click', () => { on.turning(); on.touched(); });
   option('stats').addEventListener('click', () => { on.stats(); on.touched(); });
+  option('music').addEventListener('click', () => { on.music(); on.touched(); });
   options.addEventListener('pointerdown', () => on.touched());
 
   // --- the lock on the heroes: a card that takes the PIN, or locks the device again ---
@@ -303,7 +309,7 @@ export function buildControls(root: HTMLElement, on: ControlsHandlers): Controls
       const hh = Math.floor(s.hour) % 24, mm = Math.floor((s.hour % 1) * 60);
       const text = `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
       const state = s.lapse ? 'TIME-LAPSE' : s.live ? 'LIVE' : 'SET';
-      const sig = [text, state, s.weather, s.actual, s.title, s.hero, s.heroes, s.following, s.lock, s.focus, s.stats, s.turning].join('|');
+      const sig = [text, state, s.weather, s.actual, s.title, s.hero, s.heroes, s.following, s.lock, s.focus, s.stats, s.turning, s.music].join('|');
       mark.setAttribute('transform', `rotate(${((s.hour - 12) * 15).toFixed(2)} 60 60)`);
       if (sig === last) return;
       last = sig;
@@ -330,6 +336,10 @@ export function buildControls(root: HTMLElement, on: ControlsHandlers): Controls
       setOption('focus', s.focus.charAt(0).toUpperCase() + s.focus.slice(1), s.focus !== 'soft');
       setOption('turning', s.turning ? 'On' : 'Off', s.turning);
       setOption('stats', s.stats ? 'On' : 'Off', s.stats);
+      // the row for music: what a touch will do while there is no link, and whose music it is once there is one
+      option('music').hidden = s.music === 'off';
+      option('music').title = s.music === 'connected' ? 'The screens in the city show what is playing. Select to end the link.' : 'Show what Spotify is playing on the screens in the city';
+      setOption('music', s.music === 'connected' ? 'Spotify' : s.music === 'connecting' ? 'Connecting' : 'Connect', s.music === 'connected');
       option('heroes').hidden = s.lock === 'open';
       setOption('heroes', LOCK[s.lock], s.lock === 'unlocked');
       if (s.lock !== lock) {

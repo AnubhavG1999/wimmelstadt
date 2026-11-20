@@ -15,7 +15,8 @@ import { buildPath } from '../../engine/paths';
 import { station, track, train } from '../../engine/rail';
 import { CONCRETE, lampsAlong, roadDeck, street } from '../../engine/roads';
 import type { SignDef } from '../../engine/signs';
-import type { Build, TileDef, TileParts } from '../../engine/tile';
+import type { Build, TileDef, TileParts, TrafficKind } from '../../engine/tile';
+import { PART, boxAt, shapeFrom, shapePart, wheelsFor } from '../../engine/vehicles';
 
 const SIGNS: SignDef[] = [
   { id: 'cafe', lines: ['CAFE'], color: '#ffd9a0', aspect: 3.0 },
@@ -132,15 +133,36 @@ function build(k: Build): TileParts {
   for (let i = 0; i < 24; i++) k.person(-66 + k.rand() * 42, 46 + k.rand() * 30);
 
   return {
+    // traffic of the tile's own shape, which the outer ring asks for by name beside the plain kinds
+    kinds: [TRIKE],
     // traffic keeps to the right: clockwise on the inside of the ring, the other way on the outside
     routes: [
       { id: 'ring-inner', segs: [{ t: 'ring', pts: [[-77.5, -87.5], [77.5, -87.5], [77.5, 87.5], [-77.5, 87.5]], y: 0, r: 17.5 }], speed: 16, count: 6 },
-      { id: 'ring-outer', segs: [{ t: 'ring', pts: [[-82.5, -92.5], [-82.5, 92.5], [82.5, 92.5], [82.5, -92.5]], y: 0, r: 22.5 }], speed: 16, count: 6 },
+      { id: 'ring-outer', segs: [{ t: 'ring', pts: [[-82.5, -92.5], [-82.5, 92.5], [82.5, 92.5], [82.5, -92.5]], y: 0, r: 22.5 }], speed: 16, count: 6, types: ['sedan', 'hatch', 'trike', 'trike'] },
     ],
     parked: [{ x: -55, y: 3.52, z: -43, heading: -Math.PI / 2 }],
     heroSpots: [{ id: 'hill', x: -47, y: 3.52, z: -43, heading: -Math.PI / 2 }],
   };
 }
+
+/**
+ * A kind of traffic of the tile's own: a delivery tricycle. Its nose is along
+ * +x and it stands on y = 0. The box on its back is paint, given in white, and
+ * takes one of `colors` for each tricycle; every other part keeps its colour.
+ */
+const TRIKE: TrafficKind = {
+  name: 'trike', len: 5.2, wid: 2.6, colors: [0xd94f4f, 0x3f6fb5, 0xf2c14e, 0x4fa36b],
+  geo: shapeFrom([
+    shapePart(boxAt(2.6, 1.7, 2.3, -1.2, 1.75, 0), PART.paint, 0xffffff), // the box on its back
+    shapePart(boxAt(2.4, 0.3, 0.7, 1.0, 1.0, 0), PART.trim, 0x2a2c31), // the frame, forward of it
+    shapePart(boxAt(0.9, 0.25, 0.9, 0.5, 1.45, 0), PART.trim, 0x3a2a1a), // the saddle
+    shapePart(boxAt(0.2, 1.3, 0.2, 2.0, 1.5, 0), PART.trim, 0x2a2c31), // the steering column, and the handlebar across it
+    shapePart(boxAt(0.2, 0.2, 1.6, 2.0, 2.15, 0), PART.trim, 0x2a2c31),
+    shapePart(boxAt(0.14, 0.3, 0.4, 2.2, 1.6, 0), PART.head, 0xfff4d6), // its one lamp
+    ...wheelsFor(0.8, 2.6, [-1.3]), // two wheels at the back
+    ...wheelsFor(0.8, 0.64, [2.0]), // and at the front two so close together that they are one
+  ]),
+};
 
 export const sample: TileDef = { id: 'sample', name: 'The sample tile', seed: 7, signs: SIGNS, hidden: true, build };
 

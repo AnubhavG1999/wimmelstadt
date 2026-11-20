@@ -11,7 +11,7 @@ import type { Roof } from '../../engine/buildings';
 import type { Hump, Seg } from '../../engine/paths';
 import type { SignDef } from '../../engine/signs';
 import { LANE, STOREY, TILE, type HeroSpot, type ParkedSpot, type Rect, type Route, type TrafficType } from '../../engine/tile';
-import { paintBillboard, paintScore, paintShield } from './signs';
+import { paintBillboard, paintRocketCola, paintScore, paintShield } from './signs';
 
 export { LANE, STOREY };
 export { humpHeight } from '../../engine/paths';
@@ -617,7 +617,8 @@ export const SIGNS: SignDef[] = [
   { id: 'carpark', lines: ['LOOP PARKING'], color: '#b9e2ff', ink: '#0f3b66', aspect: 5.6, kind: 'box' },
   { id: 'billboard', lines: ['DRINK', 'ROCKET COLA'], color: '#8fecff', ink: '#0b2a4a', aspect: 2.2, kind: 'box', paint: paintBillboard },
   { id: 'p', lines: ['P'], color: '#ffffff', aspect: 1, kind: 'p' },
-  { id: 'screen', lines: ['NOW PLAYING', 'Midnight Freeway Loop', 'The Diecasts'], color: '#ff3d9a', aspect: 1.78, kind: 'screen' },
+  // the big screen: what is playing, and when nothing is, a roadside advertisement for the made-up cola, in these words
+  { id: 'screen', lines: ['ROCKET', 'COLA', 'OUT OF THIS WORLD'], color: '#ff3d9a', aspect: 1.78, kind: 'screen', paint: paintRocketCola },
 
   // Route 66: the highway marker, and the word that goes with it on the road's signs today
   { id: 'shield66', lines: ['ROUTE', '66'], color: '#f4f1e8', aspect: 0.94, size: [241, 256], paint: paintShield },

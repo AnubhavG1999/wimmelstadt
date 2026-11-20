@@ -90,6 +90,22 @@ _Avoid_: Board, chunk, cell, island
 Every tile of the world standing edge to edge on one table, each on its own base. A single tile is never called a board.
 _Avoid_: Map, grid, overworld
 
+**Room**:
+The collector's room, which is the background of the city: a desk, and round it a floor, walls, shelves of boxed cars, windows and lamps. The table of the board stands in it, and the view never leaves it.
+_Avoid_: Backdrop, scenery
+
+**Desk**:
+The long desk in the room that the table of the board stands on. Its top is the map. The collector's own desk, in life, is not meant.
+_Avoid_: Tabletop, surface
+
+**Map**:
+The old map of the world on the desk, on which every tile's place is pinned. The world and the board are never called a map.
+_Avoid_: Atlas, chart, globe
+
+**Place**:
+Where in the world a tile's district is, marked on the map by a pin and joined to the tile by a thread. An imagined place is given a coast of its own on the map. A place for a hero on show, on a tile, is something else.
+_Avoid_: Location, position, coordinates
+
 **Plan**:
 The record of one tile's layout: its ground, its roads, and where each building and landmark stands. The tile is built from it.
 _Avoid_: Layout file, level data, blueprint
@@ -116,6 +132,10 @@ _Avoid_: Monument, icon, wonder
 
 **Cutaway**:
 A building with a side or roof left open so that the vehicles inside can be seen.
+
+**Screen**:
+A big screen in the city that shows what is playing. When nothing is, it shows a picture of its own. The screen of the device the city runs on is not one.
+_Avoid_: Billboard, display, jumbotron
 
 **Toy size**:
 The scale of everything in the world: each vehicle is as large, next to the others, as the physical toy it stands for. A bus the length of a hatchback stays that way.

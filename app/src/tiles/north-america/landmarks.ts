@@ -572,7 +572,8 @@ function route66(ctx: LandmarkCtx): void {
   // one word along the truss, and the highway's marker above it: together, what the road's signs say today
   const w = ctx.sign('historic', T.x, T.height - 0.4, T.z + 0.3, 0, 1, 1.9);
   ctx.sign('historic', T.x, T.height - 0.4, T.z - 0.3, 0, -1, 1.9);
-  b.box(T.x - w / 2 - 0.1, T.height - 1.4, T.z - 0.26, T.x + w / 2 + 0.1, T.height + 0.6, T.z + 0.26, BOARD);
+  // (its top stops short of the truss's own, so that the two are not in one plane)
+  b.box(T.x - w / 2 - 0.1, T.height - 1.4, T.z - 0.26, T.x + w / 2 + 0.1, T.height + 0.55, T.z + 0.26, BOARD);
   const sw = ctx.sign('shield66', T.x, top + 2.5, T.z + 0.2, 0, 1, 4.4);
   ctx.sign('shield66', T.x, top + 2.5, T.z - 0.2, 0, -1, 4.4);
   b.box(T.x - sw / 2, top + 0.3, T.z - 0.17, T.x + sw / 2, top + 4.7, T.z + 0.17, BOARD);
