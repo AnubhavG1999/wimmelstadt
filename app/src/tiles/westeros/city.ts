@@ -1,22 +1,25 @@
 // Builds everything that stands still on Westeros, and sets the dragons flying.
-// The shapes come from plan.ts.
+//
+// The plan is in plan.ts. The ground is laid by land.ts and the roads by
+// roads.ts. What stands on the ground is built region by region, each in a
+// file of its own (regions.ts lists them). A lot that no region has built yet
+// stands as a plain box with its name on a board.
 
-import type { WinSpec } from '../../engine/geo';
-import { area, flat, oval, water } from '../../engine/ground';
+import { checkRoads, type Solid } from '../../engine/checks';
 import type { Build, TileParts } from '../../engine/tile';
 import { buildDragons } from './dragons';
-import { DORNE, GODS_EYE, LAND_NECK, LAND_NORTH, LAND_SOUTH, LOTS, SEA_NORTH_EAST, SEA_SOUTH_EAST, SEA_WEST, WALL, type Lot } from './plan';
+import { buildLand } from './land';
+import type { Model } from './models';
+import { GATES, HERO_SPOTS, LOTS, WALL, type Lot } from './plan';
+import { REGIONS } from './regions';
+import { buildRoads } from './roads';
+import { WAYFARERS } from './wayfarers';
 
-/** What the street material is told about a stretch of plain ground. */
-const GROUND: WinSpec = { cell: 0, storey: 1, lit: 0, kind: 1 };
-
-const SNOW = 0xe6ecf0, BOG = 0x76835c, GRASS = 0x8ab56a, SAND = 0xe2cf9a;
-const SEA_COLD = 0x55809a, SEA_WARM = 0x4f9cc0, SEA_SUNSET = 0x4a88aa;
-const SHORE_COLD = 0xc3ccd1, SHORE = 0xb9ad90;
 const ICE = 0xcfe4ee, ICE_SHADE = 0xb4d0de, STONE = 0xb8b2a6, ROCK = 0x9a948a;
 
 /** A lot that is still only a box, with its name on a board that faces the view the tile opens with. */
 function box(k: Build, l: Lot): void {
+  if (l.id === 'wall') return wallBlock(k);
   const rock = l.id.startsWith('frostfangs') || l.id.startsWith('vale') || l.id.startsWith('casterly') || l.id === 'dragonmont';
   k.b.box(l.x0, 0, l.z0, l.x1, l.top, l.z1, rock ? ROCK : STONE, { seed: l.x0 * 0.13 + l.z0 * 0.07 });
   if (l.part || !l.name) return;
@@ -35,37 +38,52 @@ function wallBlock(k: Build): void {
 }
 
 export function buildWesteros(k: Build): TileParts {
-  // -------------------------------------------------------------------------
-  // The ground: snow north of the Neck, bog in it, green south of it, sand in Dorne
-  // -------------------------------------------------------------------------
-
-  const godsEye = oval(GODS_EYE.x, GODS_EYE.z, GODS_EYE.rx, GODS_EYE.rz, 22);
-  flat(k.street, LAND_NORTH, 0, SNOW, { win: GROUND });
-  flat(k.street, LAND_NECK, 0, BOG, { win: GROUND });
-  flat(k.street, LAND_SOUTH, 0, GRASS, { win: GROUND, holes: [godsEye] });
-  area(k, DORNE, SAND);
-
-  water(k, SEA_WEST, { color: SEA_SUNSET, quay: SHORE });
-  water(k, SEA_NORTH_EAST, { color: SEA_COLD, quay: SHORE_COLD });
-  water(k, SEA_SOUTH_EAST, { color: SEA_WARM, quay: SHORE });
-  water(k, godsEye, { color: 0x5f9fb4, quay: SHORE });
-
-  // -------------------------------------------------------------------------
-  // The blockout: every lot as a plain box, until its model is built
-  // -------------------------------------------------------------------------
-
   // On the development server, `?bare` leaves the ground empty: a clear stage for looking at a dragon from every side.
   const bare = import.meta.env.DEV && new URLSearchParams(location.search).has('bare');
-  if (!bare) {
-    wallBlock(k);
-    for (const l of LOTS) if (l.id !== 'wall') box(k, l);
-  }
+  const regions = Object.entries(REGIONS);
 
-  // -------------------------------------------------------------------------
-  // The dragons
-  // -------------------------------------------------------------------------
+  buildLand(k, new Set(bare ? [] : regions.flatMap(([, r]) => r.FLOORED)));
+  const routes = bare ? [] : buildRoads(k);
+
+  if (!bare) {
+    const models = new Map<string, Model>(regions.flatMap(([, r]) => Object.entries(r.MODELS)));
+    const covered = new Set(regions.flatMap(([, r]) => r.COVERS));
+    for (const l of LOTS) {
+      const model = models.get(l.id);
+      if (!model) {
+        if (!covered.has(l.id)) box(k, l);
+        continue;
+      }
+      try {
+        model(k, l);
+      } catch (e) {
+        // one model that fails does not take the tile with it: its lot stands as a box, and the console says why
+        console.error(`Westeros: the model of ${l.id} failed.`, e);
+        box(k, l);
+      }
+    }
+    for (const [name, r] of regions) {
+      try {
+        r.extras(k);
+      } catch (e) {
+        console.error(`Westeros: what ${name} builds besides its lots failed.`, e);
+      }
+    }
+  }
 
   buildDragons(k);
 
-  return { routes: [], parked: [], heroSpots: [] };
+  if (import.meta.env.DEV && !bare) {
+    // a road may run through a gate, and round the drum of Storm's End, which is round where its lot is square
+    const open = new Set([...GATES.map((g) => g.lot), 'se-drum']);
+    const solids: Solid[] = LOTS.filter((l) => !open.has(l.id)).map((l) => ({ id: l.id, x0: l.x0, z0: l.z0, x1: l.x1, z1: l.z1, y0: 0, y1: l.top }));
+    checkRoads('Westeros', routes, {}, solids);
+  }
+
+  return {
+    routes,
+    parked: [],
+    heroSpots: bare ? [] : HERO_SPOTS.map((s) => ({ id: s.id, x: s.x, y: 0.03, z: s.z, heading: s.heading })),
+    kinds: WAYFARERS,
+  };
 }

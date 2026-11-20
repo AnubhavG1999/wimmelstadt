@@ -7,9 +7,9 @@
 // belongs to, because the view the tile opens with looks from the
 // south-south-east and a thing hides what is north-north-west of it.
 //
-// Units: 1 unit is 1 cm of toy. A lane is 5 wide, a storey is 5 high and a car
-// is about 7 long. x points east, z points south, y points up. Traffic keeps
-// to the left.
+// Units: 1 unit is 1 cm of toy. A storey is 5 high and a car is about 7 long.
+// A lane of these roads is 4 wide. x points east, z points south, y points up.
+// Traffic keeps to the left.
 
 import { TILE } from '../../engine/tile';
 
@@ -30,24 +30,24 @@ const XW = BOARD.x0 + EDGE, XE = BOARD.x1 - EDGE, ZN = BOARD.z0 + EDGE, ZS = BOA
  * [x, z] corners. North of the Wall's west end the land runs off the board.
  */
 export const COAST_WEST: P2[] = [
-  [XW, ZN], [XW, -84], [-82, -80], [-78, -62], [-66, -48], [-14, -46], [-14, -36], [-40, -33], [-64, -28], [-78, -22], [-78, 0],
-  [-72, 8], [-72, 34], [-86, 36], [-86, 46], [-80, 50], [-78, 66], [-70, 80], [-66, 84], [-66, ZS],
+  [XW, ZN], [XW, -84], [-82, -80], [-78, -62], [-66, -48], [-44, -42.5], [-14, -42.5], [-14, -36], [-40, -33], [-64, -28], [-78, -22], [-78, 0],
+  [-72, 8], [-72, 34], [-86, 36], [-86, 46], [-80, 50], [-78, 66], [-70, 80], [-64, 86], [-64, ZS],
 ];
 /** Where the land ends to the east, from the north edge to the south. At the Vale it runs off the board. */
 export const COAST_EAST: P2[] = [
-  [90, ZN], [90, -70], [88, -58], [80, -56], [60, -49], [42, -46], [42, -37.5], [XE, -37.5], [XE, 0.5],
-  [76, 2], [76, 56], [16, 56], [16, 63], [76, 63], [76, 98], [56, 100], [56, ZS],
+  [90, ZN], [90, -70], [88, -58], [80, -56], [60, -49], [42, -44], [42, -37.5], [XE, -37.5], [XE, 0.5],
+  [76, 2], [76, 56], [62, 56], [62, 59], [44, 59], [44, 56], [16, 56], [16, 63], [76, 63], [76, 98], [56, 100], [56, ZS],
 ];
 
 /** The Neck: the narrow land between two seas, which is bog. */
-export const NECK = { x0: -14, x1: 42, z0: -46, z1: -37.5 };
+export const NECK = { x0: -14, x1: 42, z0: -44, z1: -37.5 };
 
 /** The land north of the Neck, which lies under snow: down the east coast and back up the west. */
-export const LAND_NORTH: P2[] = [...COAST_EAST.slice(0, 6), ...COAST_WEST.slice(0, 6).reverse()];
+export const LAND_NORTH: P2[] = [...COAST_EAST.slice(0, 6), [NECK.x0, NECK.z0], ...COAST_WEST.slice(0, 7).reverse()];
 /** The Neck's own ground. */
 export const LAND_NECK: P2[] = [[NECK.x1, NECK.z0], [NECK.x1, NECK.z1], [NECK.x0, NECK.z1], [NECK.x0, NECK.z0]];
 /** The land south of the Neck, which is green. */
-export const LAND_SOUTH: P2[] = [[NECK.x0, NECK.z1], [NECK.x1, NECK.z1], ...COAST_EAST.slice(7), ...COAST_WEST.slice(6).reverse()];
+export const LAND_SOUTH: P2[] = [[NECK.x0, NECK.z1], [NECK.x1, NECK.z1], ...COAST_EAST.slice(7), ...COAST_WEST.slice(7).reverse()];
 
 /** Dorne's sand, in the middle of the south edge. */
 export const DORNE: P2[] = [[2, 88], [76, 86], [76, 98], [56, 100], [56, ZS], [-16, ZS], [-8, 98]];
@@ -60,7 +60,7 @@ export const SEA_NORTH_EAST: P2[] = [...COAST_EAST.slice(0, 8), [XE, ZN]];
 export const SEA_SOUTH_EAST: P2[] = [...COAST_EAST.slice(8), [XE, ZS]];
 
 /** The Gods Eye. */
-export const GODS_EYE = { x: -55, z: 23, rx: 15, rz: 17 };
+export const GODS_EYE = { x: -52, z: 23, rx: 11, rz: 16 };
 
 /** How far below the ground the water lies. */
 export const WATER_LEVEL = -0.9;
@@ -75,9 +75,10 @@ export function inside(shape: P2[], x: number, z: number): boolean {
   return hit;
 }
 
-/** Whether a place is open water: one of the seas, or the lake. */
+/** Whether a place is open water: one of the seas, or the lake. An island in the sea is not. */
 export function isWater(x: number, z: number): boolean {
   if (((x - GODS_EYE.x) / GODS_EYE.rx) ** 2 + ((z - GODS_EYE.z) / GODS_EYE.rz) ** 2 < 1) return true;
+  for (const i of Object.values(ISLANDS)) if (((x - i.x) / i.rx) ** 2 + ((z - i.z) / i.rz) ** 2 < 1) return false;
   return inside(SEA_WEST, x, z) || inside(SEA_SOUTH_EAST, x, z) || inside(SEA_NORTH_EAST, x, z);
 }
 
@@ -173,8 +174,8 @@ export const LOTS: Lot[] = [
   lot('tw-west-keep', 'The Twins', -26, -38, -18, -30, 20),
   lot('tw-west-gate', '', -28, -30, -18, -22, 9, true),
   // --- the crossroads at (40, -15), Riverrun, the Vale ---
-  lot('inn', 'Inn at the Crossroads', 44, -27, 54, -20, 11),
-  lot('inn-stable', 'Stable', 55, -26, 60, -21, 6),
+  lot('inn', 'Inn at the Crossroads', 44, -28, 54, -21, 11),
+  lot('inn-stable', 'Stable', 55, -27, 60, -22, 6),
   lot('riverrun', 'Riverrun', -70, -22, -54, -8, 16),
   lot('vale-north', '', 64, -38, 104, -32, 10, true),
   lot('vale-body', "Giant's Lance", 68, -32, 104, -18, 24, true),
@@ -184,7 +185,7 @@ export const LOTS: Lot[] = [
   lot('eyrie', 'The Eyrie', 76, -27, 82, -21, 47),
   lot('bloody-gate-n', 'Bloody Gate', 63, -21, 67, -18, 11),
   lot('bloody-gate-arch', '', 63, -18, 67, -10, 8, true),
-  lot('gates-moon', 'Gates of the Moon', 72, -18.5, 80, -14, 12),
+  lot('gates-moon', 'Gates of the Moon', 72, -19.5, 80, -15, 12),
   // --- Harrenhal, on the Gods Eye's east shore ---
   lot('hh-wall-n', 'Harrenhal', -38, 4, 2, 6, 11, true), lot('hh-wall-s', '', -38, 28, 2, 30, 11, true),
   lot('hh-wall-w', '', -38, 4, -36, 30, 11, true), lot('hh-wall-e', '', 0, 4, 2, 30, 11, true),
@@ -212,22 +213,25 @@ export const LOTS: Lot[] = [
   lot('kl-lion-gate', 'Lion Gate', 11, 45.5, 15, 55.5, 11),
   lot('kl-river-gate', 'River Gate', 35, 56, 45, 59, 11),
   // --- the south ---
-  lot('se-wall', "Storm's End", 52, 78, 72, 98, 16, true),
-  lot('se-drum', "Storm's End", 58, 84, 66, 92, 24),
-  lot('sun-wall-1', 'Sunspear', 20, 89.5, 52, 90.5, 6, true), lot('sun-wall-2', '', 20, 95.5, 52, 96.5, 5, true), lot('sun-wall-3', '', 20, 101.5, 52, 102.5, 5, true),
-  lot('sun-tower', 'Tower of the Sun', 26, 97, 34, 105, 14),
-  lot('sun-spear', 'Spear Tower', 24, 91.5, 26.5, 94, 20),
-  lot('hg-outer', 'Highgarden', -52, 60, -20, 92, 8, true), lot('hg-mid', '', -47, 65, -25, 87, 12, true),
-  lot('hg-inner', '', -43, 69, -29, 83, 17, true), lot('hg-towers', 'Highgarden', -40, 72, -32, 80, 24),
+  // Storm's End stands on a headland 3.2 high: its wall is low to the sea and tall to the land
+  lot('se-wall', "Storm's End", 52, 78, 72, 98, 13.2, true),
+  lot('se-drum', "Storm's End", 58, 84, 66, 92, 25.2),
+  lot('sun-wall-1', 'Sunspear', 23, 86.5, 52, 87.5, 6, true), lot('sun-wall-2', '', 23, 92.5, 52, 93.5, 5, true), lot('sun-wall-3', '', 23, 98.5, 52, 99.5, 5, true),
+  lot('sun-tower', 'Tower of the Sun', 22, 102, 30, 110, 14),
+  lot('sun-spear', 'Spear Tower', 29, 99.8, 31.5, 102.3, 20),
+  lot('hg-outer', 'Highgarden', -50, 60, -18, 92, 8, true), lot('hg-mid', '', -45, 65, -23, 87, 12, true),
+  lot('hg-inner', '', -41, 69, -27, 83, 17, true), lot('hg-towers', 'Highgarden', -38, 72, -30, 80, 24),
   // the Hightower is stepped: a black base, and three tiers that narrow
   lot('hightower-base', '', -82, 88, -74, 96, 10, true), lot('hightower-1', '', -81, 89, -75, 95, 24, true), lot('hightower-2', '', -80.5, 89.5, -75.5, 94.5, 38, true),
   lot('hightower', 'The Hightower', -80, 90, -76, 94, 48),
-  lot('oldtown', 'Oldtown', -64, 84, -52, 98, 8),
-  lot('citadel', 'Citadel', -60, 86, -56, 90, 13, true),
+  // Oldtown: a row of houses on the harbour, and the Citadel and the Starry Sept on the south shore
+  lot('oldtown', 'Oldtown', -64, 88, -60.5, 96, 8),
+  lot('citadel', 'Citadel', -62, 107.5, -52, 112.5, 13),
+  lot('starry-sept', 'Starry Sept', -50, 107.5, -43, 112.5, 12),
   // --- the west and the east ---
   lot('casterly-rock-n', '', -88, 8, -74, 18, 20, true),
   lot('casterly-rock', 'Casterly Rock', -90, 16, -72, 34, 34),
-  lot('lannisport', 'Lannisport', -84, 36, -70, 46, 7),
+  lot('lannisport', 'Lannisport', -86, 36, -72, 46, 7),
   lot('pyke', 'Pyke', -98, -34, -84, -18, 18),
   lot('ds-castle', 'Dragonstone', 88, 30, 96, 38, 20),
   lot('dragonmont', 'Dragonmont', 90, 12, 104, 28, 30),
@@ -277,4 +281,158 @@ export const CIRCUIT: Waypoint[] = [
   [-98, 40, 92, 30], [-91, 40, 105, 30], [-78, 40, 110, 30],
   // east along the south shore
   [-50, 40, 109, 30], [-20, 40, 108, 30], [6, 38, 107, 30],
+];
+
+// ---------------------------------------------------------------------------
+// Roads
+// ---------------------------------------------------------------------------
+//
+// One spine with branches. The kingsroad runs from beyond the Wall to the fork
+// before Storm's End, and every other road leaves it or one of its branches.
+// A road is two lanes, one each way, and traffic keeps left. Where roads meet,
+// each lane turns left round its own corner, so no lane crosses another: see
+// roads.ts for how the lanes are drawn from these lines.
+
+/** How wide one lane is, and so half of how wide a road is. */
+export const LANE = 4;
+
+/** The middle of each road, corner by corner. */
+export const ROADS = {
+  /** From the Wall's north foot, through the gate in the ice at x 10, to the fork before Storm's End. */
+  kingsroad: [[10, -99], [10, -82], [16, -74], [16, -47], [21, -44], [21, -32], [22, -26], [40, -15], [41.5, -8.5], [44, -0.5], [70, 3], [70, 50.5], [40, 50.5], [40, 68], [43, 75.5]],
+  /** East from the crossroads, through the Bloody Gate, to the yard before the Gates of the Moon. */
+  high: [[40, -15], [52, -13], [67.5, -13]],
+  /** West from the crossroads along the Trident, over the Red Fork below Riverrun, and south between the Gods Eye and Casterly Rock. */
+  river: [[40, -15], [34, -13], [20, -14], [-46, -14], [-49, -5], [-62, 3], [-67.5, 9], [-67.5, 50.5]],
+  /** West from the kingsroad over the Twins' bridge, and down to the river road. */
+  twins: [[22, -26], [-28, -26], [-44, -22], [-46, -14]],
+  /** From the west coast east past the tourney ground, through the Lion Gate, to the Blackwater bridge. */
+  gold: [[-67.5, 50.5], [40, 50.5]],
+  /** Down the west coast to Oldtown. */
+  ocean: [[-67.5, 50.5], [-67.5, 64], [-60, 80], [-56, 88], [-56, 103]],
+  /** From the Blackwater bridge south-west past Highgarden to Oldtown. */
+  rose: [[40, 68], [24, 80], [0, 94], [-20, 100], [-30, 103], [-56, 103]],
+  /** From Oldtown over the bridge to Battle Isle. */
+  isle: [[-56, 103], [-63, 103], [-69, 100.2]],
+  /** From the fork through Sunspear's three gates, one behind another on a straight road. */
+  sunspear: [[43, 75.5], [38.5, 85], [38, 98]],
+} satisfies Record<string, P2[]>;
+
+/**
+ * Where a road ends and turns back on itself: the middle of the ring it turns
+ * in, and how far out the middle of that ring's one lane is. Traffic goes
+ * round with the clock, as it does round a roundabout where it keeps left.
+ */
+export const TURNS = {
+  /** Round the weirwood in the clearing beyond the Wall. */
+  wall: { c: [10, -106.2] as P2, r: 4.2 },
+  /** The yard before the Gates of the Moon. */
+  moon: { c: [75, -7.6] as P2, r: 4.3 },
+  /** Round Storm's End's drum tower, inside its wall. */
+  drum: { c: [62, 88] as P2, r: 6.75 },
+  /** The court inside Sunspear's third gate. */
+  sun: { c: [38, 106.5] as P2, r: 3.8 },
+  /** Round the Hightower, on Battle Isle. */
+  tower: { c: [-78, 92] as P2, r: 8.25 },
+};
+
+/** Storm's End stands on a headland: its bailey is this high, out to the outside of its wall, and the road climbs to it from the fork. */
+export const STORMS_END = { x: 62, z: 88, wall: 11, y: 3.2, foot: 22.2 };
+
+/** How high a road is at a place. Every road lies on the ground but the climb to Storm's End and the ring round its drum. */
+export function roadY(x: number, z: number): number {
+  const d = Math.hypot(x - STORMS_END.x, z - STORMS_END.z);
+  if (d >= STORMS_END.foot) return 0;
+  return d <= STORMS_END.wall ? STORMS_END.y : (STORMS_END.y * (STORMS_END.foot - d)) / (STORMS_END.foot - STORMS_END.wall);
+}
+
+/**
+ * Where a road passes through something built, which has to leave it an arch
+ * at least 9 wide and 6 high: the lot it is, and which road.
+ */
+export const GATES: { lot: string; road: keyof typeof ROADS; what: string }[] = [
+  { lot: 'wall', road: 'kingsroad', what: 'the tunnel through the ice, at x 10' },
+  { lot: 'mc-gate', road: 'kingsroad', what: "Moat Cailin's Gatehouse Tower, at x 21" },
+  { lot: 'tw-east-gate', road: 'twins', what: 'the eastern castle of the Twins, at z -26' },
+  { lot: 'tw-water', road: 'twins', what: 'the Water Tower, in the middle of the bridge' },
+  { lot: 'tw-west-gate', road: 'twins', what: 'the western castle of the Twins' },
+  { lot: 'bloody-gate-arch', road: 'high', what: 'the Bloody Gate, at z -13' },
+  { lot: 'kl-dragon-gate', road: 'kingsroad', what: 'the Dragon Gate, at x 70' },
+  { lot: 'kl-lion-gate', road: 'gold', what: 'the Lion Gate, at z 50.5' },
+  { lot: 'kl-river-gate', road: 'kingsroad', what: 'the River Gate, on the north end of the Blackwater bridge, at x 40' },
+  { lot: 'sun-wall-1', road: 'sunspear', what: 'the Threefold Gate: the first of three, at x 38' },
+  { lot: 'sun-wall-2', road: 'sunspear', what: 'the second' },
+  { lot: 'sun-wall-3', road: 'sunspear', what: 'the third' },
+  { lot: 'se-wall', road: 'kingsroad', what: "Storm's End's gate, in the west-north-west of its wall, where the road from the fork comes up" },
+];
+
+// ---------------------------------------------------------------------------
+// Islands, rivers and still water
+// ---------------------------------------------------------------------------
+
+/** Land that stands in the sea, as ovals. Each is the ground of whoever builds on it. */
+export const ISLANDS = {
+  bear: { x: -94, z: -66, rx: 7.5, rz: 7.5 },
+  dragonstone: { x: 96.5, z: 25, rx: 9.5, rz: 15.5 },
+  battle: { x: -78, z: 92, rx: 10.75, rz: 10.75 },
+  rock: { x: -82, z: 21, rx: 9.6, rz: 14.5 },
+};
+
+/**
+ * Rivers: the middle of each from its spring to its mouth, and half its width
+ * at each end. A river stops a hair short of the water it runs into, so that
+ * each stays a shape of its own.
+ */
+export const RIVERS = {
+  /** From Riverrun east past the crossroads to the bay. The kingsroad crosses it at x 42, by the inn. */
+  trident: { line: [[-53.6, -8.6], [-30, -7], [-2, -6], [30, -6], [42, -5], [50, -6.5], [64, -7], [72, -4], [75.7, 0.9]] as P2[], half: [1.5, 1.9] },
+  /** Out of the Neck, under the Twins' Water Tower at x -7, into the Trident. */
+  greenFork: { line: [[-7, -37.1], [-7, -10], [-3.9, -8.1]] as P2[], half: [1.2, 1.5] },
+  /** Along Highgarden's north wall to the Sunset Sea. The ocean road crosses it. */
+  mander: { line: [[-17, 57.3], [-52, 57.3], [-62, 58], [-74, 60], [-77.9, 60.7]] as P2[], half: [0.5, 1.6] },
+  /** Out of the kingswood into the river mouth under King's Landing. */
+  blackwater: { line: [[-8, 61], [4, 60], [15.7, 59.5]] as P2[], half: [0.5, 1.7] },
+};
+
+/**
+ * Ground that is left out of the tile's own, as a hole, because whoever builds
+ * there floors it: with water, and with whatever stands in the water.
+ */
+export const WET: Record<string, P2[]> = {
+  /** Inside Winterfell's outer wall: the moat, and the inner castle in it. */
+  winterfell: [[-38.5, -74.5], [6.5, -74.5], [6.5, -45.5], [-38.5, -45.5]],
+  /** Riverrun, where the Tumblestone and the Red Fork meet: the Trident runs on from its east side at z -8.6. */
+  riverrun: [[-70, -22], [-54, -22], [-54, -8], [-70, -8]],
+  /** Queenscrown's lake, with its tower on an islet. */
+  queenscrown: [[-63, -86.5], [-50, -86.5], [-48, -80], [-51, -76], [-61, -76], [-64, -81]],
+};
+
+/** Where a road crosses water on a bridge: which road, where the middle of the bridge is, and what it crosses. */
+export const BRIDGES: { road: keyof typeof ROADS; x: number; z: number; over: string }[] = [
+  { road: 'twins', x: -7, z: -26, over: 'the Green Fork: the Crossing, with the Water Tower on it' },
+  { road: 'river', x: -7, z: -14, over: 'the Green Fork' },
+  { road: 'river', x: -47.7, z: -8.4, over: 'the Trident, below Riverrun' },
+  { road: 'kingsroad', x: 42.3, z: -5, over: 'the Trident, by the inn' },
+  { road: 'kingsroad', x: 40, z: 59.5, over: 'the Blackwater, with the River Gate at its north end' },
+  { road: 'ocean', x: -67.5, z: 58.7, over: 'the Mander' },
+  { road: 'isle', x: -66, z: 101.6, over: 'the water between Oldtown and Battle Isle' },
+];
+
+// ---------------------------------------------------------------------------
+// Places for a hero
+// ---------------------------------------------------------------------------
+
+/**
+ * Where a hero may stand on show: each is kept empty, and open to the
+ * south-east, so that the view the tile opens with sees the whole car.
+ * `heading` is in radians: 0 faces east and a quarter turn faces south.
+ */
+export const HERO_SPOTS: { id: string; x: number; z: number; heading: number; where: string }[] = [
+  { id: 'tourney', x: 0, z: 39.3, heading: 0.35, where: 'before the royal stand at the tourney ground, on the lists' },
+  { id: 'inn', x: 49, z: -19, heading: 0, where: 'the yard of the Inn at the Crossroads, between the inn and the high road' },
+  { id: 'castle-black', x: 17.6, z: -80.5, heading: 1.2, where: "Castle Black's yard, at the foot of the stair, east of the kingsroad" },
+  { id: 'winter-town', x: 35.5, z: -50, heading: 0.5, where: "Winter Town's market square, south of its houses and east of its inn" },
+  { id: 'quay', x: 53, z: 57.4, heading: 0, where: "the fish market on the wharf under the Red Keep, south of the river-front road" },
+  { id: 'highgarden', x: -12, z: 89.3, heading: 0.6, where: 'a court of roses between Highgarden and the roseroad' },
+  { id: 'sunspear', x: 47, z: 106.5, heading: 1.1, where: 'the court inside the third of the Threefold Gate' },
 ];

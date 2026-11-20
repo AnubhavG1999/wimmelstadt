@@ -9,11 +9,12 @@
 import * as THREE from 'three';
 import type { Build } from '../../engine/tile';
 import { checkFlight } from './clearance';
-import { aim, close, frames, look, sheet } from './debug';
+import { aim, close, fourViews, frames, look, sheet } from './debug';
 import { DROGON, Dragon, FLARE, FOLDED, RHAEGAL, VISERION, blendForm, formAt, stance, wingPose, type Pose, type WingPose } from './dragon';
 import { DROGON_FLAME, Fire, RHAEGAL_FLAME, VISERION_FLAME } from './fire';
 import { Show, type Cue } from './flight';
-import { LOTS, groundAt, isWater } from './plan';
+import { LOTS, isWater } from './plan';
+import { groundAt } from './regions';
 import { SHOW } from './show';
 import { Trails } from './trails';
 
@@ -261,7 +262,7 @@ export function buildDragons(k: Build): void {
       },
       /** Goes to a moment of the show and stops there: the clock is set a little before it and frames run up to it, so that banks have settled. */
       goto(seconds: number): number[][] { rate = 1; clock = seconds - 0.5; frames(30); rate = 0; return where(); },
-      frames, look, close, aim, sheet,
+      frames, look, close, aim, sheet, fourViews,
     };
   }
 }
