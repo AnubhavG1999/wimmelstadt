@@ -2,7 +2,9 @@
 
 What a later reader cannot see in the code.
 
-**Where it stands.** Built, and waiting for the collector to call it final. The plan was put to him on 19 November 2026 and he answered the same day. Every one of the 85 lots has its model, `main` is merged in, and the checks have been run (see "The checks"). He looked at the finished tile the same evening, found it right, and asked for one thing more: the blue boards that stand before the university's buildings. They are in, and he has not seen them yet. The research is in [docs/districts/research/uiuc.md](../../../../docs/districts/research/uiuc.md). Where this file and that note disagree, this file is the later: see "What the research note has wrong".
+**Where it stands.** Final: the collector called it so on 19 November 2026. The plan was put to him that day and he answered it. He looked at the finished tile the same evening, found it right, and asked for one thing more, the blue boards that stand before the university's buildings. With those in, he called it final. Every one of the 85 lots has its model, `main` is merged in as it stood at `15d4458`, and the checks have been run (see "The checks"). The tile is not on the board yet: standing it there, and bringing the documents, the READMEs and the public pictures up to date, are the main session's to do when it merges the branch, as they were for Europe. The research is in [docs/districts/research/uiuc.md](../../../../docs/districts/research/uiuc.md). Where this file and that note disagree, this file is the later: see "What the research note has wrong".
+
+**Built from description, without a picture to go by:** Wassaja Hall's brick, its glass corner and the side its door and baskets are on; the Siebel Center's brick below and glass above; the black of the lettering on Basil Thai's white awning; Manolo's cream front under a red awning; and the four columns of the Union's porch on Green Street. The collector was shown each and named none of them when he said the tile looked right, so they stand. If one is ever found to be wrong, it is the first place to look.
 
 ## Where things are
 
@@ -493,7 +495,7 @@ The near lane is the one on the camera's side of the buildings that hide it: the
 - Wassaja Hall is named for the university's first Native American graduate, and its baskets are about his journey home. It is drawn as it stands.
 - The cemetery in the grove is small, as the collector asked: lawn, trees and plain stones, with no lettering, and nothing stands, drives or is staged in it.
 - Left out altogether: the university's block I, its seal and its wordmarks, every athletic mark, and the former mascot in any form. The chant on the crop duster's banner is the one thing of the kind on the tile, and the collector asked for it: it is plain lettering, and its capital I is one bare upright stroke with no serifs, which is not the mark. No protest, no flag of a cause and no slogan is drawn.
-- The university's boards carry no mark. Where its block I stands on a board in life there is a plain square of orange, and `University of Illinois` is in plain lettering, not its wordmark. The collector described the boards with the mark on them and asked for something like them: the square is this session's reading of that, by the rule that no logo is drawn, and it is his to change.
+- The university's boards carry no mark. Where its block I stands on a board in life there is a plain square of orange, and `University of Illinois` is in plain lettering, not its wordmark. The collector described the boards with the mark on them and asked for something like them: the square is this session's reading of that, by the rule that no logo is drawn. He was told so, saw the boards with the square on them, and called the tile final.
 - The saucer carries no name: its name is an insurer's.
 - The tile's seed is 217, the dialling code. It is not a date.
 
