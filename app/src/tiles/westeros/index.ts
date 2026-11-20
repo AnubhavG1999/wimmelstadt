@@ -35,7 +35,8 @@ export const westeros: TileDef = {
   seed: 7777777,
   signs: SIGNS,
   // It is in no atlas, so it brings its own land: in the empty south of the Pacific, where an old map has room for it.
-  place: { lon: -134, lat: -32, land: COAST, words: 'Hic sunt dracones' },
+  // West and north of the sea serpent that the map has at 118 west and 47 south.
+  place: { lon: -139, lat: -30, land: COAST, words: 'Hic sunt dracones' },
   build: buildWesteros,
 };
 

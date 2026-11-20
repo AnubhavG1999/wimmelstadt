@@ -159,7 +159,7 @@ One board is enough. A second, a singer's board in the yard of the inn, was thou
 
 ## The tile's place in the world
 
-The table stands on a desk whose top is an old map of the world, and each tile has a pin in it. Westeros is in no atlas, so it brings its own land (`place` in `index.ts`): its coast as the books describe the continent, in this tile's own drawing, 27 degrees from north to south, in the empty South Pacific at 134 west and 32 south. The words lettered beside it: "Hic sunt dracones". The map's own sea serpent swims just off its southern tip, and the words run under both.
+The table stands on a desk whose top is an old map of the world, and each tile has a pin in it. Westeros is in no atlas, so it brings its own land (`place` in `index.ts`): its coast as the books describe the continent, in this tile's own drawing, 27 degrees from north to south, in the empty South Pacific at 139 west and 30 south. The words lettered beside it: "Hic sunt dracones". The map's own sea serpent swims clear of its southern tip, to the south-east, and the last of the words run under its tail.
 
 On the map the continent is drawn long and narrow, as in the books. On the board it is squeezed: see "Liberties".
 
