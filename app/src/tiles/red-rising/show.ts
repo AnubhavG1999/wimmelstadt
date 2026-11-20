@@ -155,7 +155,8 @@ function posts(): Record<Id, Spot | null> {
     clown: rim(-1.5, -91.6), pebble: rim(3.6, -91.2), screwface: rim(18.6, -91.8),
     'obsidian-0': rim(-3, -95.4), 'obsidian-1': rim(0, -96.2), 'obsidian-2': rim(3.2, -96.6), 'obsidian-3': rim(6.4, -95.8),
     // Sefi and the Valkyrie, in the snow, beside their griffins
-    sefi: onGround(61, -95.4, S), 'valkyrie-0': onGround(42.5, -96.6, S), 'valkyrie-1': onGround(47.8, -97.4, S), 'valkyrie-2': onGround(55.8, -96.8, S), 'valkyrie-3': onGround(67, -94.4, S),
+    // (east of the shadow that Olympus, floating over the hairpin, throws on the snow from the opening view)
+    sefi: onGround(61.4, -96.4, S), 'valkyrie-0': onGround(58.6, -97.2, S), 'valkyrie-1': onGround(64.2, -97.2, S), 'valkyrie-2': onGround(67, -96.4, S), 'valkyrie-3': onGround(69.4, -97.2, S),
     // the north wall: Cassius over the grates, the Wind Knight on the postern's tower, the Bellona along the walk
     cassius: at(20, F + 10, -49.5, S + 0.5), windKnight: at(-22, F + 12, -49.6, S),
     'bellona-0': at(-44, F + 10, -49.5, N), 'bellona-1': at(-34, F + 10, -49.5, N), 'bellona-2': at(34, F + 10, -49.5, N), 'bellona-3': at(48, F + 10, -49.5, N),
@@ -547,7 +548,8 @@ function stories(Wd: World): StoryDef[] {
 
   // ---------------------------------------------------------------- 3. Ragnar opens the postern
   {
-    const obs = ['obsidian-0', 'obsidian-1', 'obsidian-2', 'obsidian-3'];
+    // two of the four Obsidians: the other two are Mustang's in the shield park, so that both stories can play at once
+    const obs = ['obsidian-2', 'obsidian-3'];
     const inf = Array.from({ length: 8 }, (_, i) => `augustanGray-${i}`);
     const tower = at(-22, F + 12, -49.6, S);
     const inside = at(-22, F, -46.2, N);
@@ -715,16 +717,16 @@ function stories(Wd: World): StoryDef[] {
         if (tb >= 18 && tb < 21) {
           // and runs clear
           const s = span(tb, 18, 21);
-          here = at(lerp(stops[3].x, 68, ease(s)), F, lerp(stops[3].z, -26, ease(s)), toward(stops[3].x, stops[3].z, 68, -26));
+          here = at(lerp(stops[3].x, 66, ease(s)), F, lerp(stops[3].z, -22, ease(s)), toward(stops[3].x, stops[3].z, 66, -22));
           pose = run((tb * 1.5) % 1);
         } else if (tb >= 21) {
-          here = at(68, F, -26, W);
+          here = at(66, F, -22, W);
           pose = tb > 32 ? draw(span(tb, 32, 36)) : guard(0);
         }
         P.put('mustang', still(here, pose, { cloak: 0.3 }));
         ['obsidian-0', 'obsidian-1'].forEach((id, i) => {
           const a = P.from(id);
-          const b = i === 0 ? at(65.6, F, -28, E) : at(66.4, F, -23.6, E);
+          const b = i === 0 ? at(63.4, F, -24.6, E) : at(64.4, F, -19.6, E);
           const s = span(tb, 18, 21.5);
           P.put(id, still(at(lerp(a.x, b.x, s), F, lerp(a.z, b.z, s), s > 0 ? W : a.h), s > 0 && s < 1 ? run((tb * 1.2) % 1) : guard(0)));
         });
@@ -1072,8 +1074,9 @@ function stories(Wd: World): StoryDef[] {
   {
     const T = STAGES.snow;
     const g = (x: number, z: number, h: number): Spot => onGround(x, z, h);
-    const ragnarAt = g(50, -95, E), ajaAt = g(54, -95, W);
-    const darrowAt = g(40, -92.5, E), cassiusAt = g(44.5, -92.5, W), mustangAt = g(38, -96.5, E);
+    // west of Olympus's shadow, where the opening view sees them
+    const ragnarAt = g(43, -95.2, E), ajaAt = g(47, -95.2, W);
+    const darrowAt = g(36.4, -92.3, E), cassiusAt = g(40.8, -92.3, W), mustangAt = g(35.6, -96.4, E);
     const vk = ['sefi', 'valkyrie-0', 'valkyrie-1', 'valkyrie-2', 'valkyrie-3'];
     const marks: Record<Id, Spot | 'post'> = { ragnar: ragnarAt, aja: ajaAt, darrow: darrowAt, cassius: cassiusAt, mustang: mustangAt };
     vk.forEach((id) => (marks[id] = 'post'));
@@ -1285,7 +1288,7 @@ export function buildShow(k: Build): Sky {
   // the griffins at rest in the snow, beside their riders
   // griffin 0 is Sefi's, and each of the others a Valkyrie's, resting just behind its rider
   WINGS_HOME = [0, 1, 2, 3, 4].map((i) => {
-    const x = [62, 41, 47, 55, 68][i], z = [-99.4, -99.6, -100.2, -99.8, -97.6][i];
+    const x = [61.4, 58.6, 64.2, 67, 69.8][i], z = [-99.4, -100.2, -100.2, -99.4, -100.2][i];
     return [x, landAt(x, z), z] as V3;
   });
   griffins.forEach((g, i) => { const h = WINGS_HOME[i]; g.at(h[0], h[1], h[2], S); g.wings(0, 1); });
@@ -1376,11 +1379,14 @@ export function buildShow(k: Build): Sky {
   // each wave that is aimed at the city strikes it and skids off; once Mustang has dropped it, the city is open.
   let nextWave = 3, nextFew = 9, fromPax = true, seed = 742;
   const rnd = (): number => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296;
-  const outside: Zone[] = [LANDINGS.west, LANDINGS.east, LANDINGS.flank, LANDINGS.peaks];
+  // Where a wave falls, each ground as often as its share: most on the open ground before the south wall, a few each on
+  // the planet's steep edges, the peaks and the plateau's far ends. The Rain shares a wave out evenly among what it is given.
+  const SOUTH = LANDINGS.flank;
+  const outside: Zone[] = [SOUTH, SOUTH, SOUTH, LANDINGS.west, LANDINGS.east, LANDINGS.peaks, LANDINGS.rimWest, LANDINGS.rimEast];
   const WAVE = 40, WAVE_EVERY = 17;
   /** Where the Rain may fall now: not on the ground a story has taken for its own marked shells. */
-  const outsideNow = (): Zone[] => outside.filter((z) => z !== LANDINGS.flank || !holding.has('outside'));
-  const zonesNow = (): Zone[] => (rain?.shield.isUp() ? [...outsideNow(), LANDINGS.city] : outsideNow());
+  const outsideNow = (): Zone[] => outside.filter((z) => z !== SOUTH || !holding.has('outside'));
+  const zonesNow = (): Zone[] => (rain?.shield.isUp() ? [...outsideNow(), LANDINGS.city, LANDINGS.city] : outsideNow());
   /** Once the shield is down, a few shells of a wave come down on the Field of Mars, unless a story has it. */
   const intoCity = (ship: 'pax' | 'morningStar', n: number): void => {
     if (rain && fleet && !rain.shield.isUp() && !holding.has('cityLz')) rain.wave(() => fleet.tubes(ship), [LANDINGS.city], n);
@@ -1399,14 +1405,16 @@ export function buildShow(k: Build): Sky {
       if (nextWave <= 0) {
         const ship = fromPax ? 'pax' : 'morningStar';
         fromPax = !fromPax;
-        rain.wave(() => fleet.tubes(ship), zonesNow(), WAVE);
+        const zones = zonesNow();
+        // four or five to each share: fewer in all while a story has the ground before the south wall
+        rain.wave(() => fleet.tubes(ship), zones, Math.min(WAVE, Math.round(zones.length * 4.5)));
         intoCity(ship, 4);
         nextWave = WAVE_EVERY;
         nextFew = 6 + rnd() * 2;
       } else if (nextFew <= 0) {
         const ship = rnd() < 0.5 ? 'pax' : 'morningStar';
-        const zones = zonesNow();
-        rain.wave(() => fleet.tubes(ship), [zones[Math.floor(rnd() * zones.length)]], 2 + Math.floor(rnd() * 4));
+        const few = zonesNow();
+        rain.wave(() => fleet.tubes(ship), [few[Math.floor(rnd() * few.length)]], 2 + Math.floor(rnd() * 4));
         nextFew = 1.4 + rnd() * 2.2;
       }
       // the shield comes back up a while after Mustang has dropped it

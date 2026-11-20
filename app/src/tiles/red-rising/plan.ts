@@ -432,6 +432,9 @@ export const LANDINGS = {
   plateau: { x0: -4, x1: 16, z0: -100, z1: -90 },
   flank: { x0: -10, x1: 40, z0: 68, z1: 80 },
   peaks: { x0: 72, x1: 98, z0: 76, z1: 104 },
+  // the plateau's two far ends, beyond the Institute and beyond the snow: where shells the shield has turned aside on its north side come down
+  rimWest: { x0: -98, x1: -62, z0: -105, z1: -92 },
+  rimEast: { x0: 74, x1: 98, z0: -105, z1: -92 },
   // the Field of Mars west of its ring: the one stretch of open floor inside the walls with room for a few husks to fall open
   city: { x0: -25, x1: -16.5, z0: 29, z1: 55 },
 };

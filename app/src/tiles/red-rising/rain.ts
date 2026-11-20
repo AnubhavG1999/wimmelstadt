@@ -1298,7 +1298,7 @@ export function buildRain(k: Build, ground: (x: number, z: number) => number): R
   }
 
   /** The zones outside the dome that a shell turned aside by the shield may land in. */
-  const OUTSIDE: Zone[] = [LANDINGS.west, LANDINGS.east, LANDINGS.plateau, LANDINGS.flank, LANDINGS.peaks];
+  const OUTSIDE: Zone[] = [LANDINGS.west, LANDINGS.east, LANDINGS.rimWest, LANDINGS.rimEast, LANDINGS.flank, LANDINGS.peaks];
   const zoneUnder = (z: Zone): boolean => underDome((z.x0 + z.x1) / 2, (z.z0 + z.z1) / 2);
   /** The zone outside the dome nearest a place. */
   function nearestOutside(x: number, z: number, zones: Zone[]): Zone {
@@ -2097,14 +2097,15 @@ export function buildRain(k: Build, ground: (x: number, z: number) => number): R
       });
     }
     // the ring of dust it lands in
-    if (tau < 2.6) {
-      const grow = easeOut(tau / 1.1), thin = 1 - span(tau, 1.1, 2.6) ** 1.5;
-      for (let j = 0; j < 10; j++) {
-        const ang = (j / 10) * TAU + hash(s.seed + j) * 0.5, r = S * (hive ? 1.4 : 1) * (0.6 + 4.6 * grow);
+    // a quick ring of a few small puffs, gone in under two seconds: a wave of forty must not leave a heap of them
+    if (tau < 1.8) {
+      const grow = easeOut(tau / 0.9), thin = 1 - span(tau, 0.7, 1.8) ** 1.5;
+      for (let j = 0; j < 6; j++) {
+        const ang = (j / 6) * TAU + hash(s.seed + j) * 0.7, r = S * (hive ? 1.4 : 1) * (0.6 + 3.8 * grow);
         const x = L[0] + Math.cos(ang) * r, z = L[2] + Math.sin(ang) * r;
-        puff(x, height(x, z) + 0.3 + 0.9 * easeOut(tau / 1.5), z, S * (0.6 + 1.2 * easeOut(tau / 0.5)) * thin, s.dust, ang);
+        puff(x, height(x, z) + 0.2 + 0.7 * easeOut(tau / 1.2), z, S * (0.4 + 0.75 * easeOut(tau / 0.5)) * thin, s.dust, ang);
       }
-      puff(L[0], L[1] + 1 + 1.5 * easeOut(tau / 1.5), L[2], S * 2.0 * easeOut(tau / 0.3) * thin, s.dust, s.roll);
+      puff(L[0], L[1] + 0.8 + 1.2 * easeOut(tau / 1.2), L[2], S * 1.3 * easeOut(tau / 0.3) * thin, s.dust, s.roll);
     }
     // steam out of the seams as it splits
     if (tau >= split && tau < split + 1.6) {
@@ -2298,7 +2299,7 @@ export function buildRain(k: Build, ground: (x: number, z: number) => number): R
     // landing zones outside the city, `rrRain.city(8)` onto the Field of Mars, `rrRain.hold(t)` stands
     // everything as it is at t (the clock is `rrRain.now()`), and `rrRain.shieldDown()` and `shieldUp()`.
     const TUBES: V3[] = Array.from({ length: 24 }, (_, i): V3 => [82, 100, 18 + (i * 44) / 23]);
-    const ZONES: Zone[] = [LANDINGS.west, LANDINGS.east, LANDINGS.plateau, LANDINGS.flank, LANDINGS.peaks];
+    const ZONES: Zone[] = [LANDINGS.west, LANDINGS.east, LANDINGS.rimWest, LANDINGS.rimEast, LANDINGS.flank, LANDINGS.peaks];
     (window as unknown as { rrRain: object }).rrRain = {
       wave: (n = 24) => ({ at: now(), lasts: wave(() => TUBES, ZONES, n) }),
       city: (n = 8) => ({ at: now(), lasts: wave(() => TUBES, [LANDINGS.city], n) }),
