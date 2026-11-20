@@ -4,6 +4,7 @@
 import * as THREE from 'three';
 import { BASE, startBuild, type Standing } from './build';
 import type { LoadedHero } from './hero';
+import type { Playing } from './signs';
 import { copyLook } from './look/materials';
 import { buildTable, nameplates } from './table';
 import { TILE, type Rect, type TileDef } from './tile';
@@ -57,6 +58,8 @@ export interface Board {
   placeHeroes(list: LoadedHero[], tricks: Record<string, PartyTrick>, prefer?: string | null): void;
   /** Shows the heroes or hides them. */
   showHeroes(on: boolean): void;
+  /** Shows what is playing on the big screens of every tile, or their own pictures again if `now` is null. */
+  showPlaying(now: Playing | null): void;
   stats(): { triangles: number; signs: number; glows: number; trees: number; people: number; moving: number; parked: number };
 }
 
@@ -146,6 +149,10 @@ export function buildBoard(defs: TileDef[]): Board {
 
     showHeroes(on) {
       for (const t of tiles) t.vehicles.showHeroes(on);
+    },
+
+    showPlaying(now) {
+      for (const t of tiles) t.standing.showPlaying(now);
     },
 
     stats() {
