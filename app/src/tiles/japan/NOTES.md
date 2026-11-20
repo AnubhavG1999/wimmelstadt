@@ -173,7 +173,7 @@ This is what building Japan taught, written for someone who has not seen this ti
 - **Tell the collector where you think it is thin.** With the blockout I named three weak places myself. The answer was to mend them as I saw fit, which saved a round of questions.
 - **Build many small scenes, not only the landmarks.** The page asks for 20 things. Japan has 41. The last fifteen are small scenes (a tofu shop, monkeys in a hot pool, tyre marks, festival stalls). They took about a third of the time, and they are what fills the ground between the landmarks without ordinary buildings. Aim for 30 to 40.
 - **Give the collector's own interest a place on every tile.** Here that is car culture: when I put the tile to him, the one thing he asked to have added was "something car culture related". Ask early what he wants to see by name, and put it where the first view shows it.
-- **Reuse the island's models.** Kyoto Tower and the pagoda came across from `island-prototype` with small changes.
+- **Reuse the island's models.** Kyoto Tower and the pagoda came across from the island prototype with small changes (its models are in `prototype/island/models`).
 - **Make a few things move.** A Ferris wheel, boats, a dragon and a turntable each cost a mesh or two in `k.group` and a few lines in `k.each`. A boat is a `train` with a `car` of its own shape on a path just under the water.
 - **Commit at every stage, with a message that says what now stands.** A long session is summarised part-way through and loses detail. The plan as data, the notes and the commits are what the work was picked up from.
 

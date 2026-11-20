@@ -30,7 +30,7 @@ It is deliberately not a collection manager: no prices, no wish lists, no checkl
 | A prototype of the look | Built. It was meant as a throwaway: one small hand-built scene. Its board turned out to be the right size and shape for a tile, and became the first one. See [prototype/look](prototype/look). |
 | A trial of the generators | Done. Rodin 2.5 made a good hero from Mini GT's own three pictures, at $0.40 a car. See [prototype/hero](prototype/hero). |
 | Research | Done for all 23 districts, with sources. See [docs/districts/research](docs/districts/research). |
-| A first attempt at the city | Built and set aside: one continuous island of 23 districts. Beside the prototype its density and its layout did not hold up. It is kept on the branch `island-prototype`, where every document says why. |
+| A first attempt at the city | Built and set aside: one continuous island of 23 districts. Beside the prototype its density and its layout did not hold up. Its plans and landmark models are kept in [prototype/island](prototype/island), whose README says why. |
 | A first try at tiles | Built and set aside: two larger tiles, blocked out side by side. Beside the prototype they were too thinly filled. See [prototype/two-tiles](prototype/two-tiles). |
 | The city | Four tiles are built and stand together on a board: North America, Japan, Hong Kong and Europe. More are to come. See [app](app), [0009](docs/adr/0009-a-city-of-hand-built-tiles.md) and [0010](docs/adr/0010-the-tiles-stand-together-on-a-table.md). |
 | Heroes | One, the black Countach from the generator trial, carried through by hand. It drives in the published city for whoever has the collector's PIN. See [0011](docs/adr/0011-the-heroes-sit-behind-a-pin.md). The pipeline that makes a hero from the phone is not built. |
@@ -109,7 +109,7 @@ See its [notes](app/src/tiles/europe/NOTES.md).
 
 The tiles stand on the board in the order they were built: North America at the back, Japan and Hong Kong at its sides, and Europe at the front. [0010](docs/adr/0010-the-tiles-stand-together-on-a-table.md) says why the tiles are joined like this. How a hero will get from one tile to the next is not decided yet: for now each hero is put on a tile at random whenever the page loads.
 
-Two other forms of the city were built first and set aside. One was a continuous island with a coast, rivers and mountains. It was too large to build by hand, so the ground between its landmarks was filled with ordinary buildings made by rule, and it looked empty where the prototype looks full. It is kept on the branch `island-prototype`. The other was a pair of larger tiles joined by an avenue, which thinned out in the same way. It is kept in [prototype/two-tiles](prototype/two-tiles). [0009](docs/adr/0009-a-city-of-hand-built-tiles.md) records both.
+Two other forms of the city were built first and set aside. One was a continuous island with a coast, rivers and mountains. It was too large to build by hand, so the ground between its landmarks was filled with ordinary buildings made by rule, and it looked empty where the prototype looks full. Its plans and landmark models are kept in [prototype/island](prototype/island). The other was a pair of larger tiles joined by an avenue, which thinned out in the same way. It is kept in [prototype/two-tiles](prototype/two-tiles). [0009](docs/adr/0009-a-city-of-hand-built-tiles.md) records both.
 
 ### The room
 
@@ -162,6 +162,7 @@ Famous landmarks stand in the city as toy versions of themselves, each on the ti
 | [supabase](supabase) | The backend's database, as the changes that made it: the heroes, the store for their models, and who may see them. |
 | [prototype/look](prototype/look) | The look prototype. Its README says what to judge and what is faked. |
 | [prototype/two-tiles](prototype/two-tiles) | The first try at tiles, set aside. Its README says why, and what is worth taking from it. |
+| [prototype/island](prototype/island) | What is kept of the island, the city's first form: its plans for 23 districts and its landmark models, for tile builders to read and copy from. Nothing in it is built. |
 | [prototype/hero](prototype/hero) | The generator trial: prepares a diecast's pictures, runs them through image-to-3D services and shows the models side by side. The pictures and models themselves stay private. |
 
 ## Run it

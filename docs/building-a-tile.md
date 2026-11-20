@@ -301,12 +301,12 @@ Where a tile needs one of these, build it in the tile's folder with `k.group` an
 Much of the thinking for every district has been done, and some of the building.
 
 - **The research notes**, `docs/districts/research/`. One or more for each district, named after it. They say what the place is known for and what a collector of diecasts would look for there.
-- **What the island had planned.** The island was the plan before tiles, and it is kept on the branch `island-prototype`. It is read without checking the branch out:
-  - `git show island-prototype:app/src/island/districts.ts` gives each district's theme, its ground, the road worth driving there, its quarters and whether traffic keeps left.
-  - `git show island-prototype:app/src/island/landmarks.ts` names what was to stand in each district, about 280 landmarks in all. It is a list to choose from: a tile holds the 30 or 40 that make the place, not all of them.
-- **Models that exist.** They are written around (0, 0) and take `{ b, glows, lights }`, which the `Build` is, so they work as they are inside `placed`. Copy the ones you need into your tile's folder.
-  - `git show island-prototype:app/src/world/landmark-models.ts`: a torii and the Taj Mahal, besides the American ones. Kyoto Tower and the pagoda from there stand on Japan now, and Big Ben and the Leaning Tower of Pisa on Europe.
-  - `git show island-prototype:app/src/world/delhi-models.ts`: Hauz Khas, the Qutub Minar, India Gate, the Lotus Temple, the Red Fort, Rashtrapati Bhavan and Connaught Place.
+- **What the island had planned.** The island was the plan before tiles. What is of use from it is kept in `prototype/island`:
+  - `prototype/island/plan/districts.ts` gives each district's theme, its ground, the road worth driving there, its quarters and whether traffic keeps left.
+  - `prototype/island/plan/landmarks.ts` names what was to stand in each district, about 280 landmarks in all. It is a list to choose from: a tile holds the 30 or 40 that make the place, not all of them.
+- **Models that exist.** They are written around (0, 0) and take `{ b, glows, lights }`, which the `Build` is, so they work inside `placed` once their imports point at `app/src/engine`. Copy the ones you need into your tile's folder.
+  - `prototype/island/models/landmark-models.ts`: a torii and the Taj Mahal, besides the American ones. Kyoto Tower and the pagoda from there stand on Japan now, and Big Ben and the Leaning Tower of Pisa on Europe.
+  - `prototype/island/models/delhi-models.ts`: Hauz Khas, the Qutub Minar, India Gate, the Lotus Temple, the Red Fort, Rashtrapati Bhavan and Connaught Place.
   - `prototype/look/src/scene-data.ts` has the look prototype's Japanese signs and the brands with Japanese names.
 - **The tiles that are built**, as worked examples of a whole tile. In each, `plan.ts` is the tile as data, `city.ts` builds it and `landmarks.ts` holds its models. Their pictures are in `app/screenshots/`.
   - **North America**: `l.ts` is a railway with branches, and `ground.ts` a ground material of its own.
