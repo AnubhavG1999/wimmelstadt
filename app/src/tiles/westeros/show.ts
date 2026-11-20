@@ -41,17 +41,21 @@ export const SHOW: ShowPlan = {
   ],
   solos: [
     // Drogon: down to the sea in the south-east corner, a long breath over open water, back north past
-    // Storm's End, and onto the Dragonmont, where he sits a while. Then off the ledge and up to the others.
+    // Storm's End and up the west side of Dragonstone, round the north of the Dragonmont in a hard turn,
+    // and down its east rim onto the shelf at its south-east corner, where he stands a while and looks
+    // out over the bay, towards the city and the view the tile opens with. Then off the south edge and
+    // up to the others.
     {
       way: [
         [97, 100, 54, 22], [99, 72, 70, 44], [98, 40, 86, 50], [96, 24, 100, 46],
         [92, 24, 109, 34], [84, 27, 106, 30], [82, 30, 90, 30], [82, 30, 66, 30],
-        [86, 31, 50, 24], [91, 35, 40, 16], [93, 30, 25, 5],
-        [86, 28, 22, 12], [77, 42, 19, 26], [69, 52, 16, 32],
+        [81, 34, 46, 28], [78, 44, 27, 26], [82, 49, 6, 22], [94, 45, -2, 16], [101.5, 38, 7, 12], [101, 32, 17.5, 8],
+        [99.5, 30, 24.5, 5],
+        [97.5, 29, 31, 12], [92, 31, 41, 20], [84, 37, 34, 26], [77, 45, 22, 28], [69, 52, 16, 32],
       ],
       fire: [{ at: 2, seconds: 1.5 }],
-      perch: { at: 10, seconds: 9 },
-      beats: [{ at: 10, n: 3 }],
+      perch: { at: 14, seconds: 9 },
+      beats: [{ at: 13, n: 3 }],
     },
     // Rhaegal: west across the riverlands to the Sunset Sea, south over Pyke and past the Rock, then very
     // low down the sea past the Hightower on its seaward side, with one short breath over open water where

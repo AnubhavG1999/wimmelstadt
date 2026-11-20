@@ -13,6 +13,7 @@ import type { Model } from './models';
 import { GATES, HERO_SPOTS, LOTS, WALL, type Lot } from './plan';
 import { REGIONS } from './regions';
 import { buildRoads } from './roads';
+import { checkSight } from './sight';
 import { WAYFARERS } from './wayfarers';
 
 const ICE = 0xcfe4ee, ICE_SHADE = 0xb4d0de, STONE = 0xb8b2a6, ROCK = 0x9a948a;
@@ -78,6 +79,7 @@ export function buildWesteros(k: Build): TileParts {
     const open = new Set([...GATES.map((g) => g.lot), 'se-drum']);
     const solids: Solid[] = LOTS.filter((l) => !open.has(l.id)).map((l) => ({ id: l.id, x0: l.x0, z0: l.z0, x1: l.x1, z1: l.z1, y0: 0, y1: l.top }));
     checkRoads('Westeros', routes, {}, solids);
+    checkSight();
   }
 
   return {
