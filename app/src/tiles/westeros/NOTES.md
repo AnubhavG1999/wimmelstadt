@@ -82,7 +82,7 @@ The south:
 48. Oldtown and the Hightower.
 49. The Citadel's rookery.
 50. Sunspear.
-51. A mummers' wagon.
+51. The mummers' wagon, and their stage at the tourney ground.
 
 In the air:
 
@@ -129,9 +129,26 @@ On show, each open to the south-east:
 
 On the roads a hero is seen best on the causeway, on the Twins' bridge, along the quays under the Red Keep, on the goldroad between the lake and the river, and on the straight road through Sunspear's gates.
 
+## What is playing
+
+Every tile is to have one or two boards that show what is playing: the cover, the title and the artist. The engine does all of it, through a sign of kind `screen`, and shows the sign's own picture when nothing plays. It is the one modern thing on this tile, so it is given to the two places in Westeros where music belongs:
+
+- **The mummers' stage at the tourney ground.** The players' wagon stands beside a small stage, and the stage's painted backcloth is the board, about 11 wide and 6 high, facing the opening view.
+- **The singer's board at the Inn at the Crossroads.** A painted board on two posts in the yard, about 8 wide and 4.5 high, of the kind that says who sings tonight.
+
+Both are hung as ordinary `screen` signs once `main` has the engine's part. Nothing for it is built in this folder.
+
+## The tile's place in the world
+
+The table stands on a desk whose top is an old map of the world, and each tile has a pin in it. Westeros is in no atlas, so it brings its own land: its coast as the books' maps describe the continent, in this tile's own drawing, about 27 degrees from north to south, in the empty South Pacific round 130 degrees west and 35 south, clear of the sea serpent drawn at 118 west and 47 south. The words lettered in the sea beside it: "Hic sunt dracones". It is written into the tile's `TileDef` as `place` once `main` has been merged.
+
+On the map the continent is drawn long and narrow, as in the books. On the board it is squeezed: see "Liberties".
+
 ## The dragons
 
 Three, after the books' three and in the books' colours: Drogon black and scarlet, 14 long with a span of 19; Rhaegal green and bronze, 12 and 16; Viserion cream and gold, 11.5 and 15.5. Section 2 of the second research note is their design: lean and long, two legs with the wings as forelimbs, everything swept back, wings that change shape with speed, a hard bank into every turn, few strong wingbeats and long glides, fire as a narrow lance after a glow in the throat, and shadows that race over the ground. They carry no rider, unless the collector says otherwise.
+
+The view is to tilt from 14 degrees to 80, so the dragons are looked at from low across the table as well as from above. They are built to be good from the side and from below: a keel and a belly, the undersides of the wings, the legs folded flat under the root of the tail.
 
 One display circuit, as planned and checked against the plan (the leader's line; the other two fly it offset into their places):
 
@@ -210,3 +227,13 @@ Both are done again on the plan as it is written, and then on what is built.
 - Which side traffic keeps to. Planned: the left.
 - The winks at toy cars: the tourney ground as a meet, the rally stage, the inn's yard, the toll at the Twins.
 - How often the pass with fire comes: every circuit, about every 40 seconds, or about once a minute with a slow high wheel between.
+- Where the two boards that show what is playing go. Planned: the mummers' stage at the tourney ground and the singer's board at the inn.
+
+## Coming from the engine, to allow for
+
+Not on `main` yet on 19 November 2026. The tile merges `main` when it is told to.
+
+- The view tilts from 14 degrees to 80. Castles and dragons are seen from the side and from below, so nothing is left open underneath or behind.
+- `wimmel.fights('westeros')` lists surfaces that lie in one plane. The tile must pass it.
+- The engine clears road markings wherever two streets overlap, not only where they cross.
+- The `screen` sign shows what is playing, and `place` on the `TileDef` puts the tile on the desk's map.
