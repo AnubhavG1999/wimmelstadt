@@ -342,7 +342,7 @@ export function life(k: Build, heroes: HeroSpot[]): ParkedSpot[] {
   avenue(-90, 100, -62, 100, 8.6, 8);
 
   // --- autos at their stands, and carts on the corners ---
-  for (const [x, z, yaw, n] of [[-66.5, -47.5, 0, 3], [-11.5, 47, Math.PI / 2, 3], [-46.5, 52.5, 0, 2], [24.5, -30, Math.PI / 2, 3]]) {
+  for (const [x, z, yaw, n] of [[-66.5, -47.5, 0, 3], [-11.5, 47, Math.PI / 2, 3], [-46.5, 52.5, 0, 2], [101.8, 67.5, Math.PI / 2, 3]]) {
     for (let i = 0; i < n; i++) {
       const ax = x + Math.cos(yaw) * i * 3.9, az = z + Math.sin(yaw) * i * 3.9;
       if (places.free(ax, az, 1.6)) parked.push({ x: ax, y: 0.03, z: az, heading: yaw, type: 'auto' });

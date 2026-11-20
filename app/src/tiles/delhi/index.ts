@@ -304,6 +304,8 @@ function build(k: Build): TileParts {
     // (east of x -80.5 the wood gives way to a lawn, where the wedding is)
     wood(64, -103, 32, -62, 49, (x) => x < -80.5);
     wood(34, -103, -112, -86, -78);
+    // and a corner of it west of Bangla Sahib, where the ground was bare
+    wood(10, -103.5, -28.3, -89.5, -19.5);
   }
 
   // -------------------------------------------------------------------------
