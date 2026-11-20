@@ -1,9 +1,10 @@
-// Builds everything that stands still on Westeros, and sets the dragons flying.
+// Builds everything that stands still on Westeros, and sets going what moves:
+// the dragons, the ships and the kraken.
 //
 // The plan is in plan.ts. The ground is laid by land.ts and the roads by
 // roads.ts. What stands on the ground is built region by region, each in a
-// file of its own (regions.ts lists them). A lot that no region has built yet
-// stands as a plain box with its name on a board.
+// file of its own (regions.ts lists them), and then the open country between
+// them. A lot whose model fails stands as a plain box.
 
 import { checkRoads, type Solid } from '../../engine/checks';
 import type { Build, TileParts } from '../../engine/tile';
@@ -22,14 +23,15 @@ import { WAYFARERS } from './wayfarers';
 
 const ICE = 0xcfe4ee, ICE_SHADE = 0xb4d0de, STONE = 0xb8b2a6, ROCK = 0x9a948a;
 
-/** A lot that is still only a box, with its name on a board that faces the view the tile opens with. */
+/**
+ * A lot as a plain box. Every lot has a model now, so this is only what
+ * stands if a model fails: the console says which. While the tile was being
+ * built, a lot without a model stood like this with its name on a board.
+ */
 function box(k: Build, l: Lot): void {
   if (l.id === 'wall') return wallBlock(k);
   const rock = l.id.startsWith('frostfangs') || l.id.startsWith('vale') || l.id.startsWith('casterly') || l.id === 'dragonmont';
   k.b.box(l.x0, 0, l.z0, l.x1, l.top, l.z1, rock ? ROCK : STONE, { seed: l.x0 * 0.13 + l.z0 * 0.07 });
-  if (l.part || !l.name) return;
-  // the camera stands in the south-south-east: 0.67 east and 0.74 south
-  k.sign(`box-${l.id}`, (l.x0 + l.x1) / 2, l.top + 2.4, (l.z0 + l.z1) / 2, 0.669, 0.743, 2.6, 22);
 }
 
 /** The Wall as a block of ice that leans back: a face to the south, a walk on top, a face to the north. */

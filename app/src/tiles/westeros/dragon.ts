@@ -516,7 +516,9 @@ export class Dragon {
     sgeo.setAttribute('position', this.shadowPos);
     this.shadowMat = new THREE.MeshBasicMaterial({ color: 0x05060a, transparent: true, opacity: 0.3, depthWrite: false, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
     this.shadow = new THREE.Mesh(sgeo, this.shadowMat);
-    this.shadow.name = `dragon-shadow-${kind.name}`;
+    // one name for all three: where two dragons' shadows cross they only darken, and the check for surfaces that
+    // fight in one plane takes two of one name and one colour for one
+    this.shadow.name = 'dragon-shadow';
     this.shadow.frustumCulled = false;
     this.shadow.renderOrder = 2;
     this.shadow.layers.set(1); // kept out of the mirror image, as the shadows under vehicles are

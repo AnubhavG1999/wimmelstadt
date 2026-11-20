@@ -5,12 +5,7 @@
 import type { SignDef } from '../../engine/signs';
 import { SIGNS as COUNTRY_SIGNS } from './country';
 import { paintHerald } from './herald';
-import { nameSign } from './look';
-import { LOTS } from './plan';
 import { REGIONS } from './regions';
-
-/** While a lot is only a box, its name stands on it. */
-export const BLOCKOUT_SIGNS: SignDef[] = LOTS.filter((l) => !l.part && l.name).map((l) => nameSign(`box-${l.id}`, l.name));
 
 /**
  * The one board that shows what is playing: the herald's board at the tourney
@@ -18,4 +13,4 @@ export const BLOCKOUT_SIGNS: SignDef[] = LOTS.filter((l) => !l.part && l.name).m
  */
 export const HERALD: SignDef = { id: 'herald', lines: ['WINTER IS COMING', 'fit your winter wheels', 'The wheelwright, Winter Town'], color: '#e9dcc0', aspect: 640 / 360, kind: 'screen', paint: paintHerald };
 
-export const SIGNS: SignDef[] = [...BLOCKOUT_SIGNS, HERALD, ...Object.values(REGIONS).flatMap((r) => r.SIGNS), ...COUNTRY_SIGNS];
+export const SIGNS: SignDef[] = [HERALD, ...Object.values(REGIONS).flatMap((r) => r.SIGNS), ...COUNTRY_SIGNS];
