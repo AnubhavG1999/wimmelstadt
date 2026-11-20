@@ -75,7 +75,7 @@ export function buildBoard(defs: TileDef[]): Board {
     const { k, finish } = startBuild(def, x, z);
     const parts = def.build(k);
     const standing = finish();
-    const vehicles = buildVehicles(k, parts.routes, parts.parked, parts.heroSpots);
+    const vehicles = buildVehicles(k, parts.routes, parts.parked, parts.heroSpots, parts.kinds);
     standing.group.add(vehicles.group);
     group.add(standing.group);
     return { def, x, z, standing, vehicles };

@@ -261,6 +261,7 @@ Rules that are not obvious from the code:
 - **A route is a closed loop.** Its direction is the order of its corners, and that is what makes traffic keep left or right.
 - **A stretch of a route can have a speed of its own**, where the road it runs on is slower or faster than the rest: a spiral ramp, a driveway, a stretch of expressway.
 - **A route can say what its vehicles are**: `types` picks among the plain kinds (`sedan`, `hatch`, `van`, `pickup`, `bus`), and `paint` gives them a city's colours, such as red taxis. A hero may be put on any route that does not say `heroes: false`.
+- **A tile can bring traffic of its own shape**: a rider, a cart, an auto-rickshaw. It hands each kind over as a `TrafficKind` in `kinds`, beside its routes: a name, a shape with its nose along +x standing on y = 0, a length, a width and the colours its paint is picked from. A route's `types` and a parked spot's `type` then ask for it by name, alone or mixed with the plain kinds. The shape is made with `shapeFrom`, `shapePart` and `PART` in `vehicles.ts`, where a comment shows a whole one: paint is given in white and takes the colour picked for each, everything else keeps its own colour. A kind without lamps says `lamps: false`, and then throws no beam on the road at night. Such traffic drives as the plain kinds do: it keeps its distance, takes turns on a shared lane, and is drawn in one batch for the whole kind, however many there are.
 - **Windows.** `win.kind` is 0 for plain windows, 1 for a wall of glass, 2 or 3 for windows above a shopfront, 4 for small windows and 6 for tall slits. `interior(lit)` is for a surface inside a lit room. Windows are placed by height above the ground, so storeys stacked as boxes of their own line up only if each box is as high as the `storey` of its `win`.
 - **Streets are laid in the tile's own coordinates**, not inside `placed`, or their junctions are not found.
 
@@ -285,7 +286,6 @@ Traps the earlier tiles fell into:
 
 What the kit does not yet have, as the first tiles found:
 
-- **Vehicles of a tile's own shape in the traffic**: a rickshaw, a double-decker. A tram or a bus is a `train` on a lane that no route uses, and a train does not see traffic.
 - **Traffic that waits**: at a crossing where people walk, or for a bridge that lifts.
 - **People who walk, and people who can be dressed.** A guard or a gondolier is built as boxes with `figure` in `parts.ts`.
 - **A window that is not a pane of glass**, such as a dark arch, and **roofs other than hip roofs** on ordinary buildings.
