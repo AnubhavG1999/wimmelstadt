@@ -460,11 +460,12 @@ function frame(now: number): boolean {
       refreshMs = [...tickGaps].sort((a, b) => a - b)[Math.floor(tickGaps.length * 0.3)];
     }
   }
-  // About `fps` frames a second, and thirty in calm mode, after a minute without input.
+  // About `fps` frames a second, and no more than sixty in calm mode, after a minute without
+  // input, so that the city looked at from across the room stays as smooth as it is up close.
   // A screen that refreshes faster is drawn on every second, third or fourth refresh,
   // which keeps the motion even: 60 on a 120 Hz screen, 72 on a 144 Hz one.
   const calm = now - rig.lastInput > 60000;
-  const cap = calm ? Math.min(30, opts.fps) : opts.fps;
+  const cap = calm ? Math.min(60, opts.fps) : opts.fps;
   const every = cap >= 240 ? 1 : Math.max(1, Math.floor(1000 / refreshMs / cap + 0.4));
   ticks++;
   if (ticks % every !== 0) return false;
@@ -502,7 +503,7 @@ function frame(now: number): boolean {
         `${r.calls} draw calls   ${(r.triangles / 1000).toFixed(0)}k triangles`,
         `${bufSize.x}x${bufSize.y} px   ${ratio.toFixed(2)}x the screen   msaa ${msaa}   shadow ${opts.shadow}`,
         `${board.stats().moving} moving, ${board.stats().parked} parked, ${board.heroes.length} heroes on ${board.tiles.length} ${board.tiles.length === 1 ? 'tile' : 'tiles'}`,
-        `${calm ? 'calm: 30 fps cap' : `cap ${opts.fps} fps`} on a ${(1000 / refreshMs).toFixed(0)} Hz screen   ${reflectionNote()}`,
+        `${calm ? `calm: ${Math.min(60, opts.fps)} fps cap` : `cap ${opts.fps} fps`} on a ${(1000 / refreshMs).toFixed(0)} Hz screen   ${reflectionNote()}`,
         `screen kept awake: ${wakeLock ? 'yes' : 'no'}`,
       ].join('\n');
     }
