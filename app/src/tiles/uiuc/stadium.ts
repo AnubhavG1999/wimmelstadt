@@ -295,6 +295,8 @@ function stadium(k: Build, l: LotDef): void {
     b.box(cx - 5.4, 5.35, back, cx + 5.4, 6.45, back + 0.06, 0xd8d3c6, { faces: 'SEWTB' });
     k.sign('stadium-name', cx, 5.9, back + 0.09, 0, 1, 0.82, 10.4);
     ys.forEach((yy, i) => {
+      // (nobody stands on a row so high that their head would be in the board over it)
+      if (yy + 2.6 > (board.y0 ?? 9.5)) return;
       for (let j = 0; j < 5; j++) k.person(field.x0 + 0.6 + rand() * (field.x1 - field.x0 - 1.2), front + w * (i + 0.5), yy);
     });
     k.lights.push({ x: cx - 7, z: back + 2, r: 10, color: '#ffe2ae', k: 0.5 });

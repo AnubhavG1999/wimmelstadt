@@ -32,6 +32,8 @@ export const WALK_GREEN = 2, WALK = 1.5;
 
 /** The railway's embankment along the west edge: where it stands, how high its track is, and how far in under it the road turns round. */
 export const RAIL = { x0: -104, x1: -96, y: 6, track: -100, turn: -102 };
+/** The top of the embankment, and the height of the line a train follows along it. */
+export const EMBANKMENT = { top: RAIL.y - 0.5, rail: RAIL.y - 0.34 };
 /** The two viaducts, where a street passes under the railway: the street's middle line, and half the width of the opening. */
 export const VIADUCTS = [{ id: 'green', z: GREEN, half: 6.2 }, { id: 'kirby', z: KIRBY, half: 6.2 }];
 

@@ -15,7 +15,7 @@ import type { Build, TileParts } from '../../engine/tile';
 import { roadFaults, throughSolids, unseen } from './checks';
 import { MODELS, extras } from './models';
 import {
-  AREAS, BOARD, CARR, HERO_SPOTS, LOTS, MUST_SEE, PARKED, RAIL, ROUTES, STREETS, TALL, VIADUCTS,
+  AREAS, BOARD, CARR, EMBANKMENT, HERO_SPOTS, LOTS, MUST_SEE, PARKED, RAIL, ROUTES, STREETS, TALL, VIADUCTS,
   type LotDef, type Surface,
 } from './plan';
 
@@ -89,7 +89,7 @@ export function buildCity(k: Build): TileParts {
   // The railway: an embankment along the west edge, and a bridge where a street passes under it
   // -------------------------------------------------------------------------
 
-  const bankTop = RAIL.y - 0.5, clear = 4.5;
+  const bankTop = EMBANKMENT.top, clear = 4.5;
   const solids: Solid[] = [];
   {
     // the embankment in pieces, from the north edge to the south, broken at each viaduct
@@ -108,7 +108,7 @@ export function buildCity(k: Build): TileParts {
       solids.push({ id: `the ${v.id} viaduct's deck`, x0: RAIL.x0, z0: v.z - v.half, x1: RAIL.x1, z1: v.z + v.half, y0: clear, y1: bankTop });
       z = v.z + v.half;
     }
-    track(k, buildPath([{ t: 'poly', pts: [[RAIL.track, BOARD.z0 + 1], [RAIL.track, BOARD.z1 - 1]], y: bankTop + 0.16, r: 0 }], false));
+    track(k, buildPath([{ t: 'poly', pts: [[RAIL.track, BOARD.z0 + 1], [RAIL.track, BOARD.z1 - 1]], y: EMBANKMENT.rail, r: 0 }], false));
   }
 
   // -------------------------------------------------------------------------

@@ -2,7 +2,7 @@
 
 What a later reader cannot see in the code.
 
-**Where it stands.** The plan was put to the collector on 19 November 2026. He answered the same day, and this is the plan with what he asked for worked in. The tile is blocked out: its ground, its streets, the railway's embankment with its two viaducts, its routes and its places for heroes are built, and every lot is a plain box with its name on a board until its model is built. Built so far: the Illini Union, Gregory Place with Basil Thai and Manolo's, the Six Pack, the blocks between Fourth Street and Wright Street, both rows of the Main Quad with Foellinger Auditorium, and the stadium with the saucer. The rest of the lots are being built a file at a time (see "The models"). The research is in [docs/districts/research/uiuc.md](../../../../docs/districts/research/uiuc.md). Where this file and that note disagree, this file is the later: see "What the research note has wrong".
+**Where it stands.** The plan was put to the collector on 19 November 2026. He answered the same day, and this is the plan with what he asked for worked in. The tile is blocked out: its ground, its streets, the railway's embankment with its two viaducts, its routes and its places for heroes are built, and every lot is a plain box with its name on a board until its model is built. Built so far: the Illini Union, Gregory Place with Basil Thai and Manolo's, the Six Pack, the blocks between Fourth Street and Wright Street, both rows of the Main Quad with Foellinger Auditorium, the stadium with the saucer, the engineering campus, the screen on the stadium's board, and what moves on a line of its own: the train, a tractor and an aeroplane. The rest of the lots are being built a file at a time (see "The models"). The research is in [docs/districts/research/uiuc.md](../../../../docs/districts/research/uiuc.md). Where this file and that note disagree, this file is the later: see "What the research note has wrong".
 
 ## Where things are
 
@@ -11,6 +11,7 @@ What a later reader cannot see in the code.
 - `checks.ts` looks at the routes and at the sight lines on every load of the development server, and says what it finds in the console.
 - `look.ts` is what the campus is made of: its brick, trim and roofs as colours, how its walls are glazed, and the small parts its buildings share (a dormer, a chimney, a column, steps, a weathervane). A storey on this tile is 2.9 high, and every model takes that from here.
 - `models.ts` gathers the files of models. Each file builds one group of lots and hands over its models by the id of their lot, the signs it hangs, and `extras` for whatever it builds that is not a lot. A lot no file has a model for is a box. A model is a function of its lot, so it moves with the plan.
+- `scenes.ts` holds the screen and the small scenes on the ground between the lots, and `moving.ts` what moves on a line of its own.
 - `union.ts` builds the Illini Union, `gregory-place.ts` Gregory Place and Manolo's, and `six-pack.ts` the halls of the Six Pack. The other files of models are named for their part of the tile.
 
 ## The models
@@ -71,6 +72,27 @@ Not checked against a picture: what Wassaja Hall looks like (its brick, its stor
 - *Illinois Field.* A small grandstand with a roof behind home plate, the diamond, two dugouts, a navy fence with yellow foul poles, and a few players.
 - *Grange Grove.* Seven canopies in orange, navy and white with a table under each, four grills, and about forty people. No lettering.
 - *The practice fields.* Two, side by side, with their lines and goal posts.
+
+**The engineering campus** (`engineering.ts`, built by an Opus builder and looked at from four sides by day and by night).
+
+- *The Siebel Center.* An L of four storeys of 2.6 each: red brick for the two lower storeys and glass for the two upper, under grey pitched roofs of standing seam that overhang, with a tall tower of buff stone beside the entrance, which is set in under the building at its south-west corner behind a flat white canopy on slender columns. On the inside of the L it is all glass, with a drum clad in green copper standing out of it. That is what photographs and the department's own pages show: a traditional south face and a modern north one. Its full name is on a board beside the entrance.
+- *Engineering Hall.* A stone ground storey, salmon-orange brick above, round-headed windows on the main floor, three pavilions on Green Street with the middle one gabled, a low hipped roof of dark blue-grey, and a wing at the back with a veranda over the creek.
+- *Grainger Engineering Library.* Three storeys of red brick with a white cornice under a big grey hipped roof with a band of skylights, half-round dormers over its end pavilions, and a small white porch of columns in the middle of its south front.
+- *The car teams' workshop.* Brick and metal sheet, with three roller doors standing open on a lit hall: benches, a formula chassis on stands, shelves of tyres, a solar shell on trestles. On the forecourt west of the hero's place: a solar car, a teardrop covered in dark blue cells, and a white and orange formula car, with cones, a tool chest, a stack of tyres and five people. The boards over the doors say SOLAR CAR and FORMULA. No team's name, no sponsor, no maker and no number is drawn.
+- *Everitt Laboratory* and *Talbot Laboratory.* Two brick laboratories of three storeys, Talbot with a high bay between two wings.
+- *The laboratories south of Green Street.* Two storeys of red brick with four ridges of skylight and loading doors at the back.
+- *Boneyard Creek*, from the line of Wright Street east to the Siebel Center: two courses of stone on each bank, three arched footbridges, walks, benches, and the bronze man who sits on a bench with a laptop in front of Grainger.
+
+**The screen** (`scenes.ts`). An ordinary sign of the kind `screen` on both faces of the board over the stadium's south end, with the picture described under "The screen" as its own `paint`. Nobody stands on the top row of the south end under it: their heads would be in the board.
+
+**What moves** (`moving.ts`).
+
+- *The train.* One piece, as Japan's bullet train is: a locomotive in navy and grey at each end, each with its cab outwards, and two silver coaches of two decks between them with a band of navy, red and white, 26 long in all. It has no lettering and no mark. The engine turns a train end for end where its line ends, and a train that is the same from both ends can do that where it stands: trains on this line often do run with a locomotive at each end. It runs the length of the embankment at 15, stands ten seconds at the south edge of the board, and ten at the north one beside a platform.
+- *The platform.* A slab on the embankment's east side beside Illinois Terminal, 23 long, with a roof on posts, two benches, seven people, and the station's name, CHAMPAIGN-URBANA, in white on navy, once for the tile and once for the train.
+- *The tractor.* A green tractor with a wagon of bales, one piece, on a track of bare earth that runs round the field of corn south of Florida Avenue.
+- *The aeroplane.* A small yellow aeroplane that tows a plain orange banner round a ring 24 across, 26 up, a little south-east of the stadium. From where the tile is first looked at, a thing in the air stands further north-west than it is, so the ring is seen over the stadium, and nowhere on it does the aeroplane seem to fly out over the edge of the board. The banner has no lettering.
+
+Not confirmed by any source found: what the Siebel Center's south front looks like in full, and which corner its entrance is on (it is put at the south-west, where the opening view sees it); where the car teams really work (the workshop is the plan's own); what Everitt and Talbot look like.
 
 Not confirmed by any source found: the shape of the roofs of Altgeld's tower and turrets; how many columns the English Building's colonnade has; Lincoln Hall's roof, brick and doorway; that Gregory Hall is Georgian with a hipped roof and a pediment; which side Noyes Laboratory's great porch is on; Smith Hall's roof colour; whether the stadium's columns are round, and how many there are (sources give 181 and 200).
 
@@ -356,6 +378,8 @@ The near lane is the one on the camera's side of the buildings that hide it: the
 - **The towers' storeys.** Illini Tower has 17 floors in life and shows 16 rows of windows. The bookstore is four storeys above the ground with a fifth set back, as its builder's page and a university page between them say.
 - **A hero on the Quad.** Quad Day's rules keep vehicles off the Quad. The solar car and a formula car have stood at their teams' tables, and that is the stand the hero's place is beside.
 - **The embankment is 6 high**, where 5 m would be less than 2.
+- **The train stops at the edge of the board and goes back.** In life it runs on to Chicago and to Carbondale. Its platform is on the embankment's east side, beside a terminal that in life stands west of the tracks.
+- **The Siebel Center is four storeys.** One database says five.
 
 ## Care
 
@@ -369,7 +393,7 @@ The near lane is the one on the camera's side of the buildings that hide it: the
 
 ## Real names on signs
 
-On signs so far: ALTGELD HALL, HENRY ADMINISTRATION BUILDING, ENGLISH BUILDING, LINCOLN HALL and GREGORY HALL, each over its door on the Quad; FOELLINGER AUDITORIUM, HARKER HALL, NATURAL HISTORY BUILDING, NOYES LABORATORY, DAVENPORT HALL, SMITH MEMORIAL HALL (the university's full name for it is Tina Weedon Smith Memorial Hall) and ASTRONOMICAL OBSERVATORY, each where the opening view can read it; GIES MEMORIAL STADIUM (so named on 9 September 2025) on the stadium's south wall, and ILLINOIS FIELD on its grandstand; ARMORY, ICE ARENA, SHERMAN HALL, ILLINI TOWER and ILLINI UNION BOOKSTORE, each on its building (Illini Tower is a private hall: its own leasing pages and the university's list of certified housing have it under that name for 2026 to 2027), and a P on the parking deck; the names of the Six Pack's seven halls and of the Ikenberry Dining Center, each over its door, as the research note gives them; ILLINI UNION, on both fronts of the Union; BASIL THAI, with "at Urbana" under it, on its awning; and MANOLO'S, with PIZZA & EMPANADAS under it, on its board and on its awning. The rest are the names the plan would use, each as plain lettering on a plain board, with what the research found on 19 November 2026. Each is checked again as its sign is written.
+On signs so far: ENGINEERING HALL, GRAINGER ENGINEERING LIBRARY, THOMAS M. SIEBEL CENTER FOR COMPUTER SCIENCE, EVERITT LABORATORY and TALBOT LABORATORY, each on its building; CHAMPAIGN-URBANA, the name of the railway's station, on the platform; ALTGELD HALL, HENRY ADMINISTRATION BUILDING, ENGLISH BUILDING, LINCOLN HALL and GREGORY HALL, each over its door on the Quad; FOELLINGER AUDITORIUM, HARKER HALL, NATURAL HISTORY BUILDING, NOYES LABORATORY, DAVENPORT HALL, SMITH MEMORIAL HALL (the university's full name for it is Tina Weedon Smith Memorial Hall) and ASTRONOMICAL OBSERVATORY, each where the opening view can read it; GIES MEMORIAL STADIUM (so named on 9 September 2025) on the stadium's south wall, and ILLINOIS FIELD on its grandstand; ARMORY, ICE ARENA, SHERMAN HALL, ILLINI TOWER and ILLINI UNION BOOKSTORE, each on its building (Illini Tower is a private hall: its own leasing pages and the university's list of certified housing have it under that name for 2026 to 2027), and a P on the parking deck; the names of the Six Pack's seven halls and of the Ikenberry Dining Center, each over its door, as the research note gives them; ILLINI UNION, on both fronts of the Union; BASIL THAI, with "at Urbana" under it, on its awning; and MANOLO'S, with PIZZA & EMPANADAS under it, on its board and on its awning. The rest are the names the plan would use, each as plain lettering on a plain board, with what the research found on 19 November 2026. Each is checked again as its sign is written.
 
 | Name | Where | What confirmed it |
 | --- | --- | --- |

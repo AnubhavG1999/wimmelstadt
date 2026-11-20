@@ -13,9 +13,11 @@ import * as engineering from './engineering';
 import * as greenNorth from './green-north';
 import * as gregoryPlace from './gregory-place';
 import * as houses from './houses';
+import * as moving from './moving';
 import { BOX_SIGNS, type Model, type ModelFile } from './plan';
 import * as quadEast from './quad-east';
 import * as quadWest from './quad-west';
+import * as scenes from './scenes';
 import * as sixPack from './six-pack';
 import * as sixth from './sixth';
 import * as southCampus from './south-campus';
@@ -36,6 +38,8 @@ const FILES: Record<string, ModelFile> = {
   east,
   'gregory-place': gregoryPlace,
   'six-pack': sixPack,
+  scenes,
+  moving,
 };
 
 export const MODELS: Record<string, Model> = {};
