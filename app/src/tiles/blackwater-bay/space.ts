@@ -9,8 +9,9 @@ import { HERO_SPOTS, HOMES, ISLANDS, LAND_NORTH, LAND_SOUTH, LENGTH, LOTS, MEADO
 
 /** Ground that belongs to a place although no lot covers it: a square, a quay, a camp, a strand. Nothing else stands there. */
 export const KEPT: { what: string; x0: number; z0: number; x1: number; z1: number }[] = [
-  { what: "the square under Balerion's head", x0: -42, z0: -4, x1: -15.5, z1: 7 },
-  { what: "the square under Vhagar's head", x0: -99.5, z0: -4, x1: -76, z1: 4 },
+  { what: "the square at the terrace's east foot", x0: -42, z0: -4, x1: -15.5, z1: 7 },
+  { what: "the square at the terrace's west foot", x0: -99.5, z0: -4, x1: -76, z1: 4 },
+  { what: "the houses on Visenya's Hill's slopes", x0: -98.5, z0: 13.5, x1: -71.5, z1: 46.5 },
   { what: "King's Landing's quays", x0: -99.5, z0: 60, x1: -14, z1: 74 },
   { what: 'the camp of the Sowing', ...SOWING },
   { what: "Aegon's strand", x0: -21, z0: 60, x1: -12, z1: 74 },

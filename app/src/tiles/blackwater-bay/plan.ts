@@ -129,11 +129,10 @@ export function isWater(x: number, z: number): boolean {
  * The Hill of Rhaenys, with the Dragonpit on its crown. The drum stands at
  * the north of a great stone terrace, `y` high and walled round, that fills
  * the hill's south half. The bronze doors face south, onto the forecourt,
- * where the Street of the Sisters comes up. Balerion lies on the terrace's
- * east apron and Vhagar on its west apron, each facing south with its tail
- * laid out behind it along the apron, so that the two flank the doors; and
- * Dreamfyre lies in the doors themselves. The forty vaults' iron doors are in
- * the terrace's walls.
+ * where the Street of the Sisters comes up. Balerion lies on the dome's
+ * crown, Dreamfyre in the doors themselves, and the Dragonkeepers' hall and
+ * the larder stand on the aprons either side of the drum. The forty vaults'
+ * iron doors are in the terrace's walls.
  */
 export const RHAENYS = {
   c: [-60, -40] as P2,
@@ -143,7 +142,7 @@ export const RHAENYS = {
   y: 6, crown: 24,
   /** Which way the bronze doors face, in degrees from east towards south: south. */
   doors: 90,
-  /** Vhagar's apron, west of the drum, and Balerion's, east of it, each reaching back as far as the drum's north side. */
+  /** The aprons west and east of the drum, each reaching back as far as the drum's north side: the larder's and the Dragonkeepers' hall's. */
   apronW: { x0: -99.5, z0: -62, x1: -78, z1: -4 },
   apronE: { x0: -42, z0: -62, x1: -15.5, z1: -4 },
   /** Before the drum, between the aprons, and the forecourt, which reaches further south where the climb comes up. */
@@ -263,7 +262,7 @@ export const LOTS: Lot[] = [
   lot('dp-larder', '', -97, -57, -83, -40, 12, true),
   lot('drovers-pen', "Drovers' pen", -36, -100, -20, -86, 2.5),
   // --- Visenya's Hill ---
-  lot('visenya', "Visenya's Hill", VISENYA.c[0] - VISENYA.crown, VISENYA.c[1] - VISENYA.crown, VISENYA.c[0] + VISENYA.crown, VISENYA.c[1] + VISENYA.crown, VISENYA.y, true),
+  lot('visenya', "Visenya's Hill", VISENYA.c[0] - VISENYA.crown, VISENYA.c[1] - VISENYA.crown, VISENYA.c[0] + VISENYA.crown, VISENYA.c[1] + VISENYA.crown, VISENYA.y + 1, true),
   lot('sept', 'Sept', -88, 26, -80, 34, 18),
   // --- Aegon's High Hill and the Red Keep ---
   lot('aegon', "Aegon's High Hill", AEGON.c[0] - AEGON.crown, AEGON.c[1] - AEGON.crown, AEGON.c[0] + AEGON.crown, AEGON.c[1] + AEGON.crown, AEGON.y, true),
@@ -350,7 +349,7 @@ export const LANE = 4;
 export const ROADS = {
   /** King's Landing: along the quays under the south wall, from the west end to Aegon's strand. */
   quays: [[-93, 67], [-25, 67]] as P2[],
-  /** The Street of the Sisters: in at the River Gate, north between Visenya's Hill and the High Hill, east under Balerion, and up to the forecourt. */
+  /** The Street of the Sisters: in at the River Gate, north between Visenya's Hill and the High Hill, and up the climb to the forecourt. */
   sisters: [[-60, 67], [-60, R.forecourt.z1]] as P2[],
   /** The Rosby road: out of the Iron Gate and along the north shore, through Duskendale, to Rook's Rest. */
   rosby: [[-28, -93], [-6, -94], [10, -93], [21, -89], [34, -94]] as P2[],
