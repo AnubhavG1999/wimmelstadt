@@ -376,6 +376,25 @@ export const STAGES: Record<string, { x0: number; z0: number; x1: number; z1: nu
 };
 
 // ---------------------------------------------------------------------------
+// The camp, and the spider tanks
+// ---------------------------------------------------------------------------
+
+/**
+ * The Augustan camp on the south flank: where the cast who rest there stand (show.ts), which the camp's builder
+ * keeps open, each with 1.5 clear round it; and its motor pool, where two spider tanks stand parked (traffic.ts),
+ * facing east, north of the place for a hero.
+ */
+export const CAMP = {
+  posts: [[-40, 70], [-62, 68.5], [-65, 70.5], [-36.6, 71], [-38, 73.2], [-52, 73.5], [-48.8, 73.5], [-45.6, 73.5], [-42.4, 73.5], [-52, 76.1], [-48.8, 76.1], [-45.6, 76.1], [-42.4, 76.1]] as P2[],
+  /** Round Kavax, at the second post, his fox trots a ring this far out. */
+  fox: 2.4,
+  parked: [[-35, 66.3], [-27.5, 66.3]] as P2[],
+};
+
+/** The round two spider tanks walk on the south flank, east of the mine and west of the peaks: its corners, on the ground. */
+export const SPIDER_PATROL: P2[] = [[46, 90], [58, 86], [66, 94], [58, 104], [46, 100]];
+
+// ---------------------------------------------------------------------------
 // The sky
 // ---------------------------------------------------------------------------
 

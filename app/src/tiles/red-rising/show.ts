@@ -163,7 +163,7 @@ function posts(): Record<Id, Spot | null> {
     lysander: at(6, F + 8, 60.5, S), atalantia: at(13, F + 8, 60.5, S),
     'bellona-4': at(-16, F + 8, 60.5, S), 'bellona-5': at(-7, F + 8, 60.5, S), 'bellona-6': at(22, F + 8, 60.5, S), 'bellona-7': at(30, F + 8, 60.5, S),
     // the camp on the south flank: Lorn and his force, Kavax and Daxo, and the Republic's later figures
-    lorn: onGround(-40, 70, E), kavax: onGround(-62, 68.5, E), daxo: onGround(-65, 70.5, E), holiday: onGround(-33.5, 67.5, E), thraxa: onGround(-30.5, 69, E),
+    lorn: onGround(-40, 70, E), kavax: onGround(-62, 68.5, E), daxo: onGround(-65, 70.5, E), holiday: onGround(-36.6, 71, E), thraxa: onGround(-38, 73.2, E),
     // the Jackal on the tallest tower, watching
     jackal: at(-74, F + 66, -34, S - 0.6),
     // away until a story brings them
