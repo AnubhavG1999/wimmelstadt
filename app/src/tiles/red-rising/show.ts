@@ -37,7 +37,7 @@ import type { V3 } from '../../engine/geo';
 import type { Build } from '../../engine/tile';
 import { SHUTTLE_PADS, shuttleGeometry } from './citadel';
 import {
-  LOOKS, SOLDIERS, blend, bow, buildCast, buildFox, buildGriffins, draw, fly, guard, haul, howl, kneel, leap, parry, push, run, salute, sit, strike, walk,
+  LOOKS, RIDER_FEET, SOLDIERS, blend, bow, buildCast, buildFox, buildGriffins, draw, fly, guard, haul, howl, kneel, leap, parry, push, ride, run, salute, sit, strike, walk,
   type Cast, type CastId, type Figure, type Fox, type Griffin, type Look, type Pose, type SoldierKind,
 } from './figures';
 import { buildFleet, type Fleet } from './fleet';
@@ -522,7 +522,7 @@ function stories(Wd: World): StoryDef[] {
     const inf = Array.from({ length: 8 }, (_, i) => `augustanGray-${i}`);
     const tower = at(-22, F + 12, -49.6, S);
     const inside = at(-22, F, -46.2, N);
-    const marks: Record<Id, Spot | 'post'> = { ragnar: at(-23.5, F + 12, -49.6, E), windKnight: 'post', cassius: at(-15.6, F + 10, -49.5, W) };
+    const marks: Record<Id, Spot | 'post'> = { ragnar: at(-23.9, F + 12, -49.6, E), windKnight: 'post', cassius: at(-15.6, F + 10, -49.5, W) };
     obs.forEach((id, i) => (marks[id] = at(-28.5 + (i % 2) * 13, F, -43 + Math.floor(i / 2) * 2.4, N)));
     inf.forEach((id, i) => (marks[id] = at(-22.6 + (i % 2) * 1.2, F, -60 - Math.floor(i / 2) * 1.6, S)));
     out.push({
@@ -1039,12 +1039,12 @@ function stories(Wd: World): StoryDef[] {
         // the riders mount, ride out over the plateau and back over the rim, and Sefi lands beside her brother
         vk.forEach((id, i) => {
           const home = P.from(id), w = wingsAt(i, tb, ragnarAt);
-          const saddle = at(w.x, w.y + 1.5, w.z, w.h);
+          const saddle = at(w.x, w.y + RIDER_FEET, w.z, w.h);
           if (tb < 5) P.put(id, still(home));
           else if (tb < 6) {
             const u = span(tb, 5, 6);
             P.put(id, still(at(lerp(home.x, saddle.x, u), lerp(home.y, saddle.y, u) + Math.sin(Math.PI * u), lerp(home.z, saddle.z, u), saddle.h), leap(u)));
-          } else if (i === 0 ? tb < 33 : tb < 30.5) P.put(id, still(saddle, sit(0.5), { cloak: 0.8 }));
+          } else if (i === 0 ? tb < 33 : tb < 30.5) P.put(id, still(saddle, ride(0), { cloak: 0.8 }));
           else if (i === 0) {
             const sefiAt = at(ragnarAt.x + 1.5, ragnarAt.y, ragnarAt.z + 0.4, W);
             const u = span(tb, 33, 34);

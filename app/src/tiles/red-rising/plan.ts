@@ -268,9 +268,11 @@ export const LOTS: Lot[] = [
   lot('canyon-wall', 'Valles Marineris', -88, -78, 88, -64, 0, true),
   lot('depot', 'Drone Depot', -12, -76, 4, -66, 28, true),
   // The Institute's gate building on the plateau above the canyon, its marble square looking out over Agea.
-  lot('institute', 'The Institute', -58, -105, -34, -93, 38),
-  lot('guns-w', '', -24, -98, -10, -90, 38),
-  lot('guns-e', '', 22, -98, 36, -90, 38),
+  // Its square stands at 35.1 as built, so the gate building rises to 44: a front some twelve high over its forecourt.
+  lot('institute', 'The Institute', -58, -105, -34, -93, 44),
+  // The guns stand on the crest, which the road's bench has raised to 38 and more; the east battery stops short of the snow.
+  lot('guns-w', '', -24, -98, -10, -90, 41),
+  lot('guns-e', '', 22, -98, 34, -90, 41),
   // Olympus floats over the canyon's east end, a mountain the wrong way up with a marble citadel on it.
   lot('olympus', 'Olympus', 62, -76, 82, -56, 62, true),
 
@@ -343,7 +345,8 @@ export const lotOf = (id: string): Lot => {
 // ---------------------------------------------------------------------------
 
 export const HERO_SPOTS: { id: string; x: number; z: number; y: number; heading: number; where: string }[] = [
-  { id: 'institute', x: -46, z: -91.2, y: naturalAt(-46, -91.2) + 0.64, heading: 0, where: "the marble square before the Institute's gates, on the plateau, looking out over Agea" },
+  // the square as built stands at 35.13: the rim road's bench has raised the ground beside the road above the natural ground
+  { id: 'institute', x: -46, z: -91.2, y: 35.17, heading: 0, where: "the marble square before the Institute's gates, on the plateau, looking out over Agea" },
   { id: 'pad', x: -21, z: 20, y: F + 6.04, heading: 0, where: "a landing pad beside the Sovereign's shuttle" },
   { id: 'field', x: -18, z: 51, y: F + 0.44, heading: 0, where: 'the Field of Mars, on its white stone' },
   { id: 'tryst', x: -27, z: -34, y: F + 28.04, heading: 0, where: "the deck of Tryst, the club on a tower's roof" },
@@ -430,7 +433,7 @@ export const SIGHT: { id: string; x: number; y: number; z: number }[] = [
   { id: 'the rim road at the crown', x: 0, y: domeAt(0, -84) + 1.6, z: -84 },
   { id: 'the rim road, west', x: -40, y: domeAt(-40, -84) + 1.6, z: -84 },
   { id: 'the rim road, east', x: 40, y: domeAt(40, -84) + 1.6, z: -84 },
-  { id: "the Institute's square", x: -46, y: naturalAt(-46, -91.2) + 1.6, z: -91.2 },
+  { id: "the Institute's square", x: -46, y: 36.7, z: -91.2 },
   { id: 'the fall', x: 10, y: F + 10, z: -70 },
   { id: 'the landing pads', x: -21, y: F + 7, z: 14 },
   { id: 'the Field of Mars', x: -4, y: F + 1.6, z: 46 },

@@ -26,6 +26,12 @@ export const SNOW = 0xeef2f6, SNOW_SHADE = 0xd6dee8, PAVING = 0xd8bfa2, MUD = 0x
 const LIMB_GREEN = 0x5f7d48, LIMB_RED = 0x8c4a2e;
 /** The canyon's strata, bottom to top. */
 export const STRATA = [0x9a4a2c, 0xc07a44, 0x7c3a26, 0xd39a62, 0xa85a34, 0xe0b27a, 0x8a4630];
+/** How thick a bed of the canyon's rock is. */
+export const BED = 2.4;
+/** How far the beds wander up and down at a place, so that they do not run level like a layer cake. */
+export const bedShift = (x: number, z: number): number => 2.2 * Math.sin(x * 0.05) + 0.8 * Math.sin(z * 0.13);
+/** The colour of the nth bed, counted up from height 0. */
+export const bedColour = (n: number): number => STRATA[((n % STRATA.length) + STRATA.length) % STRATA.length];
 
 // ---------------------------------------------------------------------------
 // The ground as built
@@ -129,8 +135,7 @@ function colourAt(y: number, level: number, x: number, z: number): number {
     return edge < 8 ? LIMB_GREEN : MEADOW_DARK;
   }
   if (level < 0.72) {
-    const bed = Math.floor((y + 2.2 * Math.sin(x * 0.05) + 0.8 * Math.sin(z * 0.13)) / 2.4);
-    return STRATA[((bed % STRATA.length) + STRATA.length) % STRATA.length];
+    return bedColour(Math.floor((y + bedShift(x, z)) / BED));
   }
   if (snowAt(x, z, y) > 0.5 + 0.25 * (m - 0.5)) return level > 0.9 ? SNOW : SNOW_SHADE;
   // the trench's floor beyond the city: dust
