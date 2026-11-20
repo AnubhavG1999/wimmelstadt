@@ -465,6 +465,20 @@ export function makeStreetMaterial(look: TileLook): THREE.MeshToonMaterial {
                    * step(0.5, lu) * step(lu, lanes - 0.5) * step(1.5, lanes);
       vec3 albedo = diffuseColor.rgb * mix(0.9 + 0.2 * vnoise(gp * 0.9), 0.96 + 0.08 * vnoise(gp * 1.3), paving);
       albedo = mix(albedo, uPaint, clamp(edge + dashes, 0.0, 1.0) * road);
+      // paving laid in flags, square to the tile: x is how big a flag is, z how far
+      // each row is set along from the last. Each flag is a shade of its own, the
+      // joints between them darker, and both fade out where a flag is too small
+      // on the screen to be drawn cleanly.
+      float flagSize = vWin.x * paving;
+      if (flagSize > 0.0) {
+        vec2 fq = gp / flagSize;
+        fq.x += floor(fq.y) * vWin.z;
+        vec2 ff = fract(fq), fw = fwidth(fq);
+        float fade = 1.0 - smoothstep(0.1, 0.28, max(fw.x, fw.y));
+        vec2 fj = smoothstep(vec2(0.04) - fw, vec2(0.04) + fw, min(ff, 1.0 - ff));
+        float tone = fract(sin(dot(floor(fq), vec2(12.9898, 78.233))) * 43758.5453);
+        albedo *= 1.0 + ((tone - 0.5) * 0.12 - 0.3 * (1.0 - fj.x * fj.y)) * fade;
+      }
       // snow lies thick on paving, thinner where traffic keeps the road clear
       albedo = mix(albedo, vec3(0.9, 0.94, 1.0), uSnow * (0.95 - 0.5 * road) * (0.85 + 0.15 * vnoise(gp * 0.5)));
       float puddle = smoothstep(0.35, 0.7, vnoise(gp * 0.07 + 3.1));

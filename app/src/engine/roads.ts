@@ -4,7 +4,7 @@
 
 import * as THREE from 'three';
 import type { V3, WinSpec } from './geo';
-import { flat, type P2 } from './ground';
+import { FLAG, flat, type P2 } from './ground';
 import type { Path } from './paths';
 import type { Build } from './tile';
 
@@ -284,7 +284,8 @@ export function street(k: Build, path: Path, o: StreetOpts = {}): void {
       pieces.push({ p: wound(p), x0: Math.min(...xs), z0: Math.min(...zs), x1: Math.max(...xs), z1: Math.max(...zs), y: (f0.y + f1.y) / 2 });
     }
     if (walk > 0) {
-      const win: WinSpec = { cell: 0, storey: walk, lit: 0, kind: 1 };
+      // laid in flags, square to the tile, so that where two sidewalks overlap at a corner they look the same
+      const win: WinSpec = { cell: FLAG, storey: walk, lit: 0.5, kind: 1 };
       strip(0, 1, 0.015, paving, win);
       strip(2, 3, 0.015, paving, win);
     }

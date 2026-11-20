@@ -108,14 +108,26 @@ export function walls(b: GeoBuilder, shape: P2[], y0: number, y1: number, color:
  * water. Call it once. A tile whose ground is drawn by a material of its own,
  * as North America's is, does not call it at all.
  */
-export function ground(k: Build, o: { color?: number; holes?: P2[][] } = {}): void {
+export function ground(k: Build, o: { color?: number; holes?: P2[][]; flags?: Flags } = {}): void {
   const r = k.board;
-  flat(k.street, rect(r.x0, r.z0, r.x1, r.z1), 0, o.color ?? 0xb3ab9c, { win: PAVING, holes: o.holes });
+  flat(k.street, rect(r.x0, r.z0, r.x1, r.z1), 0, o.color ?? 0xb3ab9c, { win: flagged(o.flags), holes: o.holes });
 }
 
-/** A patch of the ground in a colour of its own: a lawn, a square, a beach, a car park. */
-export function area(k: Build, shape: P2[], color: number, y = 0.02): void {
-  flat(k.street, shape, y, color, { win: PAVING });
+/**
+ * How paving is laid: in flags `size` units square, each row set along from
+ * the last by `bond` of a flag (a half for a running bond, none for a grid of
+ * concrete slabs). Plain paving has none.
+ */
+export interface Flags { size: number; bond?: number }
+
+/** The size of the flags a street's sidewalks are laid in. */
+export const FLAG = 1.5;
+
+const flagged = (f?: Flags): WinSpec => (f ? { ...PAVING, cell: f.size, lit: f.bond ?? 0.5 } : PAVING);
+
+/** A patch of the ground in a colour of its own: a lawn, a square, a beach, a car park. A square may be laid in `flags`. */
+export function area(k: Build, shape: P2[], color: number, y = 0.02, flags?: Flags): void {
+  flat(k.street, shape, y, color, { win: flagged(flags) });
 }
 
 export const LAWN = 0x6fa85a, SAND = 0xe3d3a4, PLAZA = 0xd8d2c4;
