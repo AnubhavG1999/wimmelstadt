@@ -1,17 +1,20 @@
-// The flypast: three jets in a tight vic that fly a round over the tile for
-// ever, leaning into its turns, and every third time down Kartavya Path trail
-// saffron, white and green smoke from Raisina Hill over India Gate to the
-// river.
+// The flypast: three fighter jets in a tight vic that fly a round over the
+// tile for ever, leaning into its turns, and every third time down Kartavya
+// Path trail saffron, white and green smoke from Raisina Hill over India Gate
+// to the river.
 //
 // It is the picture that ends the Republic Day parade. The research note says
 // to ask before anything of the parade is built: the collector was asked, and
-// chose the jets. Only the aircraft and their smoke are here. They carry no
-// weapons, no roundel and no number, and the pass has no date.
+// chose the jets. He asked for them in grey, with a small Indian flag on the
+// tail, so that they look real. Only the aircraft and their smoke are here.
+// They carry no weapons, no squadron's badge and no number, and the pass has
+// no date.
 //
-// The jets are the tile's own shape: a display team's jet in red over white,
-// with a bubble canopy, swept wings, two canted fins and one engine. All three
-// are one mesh, which is moved as one body, so that in a turn the outer wingman
-// rides high and the inner one low, as a formation does.
+// The jet is the tile's own shape and no one real type: a fighter in two
+// greys, with a long dark nose, a low canopy, swept wings, two engines and two
+// fins that lean outwards. All three are one mesh, which is moved as one body,
+// so that in a turn the outer wingman rides high and the inner one low, as a
+// formation does.
 
 import * as THREE from 'three';
 import { GeoBuilder, interior, type QuadOpts, type V3 } from '../../engine/geo';
@@ -22,9 +25,12 @@ import { AXIS_Z } from './plan';
 // Colours
 // ---------------------------------------------------------------------------
 
-const RED = 0xd3202b, BELLY = 0xf5f3ee, TRIM = 0xf5f3ee, DARK = 0x23262c, GLASS = 0x1b2c3e, GLINT = 0x6f9fc4, NOZZLE = 0x3a3d44, FLAME = 0xff9a3a;
+/** The greys of a fighter: a mid grey above, a pale one below, a darker one on its edges, its panel against the glare and its nose. */
+const GREY = 0x8b95a1, BELLY = 0xc3cad2, EDGE = 0x6c7682, RADOME = 0x525a64, DARK = 0x23262c, GLASS = 0x1b2c3e, GLINT = 0x6f9fc4, NOZZLE = 0x3a3d44, FLAME = 0xff9a3a;
 /** The paint is seen at night as if the city lit it from below, as the engine's own aircraft are. */
-const LIT: QuadOpts = { win: interior(0.4) };
+const LIT: QuadOpts = { win: interior(0.32) };
+/** The flag on each fin: saffron above, white with the wheel's blue in its middle, green below. */
+const FLAG = { saffron: 0xff9933, white: 0xffffff, green: 0x138808, navy: 0x000080 };
 /** The smoke: saffron on the left wing, white from the leader, green on the right. */
 const SAFFRON = 0xff7d1c, WHITE = 0xfbfaf4, GREEN = 0x23a03c;
 
@@ -87,80 +93,82 @@ function slab(b: GeoBuilder, p: V3[], d: V3, front: number, back: number, rim: n
   }
 }
 
-/** The body, from the nozzle forward to where the nose cone begins. */
+/** The body, from between its two engines forward to where the nose cone begins: broad and flat at the back, round at the cockpit. */
 const BODY: Station[] = [
-  { x: -4.7, y: 0.05, w: 0.5, h: 0.46 },
-  { x: -3.6, y: 0.05, w: 0.74, h: 0.58 },
-  { x: -1.4, y: 0.02, w: 0.86, h: 0.66 },
+  { x: -4.7, y: 0.05, w: 0.9, h: 0.42 },
+  { x: -3.6, y: 0.05, w: 0.94, h: 0.54 },
+  { x: -1.4, y: 0.02, w: 0.9, h: 0.66 },
   { x: 1.2, y: 0.02, w: 0.8, h: 0.64 },
   { x: 2.9, y: -0.04, w: 0.58, h: 0.52 },
   { x: 4.2, y: -0.12, w: 0.3, h: 0.28 },
 ];
-const NOSE: Station[] = [{ x: 4.2, y: -0.12, w: 0.3, h: 0.28 }, { x: 4.9, y: -0.18, w: 0.13, h: 0.12 }, { x: 5.35, y: -0.22, w: 0.02, h: 0.02 }];
+const NOSE: Station[] = [{ x: 4.2, y: -0.12, w: 0.3, h: 0.28 }, { x: 5.05, y: -0.18, w: 0.14, h: 0.13 }, { x: 5.8, y: -0.23, w: 0.02, h: 0.02 }];
+/** The canopy: long and low, a teardrop that runs back into the spine. (It was a taller bubble at first, which the collector found too round.) */
 const CANOPY: Station[] = [
-  { x: 0.5, y: 0.62, w: 0.12, h: 0.06 },
-  { x: 1.35, y: 0.8, w: 0.46, h: 0.43 },
-  { x: 2.6, y: 0.8, w: 0.49, h: 0.45 },
-  { x: 3.4, y: 0.52, w: 0.27, h: 0.21 },
-  { x: 3.78, y: 0.36, w: 0.03, h: 0.03 },
+  { x: -0.2, y: 0.6, w: 0.1, h: 0.04 },
+  { x: 1.1, y: 0.68, w: 0.3, h: 0.2 },
+  { x: 2.4, y: 0.7, w: 0.34, h: 0.25 },
+  { x: 3.3, y: 0.53, w: 0.24, h: 0.16 },
+  { x: 3.95, y: 0.3, w: 0.03, h: 0.03 },
 ];
-const PIPE: Station[] = [{ x: -4.7, y: 0.05, w: 0.5, h: 0.46 }, { x: -5.15, y: 0.05, w: 0.4, h: 0.37 }];
-const BLAZE: Station[] = [{ x: -5.16, y: 0.05, w: 0.31, h: 0.29 }, { x: -5.7, y: 0.05, w: 0.24, h: 0.22 }, { x: -6.7, y: 0.05, w: 0.03, h: 0.03 }];
+/** One engine's pipe and the flame behind it, on the jet's middle line: each engine is this, moved to its side. */
+const PIPE: Station[] = [{ x: -4.7, y: 0.05, w: 0.4, h: 0.38 }, { x: -5.22, y: 0.05, w: 0.32, h: 0.3 }];
+const BLAZE: Station[] = [{ x: -5.23, y: 0.05, w: 0.24, h: 0.23 }, { x: -5.75, y: 0.05, w: 0.19, h: 0.18 }, { x: -6.65, y: 0.05, w: 0.03, h: 0.03 }];
+/** How far either engine is from the middle line. */
+const ENGINE = 0.46;
 
 /**
- * One jet, with its nose along +x and its middle at the origin, about ten and
- * a half long and seven across the wings.
+ * One jet, with its nose along +x and its middle at the origin, about twelve
+ * and a half long with its flames and seven across the wings.
  */
 function jet(b: GeoBuilder): void {
-  // the body: red above, white along the belly, dark on top before the canopy against the glare, a dark nose cone with its probe
-  loft(b, BODY, 8, (up, stretch) => (up < -0.3 ? BELLY : stretch === 4 && up > 0.9 ? DARK : RED), LIT);
-  loft(b, NOSE, 8, () => DARK);
-  b.beam([5.3, -0.22, 0], [5.9, -0.25, 0], 0.035, 0.012, DARK);
-  // the canopy: a bubble of dark glass with the sky on its top, in which the instruments glow at night
+  // the body: grey above and pale along the belly, a darker panel on top before the canopy against the glare, and a dark nose cone with its probe
+  loft(b, BODY, 8, (up, stretch) => (up < -0.3 ? BELLY : stretch === 4 && up > 0.9 ? EDGE : GREY), LIT);
+  cap(b, BODY[0], 8, -1, EDGE);
+  loft(b, NOSE, 8, () => RADOME, LIT);
+  b.beam([5.75, -0.23, 0], [6.35, -0.26, 0], 0.035, 0.012, DARK);
+  // the canopy: dark glass with the sky on its top, in which the instruments glow at night
   loft(b, CANOPY, 6, (up) => (up > 0.5 ? GLINT : GLASS), { win: interior(0.9) });
-  // a white stripe down its back, from behind the canopy to between the fins
-  for (let i = 1; i < 3; i++) {
-    const s0 = BODY[i], s1 = BODY[i + 1], y0 = s0.y + Math.sin(Math.PI * 0.375) * s0.h + 0.012, y1 = s1.y + Math.sin(Math.PI * 0.375) * s1.h + 0.012, x1 = i === 2 ? 0.55 : s1.x;
-    const ya = y0 + ((y1 - y0) * (x1 - s0.x)) / (s1.x - s0.x);
-    face(b, [s0.x, y0, -0.17], [x1, ya, -0.17], [x1, ya, 0.17], [s0.x, y0, 0.17], [0, 1, 0], TRIM, LIT);
-  }
-  // a white flash along either side, from the cockpit back to the fins
-  for (const side of [-1, 1]) {
-    for (let i = 1; i + 1 < BODY.length - 1; i++) {
-      const s0 = BODY[i], s1 = BODY[i + 1], z0 = Math.cos(Math.PI / 8) * s0.w + 0.012, z1 = Math.cos(Math.PI / 8) * s1.w + 0.012, t = i === 1 ? 0.05 : 0.11;
-      face(b, [s0.x, s0.y - t, z0 * side], [s1.x, s1.y - 0.11, z1 * side], [s1.x, s1.y + 0.11, z1 * side], [s0.x, s0.y + t, z0 * side], [0, 0, side], TRIM, LIT);
-    }
-  }
 
   for (const side of [-1, 1]) {
     const Z = (z: number): number => z * side;
     // an intake under the wing's root, dark in its mouth, with the strake that runs forward from the wing over it
-    b.box(0.2, -0.55, Math.min(Z(0.72), Z(1.3)), 2.1, 0.1, Math.max(Z(0.72), Z(1.3)), RED, { faces: 'NESWT', ...LIT });
+    b.box(0.2, -0.55, Math.min(Z(0.72), Z(1.3)), 2.1, 0.1, Math.max(Z(0.72), Z(1.3)), GREY, { faces: 'NESWT', ...LIT });
     b.quad([0.2, -0.55, Z(0.72)], [2.1, -0.55, Z(0.72)], [2.1, -0.55, Z(1.3)], [0.2, -0.55, Z(1.3)], [0, -1, 0], BELLY, LIT);
     b.box(2.1, -0.47, Math.min(Z(0.8), Z(1.22)), 2.12, 0.02, Math.max(Z(0.8), Z(1.22)), DARK, { faces: 'E' });
-    slab(b, [[3.15, 0.1, Z(0.56)], [2.1, 0.1, Z(1.3)], [1.5, 0.1, Z(1.3)], [1.5, 0.1, Z(0.7)]], [0, -0.1, 0], RED, BELLY, RED, LIT);
+    slab(b, [[3.15, 0.1, Z(0.56)], [2.1, 0.1, Z(1.3)], [1.5, 0.1, Z(1.3)], [1.5, 0.1, Z(0.7)]], [0, -0.1, 0], GREY, BELLY, EDGE, LIT);
 
-    // the wing: swept, red above and white below, with a white tip and its lamp, red on the left and green on the right
-    slab(b, [[1.5, 0, Z(0.8)], [-1.5, 0, Z(3.5)], [-2.6, 0, Z(3.5)], [-2.5, 0, Z(0.8)]], [0, -0.14, 0], RED, BELLY, BELLY, LIT);
-    face(b, [-0.72, 0.012, Z(2.8)], [-1.5, 0.012, Z(3.5)], [-2.6, 0.012, Z(3.5)], [-2.574, 0.012, Z(2.8)], [0, 1, 0], TRIM, LIT);
-    // and a white band across it, swept as its leading edge is
-    face(b, [0.5, 0.012, Z(0.86)], [-1.36, 0.012, Z(2.5)], [-1.96, 0.012, Z(2.5)], [-0.1, 0.012, Z(0.86)], [0, 1, 0], TRIM, LIT);
+    // the wing: swept, darker along its edges, with its lamp at the tip, red on the left and green on the right
+    slab(b, [[1.5, 0, Z(0.8)], [-1.5, 0, Z(3.5)], [-2.6, 0, Z(3.5)], [-2.5, 0, Z(0.8)]], [0, -0.14, 0], GREY, BELLY, EDGE, LIT);
     b.box(-2.3, -0.13, Math.min(Z(3.5), Z(3.64)), -1.85, 0.03, Math.max(Z(3.5), Z(3.64)), side < 0 ? 0xff3030 : 0x30ff60, { faces: 'NESWTB', win: interior(5) });
 
     // the tailplane
-    slab(b, [[-3.2, 0.1, Z(0.55)], [-4.3, 0.1, Z(2.0)], [-4.95, 0.1, Z(2.0)], [-4.75, 0.1, Z(0.55)]], [0, -0.1, 0], RED, BELLY, BELLY, LIT);
+    slab(b, [[-3.2, 0.1, Z(0.6)], [-4.3, 0.1, Z(2.05)], [-4.95, 0.1, Z(2.05)], [-4.75, 0.1, Z(0.6)]], [0, -0.1, 0], GREY, BELLY, EDGE, LIT);
 
-    // a fin, leaning outwards: red, and white at its head
-    const fin = (f: number, rear: boolean): V3 => [rear ? -4.5 - 0.5 * f : -2.5 - 1.6 * f, 0.55 + 1.85 * f, Z(0.5 + 0.62 * f)];
-    const part = (f0: number, f1: number, color: number): void => slab(b, [fin(f0, false), fin(f0, true), fin(f1, true), fin(f1, false)], [0, 0, Z(-0.09)], color, color, color, LIT);
-    part(0, 0.74, RED);
-    part(0.74, 1, TRIM);
+    // a fin, leaning outwards, with the flag on both of its faces
+    const fin = (f: number, rear: boolean): V3 => [rear ? -4.5 - 0.5 * f : -2.5 - 1.6 * f, 0.4 + 2.0 * f, Z(0.52 + 0.62 * f)];
+    slab(b, [fin(0, false), fin(0, true), fin(1, true), fin(1, false)], [0, 0, Z(-0.09)], GREY, GREY, EDGE, LIT);
+    /** A place on the fin: `f` up it, `c` from its leading edge back to its trailing edge, and `off` out from its outer face. */
+    const onFin = (f: number, c: number, off: number): V3 => {
+      const a = fin(f, false), e = fin(f, true);
+      return [a[0] + (e[0] - a[0]) * c, a[1] + (e[1] - a[1]) * c, a[2] + (e[2] - a[2]) * c + Z(off)];
+    };
+    for (const off of [0.012, -0.102]) {
+      const out: V3 = [0, 0, Z(off > 0 ? 1 : -1)], shown = { win: interior(0.7) };
+      [FLAG.green, FLAG.white, FLAG.saffron].forEach((color, i) => {
+        const f0 = 0.5 + i * 0.09, f1 = f0 + 0.09;
+        face(b, onFin(f0, 0.2, off), onFin(f0, 0.82, off), onFin(f1, 0.82, off), onFin(f1, 0.2, off), out, color, shown);
+      });
+      face(b, onFin(0.612, 0.47, off * 1.35), onFin(0.612, 0.55, off * 1.35), onFin(0.658, 0.55, off * 1.35), onFin(0.658, 0.47, off * 1.35), out, FLAG.navy);
+    }
+
+    // an engine: a dark pipe, a fire in it that shows at night, and a short flame behind
+    b.moved(0, 0, Z(ENGINE), 0, () => {
+      loft(b, PIPE, 8, () => NOZZLE);
+      cap(b, PIPE[1], 8, -1, DARK);
+      loft(b, BLAZE, 6, () => FLAME, { win: interior(5.5) });
+    });
   }
-
-  // the engine: a dark pipe, a fire in it that shows at night, and a short flame behind
-  loft(b, PIPE, 8, () => NOZZLE);
-  cap(b, PIPE[1], 8, -1, DARK);
-  loft(b, BLAZE, 6, () => FLAME, { win: interior(5.5) });
 }
 
 /** Where each of the three flies, from the leader's middle: [back, to the right]. */
