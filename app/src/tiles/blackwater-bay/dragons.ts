@@ -43,10 +43,17 @@ import { Track, type Waypoint } from '../../engine/dragons/track';
 import { Trails } from '../../engine/dragons/trails';
 import { GeoBuilder } from '../../engine/geo';
 import type { Build } from '../../engine/tile';
-import { FLOCK, HOMES, LOTS, RHAENYS, WATER_LEVEL, domeAt as domeOver, groundAt as planGround, isWater, mountAt, rockAt } from './plan';
+import { FLOCK, HOMES, LOTS, RHAENYS, WATER_LEVEL, domeAt as domeOver, groundAt as planGround, isWater, mountBuilt, rockAt } from './plan';
 
 const RAD = Math.PI / 180;
 const smooth = (t: number): number => { const c = Math.min(1, Math.max(0, t)); return c * c * (3 - 2 * c); };
+
+/** How far to turn, in degrees, from one heading to another: the shorter way, unless `round` says which (1 clockwise seen from above, -1 the other). */
+function turnBy(from: number, to: number, round?: 1 | -1): number {
+  if (round === 1) return (((to - from) % 360) + 360) % 360;
+  if (round === -1) return -((((from - to) % 360) + 360) % 360);
+  return ((to - from + 540) % 360) - 180;
+}
 
 // ---------------------------------------------------------------------------
 // The cast and their homes
@@ -71,10 +78,11 @@ interface Home { x: number; y: number; z: number; facing: number; leave: number 
  * How each comes and goes, besides where the plan puts its home: which way it turns to leave by, if not the way it
  * faces; which way it comes in to land, in degrees, over open air and never low over a tower (it turns round to face
  * out once it is down); how far out its run in to land begins, if nearer than its size would give, so that it stays
- * on the board; and whether its home is a ledge on the Dragonmont, which it drops off and drops onto with its wings
- * drawn in, because others lie near it.
+ * on the board; whether its home is a ledge on the Dragonmont, which it drops off and drops onto with its wings
+ * drawn in, because others lie near it; and, where a neighbour lies within a tail's length, which way it turns round
+ * once it is down (1 clockwise seen from above, -1 the other), so that its tail sweeps over open slope.
  */
-const WAYS: Record<Key, { leave?: number; arrive: number; approach?: number; cliff?: boolean; hold?: number }> = {
+const WAYS: Record<Key, { leave?: number; arrive: number; approach?: number; cliff?: boolean; hold?: number; round?: 1 | -1 }> = {
   balerion: { arrive: 135, approach: 18 },
   // she rests looking out over the bay towards Driftmark, and turns north to leave over the open water
   vhagar: { leave: 270, arrive: 90, approach: 13 },
@@ -86,11 +94,12 @@ const WAYS: Record<Key, { leave?: number; arrive: number; approach?: number; cli
   meleys: { arrive: 90 },
   // the largest off a ledge holds her wings in longest, to be clear of the caves below the summit before she opens them
   meraxes: { arrive: 280, approach: 20, cliff: true, hold: 2.6 },
-  // he comes down from due south and turns round on his ledge away from Silverwing, beside him to the west
-  vermithor: { arrive: 270, cliff: true },
+  // he comes down from due south and turns round on his ledge with his tail out over the east flank, away from
+  // Silverwing's ledge beside him to the west
+  vermithor: { arrive: 270, cliff: true, round: -1 },
   // she comes home after a last turn over Driftmark, past him on his ledge with her wings drawn in, and turns round on
-  // hers to the west, away from him
-  silverwing: { arrive: 250, cliff: true },
+  // hers with her tail down the south face, away from him
+  silverwing: { arrive: 250, cliff: true, round: 1 },
   sheepstealer: { arrive: 10, cliff: true },
   cannibal: { arrive: 60, approach: 16, cliff: true },
 };
@@ -688,8 +697,8 @@ export function buildDragons(k: Build): void {
         // At home: it turns round to face out once it is down, looks about in its own way, watches whoever flies near
         // it, and now and then yawns, or roars.
         const h = H[key], hd = held[i];
-        const diff = ((h.facing - turnFrom[i] + 540) % 360) - 180;
-        const heading = turnFrom[i] + diff * smooth((clock - turnAt[i]) / 3.4);
+        const diff = turnBy(turnFrom[i], h.facing, WAYS[key].round);
+        const heading = (((turnFrom[i] + diff * smooth((clock - turnAt[i]) / 3.4)) % 360) + 360) % 360;
         hd.heading = heading;
         const look = Math.min(1.8, KIND[key].flight.look ?? 1);
         let yaw = (14 * Math.sin(clock * (0.23 + 0.03 * i) + i * 1.7) + 9 * Math.sin(clock * (0.61 + 0.05 * i) + i)) * look;
@@ -788,8 +797,8 @@ export function buildDragons(k: Build): void {
       clock: (): number => clock,
       playing: (): string[] => playing.map((q) => `${q.m.id} ${(clock - q.start).toFixed(1)}/${q.m.length.toFixed(0)}`),
       where: (key: Key): number[] => pilots[index.get(key)!].pose.pos.toArray().map((v) => Math.round(v * 10) / 10),
-      /** How high the Dragonmont's rock stands at a place, for leaving out of a check what lies inside it. */
-      rock: (x: number, z: number): number => mountAt(x, z),
+      /** How high the Dragonmont's rock stands at a place, ribs and all, for leaving out of a check what lies inside it. */
+      rock: (x: number, z: number): number => mountBuilt(x, z),
       /** Where a moment's dragon is, `t` into the moment: for aiming pictures. */
       at: (id: string, key: Key, t: number): number[] => {
         const m = byId.get(id)!, p = m.parts.find((q) => q.key === key)!;
@@ -828,7 +837,8 @@ function checkShow(all: Moment[], H: Record<Key, Home>): { near: string[]; neare
     }
     const dome = y - Math.max(domeAt(x, z), Math.hypot(x - RHAENYS.c[0], z - RHAENYS.c[1]) <= RHAENYS.drum ? RHAENYS.wall : -Infinity);
     if (dome < best) { best = dome; id = 'dragonpit'; }
-    const mount = y - mountAt(x, z);
+    // the mountain as it is built: its shelves cut level, and a rib of rock standing over each cave
+    const mount = y - mountBuilt(x, z);
     if (mount < best) { best = mount; id = 'dragonmont'; }
     if (onRock(x, z) && y - rockAt(x, z) < best) { best = y - rockAt(x, z); id = 'vhagars-rock'; }
     return { d: best, id };
