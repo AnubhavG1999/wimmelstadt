@@ -6,13 +6,13 @@
 // that faces the opening view. A box gives way to its model the moment a file
 // of models hands one over: models.ts gathers them.
 
-import type { Solid } from '../../engine/checks';
 import { area, ground, rect } from '../../engine/ground';
 import { buildPath, type Path } from '../../engine/paths';
 import { track } from '../../engine/rail';
 import { clearOfStreets, lampsAlong, street } from '../../engine/roads';
 import type { Build, TileParts } from '../../engine/tile';
-import { roadFaults, throughSolids, unseen } from './checks';
+import { roadFaults, throughSolids, type Solid } from '../../engine/checks';
+import { unseen } from './checks';
 import { MODELS, extras } from './models';
 import {
   AREAS, BOARD, CARR, EMBANKMENT, HERO_SPOTS, LOTS, MUST_SEE, PARKED, RAIL, ROUTES, STREETS, TALL, VIADUCTS,
