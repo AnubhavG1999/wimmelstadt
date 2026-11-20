@@ -1034,6 +1034,8 @@ const DIVE: WingForm = { sweep: 55 * RAD, span: 0.4, lift: -3 * RAD, fan: 0.42, 
 export const FLARE: WingForm = { sweep: -6 * RAD, span: 1, lift: 20 * RAD, fan: 1, tip: 14 * RAD };
 /** Folded flat along the body, as it sits. */
 export const FOLDED: WingForm = { sweep: 74 * RAD, span: 0.16, lift: 16 * RAD, fan: 0.1, tip: -10 * RAD };
+/** Drawn in close in the air, as a falcon drops off a cliff: for leaving or reaching a ledge with others close beside it. */
+export const TUCK: WingForm = { sweep: 64 * RAD, span: 0.28, lift: 8 * RAD, fan: 0.24, tip: -4 * RAD };
 
 const blend = (a: WingForm, b: WingForm, t: number): WingForm => ({
   sweep: a.sweep + (b.sweep - a.sweep) * t, span: a.span + (b.span - a.span) * t, lift: a.lift + (b.lift - a.lift) * t, fan: a.fan + (b.fan - a.fan) * t, tip: a.tip + (b.tip - a.tip) * t,
