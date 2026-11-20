@@ -10,7 +10,8 @@
 // slots closely.
 
 import * as THREE from 'three';
-import { DROGON, HALF_SPAN, RHAEGAL, VISERION, formAt } from './dragon';
+import { DROGON, RHAEGAL, VISERION } from '../../engine/dragons/kinds';
+import { HALF_SPAN, formAt } from '../../engine/dragons/model';
 import type { Show } from './flight';
 import { LOTS, WALL, type Lot } from './plan';
 

@@ -1,8 +1,10 @@
-// One dragon: its shape, its joints, and how a pose becomes a mesh.
+// One winged dragon of the books: its shape, its joints, and how a pose
+// becomes a mesh. Westeros's three were the first built from it, and any tile
+// can have its own: a `DragonKind` (see `kinds.ts`) gives its colours, its
+// size, its fire and its manner of flight, and a `Pilot` (`pilot.ts`) flies it.
 //
-// The three are built after the books' three and in the books' colours: two
-// legs, with the wings as the forelimbs, lean and long, most of each a neck, a
-// tail and wings. They are meant to read as fast jets that are dragons: head,
+// They are built after the books: two legs, with the wings as the forelimbs,
+// lean and long, most of each a neck, a tail and wings. They are meant to read as fast jets that are dragons: head,
 // neck and body in one line, everything swept back along that line, a tail fin
 // that works as a rudder, and wings that change shape with speed.
 //
@@ -12,10 +14,13 @@
 // wrist, the finger tips and the flank.
 //
 // Lengths in this file are shares of the dragon's length from nose to tail
-// tip, so that the three differ only in size and colour.
+// tip. A kind's `shape` changes them (see `DragonShape`): the great dragons
+// of the Targaryens each have one. Westeros's three have none, and so differ
+// only in size and colour.
 
 import * as THREE from 'three';
-import { patch, toon, type TileLook } from '../../engine/look/materials';
+import { patch, toon, type TileLook } from '../look/materials';
+import type { Flame } from './fire';
 
 type V3 = [number, number, number];
 
@@ -38,23 +43,81 @@ export interface DragonKind {
   mouth: number;
   /** What its throat glows before it breathes fire, and what its own fire lights it with. */
   glow: number;
+  /** Its fire. */
+  flame: Flame;
+  /** How it flies. */
+  flight: DragonFlight;
+  /** Its own build, against Westeros's three: see `DragonShape`. Left out, it is built as they are. */
+  shape?: DragonShape;
+  /** Its teeth, where its shape shows them: the claws' colour unless this says otherwise. */
+  tooth?: number;
+  /** Old wounds, where its shape has them: a paler shade of its body unless this says otherwise. */
+  scar?: number;
 }
 
-/** Black, streaked with scarlet. The largest of the three. */
-export const DROGON: DragonKind = {
-  name: 'Drogon', length: 14, body: 0x1b181e, belly: 0x29232b, streak: 0x9e1018, horn: 0xb3141c, bone: 0x141216,
-  skin: [0x4a080c, 0x3a0609], claw: 0x0b0a0c, eye: 0xff2a1a, mouth: 0x6a0c0c, glow: 0xff3018,
-};
-/** Green and bronze, with wings of jade. */
-export const RHAEGAL: DragonKind = {
-  name: 'Rhaegal', length: 12, body: 0x1f4a2a, belly: 0x2c5e36, streak: 0x8c5a26, horn: 0x8c5a26, bone: 0x7a4e22,
-  skin: [0x216349, 0x1b533d], claw: 0x0b0a0c, eye: 0xd98a2a, mouth: 0x4a2a10, glow: 0xffa020,
-};
-/** Cream and gold. The pale one. */
-export const VISERION: DragonKind = {
-  name: 'Viserion', length: 11.5, body: 0xd8c79a, belly: 0xe2d4ae, streak: 0xb8861f, horn: 0xb8861f, bone: 0xa87a1c,
-  skin: [0xc2a878, 0xb09462], claw: 0x0b0a0c, eye: 0xffc83a, mouth: 0x7a4a18, glow: 0xffd870,
-};
+/**
+ * A dragon's own build, against Westeros's three, which are 1 in every
+ * measure and 0 in every feature. What is left out is as they are. Lengths are
+ * shared out again so that the dragon is still its `length` from nose to
+ * tail tip: a longer neck makes the rest a little shorter.
+ */
+export interface DragonShape {
+  /** How long its head, its neck, its body and its tail are. */
+  head?: number;
+  neck?: number;
+  body?: number;
+  tail?: number;
+  /** How thick its body and the root of its tail are, and its legs: a heavy dragon is 1.4. */
+  bulk?: number;
+  /** How thick its neck is, from a little way out of the chest. */
+  throat?: number;
+  /** How heavy its head is: deeper and wider, jaw and all. */
+  heft?: number;
+  /** How far its wings reach: they span 1.35 times its length, times this. */
+  reach?: number;
+  /** How broad its wings are from leading edge to trailing edge: its fingers fan wider and run longer. */
+  breadth?: number;
+  /** How long its horns and the spikes of its frill are. */
+  horns?: number;
+  /** How tall the plates along its spine stand: a crest of spines is 2 or more. */
+  crest?: number;
+  /** How large the spade at the end of its tail is. */
+  fin?: number;
+  /** Teeth that show below its upper jaw, the longest as long as this share of its head: 0 for none. */
+  fangs?: number;
+  /** How torn the trailing edges of its wings are, from 0 to 1. */
+  ragged?: number;
+  /** How scarred its hide is, from 0 to 1: pale weals across its flanks and its neck. */
+  scars?: number;
+}
+
+/**
+ * A dragon's manner of flight, which a `Pilot` flies it by. Only `beat` and
+ * `answer` must be given: what is left out is as Westeros's three fly.
+ */
+export interface DragonFlight {
+  /** How long one beat of its wings takes, in seconds: the larger the dragon, the slower. */
+  beat: number;
+  /** How quickly it answers a turn with its bank: 6 is Drogon's. */
+  answer: number;
+  /** The most it banks, in degrees: 78 unless this says otherwise. */
+  bank?: number;
+  /** How long it glides between bursts of beats, against the three: 2 is twice as long. */
+  glide?: number;
+  /** How deep its beats are, against the three. */
+  stroke?: number;
+  /** How far its body rides up and down on its wings through a beat, against the three. */
+  heave?: number;
+  /** How much it rocks on the air where it flies straight, against the three. */
+  rock?: number;
+  /** How much it looks about as it flies, against the three. */
+  look?: number;
+  /** How far its tail sways as it flies, and how quickly, against the three: a great old dragon's sways slow. */
+  sway?: number;
+  swayRate?: number;
+  /** How much its neck snakes from side to side as it flies: 0 for the three, and 1 for a long neck that never keeps still. */
+  snake?: number;
+}
 
 // ---------------------------------------------------------------------------
 // Measures, as shares of the length
@@ -90,11 +153,11 @@ const LAY = [0.36, 0.55, 0.48, 0.24, 0.05, 0.02, 0.02, 0.02, 0.01, 0], CURL = [0
  * far its nose is up, and how high the root of its neck is over what it stands
  * on, as a share of its length.
  */
-export function stance(down: number): { pitch: number; root: number } {
-  const t = down * down * (3 - 2 * down);
+export function stance(down: number, m?: Measures): { pitch: number; root: number } {
+  const t = down * down * (3 - 2 * down), hip = m ? m.hip : HIP;
   // braced, its chest is held up off the ground on its wings, and its hips are low
   const pitch = 0.6 + (0.3 - 0.6) * t, hips = 0.118 + (0.08 - 0.118) * t;
-  return { pitch, root: hips - HIP[0] * Math.sin(pitch) - HIP[1] * Math.cos(pitch) };
+  return { pitch, root: hips - hip[0] * Math.sin(pitch) - hip[1] * Math.cos(pitch) };
 }
 
 /**
@@ -127,10 +190,91 @@ const AT_HEAD: Slice = { w: 0.019, up: 0.022, down: 0.024 }, AT_CHEST: Slice = {
 const DEEPEST: Slice = { w: 0.042, up: 0.044, down: 0.064 }, AT_WAIST: Slice = { w: 0.032, up: 0.035, down: 0.042 }, AT_HIPS: Slice = { w: 0.024, up: 0.028, down: 0.03 };
 const TAIL_TIP: Slice = { w: 0.0024, up: 0.0032, down: 0.0032 };
 
-/** The slice at each end of each joint of the neck, counted from the chest. */
-const neckSlice = (j: number): Slice => mix(AT_CHEST, AT_HEAD, j / NECK);
-const BODY_SLICES = [AT_CHEST, DEEPEST, AT_WAIST, AT_HIPS];
-const tailSlice = (j: number): Slice => mix(AT_HIPS, TAIL_TIP, (j / TAIL) ** 0.8);
+const scaleSlice = (s: Slice, f: number): Slice => ({ w: s.w * f, up: s.up * f, down: s.down * f });
+
+/** Every measure of one kind's build, as shares of its length, worked out from its shape by `measure`. */
+export interface Measures {
+  /** How much longer its head is than the three's, and how much deeper and wider. */
+  hx: number; hy: number;
+  head: number; neckL: number; bodyL: number; tailL: number;
+  /** The slices where the neck meets the chest and the head, and along the body from the chest to the hips. */
+  atChest: Slice; atHead: Slice; slices: Slice[]; tailTip: Slice;
+  /** How much thicker its neck is, and its body. */
+  girth: number; bulk: number;
+  shoulder: V3; hip: V3; flank: V3;
+  upper: number; fore: number; arm: number; fingers: number[]; fan: number[];
+  /** Half its full span, from the middle of its back to a wing tip. */
+  halfSpan: number;
+  horns: number; crest: number; fin: number; fangs: number; ragged: number; scars: number;
+}
+
+/** A kind's measures, from its shape. Without one they are exactly the three's. */
+export function measure(shape: DragonShape = {}): Measures {
+  const h = shape.head ?? 1, n = shape.neck ?? 1, b = shape.body ?? 1, t = shape.tail ?? 1;
+  // the parts' lengths shared out again, so that it is still its length from nose to tail tip
+  const k = h === 1 && n === 1 && b === 1 && t === 1 ? 1 : 1 / (HEAD * h + NECK * NECK_L * n + BODY * BODY_L * b + TAIL * TAIL_L * t);
+  const bulk = shape.bulk ?? 1, heft = shape.heft ?? 1, reach = shape.reach ?? 1, breadth = shape.breadth ?? 1;
+  // the wings and the legs keep their places along a longer or a shorter body
+  const along = b * k;
+  const atChest = scaleSlice(AT_CHEST, bulk);
+  return {
+    hx: h * k, hy: h * k * heft,
+    head: HEAD * h * k, neckL: NECK_L * n * k, bodyL: BODY_L * b * k, tailL: TAIL_L * t * k,
+    atChest, atHead: scaleSlice(AT_HEAD, heft), slices: [atChest, scaleSlice(DEEPEST, bulk), scaleSlice(AT_WAIST, bulk), scaleSlice(AT_HIPS, bulk)], tailTip: TAIL_TIP,
+    girth: shape.throat ?? 1, bulk,
+    shoulder: [SHOULDER[0] * along, SHOULDER[1] * bulk, SHOULDER[2] * bulk],
+    hip: [HIP[0] * along, HIP[1] * bulk, HIP[2] * bulk],
+    flank: [FLANK[0] * along, FLANK[1] * bulk, FLANK[2] * bulk],
+    upper: UPPER * reach, fore: FORE * reach, arm: ARM * reach,
+    fingers: FINGERS.map((f, i) => f * reach * (i === 0 ? 1 : Math.sqrt(breadth))),
+    fan: FAN.map((a) => a * breadth),
+    halfSpan: HALF_SPAN * reach,
+    horns: shape.horns ?? 1, crest: shape.crest ?? 1, fin: shape.fin ?? 1, fangs: shape.fangs ?? 0, ragged: shape.ragged ?? 0, scars: shape.scars ?? 0,
+  };
+}
+/** Westeros's three's measures, which every kind without a shape of its own has. */
+export const LEAN = measure();
+
+/** The slice at each end of each joint of the neck, counted from the chest: it thins or thickens to its own girth a little way out of the chest. */
+const neckSlice = (m: Measures, j: number): Slice => scaleSlice(mix(m.atChest, m.atHead, j / NECK), 1 + (m.girth - 1) * Math.min(1, j / 1.5));
+const tailSlice = (m: Measures, j: number): Slice => mix(m.slices[3], m.tailTip, (j / TAIL) ** 0.8);
+
+/** Stretches a part that was made at the three's size: its normals are stretched the other way and made whole again. */
+function stretch(s: Shape, sx: number, sy: number, sz: number): Shape {
+  if (sx === 1 && sy === 1 && sz === 1) return s;
+  for (let i = 0; i < s.pos.length; i += 3) {
+    s.pos[i] *= sx; s.pos[i + 1] *= sy; s.pos[i + 2] *= sz;
+    const nx = s.nor[i] / sx, ny = s.nor[i + 1] / sy, nz = s.nor[i + 2] / sz, l = Math.hypot(nx, ny, nz) || 1;
+    s.nor[i] = nx / l; s.nor[i + 1] = ny / l; s.nor[i + 2] = nz / l;
+  }
+  return s;
+}
+
+/** A shade of a colour part of the way to a pale bone. */
+function pale(color: number, t = 0.55): number {
+  const c = new THREE.Color(color).lerp(new THREE.Color(0xd9ccb8), t);
+  return c.getHex();
+}
+
+/** A fixed run of chance, from a number: the same scars on the same dragon every time. */
+const chanceOf = (n: number): number => { const x = Math.sin(n * 12.9898 + 4.1414) * 43758.5453; return x - Math.floor(x); };
+
+/** Old wounds healed pale: a weal slanting back across a flank of a joint, here and not there, more of them the more scarred it is. */
+function weals(b: Shape, k: DragonKind, x0: number, s0: Slice, x1: number, s1: Slice, amount: number, seed: number): void {
+  const color = k.scar ?? pale(k.body);
+  for (const side of [1, -1]) {
+    for (let w = 0; w < 2; w++) {
+      const r = chanceOf(seed * 7 + side * 3 + w * 13);
+      if (r > amount * (w === 0 ? 0.9 : 0.45)) continue;
+      const a = 0.08 + 0.42 * chanceOf(seed * 11 + side + w * 5), len = 0.24;
+      const X = (t: number): number => x0 + (x1 - x0) * t;
+      // from high on the flank, slanting back and down to below its middle, standing a hair proud
+      const hi = (t: number): V3 => { const s = mix(s0, s1, t); return [X(t), s.up * 0.32 + 0.0012, side * (s.w + 0.0014)]; };
+      const lo = (t: number): V3 => { const s = mix(s0, s1, t); return [X(t), -s.down * 0.42, side * (s.w * 0.8 + 0.0014)]; };
+      b.quad(hi(a), hi(a + len * 0.5), lo(Math.min(1, a + len * 0.5 + 0.34)), lo(Math.min(1, a + 0.34)), color, [0, 0, side]);
+    }
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Building a part
@@ -212,8 +356,8 @@ function diamond(x: number, s: Slice): V3[] {
   return [[x, s.up, 0], [x, 0, s.w], [x, -s.down, 0], [x, 0, -s.w]];
 }
 
-/** One joint of the neck or the body, from x0 to x1, with its plate on top and a streak along each flank. */
-function joint(k: DragonKind, x0: number, s0: Slice, x1: number, s1: Slice, plate: number, throat = 0): Shape {
+/** One joint of the neck or the body, from x0 to x1, with its plate on top, a streak along each flank, and its scars, if `seed` is given. */
+function joint(k: DragonKind, m: Measures, x0: number, s0: Slice, x1: number, s1: Slice, plate: number, throat = 0, seed = -1): Shape {
   const b = new Shape();
   const a = ring(x0, s0), c = ring(x1, s1);
   // back and upper flanks in the body's colour, the keel lighter
@@ -229,11 +373,15 @@ function joint(k: DragonKind, x0: number, s0: Slice, x1: number, s1: Slice, plat
     const front = Math.max(x0, x1), back = Math.min(x0, x1), len = front - back, top = Math.max(s0.up, s1.up);
     b.tri([front - len * 0.12, top, 0], [back + len * 0.08, top, 0], [back - len * 0.22, top + plate, 0], k.horn, [0, 0, 1]);
   }
+  if (m.scars > 0 && seed >= 0) weals(b, k, x0, s0, x1, s1, m.scars, seed);
   return b;
 }
 
-/** The head: a long narrow wedge, flat on top, with its horns and frill swept straight back. Its back is at the origin and its nose along +x. */
-function headShape(k: DragonKind): Shape {
+/**
+ * The head: a long narrow wedge, flat on top, with its horns and frill swept straight back. Its back is at the origin
+ * and its nose along +x. It is made at the three's size; the Dragon stretches it to its kind's.
+ */
+function headShape(k: DragonKind, m: Measures): Shape {
   const b = new Shape();
   const skull = (x: number, top: number, w: number, low: number): V3[] =>
     [[x, top, w * 0.7], [x, top * 0.35, w], [x, low, w * 0.9], [x, low, -w * 0.9], [x, top * 0.35, -w], [x, top, -w * 0.7]];
@@ -249,20 +397,40 @@ function headShape(k: DragonKind): Shape {
     // a heavy brow, and a small eye set far back under it
     b.beam([0.004, 0.0295, s * 0.018], [0.05, 0.0205, s * 0.0138], 0.0056, 0.0024, k.body, 0.7);
     b.quad([0.02, 0.0095, s * 0.0206], [0.031, 0.0085, s * 0.0196], [0.031, 0.0145, s * 0.0196], [0.02, 0.016, s * 0.0206], k.eye, [0, 0, s], [1, 0]);
-    // two horns from the brow, in line with the head
-    b.beam([0.006, 0.025, s * 0.013], [-0.072, 0.04, s * 0.025], 0.0068, 0.0009, k.horn);
+    // two horns from the brow, in line with the head, as long as its kind's
+    const longer = (a: V3, e: V3): V3 => (m.horns === 1 ? e : [a[0] + (e[0] - a[0]) * m.horns, a[1] + (e[1] - a[1]) * m.horns, a[2] + (e[2] - a[2]) * m.horns]);
+    const thick = Math.sqrt(m.horns);
+    b.beam([0.006, 0.025, s * 0.013], longer([0.006, 0.025, s * 0.013], [-0.072, 0.04, s * 0.025]), 0.0068 * thick, 0.0009, k.horn);
     // a frill of three spikes behind the jaw
     for (let i = 0; i < 3; i++) {
       const y = 0.01 - i * 0.0095;
-      b.beam([0.003, y, s * 0.0185], [-0.046 + i * 0.008, y - 0.0015 - i * 0.002, s * (0.03 - i * 0.002)], 0.0046 - i * 0.0006, 0.0007, k.horn);
+      b.beam([0.003, y, s * 0.0185], longer([0.003, y, s * 0.0185], [-0.046 + i * 0.008, y - 0.0015 - i * 0.002, s * (0.03 - i * 0.002)]), (0.0046 - i * 0.0006) * thick, 0.0007, k.horn);
+    }
+    if (m.fangs > 0) {
+      // Teeth that show below the upper jaw, the longest at the front, set along the jaw's edge and raked a little
+      // forward: as the skulls in the Red Keep's cellar show them, black.
+      for (const [x, len] of [[0.088, 1], [0.074, 0.82], [0.058, 0.62], [0.043, 0.45]]) {
+        const [ey, ez] = jawEdge(x), long = m.fangs * HEAD * len;
+        b.beam([x, ey + 0.001, s * ez * 0.92], [x + long * 0.18, ey - long, s * ez * 0.8], 0.0024 * Math.min(1.6, 0.6 + m.fangs * 2.5), 0.0003, k.tooth ?? k.claw);
+      }
     }
   }
   // the first plate of the spine, on the crown
-  b.tri([0.016, 0.027, 0], [-0.002, 0.027, 0], [-0.028, 0.041, 0], k.horn, [0, 0, 1]);
+  b.tri([0.016, 0.027, 0], [-0.002, 0.027, 0], [-0.028, m.crest === 1 ? 0.041 : 0.027 + 0.014 * m.crest, 0], k.horn, [0, 0, 1]);
   return b;
 }
 
-/** The lower jaw: a thin wedge, hinged at the origin, with its tip along +x. */
+/** Where the outer edge of the upper jaw runs, along the head: how low it is and how far out, at a share `x` of the length. */
+function jawEdge(x: number): [number, number] {
+  const at = [[0, -0.008, 0.018], [0.04, -0.008, 0.01485], [0.068, -0.007, 0.00945], [0.1, -0.005, 0.00405]];
+  for (let i = 0; i + 1 < at.length; i++) {
+    const [x0, y0, z0] = at[i], [x1, y1, z1] = at[i + 1];
+    if (x <= x1) { const t = (x - x0) / (x1 - x0); return [y0 + (y1 - y0) * t, z0 + (z1 - z0) * t]; }
+  }
+  return [-0.005, 0.00405];
+}
+
+/** The lower jaw: a thin wedge, hinged at the origin, with its tip along +x. Made at the three's size, as the head is. */
 function jawShape(k: DragonKind): Shape {
   const b = new Shape();
   const at = (x: number, w: number, top: number, low: number): V3[] => [[x, top, w], [x, low, w * 0.8], [x, low, -w * 0.8], [x, top, -w]];
@@ -274,17 +442,17 @@ function jawShape(k: DragonKind): Shape {
 }
 
 /** One joint of the tail, from the origin back along -x. The last one carries the fin: a flat spade set upright. */
-function tailShape(k: DragonKind, j: number): Shape {
-  const b = new Shape();
-  const s0 = tailSlice(j), s1 = tailSlice(j + 1);
-  b.loft(diamond(0, s0), diamond(-TAIL_L, s1), (i) => (i === 1 || i === 2 ? k.belly : k.body));
-  const plate = 0.026 * (1 - j / TAIL) ** 1.3;
-  if (j < TAIL - 2) b.tri([-TAIL_L * 0.1, s0.up, 0], [-TAIL_L * 0.9, s1.up, 0], [-TAIL_L * 1.15, s1.up + plate, 0], k.horn, [0, 0, 1]);
+function tailShape(k: DragonKind, m: Measures, j: number): Shape {
+  const b = new Shape(), TL = m.tailL, f = m.fin;
+  const s0 = tailSlice(m, j), s1 = tailSlice(m, j + 1);
+  b.loft(diamond(0, s0), diamond(-TL, s1), (i) => (i === 1 || i === 2 ? k.belly : k.body));
+  const plate = 0.026 * (1 - j / TAIL) ** 1.3 * m.crest;
+  if (j < TAIL - 2) b.tri([-TL * 0.1, s0.up, 0], [-TL * 0.9, s1.up, 0], [-TL * 1.15, s1.up + plate, 0], k.horn, [0, 0, 1]);
   if (j === TAIL - 1) {
     // the fin: a spade set upright, which swings like a rudder
-    const x = -TAIL_L * 0.05;
-    b.tri([x, 0, 0], [x - 0.024, 0.026, 0], [x - 0.07, 0, 0], k.horn, [0, 0, 1]);
-    b.tri([x, 0, 0], [x - 0.07, 0, 0], [x - 0.024, -0.026, 0], k.horn, [0, 0, 1]);
+    const x = -TL * 0.05;
+    b.tri([x, 0, 0], [x - 0.024 * f, 0.026 * f, 0], [x - 0.07 * f, 0, 0], k.horn, [0, 0, 1]);
+    b.tri([x, 0, 0], [x - 0.07 * f, 0, 0], [x - 0.024 * f, -0.026 * f, 0], k.horn, [0, 0, 1]);
   }
   return b;
 }
@@ -385,7 +553,7 @@ const SKIN_TRIS = 10;
 export function dragonMaterial(look: TileLook): { mat: THREE.MeshToonMaterial; eye: THREE.Color; throat: THREE.Color; lit: THREE.Color } {
   const eye = new THREE.Color(0, 0, 0), throat = new THREE.Color(0, 0, 0), lit = new THREE.Color(0, 0, 0);
   const mat = toon({ side: THREE.DoubleSide });
-  patch(mat, 'westeros-dragon', look, {
+  patch(mat, 'winged-dragon', look, {
     uniforms: { uEye: { value: eye }, uThroat: { value: throat }, uLit: { value: lit } },
     vertPars: /* glsl */ `
       attribute vec2 aGlow;
@@ -428,7 +596,13 @@ export class Dragon {
   readonly nose = new THREE.Vector3();
   readonly tailTip = new THREE.Vector3();
 
+  /** Every measure of its build, from its kind's shape. */
+  readonly measures: Measures;
   private readonly L: number;
+  /** How its tail sways and how its neck snakes, from its kind's manner of flight. */
+  private readonly sway: number;
+  private readonly swayRate: number;
+  private readonly snake: number;
   private readonly parts: Part[] = [];
   private readonly position: THREE.BufferAttribute;
   private readonly normal: THREE.BufferAttribute;
@@ -454,6 +628,10 @@ export class Dragon {
   constructor(kind: DragonKind, look: TileLook) {
     this.kind = kind;
     this.L = kind.length;
+    const m = (this.measures = kind.shape ? measure(kind.shape) : LEAN);
+    this.sway = kind.flight.sway ?? 1;
+    this.swayRate = kind.flight.swayRate ?? 1;
+    this.snake = kind.flight.snake ?? 0;
     const pos: number[] = [], col: number[] = [], glow: number[] = [];
     const add = (s: Shape): Part => {
       const start = pos.length / 3, count = s.pos.length / 3;
@@ -465,21 +643,21 @@ export class Dragon {
       return p;
     };
 
-    this.head = add(headShape(kind));
-    this.jaw = add(jawShape(kind));
+    this.head = add(stretch(headShape(kind, m), m.hx, m.hy, m.hy));
+    this.jaw = add(stretch(jawShape(kind), m.hx, m.hy, m.hy));
     // the neck, from the chest forward: each joint from its own origin along +x
-    for (let j = 0; j < NECK; j++) this.neck.push(add(joint(kind, 0, neckSlice(j), NECK_L, neckSlice(j + 1), 0.014 + 0.014 * (1 - j / NECK), j >= 1 ? (j - 0.5) / NECK : 0)));
+    for (let j = 0; j < NECK; j++) this.neck.push(add(joint(kind, m, 0, neckSlice(m, j), m.neckL, neckSlice(m, j + 1), (0.014 + 0.014 * (1 - j / NECK)) * m.crest, j >= 1 ? (j - 0.5) / NECK : 0, 10 + j)));
     // the body, from the chest back: each joint from its own origin along -x, the plates tallest over the shoulders
-    for (let j = 0; j < BODY; j++) this.body.push(add(joint(kind, 0, BODY_SLICES[j], -BODY_L, BODY_SLICES[j + 1], [0.038, 0.032, 0.027][j])));
-    for (let j = 0; j < TAIL; j++) this.tail.push(add(tailShape(kind, j)));
+    for (let j = 0; j < BODY; j++) this.body.push(add(joint(kind, m, 0, m.slices[j], -m.bodyL, m.slices[j + 1], [0.038, 0.032, 0.027][j] * m.crest, 0, 20 + j)));
+    for (let j = 0; j < TAIL; j++) this.tail.push(add(tailShape(kind, m, j)));
     for (const side of [1, -1]) {
       const w = side > 0 ? 0 : 1;
-      this.upper.push(add(boneShape(kind.bone, UPPER, 0.0155, 0.0125, 0.8)));
-      this.fore.push(add(boneShape(kind.bone, FORE, 0.0125, 0.009, 0.8)));
+      this.upper.push(add(boneShape(kind.bone, m.upper, 0.0155, 0.0125, 0.8)));
+      this.fore.push(add(boneShape(kind.bone, m.fore, 0.0125, 0.009, 0.8)));
       this.hand.push(add(handShape(kind, side)));
-      FINGERS.forEach((len, i) => this.finger[w].push(add(boneShape(kind.bone, len, 0.0072 - i * 0.0007, 0.0014, 0.75))));
-      this.thigh.push(add(boneShape(kind.body, THIGH, 0.019, 0.012, 0.75)));
-      this.shin.push(add(boneShape(kind.body, SHIN, 0.011, 0.0075, 0.8)));
+      m.fingers.forEach((len, i) => this.finger[w].push(add(boneShape(kind.bone, len, 0.0072 - i * 0.0007, 0.0014, 0.75))));
+      this.thigh.push(add(boneShape(kind.body, THIGH, 0.019 * m.bulk, 0.012 * m.bulk, 0.75)));
+      this.shin.push(add(boneShape(kind.body, SHIN, 0.011 * m.bulk, 0.0075 * m.bulk, 0.8)));
       this.foot.push(add(footShape(kind)));
     }
 
@@ -503,9 +681,9 @@ export class Dragon {
     geo.setAttribute('normal', this.normal);
     geo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(col), 3));
     geo.setAttribute('aGlow', new THREE.BufferAttribute(new Float32Array(glow), 2));
-    const m = dragonMaterial(look);
-    this.eye = m.eye; this.throat = m.throat; this.lit = m.lit;
-    this.mesh = new THREE.Mesh(geo, m.mat);
+    const material = dragonMaterial(look);
+    this.eye = material.eye; this.throat = material.throat; this.lit = material.lit;
+    this.mesh = new THREE.Mesh(geo, material.mat);
     this.mesh.name = `dragon-${kind.name}`;
     this.mesh.frustumCulled = false;
 
@@ -558,7 +736,7 @@ export class Dragon {
    * is under a place, for the shadow.
    */
   pose(p: Pose, ground: (x: number, z: number) => number): void {
-    const L = this.L, { q1, q2, v1, v2, at } = this;
+    const L = this.L, m = this.measures, { q1, q2, v1, v2, at } = this;
 
     // --- what the tail remembers ---
     const mem = this.memory;
@@ -581,22 +759,22 @@ export class Dragon {
     for (let j = 0; j < BODY; j++) {
       this.body[j].at.copy(at);
       this.body[j].q.copy(p.quat);
-      at.addScaledVector(v1, -BODY_L * L);
+      at.addScaledVector(v1, -m.bodyL * L);
     }
 
     // --- the tail: each joint points the way the body did when it was there ---
-    const lag = Math.min(0.055, (TAIL_L * L) / Math.max(p.speed, 10));
+    const lag = Math.min(0.055, (m.tailL * L) / Math.max(p.speed, 10));
     // when it sits, how steeply the tail must run down from the hips to lie on the ground
     const lay = p.sit > 0 ? THREE.MathUtils.clamp(((at.y - p.floor) / L - 0.012) / 0.078, 0, 1.7) : 0;
     // how high the end of each joint lies over level ground as the tail is laid out, and how steeply the joint before it runs down
     let over = at.y - p.floor, before = Math.asin(THREE.MathUtils.clamp(fwd.y, -1, 1));
-    const len = TAIL_L * L;
+    const len = m.tailL * L;
     for (let j = 0; j < TAIL; j++) {
       this.remembered(p.time, lag * (j + 1) * (1 - p.sit), q1);
       // the last few joints swing with the fin, into the turn
       if (j >= TAIL - 4) q1.multiply(turn(p.fin * ((j - (TAIL - 5)) / 4), 0, q2));
       // and the whole tail sways as it flies: a slow wave that runs down it and grows towards its tip, each dragon's in its own time
-      if (p.sit < 1) q1.multiply(turn((1 - p.sit) * (0.012 + 0.011 * j) * Math.sin(p.time * 1.9 - j * 0.6 + L), 0, q2));
+      if (p.sit < 1) q1.multiply(turn((1 - p.sit) * (0.012 + 0.011 * j) * this.sway * Math.sin(p.time * 1.9 * this.swayRate - j * 0.6 + L), 0, q2));
       // laid out behind it when it sits: down to the ground, then along it, curling to one side
       if (p.sit > 0) {
         let pitch = LAY[j] * lay;
@@ -632,20 +810,22 @@ export class Dragon {
     // when it sits its shoulders are high, and its neck runs forward and down from them: the head hangs low and looks out level
     const S = [-0.1, -0.25, -0.3, -0.1, 0.15];
     for (let j = 0; j < NECK; j++) {
-      q1.multiply(turn(p.neckYaw / (NECK + 1), p.neckPitch / (NECK + 1) + p.arch * S[j], q2));
+      // a neck that snakes: a slow wave from side to side that runs out along it, larger towards the head
+      const yaw = this.snake > 0 ? p.neckYaw / (NECK + 1) + this.snake * (1 - p.sit) * (0.05 + 0.025 * j) * Math.sin(p.time * 1.7 - j * 1.05 + L) : p.neckYaw / (NECK + 1);
+      q1.multiply(turn(yaw, p.neckPitch / (NECK + 1) + p.arch * S[j], q2));
       this.neck[j].at.copy(at);
       this.neck[j].q.copy(q1);
-      at.addScaledVector(v2.copy(X).applyQuaternion(q1), NECK_L * L);
+      at.addScaledVector(v2.copy(X).applyQuaternion(q1), m.neckL * L);
     }
     q1.multiply(turn(p.neckYaw / (NECK + 1), p.neckPitch / (NECK + 1) + p.arch * 0.25, q2));
     this.head.at.copy(at);
     this.head.q.copy(q1);
     v2.copy(X).applyQuaternion(q1);
     this.mouthDir.copy(v2);
-    this.nose.copy(at).addScaledVector(v2, HEAD * L);
-    this.mouth.copy(at).addScaledVector(v2, 0.09 * L).addScaledVector(this.v3.copy(Y).applyQuaternion(q1), -0.008 * L);
+    this.nose.copy(at).addScaledVector(v2, m.head * L);
+    this.mouth.copy(at).addScaledVector(v2, 0.09 * m.hx * L).addScaledVector(this.v3.copy(Y).applyQuaternion(q1), -0.008 * m.hy * L);
     // the jaw hangs from the back of the skull, and drops open
-    this.jaw.at.copy(at).addScaledVector(v2, 0.008 * L).addScaledVector(this.v3, -0.0084 * L);
+    this.jaw.at.copy(at).addScaledVector(v2, 0.008 * m.hx * L).addScaledVector(this.v3, -0.0084 * m.hy * L);
     this.jaw.q.copy(q1).multiply(turn(0, -0.34 * p.jaw, q2));
 
     // --- the wings ---
@@ -654,7 +834,7 @@ export class Dragon {
     const b = p.brace * p.brace * (3 - 2 * p.brace);
     for (let w = 0; w < 2; w++) {
       const side = w === 0 ? 1 : -1, wp = w === 0 ? p.right : p.left;
-      const shoulder = pts[0].set(SHOULDER[0] * L, SHOULDER[1] * L, SHOULDER[2] * L * side).applyQuaternion(p.quat).add(p.pos);
+      const shoulder = pts[0].set(m.shoulder[0] * L, m.shoulder[1] * L, m.shoulder[2] * L * side).applyQuaternion(p.quat).add(p.pos);
       // As a wing. The arm: swept back and raised, in the body's own frame.
       aW.set(-Math.sin(wp.sweep) * Math.cos(wp.lift), Math.sin(wp.lift), side * Math.cos(wp.sweep) * Math.cos(wp.lift));
       // The hand: its first finger, and the way back along the wing from it.
@@ -675,7 +855,7 @@ export class Dragon {
         target.copy(p.pos).addScaledVector(hf, WRIST_AT[0] * L).addScaledVector(hr, side * WRIST_AT[1] * L);
         target.y = p.floor + 0.009 * L;
         pole.copy(Y).addScaledVector(hf, -0.6).addScaledVector(hr, side * 0.5);
-        bend(shoulder, target, UPPER * L, FORE * L, pole, bentAt, reachTo);
+        bend(shoulder, target, m.upper * L, m.fore * L, pole, bentAt, reachTo);
         // the way each bone points, part of the way from the wing's to these
         reachTo.sub(bentAt).normalize();
         bentAt.sub(shoulder).normalize();
@@ -683,12 +863,12 @@ export class Dragon {
         foreDir = towards(aW, reachTo, b, reachTo);
         upW.lerp(upB.copy(Y).addScaledVector(hr, side * 0.7).normalize(), b).normalize();
       }
-      const elbow = pts[1].copy(shoulder).addScaledVector(upperDir, UPPER * L);
-      const wrist = pts[2].copy(elbow).addScaledVector(foreDir, FORE * L);
+      const elbow = pts[1].copy(shoulder).addScaledVector(upperDir, m.upper * L);
+      const wrist = pts[2].copy(elbow).addScaledVector(foreDir, m.fore * L);
       this.place(this.upper[w], shoulder, upperDir, upW);
       this.place(this.fore[w], elbow, foreDir, upW);
       for (let i = 0; i < 4; i++) {
-        const ang = FAN[i] * wp.fan;
+        const ang = m.fan[i] * wp.fan;
         d.copy(uW).multiplyScalar(Math.cos(ang)).addScaledVector(backW, Math.sin(ang));
         if (b > 0) {
           // folded: back along the flank from the wrist, rising towards the tail and leaning in over the back
@@ -696,7 +876,7 @@ export class Dragon {
           d.copy(towards(d, dB, b, dB));
         }
         this.place(this.finger[w][i], wrist, d, upW);
-        pts[3 + i].copy(wrist).addScaledVector(d, FINGERS[i] * L);
+        pts[3 + i].copy(wrist).addScaledVector(d, m.fingers[i] * L);
       }
       // the hand: its claws forward off the wing's leading edge in the air, and set down on the ground turned a little out
       this.bx.copy(fwd);
@@ -710,12 +890,12 @@ export class Dragon {
       }
       this.hand[w].at.copy(wrist);
       this.hand[w].q.copy(q1);
-      const flank = pts[7].set(FLANK[0] * L, FLANK[1] * L, FLANK[2] * L * side).applyQuaternion(p.quat).add(p.pos);
+      const flank = pts[7].set(m.flank[0] * L, m.flank[1] * L, m.flank[2] * L * side).applyQuaternion(p.quat).add(p.pos);
       this.tips[w].copy(pts[3]);
       this.skin(w, shoulder, elbow, wrist, pts[3], pts[4], pts[5], pts[6], flank, upW, ground);
 
       // --- the leg on this side ---
-      const hip = pts[8].set(HIP[0] * L, HIP[1] * L, HIP[2] * L * side).applyQuaternion(p.quat).add(p.pos);
+      const hip = pts[8].set(m.hip[0] * L, m.hip[1] * L, m.hip[2] * L * side).applyQuaternion(p.quat).add(p.pos);
       // Folded: the thigh lies back along the belly, the shin doubles forward under it and the foot back again.
       // Each bone is turned from the one before it, in a frame that looks back along the body.
       q1.copy(p.quat).multiply(turn(Math.PI - side * 0.06, 0, q2)).multiply(turn(0, -0.12, q2));
@@ -808,11 +988,13 @@ export class Dragon {
     let o = (this.skinStart + w * SKIN_TRIS * 3) * 3, so = w * SKIN_TRIS * 9;
     const { e1, e2, nn, mids } = this;
     // the middle of each trailing edge, drawn in a little towards where the edge is hung from
-    const scallop = (a: THREE.Vector3, b: THREE.Vector3, from: THREE.Vector3, into: THREE.Vector3): THREE.Vector3 => into.addVectors(a, b).multiplyScalar(0.5).lerp(from, 0.07);
-    scallop(t1, t2, wrist, mids[0]);
-    scallop(t2, t3, wrist, mids[1]);
-    scallop(t3, t4, wrist, mids[2]);
-    scallop(t4, flank, shoulder, mids[3]);
+    // and torn deeper, and unevenly, where its kind's wings are ragged
+    const r = this.measures.ragged;
+    const scallop = (a: THREE.Vector3, b: THREE.Vector3, from: THREE.Vector3, into: THREE.Vector3, tear: number): THREE.Vector3 => into.addVectors(a, b).multiplyScalar(0.5).lerp(from, 0.07 + r * tear);
+    scallop(t1, t2, wrist, mids[0], 0.2);
+    scallop(t2, t3, wrist, mids[1], 0.34);
+    scallop(t3, t4, wrist, mids[2], 0.14);
+    scallop(t4, flank, shoulder, mids[3], 0.26);
     const tri = (a: THREE.Vector3, b0: THREE.Vector3, c0: THREE.Vector3): void => {
       let b = b0, c = c0;
       nn.crossVectors(e1.subVectors(b, a), e2.subVectors(c, a)).normalize();
@@ -874,7 +1056,7 @@ export const blendForm = blend;
  * half folded. `amount` is how deep the beat is: 1 is a full beat, and less
  * is the shallow flick of a wing that stays swept at speed.
  */
-export function wingPose(f: WingForm, beat: number, out: WingPose, amount = 1): WingPose {
+export function wingPose(f: WingForm, beat: number, out: WingPose, amount = 1, m: Measures = LEAN): WingPose {
   let { sweep, span, lift, fan, tip } = f;
   if (beat > 0) {
     // how far it is raised through the beat: up before the downstroke, down at 0.4, and up again
@@ -892,7 +1074,7 @@ export function wingPose(f: WingForm, beat: number, out: WingPose, amount = 1): 
     sweep += 10 * RAD * folded * amount;
   }
   // the hand's sweep is whatever brings the tip in to the span that is asked for
-  const reach = (span * HALF_SPAN - SHOULDER[2] - ARM * Math.cos(sweep) * Math.cos(lift)) / (FINGERS[0] * Math.cos(lift + tip));
+  const reach = (span * m.halfSpan - m.shoulder[2] - m.arm * Math.cos(sweep) * Math.cos(lift)) / (m.fingers[0] * Math.cos(lift + tip));
   out.sweep = sweep;
   out.lift = lift;
   out.hand = Math.acos(Math.min(1, Math.max(0.03, reach)));

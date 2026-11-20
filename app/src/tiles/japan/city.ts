@@ -9,7 +9,7 @@ import { LAWN, PLAZA, area, flat, ground, oval, rect, water } from '../../engine
 import { buildPath, type Path } from '../../engine/paths';
 import { lampsAlong, roadDeck, street } from '../../engine/roads';
 import type { Build, TileParts } from '../../engine/tile';
-import { dragon } from '../../engine/dragon';
+import { dragon } from '../../engine/eastern-dragon';
 import { buildLandmarks } from './landmarks';
 import { sample, toSegs, type Piece } from '../../engine/lines';
 import {

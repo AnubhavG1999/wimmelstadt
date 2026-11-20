@@ -3,7 +3,8 @@
 // smoke and flame it is made of small solid shapes, so that it sits in the
 // city's look.
 //
-// Fire harms nothing. Where it may go is decided in the show, not here.
+// Fire harms nothing. Where it may go is the tile's to decide, not this file's.
+// Each dragon's own flame is in its kind (`kinds.ts`).
 
 import * as THREE from 'three';
 
@@ -21,18 +22,16 @@ export interface Flame {
   dark?: boolean;
   /** How long the lance is, in units. */
   reach: number;
+  /** How large its flakes are and how many it throws, against Drogon's: 1 unless this says otherwise. A great dragon's fire is a torrent. */
+  size?: number;
   /** The light it throws on the ground at night. */
   light: number;
 }
 
-/** Black, shot through with red. */
-export const DROGON_FLAME: Flame = { core: [0.02, 0.015, 0.02], edge: [1.0, 0.08, 0.04], fleck: [1.0, 0.3, 0.05], flecks: 0.08, cores: 0.62, dark: true, reach: 13, light: 0xff3a1a };
-/** Orange and yellow, with veins of green. */
-export const RHAEGAL_FLAME: Flame = { core: [1.0, 0.86, 0.3], edge: [1.0, 0.5, 0.1], fleck: [0.2, 0.92, 0.3], flecks: 0.2, cores: 0.4, reach: 11, light: 0xffa030 };
-/** Pale gold, flecked with red and orange. */
-export const VISERION_FLAME: Flame = { core: [1.0, 0.93, 0.66], edge: [1.0, 0.8, 0.36], fleck: [1.0, 0.26, 0.08], flecks: 0.2, cores: 0.45, reach: 11, light: 0xffd880 };
-
 interface Flake { p: THREE.Vector3; v: THREE.Vector3; carry: THREE.Vector3; age: number; life: number; size: number; color: RGB; dark: boolean }
+
+/** The pool of light a lance throws on the ground at night is this wide for a flame of size 1. */
+const POOL = 26;
 
 export class Fire {
   /** The flakes. */
@@ -43,16 +42,20 @@ export class Fire {
   private readonly poolMat: THREE.MeshBasicMaterial;
   private readonly flakes: Flake[] = [];
   private readonly room: number;
-  private readonly lit: { x: number; y: number; z: number; color: THREE.Color; k: number }[] = [];
+  private readonly lit: { x: number; y: number; z: number; color: THREE.Color; k: number; r: number }[] = [];
+  private readonly poolRoom: number;
   private readonly m4 = new THREE.Matrix4();
   private readonly dir = new THREE.Vector3();
   private readonly side = new THREE.Vector3();
   private readonly up2 = new THREE.Vector3();
   private readonly col = new THREE.Color();
-  private owed = [0, 0, 0];
+  /** How many flakes each dragon still owes the air, by its number. */
+  private readonly owed: number[] = [];
 
-  constructor(room = 620) {
+  /** `room` is how many flakes there may be at once, and `pools` how many pools of light, one for each dragon breathing at once. */
+  constructor(room = 620, pools = 3) {
     this.room = room;
+    this.poolRoom = pools;
     this.mesh = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), this.mat, room);
     this.mesh.count = 0;
     this.mesh.frustumCulled = false;
@@ -69,7 +72,7 @@ export class Fire {
     ctx.fillRect(0, 0, 64, 64);
     const tex = new THREE.CanvasTexture(cv);
     this.poolMat = new THREE.MeshBasicMaterial({ color: 0xffffff, map: tex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false, fog: false, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 });
-    this.pools = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), this.poolMat, 3);
+    this.pools = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), this.poolMat, pools);
     this.pools.count = 0;
     this.pools.frustumCulled = false;
     this.pools.renderOrder = 2;
@@ -84,8 +87,8 @@ export class Fire {
    * the ground is under the middle of the lance, or null where no light may fall.
    */
   breathe(who: number, at: THREE.Vector3, dir: THREE.Vector3, carry: THREE.Vector3, flame: Flame, power: number, dt: number, ground: number | null): void {
-    const life = 0.4, speed = flame.reach / life;
-    this.owed[who] += 380 * power * dt;
+    const life = 0.4, speed = flame.reach / life, size = flame.size ?? 1;
+    this.owed[who] = (this.owed[who] ?? 0) + 380 * size * power * dt;
     // what is up for the lance, so that flakes can be spread round it
     this.side.crossVectors(dir, Math.abs(dir.y) > 0.9 ? this.up2.set(1, 0, 0) : this.up2.set(0, 1, 0)).normalize();
     this.up2.crossVectors(this.side, dir).normalize();
@@ -103,11 +106,11 @@ export class Fire {
       this.flakes.push({
         p: new THREE.Vector3().copy(at).addScaledVector(v, back).addScaledVector(carry, back),
         v, carry: carry.clone(), age: back, life: life * (0.8 + Math.random() * 0.35),
-        size: (core ? 0.3 : 0.36) * (0.8 + Math.random() * 0.5), color: core ? flame.core : fleck ? flame.fleck : flame.edge, dark: core && flame.dark === true,
+        size: (core ? 0.3 : 0.36) * (0.8 + Math.random() * 0.5) * size, color: core ? flame.core : fleck ? flame.fleck : flame.edge, dark: core && flame.dark === true,
       });
     }
     if (ground !== null) {
-      this.lit.push({ x: at.x + dir.x * flame.reach * 0.5, y: ground, z: at.z + dir.z * flame.reach * 0.5, color: new THREE.Color(flame.light), k: power });
+      this.lit.push({ x: at.x + dir.x * flame.reach * 0.5, y: ground, z: at.z + dir.z * flame.reach * 0.5, color: new THREE.Color(flame.light), k: power, r: POOL * Math.sqrt(size) });
     }
   }
 
@@ -140,10 +143,10 @@ export class Fire {
     if (this.mesh.instanceColor) this.mesh.instanceColor.needsUpdate = true;
 
     // light on the ground, by night only
-    this.pools.count = night > 0.15 ? Math.min(3, this.lit.length) : 0;
+    this.pools.count = night > 0.15 ? Math.min(this.poolRoom, this.lit.length) : 0;
     for (let i = 0; i < this.pools.count; i++) {
       const l = this.lit[i];
-      this.m4.makeScale(26, 1, 26).setPosition(l.x, l.y + 0.12, l.z);
+      this.m4.makeScale(l.r, 1, l.r).setPosition(l.x, l.y + 0.12, l.z);
       this.pools.setMatrixAt(i, this.m4);
       this.pools.setColorAt(i, this.col.copy(l.color).multiplyScalar(0.5 * l.k * night));
     }
