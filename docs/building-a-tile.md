@@ -126,7 +126,7 @@ What the address takes:
 | --- | --- |
 | `?tiles=<id>` | your tile alone. `?tiles=<id>,north-america` stands it beside the first tile. `?tiles=sample` is the sample tile. |
 | `?hour=21.5` | the hour of the day, held still. Without it the clock runs. |
-| `?weather=rain` | `clear`, `cloudy`, `rain`, `storm`, `fog` or `snow`. Without it the city has weather of its own. |
+| `?weather=rain` | `clear`, `cloudy`, `rain`, `storm`, `fog` or `snow`, or `auto` for the city's own weather. Without it the sky is clear. |
 | `?drift=0` | stops the view from turning by itself. |
 | `?place=<id>` | puts the heroes on one route or one place on show, by its id, for checking it. |
 | `?x=&z=&az=&zoom=` | where the view starts. |

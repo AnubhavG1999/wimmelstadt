@@ -90,7 +90,7 @@ Then open http://localhost:5187.
 | Zoom | Scroll or pinch. |
 | Go to a tile, or back to the whole board | Double-click the tile, or the table. Escape also goes back to the board, and to the tilt the view opens with. |
 | Set the hour | Drag the sun round the dial. Touch the middle of the dial to follow the clock again. |
-| Set the weather | Touch a token. The same one again gives the weather back to the city. |
+| Set the weather | Touch a token. The sky is clear when the page opens. The same token again gives the weather to the city, which then changes it by itself. |
 | Ride along with a hero | The key with the car on it, or F. |
 | Watch a day go by in 80 seconds | The key with two arrows, or T. |
 | Change the depth of field, turn the view by itself, see how it performs, unlock the heroes | The key with three dots. |
@@ -103,7 +103,7 @@ The address bar takes options:
 | --- | --- |
 | `?tiles=japan,hong-kong` | puts only those tiles on the board, in that order. A tile named twice stands there twice, and `sample` is the sample tile, which is hidden otherwise. |
 | `?hour=21.5` | sets the hour. |
-| `?weather=rain` | sets the weather: `clear`, `cloudy`, `rain`, `storm`, `fog` or `snow`. |
+| `?weather=rain` | sets the weather the page opens with: `clear`, `cloudy`, `rain`, `storm`, `fog` or `snow`, or `auto` for the city's own. Without it the sky is clear. |
 | `?drift=0` | stops the view turning by itself. |
 | `?x=..&z=..&az=..&zoom=..` | starts with a view of its own. |
 | `?elev=24` | starts the view at a tilt, in degrees. |
