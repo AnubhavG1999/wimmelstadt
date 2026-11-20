@@ -27,8 +27,6 @@
 // its lanterns. The books give no plan, no colours but the stone's and the
 // roofs', and no shape for the throne: those are this tile's own.
 
-import * as THREE from 'three';
-import { Smoke } from '../../engine/effects';
 import { interior, rng, type GeoBuilder, type V3, type WinSpec } from '../../engine/geo';
 import { area } from '../../engine/ground';
 import { figure, lathe } from '../../engine/parts';
@@ -447,18 +445,9 @@ function greatHall(k: Build, L: Layout): void {
   // the back, over the sea: two rows of tall lights, and buttresses
   b.box(x0, 0, z0, x0 + 0.01, H, z1, PALE, { faces: 'W', win: { ...LANCETS, storey: H / 2, lit: 0.5 }, seed: 0.83 });
   for (let z = z0 + 1.5; z < z1 - 0.6; z += 1.5) buttress(b, x0, z);
-  // a chimney stack on the ridge, from the hall's hearth, and its smoke
+  // a chimney stack on the ridge, from the hall's hearth: cold, since Meleys lies over the hall and smoke rising here would stand between the view and her head
   b.box(xm - 0.32, ridge - 0.6, z1 - 2.2, xm + 0.32, ridge + 1.3, z1 - 1.5, PALE_SHADE, { top: DARK });
   b.box(xm - 0.4, ridge + 1.1, z1 - 2.28, xm + 0.4, ridge + 1.3, z1 - 1.42, PALE_SHADE, { faces: 'NESWB' });
-  const smoke = new Smoke(k.mat.prop({ vertexColors: false, color: 0xffffff }), 30);
-  k.group.add(smoke.mesh);
-  const from = new THREE.Vector3(xm, ridge + 1.45, z1 - 1.85), drift = new THREE.Vector3(0.5, 0.3, 0.25);
-  let due = 0;
-  k.each((dt) => {
-    due -= dt;
-    if (due <= 0) { due = 0.55; smoke.puff(from, drift, 0.42, 0.86); }
-    smoke.update(dt);
-  });
 
   // --- inside: the warm dark seen through the door, and the throne on its dais ---
   const ix0 = x0 + 0.2, ix1 = x1 - wall, iz0 = dz0 - 2.4, iz1 = dz1 + 0.7, ih = 4.6, glow = interior(1.4);
