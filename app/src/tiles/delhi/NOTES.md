@@ -108,7 +108,7 @@ Forty-four, numbered as in `THINGS` in `plan.ts`. None has its model yet: each i
 
 The Ring Road's flyovers at Moti Bagh and AIIMS and Dhaula Kuan's loop are a thing to find too, and are built as roads.
 
-Small scenes to stand between them: a baraat, a chaat cart, a sugarcane press, an auto stand, white Ambassadors on Raisina Hill, monkeys on its parapets, a dhaba with a painted truck, a puncture stand, the queue at a CNG station, a red Maruti 800 on a plinth.
+Small scenes that stand between them, in `life.ts`: a wedding by Aurobindo Marg, with the bride on a stage before a wall of marigolds in a tent of red and white, and the groom's procession arriving on a white mare with its band and its lamps; gully cricket on the open ground south of the AIIMS flyover; families, ice-cream carts and a balloon seller on Kartavya Path's lawns; chaat carts, sugarcane presses and auto stands; white Ambassadors on Raisina Hill and monkeys on its parapet. Every ordinary roof but a shed's carries Delhi's black water tanks. The quarters' own files stage the rest.
 
 ## How high things will stand
 
@@ -136,7 +136,7 @@ They stand in the order they do in life, and India Gate stays under the dome on 
 
 Traffic keeps left. No road crosses another on the level, and no lane is shared.
 
-- **`ring-road`**, the Ring Road, is one road there and back, 913 long, with a turning loop at each end: Dhaula Kuan's loop in the west, east along the south over a flyover at Moti Bagh and another at AIIMS, north beside the river behind the Red Fort, over the Signature Bridge, and down the east bank to Akshardham's gate. A lane each way, with a verge between them where the Metro's piers stand. Each flyover is 4.4 high, with ramps 18 long.
+- **`ring-road`**, the Ring Road, is one road there and back, 913 long, with a turning loop at each end: Dhaula Kuan's loop in the west, east along the south over a flyover at Moti Bagh and another at AIIMS, north beside the river behind the Red Fort, over the Signature Bridge, and down the east bank to Akshardham's gate. A lane each way, with a verge between them where the Metro's piers stand. Each flyover is 4.4 high, with ramps 18 long. The bridge's deck is 2.4 high. The road climbs to it on either bank while it runs straight, over 14, and turns onto the bridge on the level: when it climbed round the bend its deck was twisted, and every stretch of it was drawn with a line across the road. Each approach is a bank of earth that ends in an abutment, and two piers stand in the river.
 - **`long-drive`** is one road there and back, 473 long: from the Qutub Minar north up Aurobindo Marg under the AIIMS flyover, past Safdarjung's Tomb to the hexagon's south-west corner, along one side of it, west along Kartavya Path and up Raisina Hill to turn in front of Rashtrapati Bhavan's gates, back along Kartavya Path, the long way round India Gate, and back down to the Qutub. It uses the hexagon's outer lane exactly once round. Raisina Hill is a `hump` on the route.
 - **`hexagon`** is the hexagon's inner lane, a loop of its own.
 - **`shanti-path`** runs from below South Block under the Moti Bagh flyover to R. K. Puram and along Kaifi Azmi Marg to the school's gate, where the buses turn.
@@ -157,11 +157,11 @@ On the roads a hero is best seen on Kartavya Path, on the flyovers, beside the r
 
 ## The screen for music
 
-One, on the roof of Connaught Place's south-east block, where its hoardings stand in life. It faces the south-east, and it is not near a place of worship, a tomb or a memorial. It is hung as an ordinary sign of kind `screen`, which the engine fills with what is playing. North America's gate tower has one: see `SIGNS` in its `plan.ts`. Nothing for the music is built in this folder.
+One, on the roof of Connaught Place's south-east block, where its hoardings stand in life. It faces the south-east, and it is not near a place of worship, a tomb or a memorial. It is hung in `index.ts` as an ordinary sign of kind `screen`, which the engine fills with what is playing: 4.2 high and 7.5 wide, its foot 0.9 above the roof, on three posts with stays behind. That block's roof is kept clear of tanks and hoardings for it. Nothing for the music is built in this folder.
 
 **Its own picture.** When nothing is playing, and for everyone who has not linked their music, the screen shows a picture the tile paints itself, so that picture is what most people see. The sign gets a `paint(ctx, s, w, h)` of its own, into 640 by 360 pixels. It draws the whole rectangle each time and keeps nothing between calls.
 
-Planned: the tailboard of a lorry. HORN OK PLEASE in the colours of truck art, in three panels, with lotus flowers and a painted pair of eyes, and under it फिर मिलेंगे, "we'll meet again", which lorries carry too. No brand and no logo is on it. The Hindi is checked in its own script before it is painted, like every other sign. The collector was offered दिल्ली दिलवालों की round a heart as the other idea, and did not choose between them.
+It is the tailboard of a lorry: HORN OK PLEASE in the colours of truck art, in three panels, with lotus flowers and a painted pair of eyes, and under it फिर मिलेंगे, "we'll meet again", which lorries carry too. No brand and no logo is on it. The Hindi is checked in its own script before it is painted, like every other sign. The collector was offered दिल्ली दिलवालों की round a heart as the other idea, and did not choose between them.
 
 ## Checks
 
@@ -238,7 +238,7 @@ Each is checked as it is written, and entered here with what confirmed it. A sho
 - **`wimmel.fights('delhi')`** lists surfaces that lie in one plane, and has to come back empty. It found three kinds in what stood then, all mended: the verge under the flyovers lay on the two streets that pass under them, the pavilions of the two Blocks ended flush with their eaves, and the streets that meet the hexagon ran on across its inner kerb.
 - **The view tilts up and down.** The tile is looked at from low angles as well as from above, so whatever is seen from below needs its underside: the flyovers, the Metro's viaduct, the bridge's deck, every canopy. Still to be looked at once everything is built.
 - **Traffic of a tile's own shape**: see "Roads".
-- **The screen for music** works, and shows the tile's own picture when nothing is playing. It is not hung yet.
+- **The screen for music** works, and shows the tile's own picture when nothing is playing. It is hung.
 
 ## What the collector said
 
