@@ -100,7 +100,10 @@ function build(k: Build): TileParts {
   area(k, [0, 1, 2, 3, 4, 5].map((i) => hexCorner(i, HEX_LANES[0] - 4.5)), LAWN);
   // the gardens and forecourts that things stand in
   for (const [id, [x0, z0, x1, z1]] of Object.entries(GROUNDS)) {
-    if (GARDENS.includes(id)) area(k, rect(x0, z0, x1, z1), LAWN);
+    // (a garden with a tank in it has its lawn laid round the tank's hole, or the lawn would be a lid on the water)
+    const tank = WATERS[id];
+    if (GARDENS.includes(id) && tank) flat(k.street, rect(x0, z0, x1, z1), 0.02, LAWN, { win: { cell: 0, storey: 1, lit: 0, kind: 1 }, holes: [rect(...tank.at)] });
+    else if (GARDENS.includes(id)) area(k, rect(x0, z0, x1, z1), LAWN);
     else if (PAVED.includes(id)) area(k, rect(x0, z0, x1, z1), PLAZA);
   }
   // Chandni Chowk, paved in red sandstone

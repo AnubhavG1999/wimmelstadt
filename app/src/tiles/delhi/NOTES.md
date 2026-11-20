@@ -214,7 +214,14 @@ Each is checked as it is written, and entered here with what confirmed it. A sho
 
 **On the screen**: HORN OK PLEASE is what lorries all over India carry on their tailboards, and फिर मिलेंगे ("we'll meet again") is, by The Patriot's piece "Messages on the highway", a very common message on lorries in Hindi. Neither is anybody's name. A food festival in Delhi trades as Horn OK Please: the screen has nothing of its lettering or its look.
 
-**Still to be entered**: every real name the quarters' files hang, as each file is taken in.
+**The Metro's two stations**, on lit boards on their walls and over their platforms, in `metro.ts`:
+
+| On the board | What confirmed it |
+| --- | --- |
+| सर एम. विश्वेश्वरैया मोती बाग, SIR M. VISHWESHWARAIAH MOTI BAGH | Wikipedia's page for the station: an elevated station of the Pink Line with side platforms, opened on 6 August 2018. The Hindi is the title of Hindi Wikipedia's page for it. The name is as the operator lists it: no picture of the station's own board was found, and sources spell the engineer's name in more than one way. |
+| मयूर विहार-I, MAYUR VIHAR-I | Wikipedia's page for the station: an elevated station of the Pink Line with side platforms, opened on 31 December 2018. The Hindi is as a Metro route finder's Hindi pages write it. |
+
+**Still to be entered**: every real name the other quarters' files hang, as each file is taken in.
 
 ## Since `main` was merged
 

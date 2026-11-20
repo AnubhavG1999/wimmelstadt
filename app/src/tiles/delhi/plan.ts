@@ -170,7 +170,7 @@ export const THINGS: Thing[] = [
   T(33, 'safdarjungs-tomb', "SAFDARJUNG'S TOMB", 'south', -25, 27.5, 8, 8, 13),
   T(34, 'dilli-haat', 'DILLI HAAT', 'south', -30, 41.5, 18, 8.5, 5),
   T(35, 'sarojini-nagar', 'SAROJINI NAGAR', 'south', -44, 23, 12, 27, 5),
-  T(36, 'moti-bagh-station', 'MOTI BAGH', 'south', -84, 55, 20, 8, 6, { y: METRO.y }),
+  T(36, 'moti-bagh-station', 'MOTI BAGH', 'south', -84, 53.5, 20, 11, 6, { y: METRO.y }),
   T(37, 'dps', 'DPS R. K. PURAM', 'south', -98, 72, 24, 8, 10.2),
   T(38, 'rk-puram', 'R. K. PURAM', 'south', -70, 70, 8.5, 8, 6.8),
   T(39, 'hauz-khas', 'HAUZ KHAS', 'south', -40, 77, 7, 7, 10),
@@ -178,7 +178,7 @@ export const THINGS: Thing[] = [
   T(41, 'qutub-minar', 'QUTUB MINAR', 'south', -29.5, 100.5, 7, 7, 28),
   T(42, 'lotus-temple', 'LOTUS TEMPLE', 'south', 19.5, 88.5, 17, 17, 12.5),
   T(43, 'buddh', 'GREATER NOIDA', 'river', 89, 80, 15, 32, 0),
-  T(44, 'mayur-vihar-station', 'MAYUR VIHAR', 'river', 95, METRO.stationZ0, 8, METRO.stationZ1 - METRO.stationZ0, 6, { y: METRO.y }),
+  T(44, 'mayur-vihar-station', 'MAYUR VIHAR', 'river', 92, METRO.stationZ0, 11, METRO.stationZ1 - METRO.stationZ0, 6, { y: METRO.y }),
 ];
 
 export const thing = (id: string): Thing => {
