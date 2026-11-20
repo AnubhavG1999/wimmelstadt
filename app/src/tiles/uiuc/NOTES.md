@@ -2,7 +2,7 @@
 
 What a later reader cannot see in the code.
 
-**Where it stands.** The plan was put to the collector on 19 November 2026. He answered the same day, and this is the plan with what he asked for worked in. The tile is blocked out: its ground, its streets, the railway's embankment with its two viaducts, its routes and its places for heroes are built, and every lot is a plain box with its name on a board until its model is built. Built so far: the Illini Union, Gregory Place with Basil Thai and Manolo's, the Six Pack, and the blocks between Fourth Street and Wright Street. The rest of the lots are being built a file at a time (see "The models"). The research is in [docs/districts/research/uiuc.md](../../../../docs/districts/research/uiuc.md). Where this file and that note disagree, this file is the later: see "What the research note has wrong".
+**Where it stands.** The plan was put to the collector on 19 November 2026. He answered the same day, and this is the plan with what he asked for worked in. The tile is blocked out: its ground, its streets, the railway's embankment with its two viaducts, its routes and its places for heroes are built, and every lot is a plain box with its name on a board until its model is built. Built so far: the Illini Union, Gregory Place with Basil Thai and Manolo's, the Six Pack, the blocks between Fourth Street and Wright Street, both rows of the Main Quad with Foellinger Auditorium, and the stadium with the saucer. The rest of the lots are being built a file at a time (see "The models"). The research is in [docs/districts/research/uiuc.md](../../../../docs/districts/research/uiuc.md). Where this file and that note disagree, this file is the later: see "What the research note has wrong".
 
 ## Where things are
 
@@ -43,6 +43,36 @@ Not checked against a picture: what Wassaja Hall looks like (its brick, its stor
 - *Illini Tower* and *Sherman Hall.* Two slabs, with rows of windows lower than the campus's storey so that they read as sixteen storeys and thirteen: the tower pale with precast fins, the hall in brown brick with blank ends.
 - *The deck at Sixth and John.* Four open levels of concrete with dark shapes of cars inside and a glazed stair tower. Its roof is flat at the lot's height, with bays painted for the two parked cars that stand on it.
 - *The Illini Hall site.* A hoarding of plywood, a foundation slab, a frame of primed steel up two floors, a site cabin, a heap of sand, a small yellow digger, four workers in orange vests, and a tower crane 24 high with a load on its hook and red lamps on its peak and jib.
+
+**The Main Quad's west row** (`quad-west.ts`, built by an Opus builder and looked at from four sides by day and from two by night).
+
+- *The Alma Mater.* The bronze group on a granite block, turned to face north-west, towards the crossing of Green and Wright: the robed figure before her throne with her arms held out, and behind the throne Labor, in a smith's apron, and Learning, with a book, clasping hands. No lettering. Round it an octagon of paving, a bed of flowers, two benches, and five people, one of them having her picture taken.
+- *Altgeld Hall.* Pink-buff sandstone under steep roofs of red tile. Its great arched door is on its north side, on Green Street, under a gable, with a round turret at the corner of Green and Wright: the building of 1896 faces north, and that door is its historic front. The bell tower stands at its north-east corner: a shaft with a set-back belfry of two arches a side, lit at night, round turrets at its corners and a steep red pyramid to 18.5. On the Quad side a gabled pavilion with an arched door and the hall's name.
+- *Henry Administration.* Three storeys, the ground storey of buff stone and brick above, with stone pilasters through the two upper storeys on the Quad side only, a parapet and a flat roof.
+- *The English Building.* Red brick under a slate hip roof with dormers, four massive chimneys and a small white cupola. On the Quad side six tall white columns on a podium between two short towers, with the name on the band over them.
+- *Lincoln Hall.* Deep red brick with a band of terra cotta panels and a strongly projecting cornice, a gabled slate roof, and three arched doorways in a stone bay on the Quad side.
+- *Gregory Hall.* Red brick with limestone, a hipped slate roof with dormers, and a pedimented pavilion on the Quad side.
+
+**The Main Quad's east row and its south end** (`quad-east.ts`, built by an Opus builder and looked at from four sides by day and from two by night).
+
+- *Foellinger Auditorium.* A drum of red brick with sixteen sides under a low dome of dark weathered metal with eight ribs of green copper and a bronze pineapple on top, which is what the dome looks like today: it is not green. Small lamps are set in the dome and glow at night. The entrance block faces north, to the Quad: six limestone columns grouped one, two, two and one between masses of brick, three arched doors behind them, an attic with stone panels, and broad steps down to the lawn. Its lot is a unit deeper than first planned, so that the drum is nearly as wide as the lot.
+- *Harker Hall.* Red brick on a rough stone base, with a mansard of slate patterned in red and teal diamonds, to which it has been restored, ten dormers, and its door up a tall flight of steps on its south side.
+- *The Natural History Building.* Red brick with an orange band patterned in deep-red diamonds, a steep slate roof with four cross gables, and pointed windows at the top.
+- *Noyes Laboratory.* Red brick on rough stone, round-headed windows in threes, a deep porch of rough stone on the Quad side, and a roof crowded with chimneys and fume stacks.
+- *Davenport Hall.* Red-brown brick with bands of orange-buff terra cotta, two columns in a recessed entrance on the Quad side, and two wings that run back east round a court.
+- *Smith Memorial Hall.* Its main front, with four columns under a pediment, faces east, onto Mathews Avenue, as it does in life. Its west side, on the Quad, is plain brick.
+- *The Observatory.* A low wing of buff brick, which is what it is built of, and an eight-sided tower with a white gallery and a silver dome.
+
+**Game day** (`stadium.ts`, built by an Opus builder and looked at from four sides by day and by night).
+
+- *Gies Memorial Stadium.* Two stands, east and west, each with a lower tier, a concourse and an upper deck that overhangs it, and outside each a wall of red brick with tall arched openings and, on a ledge of limestone above it, a colonnade of 26 plain round limestone columns under a plain entablature. Nothing is lettered on them, hung on them or staged against them. A stair tower of brick stands at each corner, the press box on the west stand, a low north end, and a horseshoe of five rows at the south end. The board over the south end is a dark box on two masts, with its two faces left blank for the screen. The field has a white line every ten yards and plain orange end zones, with no mark at midfield. Seven players in orange face seven in white, and about 280 people stand in the stands.
+- *State Farm Center.* A band of lit glass at its foot, a bowl of 48 folded plates that flares outward, a white ring that overhangs all round, and a shallow dome of 24 folded plates. It carries no name.
+- *The deck at Fourth and Pennsylvania.* Four open levels with cars inside. Its roof is flat at the lot's height, with a low wall of 0.6 on its south and east sides, painted bays, and the hero's place and the two parked cars' places kept clear. The stair tower is at its north-west corner.
+- *Illinois Field.* A small grandstand with a roof behind home plate, the diamond, two dugouts, a navy fence with yellow foul poles, and a few players.
+- *Grange Grove.* Seven canopies in orange, navy and white with a table under each, four grills, and about forty people. No lettering.
+- *The practice fields.* Two, side by side, with their lines and goal posts.
+
+Not confirmed by any source found: the shape of the roofs of Altgeld's tower and turrets; how many columns the English Building's colonnade has; Lincoln Hall's roof, brick and doorway; that Gregory Hall is Georgian with a hipped roof and a pediment; which side Noyes Laboratory's great porch is on; Smith Hall's roof colour; whether the stadium's columns are round, and how many there are (sources give 181 and 200).
 
 Not confirmed by any source found: that the Armory has towers at its corners (modest pavilions stand there), which way its vault runs, what Sherman Hall and Illini Tower look like, and that the Ice Arena's front is Georgian.
 
@@ -321,6 +351,8 @@ The near lane is the one on the camera's side of the buildings that hide it: the
 - **Gregory Place has three storeys.** In life the block Basil Thai is in has four. A fourth would hide Manolo's board behind it.
 - **Bays at the kerb before Gregory Place**, where the sidewalk would be. In life cars park there too, at a slant.
 - **Altgeld Hall and Illini Hall.** Altgeld is drawn finished, without the scaffolding of its renovation. Illini Hall is drawn as the building site it is in 2026: the campus's construction map for 2026 has structural steel rising from the foundation, set by a crane that came in November 2025.
+- **Storeys on the Quad.** The English Building and Lincoln Hall have four storeys in life and three here, at the heights the plan gives them, and the English Building's colonnade is three storeys high in life. Henry Administration's storeys are 2.6, so that its three stand 8 high. Its addition of 1964 is left out, and so are Smith Hall's backstage wings of 1985 and Foellinger's additions at the back.
+- **The stadium.** Its columns are 26 a side, not 100. The plaques to the dead of the Second World War and of Korea on its north and south sides are left out. Its seats are full, and the crowd stands.
 - **The towers' storeys.** Illini Tower has 17 floors in life and shows 16 rows of windows. The bookstore is four storeys above the ground with a fifth set back, as its builder's page and a university page between them say.
 - **A hero on the Quad.** Quad Day's rules keep vehicles off the Quad. The solar car and a formula car have stood at their teams' tables, and that is the stand the hero's place is beside.
 - **The embankment is 6 high**, where 5 m would be less than 2.
@@ -337,7 +369,7 @@ The near lane is the one on the camera's side of the buildings that hide it: the
 
 ## Real names on signs
 
-On signs so far: ARMORY, ICE ARENA, SHERMAN HALL, ILLINI TOWER and ILLINI UNION BOOKSTORE, each on its building (Illini Tower is a private hall: its own leasing pages and the university's list of certified housing have it under that name for 2026 to 2027), and a P on the parking deck; the names of the Six Pack's seven halls and of the Ikenberry Dining Center, each over its door, as the research note gives them; ILLINI UNION, on both fronts of the Union; BASIL THAI, with "at Urbana" under it, on its awning; and MANOLO'S, with PIZZA & EMPANADAS under it, on its board and on its awning. The rest are the names the plan would use, each as plain lettering on a plain board, with what the research found on 19 November 2026. Each is checked again as its sign is written.
+On signs so far: ALTGELD HALL, HENRY ADMINISTRATION BUILDING, ENGLISH BUILDING, LINCOLN HALL and GREGORY HALL, each over its door on the Quad; FOELLINGER AUDITORIUM, HARKER HALL, NATURAL HISTORY BUILDING, NOYES LABORATORY, DAVENPORT HALL, SMITH MEMORIAL HALL (the university's full name for it is Tina Weedon Smith Memorial Hall) and ASTRONOMICAL OBSERVATORY, each where the opening view can read it; GIES MEMORIAL STADIUM (so named on 9 September 2025) on the stadium's south wall, and ILLINOIS FIELD on its grandstand; ARMORY, ICE ARENA, SHERMAN HALL, ILLINI TOWER and ILLINI UNION BOOKSTORE, each on its building (Illini Tower is a private hall: its own leasing pages and the university's list of certified housing have it under that name for 2026 to 2027), and a P on the parking deck; the names of the Six Pack's seven halls and of the Ikenberry Dining Center, each over its door, as the research note gives them; ILLINI UNION, on both fronts of the Union; BASIL THAI, with "at Urbana" under it, on its awning; and MANOLO'S, with PIZZA & EMPANADAS under it, on its board and on its awning. The rest are the names the plan would use, each as plain lettering on a plain board, with what the research found on 19 November 2026. Each is checked again as its sign is written.
 
 | Name | Where | What confirmed it |
 | --- | --- | --- |

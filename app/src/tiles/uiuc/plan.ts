@@ -211,7 +211,8 @@ L('natural-history', 'Natural History', 48, -43, 57, -35, 10);
 L('noyes', 'Noyes Laboratory', 48, -33, 57, -25, 9.5);
 L('davenport', 'Davenport Hall', 48, -23, 57, -15, 9);
 L('smith', 'Smith Hall', 47, -13, 57, -7, 8);
-L('foellinger', 'Foellinger Auditorium', 29.5, -19.5, 41.5, -8.5, 9, 'thing', [part('foellinger-dome', 31.5, -14.5, 39.5, -10.5, 13)]);
+// (a unit deeper than it was at first, so that its round hall can be nearly as wide as its lot)
+L('foellinger', 'Foellinger Auditorium', 29.5, -19.5, 41.5, -7.5, 9, 'thing', [part('foellinger-dome', 30.5, -18, 40.5, -8, 13)]);
 L('library', 'The Main Library', 9.5, -8, 27, 0.5, 11);
 L('observatory', 'The Observatory', 42, -7, 46.5, -3.5, 7);
 

@@ -12,6 +12,7 @@ import * as east from './east';
 import * as engineering from './engineering';
 import * as greenNorth from './green-north';
 import * as gregoryPlace from './gregory-place';
+import * as houses from './houses';
 import { BOX_SIGNS, type Model, type ModelFile } from './plan';
 import * as quadEast from './quad-east';
 import * as quadWest from './quad-west';
@@ -28,6 +29,7 @@ const FILES: Record<string, ModelFile> = {
   engineering,
   'green-north': greenNorth,
   campustown,
+  houses,
   sixth,
   'south-campus': southCampus,
   stadium,
