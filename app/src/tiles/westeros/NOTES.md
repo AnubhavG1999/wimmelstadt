@@ -2,7 +2,7 @@
 
 This file records what a later reader cannot see in the code.
 
-**Where the tile stands, on 19 November 2026: it is planned and nothing is built.** What follows is the plan as it was put to the collector. It changes with his reaction, and each section is rewritten as the thing it describes is built.
+**Where the tile stands, on 19 November 2026:** the ground, the water, the roads and their travellers are laid, the three dragons fly, and the regions are being built one by one. A lot that is not built yet stands as a plain box with its name on a board. Each section is rewritten as the thing it describes is built.
 
 ## Sources and rights
 
@@ -27,7 +27,7 @@ Beyond the Wall, and on it:
 
 The North:
 
-11. Winterfell: two walls with the moat between them, and the King's Gate.
+11. Winterfell: two walls with the moat between them, and its gatehouse on the kingsroad.
 12. The Great Keep and the Great Hall.
 13. The broken tower.
 14. The First Keep, with its gargoyles.
@@ -80,7 +80,7 @@ The south:
 46. Storm's End.
 47. Highgarden.
 48. Oldtown and the Hightower.
-49. The Citadel's rookery.
+49. The Citadel, and the Starry Sept.
 50. Sunspear.
 51. The mummers' wagon, and their stage at the tourney ground.
 
@@ -88,89 +88,109 @@ In the air:
 
 52. to 54. The three dragons.
 
-If the tile has to lose some, these go first: 8, 10, 23, 26, 35 and 49.
+If the tile has to lose some, these go first: 8, 10, 23, 26 and 35. Not built so far, and still wanted: 8, 20, 21, 26, 37, 44 and 51.
+
+
+## How the tile is put together
+
+`plan.ts` is the tile as numbers and draws nothing: the coasts, every lot with its height, the Wall, the roads' middles with their gates, bridges and turning rings, the rivers, the islands, the places for a hero, and the line the dragons fly. `land.ts` lays the ground and the water from it, and `roads.ts` the roads and the lanes.
+
+What stands on the ground is built region by region, each in a file of its own: `wall`, `holds`, `winterfell`, `neck`, `vale`, `riverlands`, `kings-landing`, `stormlands`, `reach`, `west` and `dragonstone`. A region hands over a model for each of its lots (`models.ts` says how), and `city.ts` builds a lot from its model, or as a plain box with its name on a board while it has none. So the tile was whole at every stage, and a region's file can be rebuilt without touching another. `look.ts` holds what the castles share: stone by where it was quarried, roofs, the loops and lancets that glow at night, ramparts, towers, banners, braziers, the weirwood, the name board.
+
+The regions were built by Opus builders, one to a file, each from the same brief and a task of its own, and each looked at from the opening side and from behind, by day and by night, before it was kept. The plan, the ground, the roads and the dragons are the main session's.
+
+`westeros` in the page's console, on the development server, has the tools the tile was looked at with: `hold` stands a dragon still, `at`, `rate`, `split` and `goto` set the show's clock, `off` takes the dragons away, and `look`, `close`, `sheet` and `fourViews` take pictures with `wimmel.shot`. `?bare` leaves the ground empty, with one of each kind of traveller in a row.
 
 ## The ground
 
-A continent between two seas. The sea runs down both edges and widens to the south, and the south-east corner is open water. The Wall is the north edge, and the Frostfangs stand over its top in the north-west corner. North of the Neck the ground is snow. The Neck is bog: dark pools with the causeway through them. South of it the ground is green, gold in the Reach and sand in Dorne.
+A continent between two seas. The sea runs down both edges and widens to the south, and the south-east corner is open water. The Wall is the north edge, and the Frostfangs stand over its top in the north-west corner. North of the Neck the ground is snow. The Neck is bog. South of it the ground is green, and Dorne is sand.
 
-- Water: the Trident with its Green and Red Forks, the Blackwater Rush, the Mander, the Gods Eye, Winterfell's moat, Queenscrown's lake, and the bog.
-- High ground: the Frostfangs (to 54), the Giant's Lance (52) with the Eyrie on its south-west shoulder, Casterly Rock (34), the Dragonmont (30), King's Landing's three hills (4 to 8), Highgarden's hill, and Storm's End's cliff.
-- Islands: Bear Island, Pyke's stacks, Dragonstone, Battle Isle under the Hightower, the Isle of Faces.
+- Rivers, each a shape of its own that stops a hair short of the water it runs into: the Trident from Riverrun to the bay, the Green Fork into it from the Neck, the Mander along Highgarden's north wall, and the Blackwater's last stretch into the river mouth under King's Landing.
+- Still water: the Gods Eye, Winterfell's moat, Queenscrown's lake, Riverrun's rivers, and the pools of the Neck. The last four are "wet lots": the ground is left out there, and whoever builds the place floors it.
+- Islands, laid as level ground in the sea: Bear Island, Dragonstone, Battle Isle, and the foot of Casterly Rock.
+- High ground is each region's own, built as faceted hills, and `groundAt` in `regions.ts` is the highest of them at any place. The dragons' shadows fall on it.
 
 ## Roads
 
-Traffic keeps left, unless the collector says otherwise.
+Traffic keeps left: the collector's choice.
 
-The pattern, which no other tile has: **one spine with branches, running through gates, on which every junction is a left turn.** The kingsroad is the spine, from beyond the Wall to Storm's End. Where roads meet, nobody goes straight on and nobody crosses anybody: each lane turns left round its own corner, as on a roundabout where everyone takes the first exit. So no route crosses another and none shares a lane, and nobody ever waits.
+The pattern, which no other tile has: **a tree with three loops in it, on which every lane turns left at every meeting of roads.** The kingsroad is the trunk, from beyond the Wall to the fork before Storm's End, and every other road leaves it or a branch of it. The roads cut the land into four pieces: three inside the loops, and everything outside them. Each route is the one lane that runs all the way round one piece, keeping it on its left. So at a meeting of roads nobody goes straight on across anybody: each lane turns left round its own corner, as on a roundabout where everyone takes the first exit. No lane crosses another and none joins one, so nobody ever waits, and the engine's check finds no two roads that cross on the level.
 
-That makes four routes:
+- `kingsroad`, the long way round the outside, about 940 units: from the ring beyond the Wall south through the tunnel in the ice, through Castle Black, past Winterfell, through Moat Cailin's Gatehouse Tower, left at the crossroads up the high road through the Bloody Gate to the Gates of the Moon and back, over the Trident by the inn, through the Dragon Gate and along King's Landing's quays and river front, over the Blackwater through the River Gate, up to Storm's End and round its drum, through Sunspear's three gates and back, down the roseroad, over the bridge to Battle Isle and round the Hightower, up the ocean road and the west coast between the Gods Eye and Casterly Rock, over the Twins' bridge under the Water Tower, and north again to the Wall.
+- `riverlands`, about 160: north up the kingsroad from the crossroads, west over the Twins' bridge, and back east along the river road.
+- `westerlands`, about 360: west along the river road, south between the lake and the Rock, east along the goldroad through the Lion Gate and along the river front, and north along the quays.
+- `reach`, about 265: west along the goldroad, down the ocean road, back along the roseroad, and north over the Blackwater bridge.
 
-- `kingsroad`, the long way round the outside of everything, about 1,350 units: from the clearing beyond the Wall south through the gate in the ice, past Winterfell, through Moat Cailin's Gatehouse Tower and along the causeway, left at the crossroads up the high road through the Bloody Gate to the Gates of the Moon and back, down to the bay, through the Dragon Gate and along King's Landing's quays, over the Blackwater through the River Gate, to Storm's End and round its drum, to Sunspear through its three gates and back, down the roseroad, to Oldtown and round the Hightower, up the west coast past Lannisport and Casterly Rock, past Riverrun, over the Twins' bridge under the Water Tower, and north again to the Wall.
-- `riverlands`, about 160: the kingsroad north from the crossroads, west over the Twins' bridge, down the west bank, and back east along the river road.
-- `westerlands`, about 300: the river road west, the coast south past the Rock, the goldroad east along the Gods Eye and the Blackwater, through the Lion Gate, and the quays north.
-- `reach`, about 280: the goldroad west, the ocean road south, the roseroad north-east past Highgarden, and the Blackwater bridge.
+A branch ends in a ring to turn in, which traffic goes round with the clock: round a weirwood beyond the Wall, in the yard of the Gates of the Moon, round Storm's End's drum, in Sunspear's inner court, and round the Hightower.
 
-The gates a road goes through: the Wall, Moat Cailin's Gatehouse Tower, both castles of the Twins and the Water Tower between them, the Bloody Gate, the Dragon Gate, the Lion Gate, the River Gate on its bridge, Storm's End's gate, and the Threefold Gate of Sunspear, which is three in a row on one straight road.
+A lane is 4 wide and a road 8, narrower than the city tiles' roads, because nothing wider than a wain uses them. The roads have no markings. Every road is packed earth where it meets another: two colours in one plane would flicker. Between their ends the goldroad is yellow stone, the roseroad rose-coloured setts and the ocean road shell sand, and the kingsroad north of the Neck is frozen mud.
 
-Each gate has its mass to the north or the west of the road and is low to the south and the east, so that a vehicle is out of sight only under the arch.
+Storm's End stands on a headland 3.2 high, so the road climbs to its gate, and the ring round its drum is the one stretch of road that is not on the ground. Its wall is low towards the sea, so that the opening view sees a traveller come round the drum.
+
+## Who travels the roads
+
+Nobody drives a plain car: the collector's choice, "sparse or no cars, maybe we can substitute with something else that feels on brand". So a hero is the only car on the tile, and round it go seven kinds of traveller, 17 in all: a rider at the gallop, a knight under a banner, two brothers of the Night's Watch with a torch, a cart, a haywain behind two oxen, a covered wain, and a wheelhouse behind four white horses. A rider's cloak and a knight's banner are in the plain colours of a house, and there are no arms on them. They are toy figures of lead and wood, and stand in one pose, as toy horses do: they do not move their legs. Torch and lanterns burn at night, and none throws a beam on the road.
+
+The engine draws each kind as one batch, and they keep their distance and their lanes as plain traffic does. The engine gained this for the tile: see "For the engine".
 
 ## Places for a hero
 
-On show, each open to the south-east:
+On show, each open to the south-east (`HERO_SPOTS` in plan.ts):
 
-- `tourney`: before the royal stand at the tourney ground, which is a meet.
+- `tourney`: on the lists before the royal stand at the tourney ground, which is a meet.
 - `inn`: the yard of the Inn at the Crossroads.
 - `castle-black`: the yard at the foot of the stair, where the cage comes down.
 - `winter-town`: the market square.
-- `quay`: the fish market on King's Landing's river quay, under the Red Keep.
+- `quay`: the fish market on the wharf under the Red Keep.
 - `highgarden`: a court of roses beside the roseroad.
 - `sunspear`: the court inside the third gate.
 
-On the roads a hero is seen best on the causeway, on the Twins' bridge, along the quays under the Red Keep, on the goldroad between the lake and the river, and on the straight road through Sunspear's gates.
+On the roads a hero is seen best on the causeway through the Neck, on the Twins' bridge, along the quays under the Red Keep, on the goldroad between the lake and the river, between the Gods Eye and the Rock, and coming round Storm's End's drum.
 
 ## What is playing
 
 Every tile has one board that shows what is playing: the cover, the title and the artist. The engine does all of it, through a sign of kind `screen`. It is the one modern thing on this tile.
 
-**The herald's board at the tourney ground.** A painted board on a timber frame at the east end of the royal stand, about 11 wide and 6 high, facing the opening view. A tourney has a herald, and the meet has its bill.
+**The herald's board at the tourney ground**: a painted board on a timber frame east of the royal stand, about 11 wide and 6 high, facing the opening view. A tourney has a herald, and the meet has its bill. It is the sign `herald` in `signs.ts`, and the riverlands' file hangs it.
 
-When nothing plays, the board shows its own picture, and that is what most people see. So it is a bill a herald would paint, bold enough to read from across the tile, in the books' own words and this tile's own drawing, and nothing like a display of what is playing. The tile gives the sign a `paint` of its own for it. Planned: **"WINTER IS COMING"**, the Starks' words, over a grey direwolf's head, with "fit your winter wheels" beneath and "the wheelwright, Winter Town" as the one who paid for it. It is an advertisement, as the boards of the built tiles are, and the wink at toy cars is the wheels. The other bill thought of: "TOURNEY TODAY: joust, melee, archery. All horsepower welcome", with crossed lances and a row of shields.
+When nothing plays, the board shows its own picture (`herald.ts`), and that is what most people see. It is a bill a herald would paint, bold enough to read from across the tile: **"WINTER is COMING"**, the Starks' words, beside a grey direwolf's head set in a cart wheel that stands in a snowdrift, with "fit your winter wheels" beneath, and "The wheelwright, Winter Town" as the one who paid for it. It is an advertisement, as the boards of the built tiles are, and the wink at toy cars is the wheels. The wolf is this tile's own drawing.
 
-A second board, a singer's board in the yard of the Inn at the Crossroads, is left out unless it earns its place.
-
-The board is hung as an ordinary `screen` sign once `main` has the engine's part. Nothing else for it is built in this folder.
+One board is enough. A second, a singer's board in the yard of the inn, was thought of and left out.
 
 ## The tile's place in the world
 
-The table stands on a desk whose top is an old map of the world, and each tile has a pin in it. Westeros is in no atlas, so it brings its own land: its coast as the books' maps describe the continent, in this tile's own drawing, about 27 degrees from north to south, in the empty South Pacific round 130 degrees west and 35 south, clear of the sea serpent drawn at 118 west and 47 south. The words lettered in the sea beside it: "Hic sunt dracones". It is written into the tile's `TileDef` as `place` once `main` has been merged.
+The table stands on a desk whose top is an old map of the world, and each tile has a pin in it. Westeros is in no atlas, so it brings its own land (`place` in `index.ts`): its coast as the books describe the continent, in this tile's own drawing, 27 degrees from north to south, in the empty South Pacific at 134 west and 32 south. The words lettered beside it: "Hic sunt dracones". The map's own sea serpent swims just off its southern tip, and the words run under both.
 
 On the map the continent is drawn long and narrow, as in the books. On the board it is squeezed: see "Liberties".
 
 ## The dragons
 
-Three, after the books' three and in the books' colours: Drogon black and scarlet, 14 long with a span of 19; Rhaegal green and bronze, 12 and 16; Viserion cream and gold, 11.5 and 15.5. Section 2 of the second research note is their design: lean and long, two legs with the wings as forelimbs, everything swept back, wings that change shape with speed, a hard bank into every turn, few strong wingbeats and long glides, fire as a narrow lance after a glow in the throat, and shadows that race over the ground. They carry no rider, unless the collector says otherwise.
+Three, after the books' three and in the books' colours: Drogon black and scarlet, 14 long with a span of 19, whose fire is black shot with red. Rhaegal green and bronze with wings of jade, 12 and 16, whose fire is orange and yellow veined with green. Viserion cream and gold, 11.5 and 15.5, whose fire is pale gold flecked with red. Section 2 of the second research note is their design: lean and long, two legs with the wings as forelimbs, everything swept back, wings that change shape with speed, a hard bank into every turn, few strong wingbeats and long glides, fire as a narrow lance after a glow in the throat, and shadows that race over the ground. They carry no rider: the collector's choice. They are this tile's own drawing, and nothing of them is taken from the television series.
 
-The view is to tilt from 14 degrees to 80, so the dragons are looked at from low across the table as well as from above. They are built to be good from the side and from below: a keel and a belly, the undersides of the wings, the legs folded flat under the root of the tail.
+**How one is made** (`dragon.ts`). A dragon is one mesh of rigid parts: a head with its horns and frill, a jaw, five joints of neck, three of body and ten of tail, and for each wing an upper arm, a forearm, a hand of three claws and four fingers, with a leg of three bones under each hip. On every frame each part is turned and moved to where the pose puts it, and the skin of the wings is drawn afresh between the shoulder, the elbow, the wrist, the finger tips and the flank. The tail follows where the body pointed a moment ago. The material is the city's cel shading with both sides of every face drawn, and light of its own in the eyes and the throat.
 
-One display circuit, as planned and checked against the plan (the leader's line; the other two fly it offset into their places):
+**How one flies** (`dragons.ts`, `flight.ts`, `show.ts`). The show is places as a function of time: the leader's line through the plan's waypoints, and a slot beside it for each of the other two that changes with the formation called. From where a dragon was and will be come its speed and how hard it turns, and from those its heading, its bank (never more than 78 degrees), how far its wings sweep back (spread below 22 units a second, a dart above 55), the turn of its head into a bend before its body follows, and the ribbon off each wing tip in a hard turn. It beats its wings once every few seconds while it cruises, and on command at the pull-up and at take-off.
 
-1. The run-in: east along the south shore at 30 to 36 high, down to 20 over the sea in the south-east corner, and a banked turn to the north.
-2. The low fast pass: north along the east edge over open water, at 45 a second and 20 high, in echelon. Each gives one short burst ahead, a third of a second apart.
+**On the ground** a dragon with two legs stands as a bat does: on its feet and on the claws at the wrists of its wings, set down ahead of its chest and wide of it, elbows out, chest held up, fingers folded back along its flanks, neck run forward and down so that its head hangs low. The collector asked for this in place of an upright sitting pose, which looked like a bird's. Feet and wing claws are set on the ground by reach: each limb bends to where it must stand and hangs towards the ground while it is still out of reach, so the same joints carry the flare, the landing and the leaving.
+
+**A display circuit**, 38 seconds:
+
+1. The run-in: east along the south shore in a vic, down to the sea in the south-east corner, and a banked turn to the north.
+2. The low fast pass: north along the east edge over open water, at 45 a second and 22 high, in echelon. Each gives one short burst ahead, a third of a second apart.
 3. The vertical: a pull-up off the end of the pass, all three beating together, straight up to 110 over the mouth of the bay, slowing until they almost hang. One long lance of flame each, straight up.
 4. Off the top to the west-north-west, down to 55 over the bay and the north end of the city, and north up the kingsroad over the Twins and the Neck.
 5. Once round Winterfell at 57 high, the other way to the clock.
-6. North-east to the Wall's east end, and west along the Wall in line astern at 37 high, below its top, with a ripple roll.
+6. North-east to the Wall's east end, and west along the Wall in line astern at 37 high, below its top, with a roll one after another.
 7. Left at the Shadow Tower and south down the west coast at 50, in echelon, past Pyke and Casterly Rock.
 8. Once and a quarter round the Hightower at 40, in trail, and east along the south shore to the run-in.
 
-By the sums in "What was checked": the circuit is about 1,180 units and takes about 38 seconds at the note's speeds (30 cruising, 45 in the pass, 38 along the Wall), with about 16 of them banked over 45 degrees.
+The research note gives one circuit as about 100 seconds. That does not agree with its own speeds: at 30 a second a dragon crosses the whole tile in under 8 seconds. The speeds are kept, since they are the feeling of a jet, and the circuit is as long as it comes out.
 
-The research note gives one circuit as about 100 seconds. That does not agree with its own speeds: at 30 a second a dragon crosses the whole tile in under 8 seconds. The speeds are kept, since they are the feeling of a jet, and the circuit is as long as it comes out. A slow high wheel between circuits would space the passes to about one a minute. It is put to the collector.
+**A split**, about one circuit in four and never two in a row, 58 seconds: at the top of the vertical they burst three ways and are apart for 22 seconds. Drogon dives to the sea in the south-east corner with one long breath over open water, comes back north past Storm's End, lands on the south-west rim of the Dragonmont and stands there braced for nine seconds, looking about, then leaves with three strong beats. Rhaegal goes west across the riverlands, south over Pyke and past the Rock, very low down the sea past the Hightower on its seaward side with one short breath, and once round Highgarden. Viserion climbs in widening circles over Winterfell, runs the Wall alone, and comes back down the east side over the Vale. They come together again over the city.
 
-About one circuit in four, at the top of the vertical, they burst three ways in place of flying on: Drogon to Dragonstone, where he lands on a ledge of the Dragonmont and sits; Rhaegal west across the riverlands and low down the Sunset Sea; Viserion north to climb in widening circles over Winterfell and run the Wall alone. They rejoin over the Dragonpit.
+Where a breath may go: straight up; over open sea; into the Dragonpit's empty sand; onto the Hightower's beacon and the beacon on the Wall at Castle Black; and into the Dragonmont's crater. Nowhere else, and never over a godswood, a sept, a town or the tourney ground. Fire harms nothing. Only the first two are used so far.
 
-Where a breath may go: straight up; over open sea, at least 15 from any ship or shore; into the Dragonpit's empty sand; onto the Hightower's beacon and the beacon on the Wall at Castle Black; and into the Dragonmont's crater. Nowhere else, and never over a godswood, a sept, a town or the tourney ground.
+**What they cost**: about 0.7 ms a frame on the build machine for all three with their fire, shadows and ribbons, and 14 draw calls. They cannot cast real shadows, because the engine draws its shadow map once: each has a flat shadow of its own, draped on the ground.
 
 ## How high things stand
 
@@ -190,7 +210,7 @@ The city's towers are roughly to one scale, about 3.2 metres to a unit. Westeros
 | The Dragonmont | 30 | a mountain: a toy |
 | Winterfell's broken tower | 27 | once its tallest |
 | Winterfell's Great Keep | 26, on a ward raised to 6 | |
-| Storm's End's drum | 24, on its cliff | one colossal tower |
+| Storm's End's drum | 25, on a headland of 3 | one colossal tower |
 | Highgarden's towers | 24, on its hill | |
 | The Dragonpit | 22, on a hill of 4 | |
 | The Twins' keeps | 20, and the Water Tower 17 | |
@@ -198,46 +218,49 @@ The city's towers are roughly to one scale, about 3.2 metres to a unit. Westeros
 | Moat Cailin | 18, 14 and 9 | |
 | Pyke | 18, on its stacks | |
 | Riverrun | 16 | |
-| The Shadow Tower | 16, on a rise of 4 | |
+| The Shadow Tower | 20 | |
 | Castle Black's towers | 10 to 15 | the tallest a third of the Wall |
 | Winterfell's walls | 11 within and 8 without | 100 ft and 80 ft |
 
+Beside a toy car 7 long, Drogon at 14 is a young dragon, as in the books when he is first ridden. How big the three are is one number each, and is the collector's to turn.
+
 ## Liberties taken with the books' map
 
-- The whole continent is squeezed onto one board. North to south is squeezed hardest, and the North most of all.
+- The whole continent is squeezed onto one board. North to south is squeezed hardest, and the North most of all: Castle Black stands at Winterfell's north wall, and Moat Cailin at its south-east corner.
 - **Harrenhal stands on the Gods Eye's east shore**, not its north. What stands north-north-west of a tall thing is hidden by it, and there it would have hidden the river road.
+- **The Gods Eye is small**, so that the road down the west side passes between its shore and the foot of Casterly Rock.
 - **The kingsroad swings east to the bay and runs along King's Landing's quays**, outside the wall, where the books take it through the city. Inside, the three hills would have hidden it.
-- **The crossroads lies north-east of King's Landing**, at the foot of the Vale, so that the road down to the Dragon Gate passes clear of the Dragonpit.
+- **The crossroads lies north-east of King's Landing**, at the foot of the Vale, and the Trident is crossed just south of it, as in the books.
 - **Dorne is the middle of the south edge, and the south-east corner is open sea.** It is the water the dragons' low pass and their fire need, at the front of the opening view.
-- **Winterfell's ward is raised to 6**, as a castle on a mound, so that the godswood, the pools and the glass gardens are seen over the walls. Its moat is seen only from the north and the west, and from above.
-- **Every junction is a left turn**, as under "Roads".
-- Bridges stand where the books have a ford or a ferry: over the Trident and over the Blackwater.
-- Storm's End's road goes in at the gate and round the drum.
-- The tourney ground is a meet, a stretch of the kingsroad is a rally stage, and the inn's yard is a place to pull in. These are the collector's own interest, put where the opening view shows it.
+- **Winterfell's ward is raised to 6**, as a castle on a mound, so that the godswood, the pools and the glass gardens are seen over the walls.
+- **Storm's End stands on a headland and its wall is low towards the sea**, where the books give it a wall higher towards the sea. A tall wall there would hide the whole bailey and the junction north-west of it.
+- **Oldtown is a harbour row, the Citadel and the Starry Sept on the south shore, and the Hightower on its isle**: the city between them is left out, because the ocean road needs the ground.
+- **Every lane turns left at every meeting of roads**, as under "Roads".
+- Bridges stand where the books have a ford or a ferry: over the Trident by the inn, and over the Blackwater.
+- Rivers are short and narrow, and only the Trident, the Green Fork, the Mander and the Blackwater's mouth are there.
+- The tourney ground is a meet, and the inn's yard a place to pull in. These are the collector's own interest, put where the opening view shows it.
 
-## What was checked before building
+## What was checked
 
-Done on the map alone, with the lots as boxes with heights, on 19 November 2026.
-
-- **What hides what, from the opening view.** 86 points were asked: the seven places for a hero, 34 places along the roads, and the foot or the middle of every landmark. 84 are seen. The two that are not: the last few units of the road before Storm's End's gate, behind its own wall, and the foot of Winterfell's glass gardens, which move a unit north.
-- **The dragons' circuit.** The leader's line was flown against every lot with Drogon's own wing, swept by its speed and banked by its turn. Nothing comes nearer than 8.0. The nearest are the Wall's top (8.0), Casterly Rock and Storm's End's curtain wall (8.3) and the Hightower (8.6).
-
-Both are done again on the plan as it is written, and then on what is built.
+- **Roads.** `checkRoads` runs on every load of the development server: no road crosses another on the level, and none runs through anything built but through its gate.
+- **Surfaces in one plane.** `wimmel.fights('westeros')` came back empty with the ground, the water and the roads laid. It is run again with every region.
+- **The dragons' circuit.** `clearance.ts` flies both kinds of circuit on every load, in tenths of a second, with each dragon's wing swept by its speed and banked by its turn, against every lot of the plan. Nothing comes nearer than 8. The nearest are Storm's End's drum (8.1), Casterly Rock and the Wall's top (8.6) and the Hightower (9.4). The landing is left out, since a dragon is meant to be near what it lands on.
+- **What hides what**, from the opening view, was worked out on the plan before building, and is done again on what is built.
 
 ## Open, for the collector
 
-- Whether the dragons carry a rider. Planned: none.
-- Which side traffic keeps to. Planned: the left.
-- The winks at toy cars: the tourney ground as a meet, the rally stage, the inn's yard, the toll at the Twins.
-- How often the pass with fire comes: every circuit, about every 40 seconds, or about once a minute with a slow high wheel between.
-- The board that shows what is playing, and its own picture when nothing plays. Planned: the herald's board at the tourney ground, painted with "WINTER IS COMING: fit your winter wheels".
+- How big and how fast the dragons are. They are small at the size the whole tile is seen at, and that is the books' size beside a car.
+- How often the pass with fire comes: every circuit, every 38 seconds, or less often with a slow high wheel between.
+- The winks at toy cars: the tourney ground as a meet, the inn's yard, the wheelwright's bill. A rally stage on the kingsroad and a toll at the Twins were planned and are not built.
 
-## Coming from the engine, to allow for
+## For the engine
 
-Not on `main` yet on 19 November 2026. The tile merges `main` when it is told to.
+Asked for and given while this tile was built:
 
-- The view tilts from 14 degrees to 80. Castles and dragons are seen from the side and from below, so nothing is left open underneath or behind.
-- `wimmel.fights('westeros')` lists surfaces that lie in one plane. The tile must pass it.
-- The engine clears road markings wherever two streets overlap, not only where they cross.
-- The `screen` sign shows what is playing, and calls the sign's own `paint(ctx, s, w, h)` whenever nothing is: into 640 by 360 pixels, the whole rectangle each time, keeping no state.
-- `place` on the `TileDef` puts the tile on the desk's map.
+- **Traffic of a tile's own shape.** A tile can hand the engine kinds of traffic beside its routes. Without it this tile would have had cars or nothing.
+
+Still wanted:
+
+- **Something that keeps a thing in the air in focus.** The soft focus blurs by depth, so a dragon high over the table is blurred when the view is close, and so are the towers under it. `?focus=off` and the B key turn it off for the whole view.
+- **Shadows for what moves.** The shadow map is drawn once, so anything a tile moves casts none. The dragons carry flat shadows of their own. A second, small shadow map for moving things would let them shade the towers they pass.
+- **Where the map's words go.** The words beside a land that a tile brings run under the map's own sea serpent here.
