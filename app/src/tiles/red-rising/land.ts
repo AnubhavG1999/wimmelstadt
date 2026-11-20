@@ -269,7 +269,8 @@ export function buildLand(k: Build): void {
     for (const tri of THREE.ShapeUtils.triangulateShape(v2, [])) {
       const [a, b, c] = tri.map((i) => shape[i]);
       const over = (b[1] - a[1]) * (c[0] - a[0]) - (b[0] - a[0]) * (c[1] - a[1]);
-      for (const p of over >= 0 ? [a, b, c] : [a, c, b]) pos.push(p[0], level, p[1]);
+      // the river runs into the lake a hair under it, so that where the two overlap one water is drawn and not two at once
+      for (const p of over >= 0 ? [a, b, c] : [a, c, b]) pos.push(p[0], shape === LAKE ? level : level - 0.04, p[1]);
     }
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));

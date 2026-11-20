@@ -17,11 +17,11 @@ const d2 = (px: number, pz: number, ax: number, az: number, bx: number, bz: numb
 
 const ROADS3 = [LOOP_MIDDLE, AVENUE, SOUTH];
 
-/** How far a place is from the middle of the nearest road, counting a ring to turn in as a road round its circle. */
+/** How far a place is from the middle of the nearest road. A ring to turn in counts as road right across, its island too: what stands on an island is its builder's own. */
 export function toRoad(x: number, z: number): number {
   let d = Infinity;
   for (const line of ROADS3) for (let i = 0; i + 1 < line.length; i++) d = Math.min(d, d2(x, z, line[i][0], line[i][2], line[i + 1][0], line[i + 1][2]));
-  for (const t of Object.values(TURNS)) d = Math.min(d, Math.abs(Math.hypot(x - t.c[0], z - t.c[1]) - t.r) - 0.6);
+  for (const t of Object.values(TURNS)) d = Math.min(d, Math.max(0, Math.hypot(x - t.c[0], z - t.c[1]) - t.r) - 0.6);
   return d;
 }
 

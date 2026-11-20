@@ -90,7 +90,7 @@ const HIVE_SPLIT = 1.0, HIVE_OUT = 1.4;
 /** How far a husk's halves fall open at once, and once they have settled, in radians. */
 const OPEN_A = 0.72, OPEN_B = 0.9;
 /** When a husk fades, and when its scorch has faded, in seconds from touchdown. */
-const HUSK_FADE = 11, HUSK_GONE = 12.6, SCORCH_FADE = 8, SCORCH_GONE = 22;
+const HUSK_FADE = 7.5, HUSK_GONE = 9, SCORCH_FADE = 7, SCORCH_GONE = 15;
 /** How long the smoke of a trail hangs: from the streak, and from the boots. */
 const SMOKE_HOT = 6.5, SMOKE_BOOTS = 3;
 /** How many seconds of a shell's way its trail of fire reaches back along, and the most units it may be. */

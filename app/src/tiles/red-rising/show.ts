@@ -695,7 +695,10 @@ function stories(Wd: World): StoryDef[] {
       play(tb, P) {
         // she sets a charge on each pylon in turn, kneeling at its foot, while her Obsidians keep watch
         const m = P.from('mustang');
-        const stops = pylons.map((p, i): Spot => at(p[0] + (p[0] < 70 ? 2.6 : -2.6), F, p[2] + (p[2] < -20 ? 2.6 : -2.6), toward(p[0] + (p[0] < 70 ? 2.6 : -2.6), p[2] + (p[2] < -20 ? 2.6 : -2.6), p[0], p[2]) + 0 * i));
+        const stops = pylons.map((p, i): Spot => {
+          const sx = i === 3 ? p[0] - 3.3 : p[0] + (p[0] < 70 ? 2.6 : -2.6), sz = i === 3 ? p[2] + 0.5 : p[2] + (p[2] < -20 ? 2.6 : -2.6);
+          return at(sx, F, sz, toward(sx, sz, p[0], p[2]));
+        });
         let here = m;
         let pose: Partial<Pose> = {};
         for (let i = 0; i < 4; i++) {
@@ -712,16 +715,16 @@ function stories(Wd: World): StoryDef[] {
         if (tb >= 18 && tb < 21) {
           // and runs clear
           const s = span(tb, 18, 21);
-          here = at(lerp(stops[3].x, 71, ease(s)), F, lerp(stops[3].z, -26, ease(s)), toward(stops[3].x, stops[3].z, 71, -26));
+          here = at(lerp(stops[3].x, 68, ease(s)), F, lerp(stops[3].z, -26, ease(s)), toward(stops[3].x, stops[3].z, 68, -26));
           pose = run((tb * 1.5) % 1);
         } else if (tb >= 21) {
-          here = at(71, F, -26, W);
+          here = at(68, F, -26, W);
           pose = tb > 32 ? draw(span(tb, 32, 36)) : guard(0);
         }
         P.put('mustang', still(here, pose, { cloak: 0.3 }));
         ['obsidian-0', 'obsidian-1'].forEach((id, i) => {
           const a = P.from(id);
-          const b = i === 0 ? at(68.8, F, -27.6, E) : at(69.6, F, -24.2, E);
+          const b = i === 0 ? at(65.6, F, -28, E) : at(66.4, F, -23.6, E);
           const s = span(tb, 18, 21.5);
           P.put(id, still(at(lerp(a.x, b.x, s), F, lerp(a.z, b.z, s), s > 0 ? W : a.h), s > 0 && s < 1 ? run((tb * 1.2) % 1) : guard(0)));
         });
@@ -754,11 +757,12 @@ function stories(Wd: World): StoryDef[] {
         if (tb >= 26.5) {
           once('wave', () => {
             const tubes = () => Wd.fleet?.tubes('morningStar') ?? [[80, 120, 60]];
-            Wd.rain?.wave(tubes, [LANDINGS.city, LANDINGS.flank], 18);
             field.forEach((spot, i) => {
               const from = tubes()[i * 4] ?? [80, 120, 60];
               opens[i] = 26.5 + (Wd.rain?.drop(from, [spot.x, spot.y, spot.z], i === 0 ? 0x5e6670 : 0xc9a23a) ?? 12.5);
             });
+            Wd.rain?.wave(tubes, [LANDINGS.city], 3);
+            Wd.rain?.wave(tubes, [LANDINGS.flank, LANDINGS.east], 14);
           });
         }
       },
@@ -1332,6 +1336,8 @@ export function buildShow(k: Build): Sky {
   };
 
   const finish = (r: Running): void => {
+    // its props are left as its body ends, however it was ended: the shuttles on their pads, the doors as the story leaves them
+    r.def.props?.(r.def.body, X, false, () => {});
     for (const id of r.def.cast) {
       const a = actors.get(id);
       if (!a) continue;
@@ -1373,7 +1379,12 @@ export function buildShow(k: Build): Sky {
   const outside: Zone[] = [LANDINGS.west, LANDINGS.east, LANDINGS.flank, LANDINGS.peaks];
   const WAVE = 40, WAVE_EVERY = 17;
   /** Where the Rain may fall now: not on the ground a story has taken for its own marked shells. */
-  const zonesNow = (): Zone[] => [...outside.filter((z) => z !== LANDINGS.flank || !holding.has('outside')), ...(holding.has('cityLz') ? [] : [LANDINGS.city])];
+  const outsideNow = (): Zone[] => outside.filter((z) => z !== LANDINGS.flank || !holding.has('outside'));
+  const zonesNow = (): Zone[] => (rain?.shield.isUp() ? [...outsideNow(), LANDINGS.city] : outsideNow());
+  /** Once the shield is down, a few shells of a wave come down on the Field of Mars, unless a story has it. */
+  const intoCity = (ship: 'pax' | 'morningStar', n: number): void => {
+    if (rain && fleet && !rain.shield.isUp() && !holding.has('cityLz')) rain.wave(() => fleet.tubes(ship), [LANDINGS.city], n);
+  };
 
   let frame = 0;
   k.each((dt) => {
@@ -1389,6 +1400,7 @@ export function buildShow(k: Build): Sky {
         const ship = fromPax ? 'pax' : 'morningStar';
         fromPax = !fromPax;
         rain.wave(() => fleet.tubes(ship), zonesNow(), WAVE);
+        intoCity(ship, 4);
         nextWave = WAVE_EVERY;
         nextFew = 6 + rnd() * 2;
       } else if (nextFew <= 0) {

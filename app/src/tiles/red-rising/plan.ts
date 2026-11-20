@@ -320,7 +320,7 @@ export const LOTS: Lot[] = [
 
   // ============================ the lowColor quarter ============================
   // Low and dense, south of Quarter Street and on either side of the road to the South Gate.
-  onFloor('low-1', '', 50, 6, 62, 20, 8),
+  onFloor('low-1', '', 50, 6.65, 62, 20, 8),
   onFloor('low-2', '', 78, 6, 86, 20, 8),
   onFloor('low-3', '', 50, 26, 62, 44, 12),
   onFloor('low-4', '', 78, 26, 86, 42, 9),
@@ -361,7 +361,7 @@ export const HERO_SPOTS: { id: string; x: number; z: number; y: number; heading:
   // the square as built stands at 35.13: the rim road's bench has raised the ground beside the road above the natural ground
   { id: 'institute', x: -46, z: -91.2, y: 35.17, heading: 0, where: "the marble square before the Institute's gates, on the plateau, looking out over Agea" },
   // at the deck's south-east corner, at the head of the ramp up from the avenue: the deck before the shuttles' ramps is the stories'
-  { id: 'pad', x: -16.4, z: 23.6, y: F + 6.04, heading: 0, where: "the landing pads' deck, at the head of its ramp, beside the Sovereign's shuttles" },
+  { id: 'pad', x: -17.4, z: 23.1, y: F + 6.04, heading: 0, where: "the landing pads' deck, at the head of its ramp, beside the Sovereign's shuttles" },
   { id: 'field', x: -18, z: 51, y: F + 0.44, heading: 0, where: 'the Field of Mars, on its white stone' },
   { id: 'tryst', x: -27, z: -34, y: F + 28.04, heading: 0, where: "the deck of Tryst, the club on a tower's roof" },
   // level with the ground under the bay's highest corner, the north-east, so that no corner of a car sinks into the slope
@@ -432,7 +432,8 @@ export const LANDINGS = {
   plateau: { x0: -4, x1: 16, z0: -100, z1: -90 },
   flank: { x0: -10, x1: 40, z0: 68, z1: 80 },
   peaks: { x0: 72, x1: 98, z0: 76, z1: 104 },
-  city: { x0: -24, x1: 2, z0: 30, z1: 54 },
+  // the Field of Mars west of its ring: the one stretch of open floor inside the walls with room for a few husks to fall open
+  city: { x0: -25, x1: -16.5, z0: 29, z1: 55 },
 };
 
 // ---------------------------------------------------------------------------
