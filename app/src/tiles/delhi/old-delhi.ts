@@ -21,7 +21,7 @@ import { DEVANAGARI, type SignDef } from '../../engine/signs';
 import type { Build } from '../../engine/tile';
 import {
   BUFF, BUFF_SHADE, CREAM, GOLD, MARBLE, MARBLE_SHADE, RECESS, RED, RED_DARK, RED_LIGHT, RUBBLE_LIGHT,
-  arcade, archThrough, dome, drum, merlons, minaret, niche, tiranga, type Facing,
+  arcade, archThrough, dome, drum, merlons, minaret, niche, slot, tiranga, type Facing,
 } from './mughal';
 import { CHANDNI, GROUNDS, KASHMERE_TURN, STOREY, TURN_R, type Thing } from './plan';
 import { STREETS } from './roads';
@@ -296,15 +296,32 @@ function redFort(k: Build, t: Thing): void {
   b.box(x0, walk - 0.55, z1, dx - GATE_HALF, walk - 0.3, z1 + 0.12, RED_DARK, { faces: 'STB' });
   b.box(dx + GATE_HALF, walk - 0.55, z1, x1, walk - 0.3, z1 + 0.12, RED_DARK, { faces: 'STB' });
   b.box(x0, walk - 0.55, z0 - 0.12, x1, walk - 0.3, z0, RED_DARK, { faces: 'NTB' });
-  const teeth = { step: 2.6, h: 0.9 };
+  // (kanguras: teeth that come to a point, with an arrow slit in the wall under every other one)
+  const teeth = { step: 1.7, h: 0.7, point: 0.45 };
   merlons(b, x0 + 1.6, z0, x1 - 2.2, z0 + 0.4, walk, RED, teeth);
   merlons(b, x0, lz + GATE_HALF + 1.5, x0 + 0.4, z1 - 2.3, walk, RED, teeth);
   merlons(b, x0 + 2.3, z1 - 0.4, dx - GATE_HALF - 1.5, z1, walk, RED, teeth);
   merlons(b, dx + GATE_HALF + 1.5, z1 - 0.4, x1 - 2.3, z1, walk, RED, teeth);
+  // What breaks the long faces of the walls: a row of tall blind arches, arrow slits under the battlements, and a
+  // plinth of darker stone at their foot. The west wall begins south of the Lahori Gate's barbican.
+  {
+    const wz0 = lz + 5.2, wz1 = z1 - 2.2, nx0 = x0 + 2.2, nx1 = x1 - 2.6, ARCH = 4.3, FOOT = 1.2;
+    openings(b, 'W', x0, wz0, wz1, FOOT, Math.round((wz1 - wz0) / 2.6), ARCH, RED_DARK, 0, true);
+    openings(b, 'N', z0, nx0, nx1, FOOT, Math.round((nx1 - nx0) / 2.6), ARCH, RED_DARK, 0, true);
+    b.box(x0 - 0.16, 0, wz0, x0, 0.75, z1 - 1.4, RED_DARK, { faces: 'NSWT' });
+    b.box(x0 + 1.4, 0, z0 - 0.16, x1 - 2.0, 0.75, z0, RED_DARK, { faces: 'NEWT' });
+    for (let z = wz0 + 0.5; z < wz1; z += 3.4) slot(b, 'W', x0, z, walk - 1.75, 0.16, 0.8);
+    for (let x = nx0 + 0.3; x < nx1; x += 3.4) slot(b, 'N', z0, x, walk - 1.75, 0.16, 0.8);
+    // the south wall shows over its barbican: slits only, either side of the Delhi Gate
+    for (let x = x0 + 2.6; x < x1 - 2.4; x += 1.7) if (Math.abs(x - dx) > GATE_HALF + 1.2) slot(b, 'S', z1, x, walk - 1.75, 0.16, 0.8);
+  }
 
   // --- bastions: eight-sided, with a white-domed chhatri on each of the three corners that have room for one ---
   const bastion = (cx: number, cz: number, r: number, top: number, crowned: boolean): void => {
     b.cyl(cx, cz, 0, top - 0.45, r * 1.05, r, 8, RED, { cap: crowned ? false : RED_DARK });
+    // two courses of darker stone round it, and a plinth
+    for (const f of [0.42, 0.74]) b.cyl(cx, cz, top * f, top * f + 0.2, r * (1.05 - 0.05 * f) + 0.07, r * (1.05 - 0.05 * f) + 0.07, 8, RED_DARK, { cap: false });
+    b.cyl(cx, cz, 0, 0.75, r * 1.05 + 0.14, r * 1.05 + 0.1, 8, RED_DARK, { cap: false });
     if (crowned) {
       b.cyl(cx, cz, top - 0.45, top, r, r + 0.25, 8, RED_DARK, { cap: RED_DARK });
       kiosk(b, cx, top, cz, r * 0.56, 1.2, RED, MARBLE, 6, true);
@@ -331,7 +348,7 @@ function redFort(k: Build, t: Thing): void {
   }
 
   // --- their barbicans: a low walled court before each gate, entered from the side ---
-  const BH = 3.4, BT = 0.7, low = { step: 2.5, h: 0.65 };
+  const BH = 3.4, BT = 0.7, low = { step: 1.6, h: 0.5, point: 0.32 };
   const court = (xa: number, za: number, xb: number, zb: number, faces: string): void => b.box(xa, 0, za, xb, BH, zb, RED, { top: RED_DARK, faces });
   {
     // the Lahori Gate's, entered from the north
@@ -371,6 +388,14 @@ function redFort(k: Build, t: Thing): void {
   openings(b, 'W', XT, iz0 + 0.6, lz - 0.4, 0.3, 2, 3.4, RED_DARK, 0, true);
   openings(b, 'W', XT, lz + 7.8, iz1 - 0.6, 0.3, 9, 3.4, RED_DARK, 0, true);
   for (const f of [0.22, 0.64, 0.82]) opening(b, 'E', x1, v(f), 0.7, 0.8, 1.5, RECESS);
+  {
+    // a row of tall blind arches along the river face, which leaves out the tower, the water gate and the three small doors
+    const taken = [v(0.22), v(0.64), v(0.82), v(0.458), v(0.458) + 2.3], za = iz0 + 1, zb = iz1 - 1, n = Math.round((zb - za) / 2.5), bay = (zb - za) / n;
+    for (let i = 0; i < n; i++) {
+      const z = za + (i + 0.5) * bay;
+      if (taken.every((q, j) => Math.abs(z - q) > (j === 3 ? 2.1 : 1.25))) opening(b, 'E', x1, z, 1.1, bay * 0.62, T - 2.4, RED_DARK, 0, true);
+    }
+  }
   // the Stream of Paradise, which ran through every hall
   b.box(x1 - 2.5, T, v(0.92), x1 - 2.0, T + 0.012, v(0.06), STREAM, { faces: 'T' });
   const xe = x1 - 0.5;

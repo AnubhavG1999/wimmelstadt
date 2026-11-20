@@ -216,14 +216,29 @@ export function minaret(b: GeoBuilder, x: number, z: number, y0: number, y1: num
 
 /**
  * Battlements along the top of a wall: a row of teeth over the rectangle
- * (x0, z0) to (x1, z1), which is the wall's own top, at height `y`.
+ * (x0, z0) to (x1, z1), which is the wall's own top, at height `y`. With
+ * `point`, each tooth comes to a point that much higher, as the kanguras of a
+ * Mughal fort do.
  */
-export function merlons(b: GeoBuilder, x0: number, z0: number, x1: number, z1: number, y: number, color: number, o: { step?: number; h?: number } = {}): void {
+export function merlons(b: GeoBuilder, x0: number, z0: number, x1: number, z1: number, y: number, color: number, o: { step?: number; h?: number; point?: number } = {}): void {
   const step = o.step ?? 1.5, h = o.h ?? 0.9, long = x1 - x0 >= z1 - z0, len = long ? x1 - x0 : z1 - z0, n = Math.max(1, Math.round(len / step)), w = (len / n) * 0.62;
+  const p = o.point ?? 0, faces = p ? 'NESW' : 'NESWT', top = y + h, tip = top + p, nl = Math.hypot(p, w / 2) || 1, sx = p / nl, sy = w / 2 / nl;
   for (let i = 0; i < n; i++) {
-    const c = (long ? x0 : z0) + ((i + 0.5) / n) * len;
-    if (long) b.box(c - w / 2, y, z0, c + w / 2, y + h, z1, color);
-    else b.box(x0, y, c - w / 2, x1, y + h, c + w / 2, color);
+    const c = (long ? x0 : z0) + ((i + 0.5) / n) * len, a = c - w / 2, e = c + w / 2;
+    if (long) b.box(a, y, z0, e, top, z1, color, { faces });
+    else b.box(x0, y, a, x1, top, e, color, { faces });
+    if (!p) continue;
+    if (long) {
+      b.quad([a, top, z1], [a, top, z0], [c, tip, z0], [c, tip, z1], [-sx, sy, 0], color);
+      b.quad([e, top, z0], [e, top, z1], [c, tip, z1], [c, tip, z0], [sx, sy, 0], color);
+      tri(b, [a, top, z1], [e, top, z1], [c, tip, z1], [0, 0, 1], color);
+      tri(b, [e, top, z0], [a, top, z0], [c, tip, z0], [0, 0, -1], color);
+    } else {
+      b.quad([x0, top, a], [x1, top, a], [x1, tip, c], [x0, tip, c], [0, sy, -sx], color);
+      b.quad([x1, top, e], [x0, top, e], [x0, tip, c], [x1, tip, c], [0, sy, sx], color);
+      tri(b, [x1, top, a], [x1, top, e], [x1, tip, c], [1, 0, 0], color);
+      tri(b, [x0, top, e], [x0, top, a], [x0, tip, c], [-1, 0, 0], color);
+    }
   }
 }
 
