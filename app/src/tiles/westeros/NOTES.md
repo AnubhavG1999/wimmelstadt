@@ -293,24 +293,31 @@ The boards stand where the opening view reads them, and the open country plants 
 
 - **Roads.** `checkRoads` runs on every load of the development server: no road crosses another on the level, and none runs through anything built but through its gate. It goes by the plan's boxes.
 - **Lanes against what is really built.** Rays along every lane, at three places across it: upwards for anything lower than 5.8 over the road, and ahead at two heights for anything standing in it. This found what the boxes could not: a traveller coming down from Storm's End clipped the ramp's low wall as it turned for Sunspear, and rode a hand above the ground there. The fork was moved for it. What is left is the sides of Sunspear's three arches, which are 5.2 over the road at a lane's outer edge and 6.4 at the crown: no traveller is that tall.
-- **Traffic.** Twenty minutes in steps of a twentieth of a second: the nearest any two travellers come is 3.8, where the two lanes of one loop run together at the crossroads; nothing stands still; none follows another closer than 10; and no lane is shared.
+- **Traffic.** Twenty minutes in steps of a twentieth of a second, run again after `main` was merged: the nearest any two travellers come is 3.8, where the two lanes of one loop run together at the crossroads; none follows another closer than 9.6; and no lane is shared. Nothing stands still but a hero on the reach route, which stops for about 3.7 seconds every half minute to do its party trick, as the engine now has heroes do, while the traveller behind it waits up to 1.8. The dragons are taken away for the run: they have nothing to do with the traffic, and they cost each step of it 0.45 ms.
 - **Surfaces in one plane.** `wimmel.fights('westeros')` comes back empty, and stays empty over 160 seconds of the show with the dragons, the ships and the kraken moving.
 - **The dragons' circuit.** `clearance.ts` flies both kinds of circuit on every load, in tenths of a second, with each dragon's wing swept by its speed and banked by its turn, against every lot of the plan. Nothing comes nearer than 8. The nearest are Casterly Rock and the Wall's top (8.6), Storm's End's drum (8.7) and the Dragonmont (9.2). The landing is left out, since a dragon is meant to be near what it lands on.
 - **Places for a hero.** Each of the seven is clear of anything built, by rays through a box the size of a car, and seen from the opening view at its middle and its four corners. One low corner of a car at the tourney ground is behind the Lion Gate's tower.
 - **What the opening view sees of the roads**, by the plan's boxes, on every load: about a quarter of the long route is behind something, most of it north of King's Landing behind the city, beyond the Wall, and behind gates. The count takes the Dragonmont as a box 30 high, which it is not.
 - **Sides and weather.** From 42, 132, 222 and 312, by day and by night; rain at dusk and by night; snow by day.
-- **`npm run typecheck` and `npm run build`** pass. `main` had not moved since it was last merged, at 15d4458.
+- **`npm run typecheck` and `npm run build`** pass, after `main` was merged at bd36a6f.
 
 ## What it costs
 
-On the build machine, each tile alone on the board in a window 866 by 526, the pane not in front, so the numbers are rough: Westeros takes about 5 ms a frame and North America about 3. A little under 1 ms of that is the dragons.
+On the build machine, after `main` was merged at bd36a6f, each tile alone on the board in a window 866 by 526, one straight after the other, the pane not in front, so the numbers are rough. A frame takes:
+
+| | By day (14) | By night (21) |
+| --- | --- | --- |
+| Westeros | 4.4 ms | 5.0 ms |
+| North America | 4.3 ms | 4.1 ms |
+
+About 0.9 ms of Westeros's is the dragons. Before the merge the two were 5 and 3: the engine's new work costs North America more than it costs this tile.
 
 | | Triangles that stand still | People | Trees | Moving |
 | --- | --- | --- | --- | --- |
 | Westeros | 102,500 | 474 | 759 | 17 travellers, 3 dragons, 3 ships, a kraken, a cage |
-| North America | 42,400 | 259 | 57 | 99 vehicles |
+| North America | 42,400 | 259 | 57 | 100 vehicles |
 
-That is more than twice a built tile's triangles, where the page that says how to build a tile asks for about twice. They are spread thinly: King's Landing 11,400, the riverlands 11,300, the Reach 11,000, Winterfell 9,400, the Wall 8,500, the west 7,900, the open country 7,900, the stormlands 7,200, the holds 6,800, the Neck 6,750, the Vale 6,200, Dragonstone 5,300, the roads 1,600 and the land 1,100. No one lot is dear, so a trim would be a tenth off every part. It was not done: a frame is mostly the heroes' own triangles, and the saving could not be measured. It is the first thing to do if the whole board runs slowly.
+So a frame costs about what a built tile's does, but the triangles that stand still are 2.4 times North America's, where the page that says how to build a tile asks for about twice. They are spread thinly: King's Landing 11,400, the riverlands 11,300, the Reach 11,000, Winterfell 9,400, the Wall 8,500, the west 7,900, the open country 7,900, the stormlands 7,200, the holds 6,800, the Neck 6,750, the Vale 6,200, Dragonstone 5,300, the roads 1,600 and the land 1,100. No one lot is dear, so a trim would be a tenth off every part. It was not done: a frame is mostly the heroes' own triangles, and the saving could not be measured. It is the first thing to do if the whole board runs slowly.
 
 ## Open, for the collector
 
