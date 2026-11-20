@@ -312,7 +312,7 @@ export const LOTS: Lot[] = [
   // ======================= The south shore =======================
   lot('ferry-landing', 'Ferry', -79, 86.5, -69, 91, 3),
   lot('sheepfold', 'Sheepfold', -40, 89, -30, 96, 2.5),
-  lot('stonedance', 'Stonedance', 22, 95.5, 34, 100, 10),
+  lot('stonedance', 'Stonedance', 14, 95.5, 26, 100, 10),
   lot('sharp-point', 'Sharp Point', 91, 94.5, 101, 101, 8),
 ];
 
