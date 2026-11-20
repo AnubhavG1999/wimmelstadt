@@ -1,8 +1,10 @@
-// One dragon: its shape, its joints, and how a pose becomes a mesh.
+// One winged dragon of the books: its shape, its joints, and how a pose
+// becomes a mesh. Westeros's three were the first built from it, and any tile
+// can have its own: a `DragonKind` (see `kinds.ts`) gives its colours, its
+// size, its fire and its manner of flight, and a `Pilot` (`pilot.ts`) flies it.
 //
-// The three are built after the books' three and in the books' colours: two
-// legs, with the wings as the forelimbs, lean and long, most of each a neck, a
-// tail and wings. They are meant to read as fast jets that are dragons: head,
+// They are built after the books: two legs, with the wings as the forelimbs,
+// lean and long, most of each a neck, a tail and wings. They are meant to read as fast jets that are dragons: head,
 // neck and body in one line, everything swept back along that line, a tail fin
 // that works as a rudder, and wings that change shape with speed.
 //
@@ -15,7 +17,8 @@
 // tip, so that the three differ only in size and colour.
 
 import * as THREE from 'three';
-import { patch, toon, type TileLook } from '../../engine/look/materials';
+import { patch, toon, type TileLook } from '../look/materials';
+import type { Flame } from './fire';
 
 type V3 = [number, number, number];
 
@@ -38,23 +41,34 @@ export interface DragonKind {
   mouth: number;
   /** What its throat glows before it breathes fire, and what its own fire lights it with. */
   glow: number;
+  /** Its fire. */
+  flame: Flame;
+  /** How it flies. */
+  flight: DragonFlight;
 }
 
-/** Black, streaked with scarlet. The largest of the three. */
-export const DROGON: DragonKind = {
-  name: 'Drogon', length: 14, body: 0x1b181e, belly: 0x29232b, streak: 0x9e1018, horn: 0xb3141c, bone: 0x141216,
-  skin: [0x4a080c, 0x3a0609], claw: 0x0b0a0c, eye: 0xff2a1a, mouth: 0x6a0c0c, glow: 0xff3018,
-};
-/** Green and bronze, with wings of jade. */
-export const RHAEGAL: DragonKind = {
-  name: 'Rhaegal', length: 12, body: 0x1f4a2a, belly: 0x2c5e36, streak: 0x8c5a26, horn: 0x8c5a26, bone: 0x7a4e22,
-  skin: [0x216349, 0x1b533d], claw: 0x0b0a0c, eye: 0xd98a2a, mouth: 0x4a2a10, glow: 0xffa020,
-};
-/** Cream and gold. The pale one. */
-export const VISERION: DragonKind = {
-  name: 'Viserion', length: 11.5, body: 0xd8c79a, belly: 0xe2d4ae, streak: 0xb8861f, horn: 0xb8861f, bone: 0xa87a1c,
-  skin: [0xc2a878, 0xb09462], claw: 0x0b0a0c, eye: 0xffc83a, mouth: 0x7a4a18, glow: 0xffd870,
-};
+/**
+ * A dragon's manner of flight, which a `Pilot` flies it by. Only `beat` and
+ * `answer` must be given: what is left out is as Westeros's three fly.
+ */
+export interface DragonFlight {
+  /** How long one beat of its wings takes, in seconds: the larger the dragon, the slower. */
+  beat: number;
+  /** How quickly it answers a turn with its bank: 6 is Drogon's. */
+  answer: number;
+  /** The most it banks, in degrees: 78 unless this says otherwise. */
+  bank?: number;
+  /** How long it glides between bursts of beats, against the three: 2 is twice as long. */
+  glide?: number;
+  /** How deep its beats are, against the three. */
+  stroke?: number;
+  /** How far its body rides up and down on its wings through a beat, against the three. */
+  heave?: number;
+  /** How much it rocks on the air where it flies straight, against the three. */
+  rock?: number;
+  /** How much it looks about as it flies, against the three. */
+  look?: number;
+}
 
 // ---------------------------------------------------------------------------
 // Measures, as shares of the length
@@ -385,7 +399,7 @@ const SKIN_TRIS = 10;
 export function dragonMaterial(look: TileLook): { mat: THREE.MeshToonMaterial; eye: THREE.Color; throat: THREE.Color; lit: THREE.Color } {
   const eye = new THREE.Color(0, 0, 0), throat = new THREE.Color(0, 0, 0), lit = new THREE.Color(0, 0, 0);
   const mat = toon({ side: THREE.DoubleSide });
-  patch(mat, 'westeros-dragon', look, {
+  patch(mat, 'winged-dragon', look, {
     uniforms: { uEye: { value: eye }, uThroat: { value: throat }, uLit: { value: lit } },
     vertPars: /* glsl */ `
       attribute vec2 aGlow;

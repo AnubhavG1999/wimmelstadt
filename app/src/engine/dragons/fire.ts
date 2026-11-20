@@ -3,7 +3,8 @@
 // smoke and flame it is made of small solid shapes, so that it sits in the
 // city's look.
 //
-// Fire harms nothing. Where it may go is decided in the show, not here.
+// Fire harms nothing. Where it may go is the tile's to decide, not this file's.
+// Each dragon's own flame is in its kind (`kinds.ts`).
 
 import * as THREE from 'three';
 
@@ -24,13 +25,6 @@ export interface Flame {
   /** The light it throws on the ground at night. */
   light: number;
 }
-
-/** Black, shot through with red. */
-export const DROGON_FLAME: Flame = { core: [0.02, 0.015, 0.02], edge: [1.0, 0.08, 0.04], fleck: [1.0, 0.3, 0.05], flecks: 0.08, cores: 0.62, dark: true, reach: 13, light: 0xff3a1a };
-/** Orange and yellow, with veins of green. */
-export const RHAEGAL_FLAME: Flame = { core: [1.0, 0.86, 0.3], edge: [1.0, 0.5, 0.1], fleck: [0.2, 0.92, 0.3], flecks: 0.2, cores: 0.4, reach: 11, light: 0xffa030 };
-/** Pale gold, flecked with red and orange. */
-export const VISERION_FLAME: Flame = { core: [1.0, 0.93, 0.66], edge: [1.0, 0.8, 0.36], fleck: [1.0, 0.26, 0.08], flecks: 0.2, cores: 0.45, reach: 11, light: 0xffd880 };
 
 interface Flake { p: THREE.Vector3; v: THREE.Vector3; carry: THREE.Vector3; age: number; life: number; size: number; color: RGB; dark: boolean }
 
