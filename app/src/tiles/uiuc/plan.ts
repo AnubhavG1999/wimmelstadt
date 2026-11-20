@@ -186,7 +186,8 @@ L('flats-3', 'flats', -47, -26, -40, -6, 9, 'flats');
 L('brothers', 'Brothers', -26, -75, -16, -68, 6.5, 'bar');
 L('shops-s2', 'shops', -14, -75, -5, -68, 6.5, 'shop');
 L('joes', "Joe's Brewery", -26, -66, -17, -58, 7);
-L('illini-hall-site', 'The Illini Hall site', -14, -66, -5, -57, 2);
+// (two floors of steel are up: the crane over them is too slender to hide anything)
+L('illini-hall-site', 'The Illini Hall site', -14, -66, -5, -57, 5.5);
 L('deck-c7', 'The deck at Sixth and John', -26, -52, -16, -42, 11, 'deck');
 L('bookstore', 'Illini Union Bookstore', -14, -52, -5, -42, 12.5);
 L('illini-tower', 'Illini Tower', -26, -40, -17, -31, 20.5, 'tower');

@@ -2,7 +2,7 @@
 
 What a later reader cannot see in the code.
 
-**Where it stands.** The plan was put to the collector on 19 November 2026. He answered the same day, and this is the plan with what he asked for worked in. The tile is blocked out: its ground, its streets, the railway's embankment with its two viaducts, its routes and its places for heroes are built, and every lot is a plain box with its name on a board until its model is built. Built so far: the Illini Union, Gregory Place with Basil Thai and Manolo's, and the Six Pack. The rest of the lots are being built a file at a time (see "The models"). The research is in [docs/districts/research/uiuc.md](../../../../docs/districts/research/uiuc.md). Where this file and that note disagree, this file is the later: see "What the research note has wrong".
+**Where it stands.** The plan was put to the collector on 19 November 2026. He answered the same day, and this is the plan with what he asked for worked in. The tile is blocked out: its ground, its streets, the railway's embankment with its two viaducts, its routes and its places for heroes are built, and every lot is a plain box with its name on a board until its model is built. Built so far: the Illini Union, Gregory Place with Basil Thai and Manolo's, the Six Pack, and the blocks between Fourth Street and Wright Street. The rest of the lots are being built a file at a time (see "The models"). The research is in [docs/districts/research/uiuc.md](../../../../docs/districts/research/uiuc.md). Where this file and that note disagree, this file is the later: see "What the research note has wrong".
 
 ## Where things are
 
@@ -34,6 +34,17 @@ Not checked against a picture: whether the Green Street porch has columns, and h
 It is move-in day. The hero's place is the car's, on the lawn before the door. What came out of the car stands on the walk east of the door: boxes, a small fridge, a rug, two of the blue carts the halls lend out, a board that says MOVE-IN DAY, with balloons. Nothing stands on the car's place, south or east of it, or before the baskets.
 
 Not checked against a picture: what Wassaja Hall looks like (its brick, its storeys, where its door and its baskets are), and the colour of the old halls' brick. The collector is asked.
+
+**Between Fourth Street and Wright Street** (`sixth.ts`, built by an Opus builder and looked at from both sides by day and by night).
+
+- *The Armory.* The drill hall's vault is half an ellipse in sixteen strips of aluminium grey with five raised ribs, its crown at the lot's height. It runs east and west, and each end is a half-round of glass in a grid of steel bars, lit at night. Round it stand two-storey ranges of red brick with a stone base and a white cornice, a pavilion one storey higher at each corner, and an arched doorway of rusticated limestone on each side. On the paving south of it the marching band is forming up: four rows of five in navy coats with orange and white, tubas and bass drums at the back, a drum major in white in front, and four people watching.
+- *The Ice Arena.* Red brick with two rows of tall windows for the rink, a slate gable roof with a glazed lantern along its ridge and a white cupola, and a front with a white pediment, four pilasters and three arched doors on its south side.
+- *The Illini Union Bookstore.* A stone ground floor of shop windows under navy awnings, four storeys of red brick with stone bands, a corner bay of glass on Wright Street that rises above the parapet, and a penthouse set back on the roof.
+- *Illini Tower* and *Sherman Hall.* Two slabs, with rows of windows lower than the campus's storey so that they read as sixteen storeys and thirteen: the tower pale with precast fins, the hall in brown brick with blank ends.
+- *The deck at Sixth and John.* Four open levels of concrete with dark shapes of cars inside and a glazed stair tower. Its roof is flat at the lot's height, with bays painted for the two parked cars that stand on it.
+- *The Illini Hall site.* A hoarding of plywood, a foundation slab, a frame of primed steel up two floors, a site cabin, a heap of sand, a small yellow digger, four workers in orange vests, and a tower crane 24 high with a load on its hook and red lamps on its peak and jib.
+
+Not confirmed by any source found: that the Armory has towers at its corners (modest pavilions stand there), which way its vault runs, what Sherman Hall and Illini Tower look like, and that the Ice Arena's front is Georgian.
 
 ## How the tile lies
 
@@ -309,7 +320,8 @@ The near lane is the one on the camera's side of the buildings that hide it: the
 - **Manolo's is open.** It closed on 20 October 2026. It stands as it stood, and carries its name on a board above its roof, where the opening view can read it.
 - **Gregory Place has three storeys.** In life the block Basil Thai is in has four. A fourth would hide Manolo's board behind it.
 - **Bays at the kerb before Gregory Place**, where the sidewalk would be. In life cars park there too, at a slant.
-- **Altgeld Hall and Illini Hall.** Altgeld is drawn finished, without the scaffolding of its renovation. Illini Hall is drawn as the building site it is in 2026.
+- **Altgeld Hall and Illini Hall.** Altgeld is drawn finished, without the scaffolding of its renovation. Illini Hall is drawn as the building site it is in 2026: the campus's construction map for 2026 has structural steel rising from the foundation, set by a crane that came in November 2025.
+- **The towers' storeys.** Illini Tower has 17 floors in life and shows 16 rows of windows. The bookstore is four storeys above the ground with a fifth set back, as its builder's page and a university page between them say.
 - **A hero on the Quad.** Quad Day's rules keep vehicles off the Quad. The solar car and a formula car have stood at their teams' tables, and that is the stand the hero's place is beside.
 - **The embankment is 6 high**, where 5 m would be less than 2.
 
@@ -325,7 +337,7 @@ The near lane is the one on the camera's side of the buildings that hide it: the
 
 ## Real names on signs
 
-On signs so far: the names of the Six Pack's seven halls and of the Ikenberry Dining Center, each over its door, as the research note gives them; ILLINI UNION, on both fronts of the Union; BASIL THAI, with "at Urbana" under it, on its awning; and MANOLO'S, with PIZZA & EMPANADAS under it, on its board and on its awning. The rest are the names the plan would use, each as plain lettering on a plain board, with what the research found on 19 November 2026. Each is checked again as its sign is written.
+On signs so far: ARMORY, ICE ARENA, SHERMAN HALL, ILLINI TOWER and ILLINI UNION BOOKSTORE, each on its building (Illini Tower is a private hall: its own leasing pages and the university's list of certified housing have it under that name for 2026 to 2027), and a P on the parking deck; the names of the Six Pack's seven halls and of the Ikenberry Dining Center, each over its door, as the research note gives them; ILLINI UNION, on both fronts of the Union; BASIL THAI, with "at Urbana" under it, on its awning; and MANOLO'S, with PIZZA & EMPANADAS under it, on its board and on its awning. The rest are the names the plan would use, each as plain lettering on a plain board, with what the research found on 19 November 2026. Each is checked again as its sign is written.
 
 | Name | Where | What confirmed it |
 | --- | --- | --- |
