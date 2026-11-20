@@ -7,6 +7,7 @@
 
 import { checkRoads, type Solid } from '../../engine/checks';
 import type { Build, TileParts } from '../../engine/tile';
+import { buildCountry } from './country';
 import { buildDragons } from './dragons';
 import { buildLand } from './land';
 import type { Model } from './models';
@@ -69,6 +70,11 @@ export function buildWesteros(k: Build): TileParts {
       } catch (e) {
         console.error(`Westeros: what ${name} builds besides its lots failed.`, e);
       }
+    }
+    try {
+      buildCountry(k);
+    } catch (e) {
+      console.error('Westeros: the open country failed.', e);
     }
   }
 
