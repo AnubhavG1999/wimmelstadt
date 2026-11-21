@@ -2,11 +2,12 @@
 // Tower over them and the Bat-Signal on its cloud; the Sprang River between
 // its two quays, up the middle of the view to Arkham on its island; Uptown,
 // the East End, Ace Chemicals and Amusement Mile on the east bank; and across
-// the Gotham River, Wayne Manor on Crest Hill with the Batcave cut open under
-// it. Batman, his allies and his rogues have haunts on it and play small
+// the Gotham River, Wayne Manor on the cliff of Crest Hill with the Batcave
+// hidden under it. Batman, his allies and his rogues have haunts on it and play small
 // stories. Traffic keeps right.
 
 import type { TileDef } from '../../engine/tile';
+import { buildHatch } from './bristol';
 import { buildGotham } from './city';
 import { buildShow } from './show';
 import { SIGNS } from './signs';
@@ -24,7 +25,15 @@ export const gotham: TileDef = {
     // what moves on the tile besides its traffic, once everything that stands still is built. On the development
     // server `?gotham=still` leaves it out, so that the traffic can be run for hours by itself and the still tile's
     // cost measured.
-    if (!(import.meta.env.DEV && new URLSearchParams(location.search).get('gotham') === 'still')) buildShow(k);
+    // The lid over the Batcave's lift is there, and shut, whether or not the show runs: the show's stories open it.
+    let hatch: ReturnType<typeof buildHatch> | null = null;
+    try {
+      hatch = buildHatch(k);
+    } catch (e) {
+      console.error("Gotham: the lid over the Batcave's lift failed.", e);
+    }
+    if (import.meta.env.DEV) (window as unknown as { gothamHatch: unknown }).gothamHatch = hatch;
+    if (!(import.meta.env.DEV && new URLSearchParams(location.search).get('gotham') === 'still')) buildShow(k, hatch);
     return parts;
   },
 };

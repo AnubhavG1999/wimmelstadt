@@ -26,7 +26,7 @@ import { buildMachines, type Machines } from './machines';
 import type { Place } from './models';
 import { REGIONS } from './regions';
 import { Solid } from './solid';
-import { Lines, Rings, at, atEase, hidden, legBetween, still, S, type Id, type Leg, type Rest, type Spot, type State, type StoryDef, type Way, type World } from './stage';
+import { Lines, Rings, at, atEase, hidden, legBetween, still, S, type Id, type Leg, type Rest, type Spot, type State, type Hatch, type StoryDef, type Way, type World } from './stage';
 import { buildStories } from './stories';
 import { buildBoats } from './traffic';
 
@@ -72,7 +72,7 @@ interface Running {
 
 const AWAY: Spot = at(0, -30, 0, S);
 
-export function buildShow(k: Build): Show {
+export function buildShow(k: Build, hatch: Hatch | null = null): Show {
   const air = tried('the air', () => buildAir(k));
   const cast = tried('the cast', () => buildCast(k));
   const machines = tried('the machines', () => buildMachines(k));
@@ -91,6 +91,7 @@ export function buildShow(k: Build): Show {
     },
     air, machines, beasts, lines, glints, rings,
     night: () => night,
+    hatch,
   };
 
   const made = tried('the stories', () => buildStories(k, W));

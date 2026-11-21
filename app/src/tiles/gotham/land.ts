@@ -113,7 +113,7 @@ function drawZoned(k: Build, f: Zoned, colour: (zone: string, y: number, level: 
 }
 
 // ---------------------------------------------------------------------------
-// Bristol: the shelf, Crest Hill, the Batcave's cut and the cove
+// Bristol: the shelf, Crest Hill, the shaft of the Batcave's lift and the grotto
 // ---------------------------------------------------------------------------
 
 /** How high Crest Hill would be at a place with nothing cut into it. */
@@ -128,7 +128,7 @@ function bristolZone(x: number, z: number): string | null {
   if (!inside(LANDS.bristol, x, z)) return null;
   const C = CREST;
   if (z > C.cliff) return x > C.spur.x0 && x < C.spur.x1 && z < C.spur.z1 ? 'hill' : 'shelf';
-  if (x > C.cave.x0 && x < C.cave.x1 && z > C.cave.z0) return 'cave';
+  if (x > C.cave.x0 && x < C.cave.x1 && z > C.cave.z0 && z < C.cave.z1) return 'cave';
   if (x > C.cove.x0 && x < C.cove.x1 && z > C.cove.z0) return 'cove';
   return 'hill';
 }
@@ -153,7 +153,7 @@ function bristolColour(zone: string, _y: number, level: number, x: number, z: nu
   if (zone === 'cave' || zone === 'cove') return ROCK_DARK;
   if (level < 0.82) return noise(x * 0.4, z * 0.4) > 0.5 ? ROCK : ROCK_LIGHT;
   // the Manor's lawns on the top, and woods at its ends and its back
-  const wooded = x < -6 || x > 70 || z < -108;
+  const wooded = x < -13 || x > 87 || z < -110;
   return wooded ? (noise(x * 0.2, z * 0.2) > 0.5 ? WOOD : LAWN_DARK) : noise(x * 0.15, z * 0.15) > 0.55 ? LAWN : LAWN_DARK;
 }
 

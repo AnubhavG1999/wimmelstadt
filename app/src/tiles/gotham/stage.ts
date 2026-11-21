@@ -292,6 +292,13 @@ export interface Putter {
   from(id: Id): Spot;
 }
 
+/**
+ * The mirror pool of Wayne Manor's pool garden, which is the lid of the Batcave's lift (bristol.ts builds it):
+ * `open` slides its two halves apart, from 0 shut to 1 open, and `lift` raises the platform under it, from 0 down
+ * on the cave's floor to 1 level with the garden. A story that moves either puts both back to 0 when it ends.
+ */
+export interface Hatch { open(f: number): void; lift(f: number): void }
+
 /** Everything a story can reach. */
 export interface World {
   solid: Solid;
@@ -308,6 +315,8 @@ export interface World {
   rings: Rings;
   /** How dark it is now, from 0 at noon to 1 at night. */
   night(): number;
+  /** The lid over the Batcave's lift, in the Manor's pool garden, and the lift under it: null if it could not be built. */
+  hatch: Hatch | null;
 }
 
 export interface StoryDef {

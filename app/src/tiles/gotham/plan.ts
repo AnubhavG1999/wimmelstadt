@@ -224,10 +224,14 @@ export const CREST = {
   north: [-108, -113] as P2,
   /** A spur of rock that the service lane ends at, with the old tunnel's mouth in its west face. */
   spur: { x0: 64, x1: 70, z1: -81 },
-  /** The Batcave, cut open to the sky and to the view. Its back, under the Manor's terrace, is roofed. */
-  cave: { x0: 6, x1: 50, z0: -97, z1: -85, roofed: -94 },
-  /** The cove the waterfall falls into, and the Batmobile comes out through. */
-  cove: { x0: -14, x1: -2, z0: -93, z1: -85 },
+  /**
+   * The Batcave is hidden in the hill, which the collector asked for. All that is cut into the hilltop is the shaft
+   * of its lift, a pit with rock all round it: the mirror pool of the Manor's pool garden lies over it as a lid, and
+   * opens for the Batwing.
+   */
+  cave: { x0: 4, x1: 18, z0: -99, z1: -87 },
+  /** The grotto in the cliff under the Manor's tower, a notch that the Manor's terrace roofs: the waterfall falls across its mouth, and the Batmobile comes out through it. */
+  cove: { x0: 36, x1: 44, z0: -91, z1: -85 },
 };
 
 /** The crag Arkham stands on, on Mercey Island. */
@@ -242,7 +246,7 @@ export const KNOLL = { c: [-88, -44] as P2, r: 11, h: 5 };
 function crestAt(x: number, z: number): number {
   const C = CREST;
   if (z > C.cliff) return x > C.spur.x0 && x < C.spur.x1 && z < C.spur.z1 ? Y.crest : Y.shelf;
-  if (x > C.cave.x0 && x < C.cave.x1 && z > C.cave.z0) return Y.cave;
+  if (x > C.cave.x0 && x < C.cave.x1 && z > C.cave.z0 && z < C.cave.z1) return Y.cave;
   if (x > C.cove.x0 && x < C.cove.x1 && z > C.cove.z0) return Y.cave;
   const ends = Math.min(smooth(C.west[0], C.west[1], x), 1 - smooth(C.east[0], C.east[1], x));
   const back = 1 - 0.5 * smooth(C.north[0], C.north[1], z);
@@ -456,12 +460,12 @@ export const EL_LOOP: { p: P2; r: number }[] = [
 
 /**
  * The lanes of the show, which no traffic enters. The service lane runs under
- * Crest Hill's cliff from the waterfall's cove to the old tunnel's mouth, on
- * the cliff's side of the river road. The apron is the docks' quay, from the
+ * Crest Hill's cliff from the grotto under the Manor to the old tunnel's
+ * mouth, on the cliff's side of the river road. The apron is the docks' quay, from the
  * Sprang's mouth to the dock cut and over its drawbridge.
  */
 export const SHOW_LANES = {
-  service: { z: -82.5, x0: -2, x1: 63, y: Y.shelf },
+  service: { z: -82.5, x0: 30, x1: 63, y: Y.shelf },
   apron: { z: 47, x0: 60, x1: 103, y: Y.quay },
 };
 
@@ -566,7 +570,10 @@ lot('blocks', 'uptown-3', '', 41, -33, 53, -24, Y.quay, 42);
 lot('blocks', 'uptown-4', '', 57, -33, 71, -24, Y.quay, 50);
 // A warehouse in the south-west, between the Clock Tower and the Gazette, and a shed behind the docks' named works.
 lot('blocks', 'warehouse-1', '', -88, 95, -80, 108, Y.quay, 12);
-lot('blocks', 'shed-2', '', 62, 27, 73, 33, Y.quay, 6);
+// a row of houses east of Kane Street, between Amusement Mile's wall and the fire house, no taller than lets the
+// boardwalk be seen over it
+lot('blocks', 'kane-row', '', 90, -11, 102.5, -3.5, Y.quay, 12);
+// (a shed stood at x 62 to 73, z 27 to 33: the docks' station now brings its stairs down there)
 // Built over Grand Avenue, so that the avenue runs through them: a long building over the ramp in three lengths that
 // step up with it, and a gatehouse on the bastion that the avenue turns through. Each one's `base` is the height of
 // its underside over the road, not of its ground.
@@ -577,11 +584,15 @@ lot('blocks', 'gate-house', '', -103, 41.6, -84, 74.6, 16, 24);
 // And over Kane Street, where its ramp leaves River Street's terrace: a tower that the street runs through, and the
 // elevated railway beside it.
 lot('blocks', 'kane-gate', '', 72, -34, 88, -24, 16, 32);
-// ============================ Bristol: Wayne Manor and the Batcave ============================
-lot('bristol', 'manor', 'Wayne Manor', 8, -108, 48, -97, Y.crest, 14);
-lot('bristol', 'batcave', 'The Batcave', 6, -97, 50, -85, Y.cave, 6, true);
-lot('bristol', 'cove', '', -14, -93, -2, -85, Y.cave, 6, true);
-lot('bristol', 'forecourt', '', 52, -106, 64, -96, Y.crest, 0.2, true);
+// ============================ Bristol: Wayne Manor, and the Batcave hidden under it ============================
+// The collector asked for the Manor to be grand and for the cave to be hidden. The house stands on the cliff's edge,
+// where it may be tall without the tile's north edge rising: the cliff and its front are one face over the river.
+// The waterfall falls across a grotto under its tower. At its west end is a pool garden whose mirror pool is the lid
+// of the cave's lift, at its east end the entrance court. The cave has no lot and no name on the tile.
+lot('bristol', 'manor', 'Wayne Manor', 22, -99, 58, -87, Y.crest, 28);
+lot('bristol', 'pool-garden', '', 2, -100, 20, -85.5, Y.crest, 3, true);
+lot('bristol', 'cove', '', 36, -91, 44, -85, Y.cave, 5.8, true);
+lot('bristol', 'forecourt', '', 60, -100, 74, -88, Y.crest, 0.2, true);
 lot('bristol', 'kane-bridge', 'Kane Memorial Bridge', 72, -70, 88, -48, Y.shelf, 24, true);
 // ============================ Mercey Island: Arkham ============================
 lot('arkham', 'arkham', 'Arkham Asylum', -96, -104, -66, -88, Y.crag, 21);
@@ -613,8 +624,8 @@ export const lotOf = (id: string): Lot => {
 // ---------------------------------------------------------------------------
 
 export const HERO_SPOTS: { id: string; x: number; z: number; y: number; heading: number; turn?: number; where: string }[] = [
-  { id: 'batcave', x: 30, z: -89.5, y: Y.cave + 0.35, heading: 0, turn: 0.2, where: 'a guest bay on a turntable in the Batcave, beside the Batmobile' },
-  { id: 'manor', x: 58, z: -101, y: Y.crest + 0.04, heading: Math.PI / 2, where: "Wayne Manor's forecourt, at the head of the drive" },
+  { id: 'garden', x: 5, z: -104.5, y: Y.crest + 0.34, heading: 0, turn: 0.2, where: "a stone stand on the lawn by Wayne Manor's pool garden, where the Batwing rises before it" },
+  { id: 'manor', x: 67, z: -94, y: Y.crest + 0.04, heading: Math.PI / 2, where: "Wayne Manor's entrance court, at the head of the drive" },
   { id: 'wayne-tower', x: -73, z: 39, y: Y.crown + 0.24, heading: 0, where: "Wayne Tower's forecourt, on the rim of the upper city" },
   { id: 'battery', x: 16.5, z: 37, y: 0.04, heading: 0, where: 'the Battery, where the Sprang meets the harbour, before the Iceberg Lounge' },
   { id: 'casino', x: CASINO.c[0], z: CASINO.c[1], y: 3.3, heading: Math.atan2(SPRANG_ALONG[1], SPRANG_ALONG[0]), turn: 0.25, where: "the prize turntable on the Iceberg Casino's deck" },
@@ -630,21 +641,20 @@ export const HERO_SPOTS: { id: string; x: number; z: number; y: number; heading:
  * shines on. The cloud hangs over Gotham's own ground, thin enough to see
  * through, and the picture on it is drawn so that it shows from above.
  */
-export const SIGNAL = { lamp: [-49.5, Y.upper + 24.6, 20.5] as P3, cloud: { c: [-49.5, 53, 20.5] as P3, rx: 10, rz: 6.5 } };
+export const SIGNAL = { lamp: [-49.5, Y.upper + 25.4, 20.5] as P3, cloud: { c: [-49.5, 53, 20.5] as P3, rx: 10, rz: 6.5 } };
 
 /**
  * Where Wayne Enterprises' helicopter sets down, which the collector asked for with Bruce Wayne's flight home: a deck
  * that stands out from Wayne Tower's east face at its first setback (how high is the tower's own business, in
- * towers.ts), and a ring on Wayne Manor's lawn south of its forecourt, beside the strip the forecourt's hero is seen
- * through and not in it.
+ * towers.ts), and a ring on the lawn east of Wayne Manor's entrance court.
  */
-export const HELIPADS = { tower: { x: -60.2, z: 27.5, r: 4.6 }, manor: { x: 56.5, z: -91.6, r: 4.0 } };
+export const HELIPADS = { tower: { x: -60.2, z: 27.5, r: 4.6 }, manor: { x: 81, z: -91, r: 3.8 } };
 
 /** Where steam rises from the street: grates and manholes on sidewalks and in lanes, each [x, z] on the ground as built. */
 export const VENTS: P2[] = [
   [-27, 2], [-12, 22], [2, 26], [-16, 44], [-10, 60], [-40, 72], [-70, 92],
   [-38, 48], [-56, 44], [-88, 46],
-  [26, -28], [55, -28], [40, -23], [48, 0], [58, 11.5], [70, 11.5], [50, 24.5], [86.5, 2],
+  [26, -23], [55, -28], [40, -23], [48, 0], [58, 11.5], [70, 11.5], [50, 24.5], [86.5, 2],
 ];
 
 // ---------------------------------------------------------------------------
@@ -654,10 +664,11 @@ export const VENTS: P2[] = [
 export const SIGHT: { id: string; x: number; y: number; z: number }[] = [
   { id: "Arkham's gate", x: -68, y: Y.isle + 4, z: -80 },
   { id: 'the Trigate', x: -36, y: Y.shelf + 1.6, z: -64 },
-  { id: 'the Batcave', x: 28, y: Y.cave + 1.5, z: -89 },
-  { id: 'the waterfall', x: -8, y: Y.cave + 3, z: -92 },
-  { id: 'the service lane', x: 30, y: Y.shelf + 1.6, z: -82.5 },
-  { id: "the Manor's front", x: 28, y: Y.crest + 5, z: -97 },
+  { id: 'the pool garden', x: 11, y: Y.crest + 0.6, z: -93 },
+  { id: 'the waterfall', x: 40, y: Y.cave + 3, z: -85.4 },
+  { id: 'the service lane', x: 52, y: Y.shelf + 1.6, z: -82.5 },
+  { id: "the Manor's front", x: 40, y: Y.crest + 6, z: -86.8 },
+  { id: "the Manor's court", x: 67, y: Y.crest + 1.5, z: -94 },
   { id: 'the Kane Bridge', x: 80, y: Y.shelf + 2.6, z: -62 },
   { id: "Wayne Tower's door", x: -73, y: Y.crown + 3, z: 36 },
   { id: 'the courthouse steps', x: -34, y: Y.upper + 2, z: 41 },
@@ -667,6 +678,7 @@ export const SIGHT: { id: string; x: number; y: number; z: number }[] = [
   { id: 'the park', x: -72, y: 1.5, z: -47 },
   { id: 'the Iceberg Lounge', x: -3, y: 4, z: 42 },
   { id: 'the Battery', x: 16, y: 1.5, z: 38 },
+  { id: 'the fish market', x: 20, y: 4, z: 61 },
   { id: 'the east quay', x: 11, y: 1.6, z: -13 },
   { id: 'Park Row', x: 61, y: 2, z: 11.5 },
   { id: "the museum's steps", x: 48.5, y: 2, z: 11.5 },
@@ -721,10 +733,11 @@ export const STAGES: Record<string, { x0: number; z0: number; x1: number; z1: nu
   apron: { x0: 58, z0: 44.4, x1: 104, z1: 49.8, y: 0, what: "the docks' apron along the quay's edge, kept clear from end to end, under the viaduct and over the dock cut's drawbridge: the Jokermobile's chase, Freeze, Bane" },
   boardwalk: { x0: 88, z0: -30, x1: 98, z1: -16, y: Y.bluff, what: "Amusement Mile's boardwalk under the wheel: the place for a hero, and Harley's booth beside it" },
   // ---- Bristol and the island
-  cave: { x0: 6, z0: -97, x1: 50, z1: -85, y: Y.cave, what: "the Batcave's floor: the Batmobile's turntable at (14, -90.5), the guest's at (30, -89.5), the Batplane's pad at (43.5, -90.5), the trophies and the computer along its back" },
-  terrace: { x0: 8, z0: -97, x1: 48, z1: -94, y: Y.crest, what: "the Manor's terrace, over the cave's back: Alfred's post" },
-  lawn: { x0: -8, z0: -107, x1: 6, z1: -96, y: Y.crest, what: "the lawn west of the Manor: Damian's post, with Titus, Alfred the cat and Bat-Cow" },
-  manorPad: { x0: HELIPADS.manor.x - HELIPADS.manor.r - 0.2, z0: HELIPADS.manor.z - HELIPADS.manor.r - 0.2, x1: HELIPADS.manor.x + HELIPADS.manor.r + 0.2, z1: HELIPADS.manor.z + HELIPADS.manor.r + 0.2, y: Y.crest, what: "the ring on the Manor's lawn south of its forecourt where Wayne Enterprises' helicopter sets down: Bruce Wayne's flight home" },
+  hatch: { x0: 4, z0: -99, x1: 18, z1: -87, y: Y.crest, what: "the mirror pool of the Manor's pool garden, which is the lid of the Batcave's lift: it opens, and the Batwing rises and lands here" },
+  terrace: { x0: 24, z0: -87, x1: 56, z1: -85.4, y: Y.crest, what: "the Manor's terrace walk along the cliff's edge, before its front: Alfred's post" },
+  lawn: { x0: -12, z0: -110, x1: 0, z1: -98, y: Y.crest, what: "the lawn west of the pool garden: Damian's post, with Titus, Alfred the cat and Bat-Cow" },
+  grotto: { x0: 36, z0: -91, x1: 44, z1: -85, y: Y.cave, what: "the grotto under the Manor's tower, behind the waterfall: the Batmobile's way out, onto the service lane" },
+  manorPad: { x0: HELIPADS.manor.x - HELIPADS.manor.r - 0.2, z0: HELIPADS.manor.z - HELIPADS.manor.r - 0.2, x1: HELIPADS.manor.x + HELIPADS.manor.r + 0.2, z1: HELIPADS.manor.z + HELIPADS.manor.r + 0.2, y: Y.crest, what: "the ring on the lawn east of the Manor's entrance court where Wayne Enterprises' helicopter sets down: Bruce Wayne's flight home" },
   gate: { x0: -72, z0: -85, x1: -62, z1: -78, y: Y.isle, what: "the ground before Arkham's gate, between it and the ring: the breakout. The gate's own leaf is the show's, and its frame stands empty" },
   // ---- the harbour
   casinoDeck: { x0: CASINO.c[0] - 5, z0: CASINO.c[1] - 5, x1: CASINO.c[0] + 5, z1: CASINO.c[1] + 5, y: 3, what: "the Iceberg Casino's deck: the prize turntable at its middle" },

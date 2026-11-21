@@ -1,36 +1,48 @@
-// Bristol: Wayne Manor on Crest Hill, the Batcave cut open under it, the waterfall's cove, the gates and the drive, the old tunnel's mouth, and the Kane Memorial Bridge.
+// Bristol: Wayne Manor on the edge of Crest Hill's cliff, the Batcave hidden under it, the gates and the drive, the old tunnel's mouth, and the Kane Memorial Bridge.
 //
 // The mainland north of the Gotham River. land.ts lays the shelf the river
-// road runs on, Crest Hill's upright cliff over it, and the two cuts in the
-// cliff: the Batcave's, open to the sky and to the view like a doll's house,
-// and the waterfall's cove west of it. This file builds what stands on them.
+// road runs on, Crest Hill's upright cliff over it, and the two things cut
+// into the hill: the shaft of the Batcave's lift, a pit with rock all round
+// it, and a notch in the cliff under the Manor's tower. This file builds what
+// stands on them.
 //
-// Wayne Manor is a Gothic Revival house rebuilt after the earthquake with
-// battlements (the research's "fortress"): long and low, its height at its
-// south front, since the ceiling along the north edge of the board binds it.
-// Its terrace is built out over the back of the cave, which is the cave's
-// roof there. In the cave: the Batmobile's turntable before the tunnel to the
-// waterfall, a guest's turntable, the Batplane's pad, the three trophies of
-// the comics (the mechanical Tyrannosaurus, the giant Lincoln penny and the
-// giant Joker card), the Batcomputer on its platform, and the stair down from
-// the Manor's study. The Kane Memorial Bridge is a short suspension bridge
-// with two stone towers of pointed arches, in the manner of the Brooklyn and
-// Manhattan bridges that the comics' map-maker named, and a copy of neither.
+// Wayne Manor is a Gothic Revival country house in pale limestone, rebuilt
+// after the earthquake with battlements (the research's "fortress"), and the
+// tile's own drawing of one: end pavilions with gables and stair turrets,
+// battlemented ranges, and a great tower in the middle that carries it, as
+// Arkham's clock tower carries Arkham. It stands at the very edge of the
+// cliff, so that the rock and the house read as one front over the river.
+// Its height is at its front, since the ceiling along the north edge of the
+// board binds it.
+//
+// The Batcave is hidden, which the collector asked for. The notch under the
+// tower is roofed by the terrace and the house, so that it is a grotto: the
+// waterfall falls across its mouth (the curtain itself is air.ts's), and the
+// Batmobile comes out through it onto the service lane. The mirror pool of the
+// pool garden at the house's west end is the lid of the shaft: it splits,
+// sinks and slides apart under the lawns (`buildHatch`, which the show calls),
+// and the Batwing rises on a lift. In the shaft are the comics' three trophies,
+// the mechanical Tyrannosaurus, the giant Lincoln penny and the giant Joker
+// card, and the Batcomputer's screens. Nothing names the cave.
+//
+// The Kane Memorial Bridge is a short suspension bridge with two stone towers
+// of pointed arches, in the manner of the Brooklyn and Manhattan bridges that
+// the comics' map-maker named, and a copy of neither.
 
 import * as THREE from 'three';
-import { interior, rng, type GeoBuilder, type V3 } from '../../engine/geo';
+import { GeoBuilder, interior, rng, type V3 } from '../../engine/geo';
 import { makeWaterMaterial } from '../../engine/look/materials';
-import { pinnacle, roundel, tri } from '../../engine/parts';
-import { face3, slab, slope3 } from '../../engine/shapes';
+import { hipped, pinnacle, roundel, tri } from '../../engine/parts';
+import { face3, gable, slab, slope3 } from '../../engine/shapes';
 import type { SignDef } from '../../engine/signs';
 import type { Build } from '../../engine/tile';
 import { landAt } from './land';
 import {
-  AMBER, BOARDS, BRASS, COLD, DARK, GOTHIC_WIN, IRON, IRON_DARK, LEAD, LIMESTONE, LIMESTONE_DARK, ROCK, ROCK_DARK, ROCK_LIGHT, SLATE, SMALL_WIN, SODIUM,
-  STEEL, STONE, STONE_DARK, STONE_LIGHT, STONE_TRIM, TIMBER, TIMBER_DARK, TO_VIEW, balustrade, gasLamp, nameBoard, nameSign, padMark, parapet,
+  AMBER, BRASS, COLD, DARK, GOTHIC_WIN, IRON, IRON_DARK, LEAD, LIMESTONE, LIMESTONE_DARK, ROCK, ROCK_DARK, ROCK_LIGHT, SLATE, SMALL_WIN, SODIUM,
+  STEEL, STONE, STONE_DARK, STONE_LIGHT, STONE_TRIM, TIMBER_DARK, TO_VIEW, gargoyle, gasLamp, nameBoard, nameSign, padMark, parapet,
 } from './look';
 import type { Model, Place } from './models';
-import { CREST, HELIPADS, KANE, Y, lotOf, type Lot, type P2 } from './plan';
+import { CREST, HELIPADS, HERO_SPOTS, KANE, Y, lotOf, type Lot, type P2 } from './plan';
 import { MIDDLES } from './roads';
 import { ceilingAt, open, underBoards } from './space';
 
@@ -42,14 +54,18 @@ import { ceilingAt, open, underBoards } from './space';
 const TRIM = 0xa8a69c;
 /** A window pane by day, which glows amber at night. */
 const PANE = 0x3a2b1c;
-const IVY = 0x2f4a2a, IVY_DARK = 0x253d22;
-const GRAVEL = 0x9a9284;
-/** The cave's floor, its machines and its lights. */
-const CONCRETE = 0x393b41, STEEL_DARK = 0x4a5059, STEEL_DECK = 0x30343b, HAZARD = 0xd9b23a;
+const IVY = 0x2f4a2a, IVY_DARK = 0x253d22, HEDGE = 0x2c4628, YEW = 0x22361f, MOWN = 0x5b7d51;
+const GRAVEL = 0x9a9284, FLAGS = 0x8f8d86, JOINT = 0x77756f, EARTH = 0x4a3f33, BRICK_OLD = 0x7a5444;
+/** The clock's dial, a statue's marble. */
+const DIAL = 0xd9d2bf, MARBLE = 0xbab7ad;
+/** The cave's machines and its lights. */
+const STEEL_DARK = 0x4a5059, STEEL_DECK = 0x30343b, HAZARD = 0xd9b23a;
 const COPPER = 0xb8743c, COPPER_DEEP = 0x8f5529;
-const REX = 0x5a6c4a, REX_DARK = 0x3f4d35, REX_BELLY = 0x8b8f66;
-const WATER_POOL = 0x3c6878, WATER_STREAM = 0x4d7a88;
+const REX = 0x5a6c4a, REX_DARK = 0x3f4d35;
+const WATER_POOL = 0x3c6878, MIRROR = 0x1d3a46;
 const SETT = 0x6b665e;
+/** The flag on the tower: plain, a family's colour and nothing on it. */
+const FLAG = 0x6e1e28;
 
 const PI = Math.PI;
 
@@ -60,11 +76,13 @@ const PI = Math.PI;
 /** A box with all six faces. */
 const solid = (b: GeoBuilder, x0: number, y0: number, z0: number, x1: number, y1: number, z1: number, c: number, faces = 'NESWTB'): void => b.box(x0, y0, z0, x1, y1, z1, c, { faces });
 
-/** A point in a frame that is turned by `yaw` and moved to (x, z), as `moved` does it. */
-const toWorld = (x: number, z: number, yaw: number, lx: number, lz: number): P2 => [x + lx * Math.cos(yaw) - lz * Math.sin(yaw), z + lx * Math.sin(yaw) + lz * Math.cos(yaw)];
-
 /** The yaw that turns a frame built to face +z so that it faces (nx, nz). */
 const yawFacing = (nx: number, nz: number): number => Math.atan2(-nx, nz);
+
+/** Builds in a frame on a wall that faces south, north, east or west: +z is out of the wall, the wall's face at z 0. */
+const FACE_YAW = { S: 0, N: PI, E: -PI / 2, W: PI / 2 } as const;
+type Face = keyof typeof FACE_YAW;
+const onFace = (b: GeoBuilder, face: Face, x: number, z: number, fn: () => void): void => b.moved(x, 0, z, FACE_YAW[face], fn);
 
 /**
  * A pitched roof whose ridge runs along x, its slopes through the tops of the
@@ -90,24 +108,45 @@ function roofX(b: GeoBuilder, x0: number, x1: number, z0: number, z1: number, y:
 }
 
 /**
- * The roof of a cross-wing: a gable at its south end, over the front, and a
- * hip at its north end, which keeps it under the ceiling that binds the
- * Manor. Its ridge runs along z.
+ * A pitched roof with its ridge along x, each end a gable ('g'), a hip ('h')
+ * or left open ('o') where it meets another wall, with undersides under every
+ * eave. Returns the ridge's height. (Arkham's, so that the two great houses
+ * are roofed alike.)
  */
-function roofWing(b: GeoBuilder, x0: number, x1: number, zB: number, zF: number, y: number, rise: number, over = 0.3, wall = LIMESTONE): void {
-  const half = (x1 - x0) / 2, xc = (x0 + x1) / 2, k = rise / half, len = Math.hypot(half, rise), top = y + rise;
-  const ye = y - k * over, A = x0 - over, E = x1 + over, F = zF + over, B = zB - over, zr = zB + half;
-  const nW: V3 = [-rise / len, half / len, 0], nE: V3 = [rise / len, half / len, 0], nB: V3 = [0, half / len, -rise / len];
-  const under = (n: V3): V3 => [-n[0], -n[1], -n[2]];
-  b.quad([A, ye, F], [A, ye, B], [xc, top, zr], [xc, top, F], nW, SLATE);
-  b.quad([E, ye, B], [E, ye, F], [xc, top, F], [xc, top, zr], nE, SLATE);
-  face3(b, [A, ye, B], [E, ye, B], [xc, top, zr], nB, SLATE);
-  b.quad([A, ye, F], [A, ye, B], [xc, top, zr], [xc, top, F], under(nW), STONE_DARK);
-  b.quad([E, ye, B], [E, ye, F], [xc, top, F], [xc, top, zr], under(nE), STONE_DARK);
-  face3(b, [A, ye, B], [E, ye, B], [xc, top, zr], under(nB), STONE_DARK);
-  solid(b, xc - 0.13, top - 0.06, zr, xc + 0.13, top + 0.12, F, LEAD);
-  // the gable under it, and its coping
-  face3(b, [x0, y, zF], [x1, y, zF], [xc, top, zF], [0, 0, 1], wall);
+function pitched(b: GeoBuilder, x0: number, x1: number, z0: number, z1: number, y: number, rise: number, o: { over?: number; ends?: [string, string]; wall?: number } = {}): number {
+  const over = o.over ?? 0.35, [e0, e1] = o.ends ?? ['g', 'g'];
+  const zc = (z0 + z1) / 2, half = (z1 - z0) / 2, k = rise / half, top = y + rise;
+  const ye = y - k * over, A = x0 - over, E = x1 + over, N = z0 - over, S = z1 + over, he = half + over;
+  const r0 = e0 === 'h' ? Math.min(A + he, (A + E) / 2) : A, r1 = e1 === 'h' ? Math.max(E - he, (A + E) / 2) : E;
+  const len = Math.hypot(he, rise);
+  const nS: V3 = [0, he / len, rise / len], nN: V3 = [0, he / len, -rise / len];
+  const neg = (n: V3): V3 => [-n[0], -n[1], -n[2]];
+  const south: [V3, V3, V3, V3] = [[A, ye, S], [E, ye, S], [r1, top, zc], [r0, top, zc]];
+  const north: [V3, V3, V3, V3] = [[E, ye, N], [A, ye, N], [r0, top, zc], [r1, top, zc]];
+  b.quad(...south, nS, SLATE);
+  b.quad(...north, nN, SLATE);
+  b.quad(...south, neg(nS), STONE_DARK);
+  b.quad(...north, neg(nN), STONE_DARK);
+  for (const [e, xe, xr, s] of [[e0, A, r0, -1], [e1, E, r1, 1]] as [string, number, number, number][]) {
+    if (e === 'h') {
+      const n: V3 = [(s * rise) / len, he / len, 0];
+      tri(b, [xe, ye, N], [xe, ye, S], [xr, top, zc], n, SLATE);
+      tri(b, [xe, ye, N], [xe, ye, S], [xr, top, zc], neg(n), STONE_DARK);
+    } else if (e === 'g') {
+      const xw = s < 0 ? x0 : x1;
+      tri(b, [xw, y, z0], [xw, y, z1], [xw, top, zc], [s, 0, 0], o.wall ?? LIMESTONE);
+    }
+  }
+  if (r1 - r0 > 0.05) solid(b, r0, top - 0.05, zc - 0.12, r1, top + 0.12, zc + 0.12, LEAD);
+  return top;
+}
+
+/** The same roof with its ridge along z: its first end is the north one. */
+function pitchedZ(b: GeoBuilder, x0: number, x1: number, z0: number, z1: number, y: number, rise: number, o: Parameters<typeof pitched>[7] = {}): number {
+  const cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
+  let top = 0;
+  b.moved(cx, 0, cz, PI / 2, () => { top = pitched(b, z0 - cz, z1 - cz, -(x1 - cx), -(x0 - cx), y, rise, o); });
+  return top;
 }
 
 /**
@@ -132,23 +171,35 @@ function pointedArch(b: GeoBuilder, cx: number, z0: number, z1: number, half: nu
   }
 }
 
+/** The height of a pointed arch's apex over its spring. */
+const archRise = (half: number, r: number): number => Math.sqrt(r * r - (r - half) * (r - half));
+
 /**
  * A Gothic window on a wall, in a frame that faces +z with the wall at z 0:
  * a lit pane with a pointed head, a sill, a hood mould over the head, and
- * mullions and a transom of stone. Build it inside `moved`.
+ * mullions, a transom and a ring of tracery of stone. Build it inside `moved`.
  */
-function lancet(b: GeoBuilder, w: number, y0: number, y1: number, o: { lights?: number; transom?: number; lit?: number; head?: number } = {}): void {
-  const lit = interior(o.lit ?? 2.4), h = w * (o.head ?? 0.5), hw = w / 2;
-  b.quad([-hw, y0, 0.03], [hw, y0, 0.03], [hw, y1, 0.03], [-hw, y1, 0.03], [0, 0, 1], PANE, { win: lit });
-  tri(b, [-hw, y1, 0.03], [hw, y1, 0.03], [0, y1 + h, 0.03], [0, 0, 1], PANE, { win: lit });
-  b.box(-hw - 0.16, y0 - 0.2, 0, hw + 0.16, y0, 0.16, TRIM, { faces: 'SEWTB' });
-  for (const s of [-1, 1]) b.beam([s * (hw + 0.14), y1 - 0.1, 0.07], [0, y1 + h + 0.16, 0.07], 0.07, 0.07, TRIM);
+function lancet(b: GeoBuilder, w: number, y0: number, y1: number, o: { lights?: number; transom?: number; lit?: number; head?: number; tracery?: boolean; out?: number } = {}): void {
+  const lit = interior(o.lit ?? 2.4), h = w * (o.head ?? 0.5), hw = w / 2, z = o.out ?? 0;
+  b.quad([-hw, y0, z + 0.03], [hw, y0, z + 0.03], [hw, y1, z + 0.03], [-hw, y1, z + 0.03], [0, 0, 1], PANE, { win: lit });
+  tri(b, [-hw, y1, z + 0.03], [hw, y1, z + 0.03], [0, y1 + h, z + 0.03], [0, 0, 1], PANE, { win: lit });
+  b.box(-hw - 0.16, y0 - 0.2, z, hw + 0.16, y0, z + 0.16, TRIM, { faces: 'SEWTB' });
+  for (const s of [-1, 1]) b.beam([s * (hw + 0.14), y1 - 0.1, z + 0.07], [0, y1 + h + 0.16, z + 0.07], 0.07, 0.07, TRIM);
   const lights = o.lights ?? 2;
   for (let i = 1; i < lights; i++) {
     const x = -hw + (w * i) / lights;
-    b.box(x - 0.06, y0, 0.03, x + 0.06, y1 + h * (1 - Math.abs(x) / hw) - 0.05, 0.1, TRIM, { faces: 'SEW' });
+    b.box(x - 0.06, y0, z + 0.03, x + 0.06, y1 + h * (1 - Math.abs(x) / hw) * (o.tracery ? 0.5 : 1) - 0.05, z + 0.1, TRIM, { faces: 'SEW' });
   }
-  if (o.transom !== undefined) b.box(-hw, o.transom - 0.06, 0.03, hw, o.transom + 0.06, 0.1, TRIM, { faces: 'STB' });
+  if (o.transom !== undefined) b.box(-hw, o.transom - 0.06, z + 0.03, hw, o.transom + 0.06, z + 0.1, TRIM, { faces: 'STB' });
+  if (o.tracery) {
+    // a ring of stone in the head, and the outer lights' arches meeting it
+    const cy = y1 + h * 0.45, r = Math.min(hw * 0.42, h * 0.32);
+    for (let i = 0; i < 8; i++) {
+      const a0 = (i / 8) * PI * 2, a1 = ((i + 1) / 8) * PI * 2;
+      b.beam([Math.cos(a0) * r, cy + Math.sin(a0) * r, z + 0.08], [Math.cos(a1) * r, cy + Math.sin(a1) * r, z + 0.08], 0.05, 0.05, TRIM);
+    }
+    for (const s of [-1, 1]) b.beam([s * hw * 0.96, y1, z + 0.08], [s * r * 0.7, cy - r * 0.7, z + 0.08], 0.05, 0.05, TRIM);
+  }
 }
 
 /** A strip of crenellations: a parapet with merlons on it, along x from x0 to x1, its outer face at z (facing +z if `out` is 1). */
@@ -163,11 +214,11 @@ function battlement(b: GeoBuilder, x0: number, x1: number, z: number, out: numbe
 }
 
 /** Ivy on a wall: dark green patches a hair proud of it, climbing from `y0`, in a frame facing +z (build it inside `moved`). */
-function ivy(b: GeoBuilder, seed: number, w: number, y0: number, y1: number): void {
+function ivy(b: GeoBuilder, seed: number, w: number, y0: number, y1: number, out = 0): void {
   const R = rng(seed);
-  for (let i = 0; i < 6; i++) {
-    const x = (R() - 0.5) * w, hw = 0.4 + R() * 0.7, top = y0 + (y1 - y0) * (0.45 + R() * 0.55);
-    b.box(x - hw, y0, 0.02 + i * 0.012, x + hw, top, 0.08 + i * 0.012, i % 2 ? IVY : IVY_DARK, { faces: 'SEWT' });
+  for (let i = 0; i < 5; i++) {
+    const x = (R() - 0.5) * w, hw = 0.35 + R() * 0.6, top = y0 + (y1 - y0) * (0.45 + R() * 0.55);
+    b.box(x - hw, y0, out + 0.02 + i * 0.012, x + hw, top, out + 0.08 + i * 0.012, i % 2 ? IVY : IVY_DARK, { faces: 'SEWT' });
   }
 }
 
@@ -178,8 +229,49 @@ function chimney(b: GeoBuilder, x: number, z: number, y0: number, y1: number, al
   solid(b, x - hx - 0.1, y1 - 0.75, z - hz - 0.1, x + hx + 0.1, y1 - 0.5, z + hz + 0.1, TRIM);
   for (const s of [-1, 1]) {
     const px = along === 'x' ? x + s * 0.38 : x, pz = along === 'x' ? z : z + s * 0.38;
-    b.cyl(px, pz, y1 - 0.5, y1, 0.2, 0.16, 6, 0x7a5444);
+    b.cyl(px, pz, y1 - 0.5, y1, 0.2, 0.16, 6, BRICK_OLD);
   }
+}
+
+/** Iron cresting along a ridge: a rail with spikes on it. */
+function cresting(b: GeoBuilder, a: V3, c: V3, every = 0.5): void {
+  const n = Math.max(1, Math.round(Math.hypot(c[0] - a[0], c[2] - a[2]) / every));
+  b.beam([a[0], a[1] + 0.3, a[2]], [c[0], c[1] + 0.3, c[2]], 0.04, 0.04, IRON);
+  for (let i = 0; i <= n; i++) {
+    const x = a[0] + ((c[0] - a[0]) * i) / n, y = a[1] + ((c[1] - a[1]) * i) / n, z = a[2] + ((c[2] - a[2]) * i) / n;
+    b.beam([x, y, z], [x, y + (i % 2 ? 0.42 : 0.6), z], 0.035, 0.015, IRON);
+  }
+}
+
+/**
+ * A stone balustrade along a line of corners, as look.ts draws one (a rail on
+ * short posts, a pier every `every` units), but with one pier at each corner
+ * where two lengths meet, not two in one place. Returns where its piers stand.
+ */
+function balustrade(b: GeoBuilder, pts: P2[], y: number, color = TRIM, every = 4): P2[] {
+  const piers: P2[] = [];
+  for (let i = 0; i + 1 < pts.length; i++) {
+    const [ax, az] = pts[i], [bx, bz] = pts[i + 1], len = Math.hypot(bx - ax, bz - az);
+    if (len < 1e-3) continue;
+    const yaw = Math.atan2(bz - az, bx - ax), dx = (bx - ax) / len, dz = (bz - az) / len;
+    b.obox((ax + bx) / 2, y + 1.0, (az + bz) / 2, len / 2, 0.1, 0.16, yaw, color, { faces: 'NESWTB' });
+    b.obox((ax + bx) / 2, y + 0.1, (az + bz) / 2, len / 2, 0.1, 0.14, yaw, color, { faces: 'NESWTB' });
+    const n = Math.max(1, Math.round(len / every));
+    for (let j = i === 0 ? 0 : 1; j <= n; j++) {
+      const s = (j / n) * len, p: P2 = [ax + dx * s, az + dz * s];
+      b.obox(p[0], y + 0.6, p[1], 0.22, 0.6, 0.22, yaw, color, { faces: 'NESWTB' });
+      piers.push(p);
+    }
+    b.obox((ax + bx) / 2, y + 0.55, (az + bz) / 2, len / 2, 0.36, 0.05, yaw, STONE_LIGHT, { faces: 'NESWTB' });
+  }
+  return piers;
+}
+
+/** An urn on a pier or a pedestal whose top is at `y`. */
+function urn(b: GeoBuilder, x: number, y: number, z: number, s = 1): void {
+  b.cyl(x, z, y, y + 0.12 * s, 0.2 * s, 0.2 * s, 6, TRIM, { cap: false });
+  b.cyl(x, z, y + 0.12 * s, y + 0.45 * s, 0.14 * s, 0.3 * s, 6, TRIM, { cap: false });
+  b.cyl(x, z, y + 0.45 * s, y + 0.6 * s, 0.3 * s, 0.24 * s, 6, TRIM, { cap: IVY_DARK });
 }
 
 /** The height of the Kane Bridge's road at a place along it, read off its middle as it was laid. */
@@ -205,7 +297,7 @@ function kaneRoad(): (z: number) => number {
   };
 }
 
-/** A surface of water of this file's own, at its own height: the cove's pool, the stream and its pond. */
+/** A surface of water of this file's own, at its own height: the grotto's pool. */
 function waterOf(k: Build, shapes: { pts: P2[]; y: number }[], color: number): void {
   const pos: number[] = [];
   for (const { pts, y } of shapes) {
@@ -225,7 +317,7 @@ function waterOf(k: Build, shapes: { pts: P2[]; y: number }[], color: number): v
   k.group.add(mesh);
 }
 
-/** A band along a line of corners, `half` either side of it, laid on the ground as built `lift` above it, in short pieces: a drive, a stream's bed. */
+/** A band along a line of corners, `half` either side of it, laid on the ground as built `lift` above it, in short pieces: a drive, a lawn's stripe. */
 function laid(b: GeoBuilder, line: P2[], half: number, color: number, lift = 0.07, step = 1.4, y?: number): void {
   const dense: P2[] = [];
   for (let i = 0; i + 1 < line.length; i++) {
@@ -246,6 +338,10 @@ function laid(b: GeoBuilder, line: P2[], half: number, color: number, lift = 0.0
     slope3(b, at(i, -1), at(i + 1, 1), at(i + 1, -1), color);
   }
 }
+
+/** A level quad that faces the sky, from (x0, z0) to (x1, z1) at height y. */
+const flat = (b: GeoBuilder, x0: number, z0: number, x1: number, z1: number, y: number, color: number, o: { win?: ReturnType<typeof interior> } = {}): void =>
+  b.quad([x0, y, z1], [x1, y, z1], [x1, y, z0], [x0, y, z0], [0, 1, 0], color, o);
 
 // ---------------------------------------------------------------------------
 // Signs
@@ -354,86 +450,92 @@ function paintCard(ctx: CanvasRenderingContext2D, _s: SignDef, w: number, h: num
   for (const s of [-1, 1]) { ctx.beginPath(); ctx.moveTo(cx + s * w * 0.2, h * 0.6); ctx.lineTo(cx + s * w * 0.23, h * 0.57); ctx.stroke(); }
 }
 
-/** The card's back: a red lattice in a white border. */
-function paintCardBack(ctx: CanvasRenderingContext2D, _s: SignDef, w: number, h: number): void {
-  ctx.fillStyle = '#f5f0e4';
-  ctx.fillRect(0, 0, w, h);
-  ctx.fillStyle = '#9e1e28';
-  ctx.fillRect(9, 9, w - 18, h - 18);
-  ctx.strokeStyle = '#e07a7f';
-  ctx.lineWidth = 2;
-  for (let d = -h; d < w + h; d += 14) {
-    ctx.beginPath(); ctx.moveTo(d, 9); ctx.lineTo(d + h, h); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(d, h - 9); ctx.lineTo(d + h, 0); ctx.stroke();
-  }
-  ctx.strokeStyle = '#f5f0e4';
-  ctx.lineWidth = 4;
-  ctx.strokeRect(9, 9, w - 18, h - 18);
-}
-
 /** Every sign this file hangs. Each id begins with `bristol-`. */
 export const SIGNS: SignDef[] = [
   nameSign('bristol-manor', 'Wayne Manor'),
-  nameSign('bristol-batcave', 'The Batcave'),
   nameSign('bristol-kane', 'Kane Memorial Bridge'),
   { id: 'bristol-screen', lines: [], color: '#04101d', aspect: 1.6, kind: 'board', size: [256, 160], paint: paintScreen },
   { id: 'bristol-screen-side', lines: [], color: '#05121f', aspect: 1.4, kind: 'board', size: [140, 100], paint: paintSide },
   { id: 'bristol-card', lines: [], color: '#f5f0e4', aspect: 0.72, kind: 'board', size: [144, 200], paint: paintCard },
-  { id: 'bristol-card-back', lines: [], color: '#9e1e28', aspect: 0.72, kind: 'board', size: [72, 100], paint: paintCardBack },
 ];
 
 // ---------------------------------------------------------------------------
 // Where things stand, from the plan
 // ---------------------------------------------------------------------------
 
-const CAVE = CREST.cave, COVE = CREST.cove, SPUR = CREST.spur;
-/** The Batmobile's turntable, the guest's and the Batplane's pad. */
-const TABLE = { x: 14, z: -90.5, r: 5.2, top: Y.cave + 0.25 };
-const GUEST = { x: 30, z: -89.5, r: 4.6, top: Y.cave + 0.35 };
-const PAD = { x: 43.5, z: -90.5, r: 5.4, top: Y.cave + 0.6 };
-/** The terrace over the cave's back: its top, its underside. */
-const TERRACE = { top: Y.crest + 0.04, under: Y.crest - 0.6, z1: CAVE.roofed };
-/** The west tunnel's mouth, in line with the Batmobile's turntable. */
-const WEST_TUNNEL = { z: TABLE.z, half: 2.5, h: 3.4 };
-/** The stair from the Manor's study: its landing and door at the west end of the back wall, and its foot. */
-const STAIR = { x0: 8.2, land: 10.2, x1: 16.0, top: 7.4, z0: CAVE.z0 + 0.05, z1: CAVE.z0 + 1.15 };
-/** The Batcomputer's platform, under the terrace behind the guest's turntable. */
-const DESK = { x0: 26, x1: 34, z0: CAVE.z0 + 0.1, z1: CAVE.z0 + 2.5, top: Y.cave + 0.8 };
-/** The cove's tunnel, its waterfall's lip, its pool and its ford. */
+const M = lotOf('manor'), COURT = lotOf('forecourt');
+const SHAFT = CREST.cave, COVE = CREST.cove, SPUR = CREST.spur, CLIFF = CREST.cliff;
 const COVE_MID = (COVE.x0 + COVE.x1) / 2;
-const POOL_Y = Y.cave + 0.25, FORD_Y = POOL_Y - 0.03, FALL_Z = COVE.z0 + 0.7;
+/** The middle of the shaft of the lift, which is the mirror pool's. */
+const SHAFT_X = (SHAFT.x0 + SHAFT.x1) / 2, SHAFT_Z = (SHAFT.z0 + SHAFT.z1) / 2;
+/** The grotto's pool and the ford through it. */
+const POOL_Y = Y.cave + 0.25, FORD_Y = POOL_Y - 0.03;
+/** The waterfall's lip under the terrace's slab, and how far inside the cliff's face it hangs. */
+const FALL = { top: Y.crest - 0.6, z: CLIFF - 0.6 };
+/** The grotto's ceiling: the underside of the terrace's slab and of the tower's floor over it. */
+const GROTTO_ROOF = Y.crest - 0.5;
+/** The house's levels: where its walls stand in the ground, its doors' sills, its plinth's top, where its storeys begin. */
+const FOOT = Y.crest - 0.4, SILL = Y.crest + 0.5, PLINTH = Y.crest + 2;
+/** Its depths: the back of the main pile, the front of the pavilions and the tower, and the front of the ranges between them. */
+const ZB = M.z1 - 8, ZP = M.z1 - 1, ZR = ZP - 1.5;
+/** The end pavilions, west and east, and the side each turret is on. */
+const PAV = [{ x0: M.x0 + 0.8, x1: M.x0 + 6, outer: -1 }, { x0: M.x1 - 6, x1: M.x1 - 0.8, outer: 1 }];
+/** The great tower, which stands over the grotto. */
+const TOWER = { x0: COVE.x0, x1: COVE.x1, z0: ZB, z1: ZP, top: 29.5 };
+/** The two ranges between the pavilions and the tower, and the way each one's far end points. */
+const RANGES = [{ x0: PAV[0].x1, x1: TOWER.x0, dir: -1 }, { x0: TOWER.x1, x1: PAV[1].x0, dir: 1 }];
+/** The tower's porch, with the front door in it. */
+const PORCH = { x0: COVE_MID - 2.4, x1: COVE_MID + 2.4, z0: ZP, z1: M.z1, top: Y.crest + 5.2, door: 1.0 };
+/** The terrace walk along the cliff's edge: its flags, and the balustrade along the edge. */
+const TERRACE = { top: Y.crest + 0.04, z1: CLIFF - 0.12, rail: CLIFF - 0.3 };
+/** The porte-cochère at the east end, towards the entrance court, and the east door in it. */
+const PORTE = { x0: PAV[1].x1, x1: PAV[1].x1 + 4.6, z0: ZP - 6.2, z1: ZP - 1.6, top: Y.crest + 3.9 };
+const PORTE_Z = (PORTE.z0 + PORTE.z1) / 2;
+/** The garden door in the west pavilion's end, and where the drive comes into the court. */
+const GARDEN_DOOR_Z = ZP - 3.5, DRIVE_IN = COURT.z1 - 9;
+/** The mirror pool's two halves: how far each is from the seam to its outer kerb, and how far each sinks and slides. */
+const HATCH = { hw: (SHAFT.x1 - SHAFT.x0) / 2, hd: (SHAFT.z1 - SHAFT.z0) / 2, kerb: 1, sink: 0.4, slide: 7.3, seam: 0.015 };
+/** The lift's platform: half its size, and where its top is when down and up. */
+const LIFT = { hw: 6.5, hd: 5.5, down: Y.cave + 0.6, up: Y.crest };
 /** The Batboat's arch in the shelf's river wall. */
 const BOATHOUSE = { x: 30, z: -67, half: 2.5 };
 /** The gates on the shelf. */
 const GATES = { x: 96, z: -79.5 };
+/** The hero's place on the lawn, and the stone stand it is on. */
+const STAND = HERO_SPOTS.find((s) => s.id === 'garden') ?? { x: 5, z: -104.5, y: Y.crest + 0.34 };
 
 /** Places on what this file builds that the show needs as built: its task names them. */
 export const PLACES: Record<string, Place> = {
-  batmobile: { x: TABLE.x, y: TABLE.top, z: TABLE.z, h: PI },
-  caveTunnel: { x: CAVE.x0 + 0.6, y: Y.cave + 0.055, z: WEST_TUNNEL.z, h: PI },
-  guest: { x: GUEST.x, y: GUEST.top, z: GUEST.z, h: 0 },
-  batplane: { x: PAD.x, y: PAD.top, z: PAD.z, h: PI / 2 },
-  computer: { x: (DESK.x0 + DESK.x1) / 2, y: DESK.top, z: DESK.z0 + 1.85, h: -PI / 2 },
-  caveStairTop: { x: (STAIR.x0 + STAIR.land) / 2, y: STAIR.top, z: (STAIR.z0 + STAIR.z1) / 2, h: 0 },
-  caveStairFoot: { x: STAIR.x1 + 0.6, y: Y.cave + 0.04, z: (STAIR.z0 + STAIR.z1) / 2, h: 0 },
-  fallTop: { x: COVE_MID, y: Y.crest + 0.06, z: FALL_Z, h: PI / 2 },
-  fallFoot: { x: COVE_MID, y: POOL_Y, z: FALL_Z + 0.6, h: PI / 2 },
-  coveTunnel: { x: COVE_MID, y: FORD_Y, z: COVE.z0 + 0.4, h: PI / 2 },
-  fordSouth: { x: COVE_MID, y: FORD_Y, z: COVE.z1 - 0.4, h: PI / 2 },
-  oldTunnel: { x: SPUR.x0 - 0.45, y: Y.shelf, z: CREST.cliff + 2, h: 0 },
-  batboat: { x: BOATHOUSE.x, y: Y.water, z: BOATHOUSE.z + 1.2, h: PI / 2 },
-  alfred: { x: 28, y: TERRACE.top, z: CAVE.z0 + 1.5, h: PI / 2 },
-  manorDoor: { x: 28, y: TERRACE.top, z: CAVE.z0 - 0.15, h: PI / 2 },
-  damian: { x: -1.5, y: Y.crest, z: -100.5, h: PI / 4 },
-  titus: { x: 0.8, y: Y.crest, z: -99.2, h: PI / 4 },
-  batCow: { x: -4.8, y: Y.crest, z: -104, h: PI / 3 },
-  alfredCat: { x: 3.6, y: Y.crest, z: -103.6, h: PI / 4 },
-  batsCrevice: { x: -18, y: 6, z: CREST.cliff + 0.4, h: PI / 2 },
-  gates: { x: GATES.x, y: Y.shelf, z: GATES.z, h: PI / 2 },
-  // the ring on the lawn where the helicopter's skids stand, the gravel before the house's east door, and the door itself
+  // the grotto and the fall
+  batmobile: { x: COVE_MID, y: FORD_Y, z: FALL.z - 3.5, h: PI / 2 },
+  coveTunnel: { x: COVE_MID, y: FORD_Y, z: COVE.z0 + 0.45, h: PI / 2 },
+  fordSouth: { x: COVE_MID, y: FORD_Y, z: CLIFF - 0.15, h: PI / 2 },
+  fallTop: { x: COVE_MID, y: FALL.top, z: FALL.z, h: PI / 2 },
+  fallFoot: { x: COVE_MID, y: POOL_Y, z: CLIFF - 0.4, h: PI / 2 },
+  // the pool and the lift
+  hatch: { x: SHAFT_X, y: Y.crest, z: SHAFT_Z, h: 0 },
+  batplane: { x: SHAFT_X, y: LIFT.down, z: SHAFT_Z, h: PI / 2 },
+  // the house
+  alfred: { x: COVE_MID, y: TERRACE.top, z: M.z1 + 1.2, h: PI / 2 },
+  manorDoor: { x: COVE_MID, y: SILL, z: M.z1 - 0.2, h: PI / 2 },
+  eastDoor: { x: PORTE.x0 + 0.75, y: TERRACE.top, z: PORTE_Z, h: 0 },
+  eastPath: { x: PORTE.x0 + 3.75, y: TERRACE.top, z: PORTE_Z, h: 0 },
+  gardenDoor: { x: PAV[0].x0 - 1.9, y: TERRACE.top, z: GARDEN_DOOR_Z, h: PI },
+  terraceWest: { x: M.x0 + 2.6, y: TERRACE.top, z: M.z1 + 0.8, h: PI / 2 },
+  terraceEast: { x: M.x1 - 2.6, y: TERRACE.top, z: M.z1 + 0.8, h: PI / 2 },
+  towerTop: { x: COVE_MID, y: TOWER.top, z: TOWER.z1 - 0.65, h: PI / 2 },
+  // the ring on the lawn east of the court where the helicopter's skids stand
   manorPad: { x: HELIPADS.manor.x, y: Y.crest + 0.09, z: HELIPADS.manor.z, h: Math.atan2(TO_VIEW[2], TO_VIEW[0]) },
-  eastPath: { x: 49.6, y: Y.crest + 0.04, z: -102.5, h: 0 },
-  eastDoor: { x: 46.75, y: Y.crest + 0.04, z: -102.5, h: 0 },
+  // the west lawn: Damian, his dog, the cow and the cat
+  damian: { x: -5.0, y: Y.crest, z: -102.5, h: PI / 4 },
+  titus: { x: -3.0, y: Y.crest, z: -101.0, h: PI / 4 },
+  batCow: { x: -8.6, y: Y.crest, z: -105.6, h: PI / 3 },
+  alfredCat: { x: -2.4, y: Y.crest, z: -104.4, h: PI / 4 },
+  // what was there before
+  batsCrevice: { x: -18, y: 6, z: CLIFF + 0.4, h: PI / 2 },
+  gates: { x: GATES.x, y: Y.shelf, z: GATES.z, h: PI / 2 },
+  oldTunnel: { x: SPUR.x0 - 0.45, y: Y.shelf, z: CLIFF + 2, h: 0 },
+  batboat: { x: BOATHOUSE.x, y: Y.water, z: BOATHOUSE.z + 1.2, h: PI / 2 },
 };
 
 // ---------------------------------------------------------------------------
@@ -441,515 +543,410 @@ export const PLACES: Record<string, Place> = {
 // ---------------------------------------------------------------------------
 
 function manor(k: Build, l: Lot): void {
-  const b = k.b, y0 = l.base;
-  // the long range, the two cross-wings at its ends and the entrance bay between them
-  const X0 = l.x0 + 2, X1 = l.x1 - 2, front = l.z1 - 0.3, zS = l.z1 - 2.5, zN = l.z1 - 8.5;
-  const wingW = 7.5, wB = zS - 2.3, xc = (l.x0 + l.x1) / 2, bay = { x0: xc - 2.5, x1: xc + 2.5, z0: zS - 0.5 };
-  // the wings stand a little proud of the range's ends, so that their walls and its gables never lie in one plane
-  const wings = [{ x0: X0 - 0.15, x1: X0 + wingW, outer: -1 }, { x0: X1 - wingW, x1: X1 + 0.15, outer: 1 }];
-  const plinth = y0 + 2, eaves = y0 + 6, wingTop = y0 + 10;
-
-  // --- the range: plinth, one storey, cornice, battlements along its front, a steep slate roof
-  b.box(X0 - 0.15, y0 - 0.4, zN - 0.15, X1 + 0.15, plinth, zS + 0.15, LIMESTONE_DARK, { faces: 'NEW' });
-  b.box(X0, plinth, zN, X1, eaves, zS, LIMESTONE, { faces: 'NEW', win: GOTHIC_WIN, seed: 3.1 });
-  b.box(X0, plinth, zN, X1, eaves, zS, LIMESTONE, { faces: 'S' });
-  solid(b, X0 - 0.1, plinth - 0.1, zN - 0.12, X1 + 0.1, plinth + 0.15, zN, TRIM, 'NEWT');
-  solid(b, X0 - 0.12, eaves - 0.25, zN - 0.15, X1 + 0.12, eaves, zN, TRIM, 'NEWB');
-  roofX(b, X0, X1, zN, zS, eaves, 3.5, { overS: 0, overN: 0.35 });
-  // the recessed fronts between the wings and the bay, each with two windows and battlements
-  for (const [a, c] of [[wings[0].x1, bay.x0], [bay.x1, wings[1].x0]]) {
-    b.box(a, y0 - 0.4, zS, c, plinth, zS + 0.15, LIMESTONE_DARK, { faces: 'S' });
-    solid(b, a, plinth - 0.1, zS, c, plinth + 0.15, zS + 0.12, TRIM, 'STB');
-    battlement(b, a, c, zS + 0.12, 1, eaves);
-    const n = 2;
-    for (let i = 0; i < n; i++) b.moved(a + ((i + 0.5) * (c - a)) / n, 0, zS, 0, () => lancet(b, 1.7, plinth + 0.5, eaves - 1.2, { transom: plinth + 2.2 }));
-  }
-  // tall chimneys on the range's front slope, between the wings and the bay
-  const slopeY = (z: number): number => eaves + ((zS - z) * 3.5) / 3;
-  for (const x of [(wings[0].x1 + bay.x0) / 2, (bay.x1 + wings[1].x0) / 2]) {
-    const z = zS - 1.45;
-    chimney(b, x, z, slopeY(z) - 0.4, Math.min(ceilingAt(x, z - 0.45), 22) - 0.4);
-  }
-
-  // --- the cross-wings: two storeys over a plinth, a gable to the front, a hip behind
-  for (const w of wings) {
-    const x0 = w.x0, x1 = w.x1, mid = (x0 + x1) / 2, outerX = w.outer < 0 ? x0 : x1;
-    b.box(x0 - 0.15, y0 - 0.4, wB, x1 + 0.15, plinth, front + 0.15, LIMESTONE_DARK, { faces: 'ESW' });
-    // the outer side with windows, the inner side's short stretch in front of the range with windows, and the front plain
-    if (w.outer < 0) b.box(x0, plinth, wB, x1, wingTop, front, LIMESTONE, { faces: 'W', win: GOTHIC_WIN, seed: 5.3 });
-    else b.box(x0, plinth, wB, x1, wingTop, front, LIMESTONE, { faces: 'E', win: GOTHIC_WIN, seed: 5.9 });
-    const innerX = w.outer < 0 ? x1 : x0;
-    b.box(innerX, plinth, zS, innerX + 0.001, wingTop, front, LIMESTONE, { faces: w.outer < 0 ? 'E' : 'W' });
-    b.moved(innerX, 0, (zS + front) / 2, w.outer < 0 ? -PI / 2 : PI / 2, () => {
-      lancet(b, 0.9, plinth + 0.6, eaves - 1.0, { lights: 1 });
-      lancet(b, 0.9, eaves + 0.6, wingTop - 1.2, { lights: 1 });
-    });
-    b.box(x0, eaves - 0.3, wB, x1, wingTop, zS, LIMESTONE, { faces: w.outer < 0 ? 'EN' : 'WN' });
-    if (w.outer > 0) b.box(x0, plinth, wB, x1, wingTop, front, LIMESTONE, { faces: 'S' });
-    solid(b, x0 - 0.1, plinth - 0.1, wB, x1 + 0.1, plinth + 0.15, front + 0.12, TRIM, 'ESWT');
-    solid(b, x0 - 0.1, eaves - 0.12, front, x1 + 0.1, eaves + 0.12, front + 0.12, TRIM, 'STB');
-    solid(b, x0 - 0.12, wingTop - 0.25, wB - 0.12, x1 + 0.12, wingTop, front + 0.12, TRIM, 'NESWB');
-    roofWing(b, x0, x1, wB, front, wingTop, 3.4);
-    // a finial over the gable's point, and a small lancet in the gable
-    pinnacle(b, mid, front + 0.05, wingTop + 3.3, 1.0, 0.16, TRIM);
-    b.moved(mid, 0, front, 0, () => lancet(b, 0.8, wingTop + 0.5, wingTop + 1.6, { lights: 1, lit: 2 }));
-    // the front: a great window of three lights on the ground storey (the west one the study's), two lancets over it
-    if (w.outer > 0) b.moved(mid, 0, front, 0, () => lancet(b, 3.0, plinth + 0.4, eaves - 1.0, { lights: 3, transom: plinth + 2.4, head: 0.3 }));
-    for (const s of [-1, 1]) b.moved(mid + s * 1.6, 0, front, 0, () => lancet(b, 1.2, eaves + 0.6, wingTop - 1.3, { lights: 1 }));
-    // a tall chimney on the outer side
-    const cz = wB + 1.6, cxo = outerX + w.outer * 0.45;
-    b.box(cxo - 0.45, plinth, cz - 0.6, cxo + 0.45, wingTop, cz + 0.6, LIMESTONE_DARK, { faces: 'NESW' });
-    chimney(b, cxo, cz, wingTop, Math.min(ceilingAt(cxo, cz - 0.7), 22.6) - 0.35, 'z');
-    // a turret corbelled out from the front's outer corner, with a spire
-    const tx = outerX + w.outer * 0.1, tz = front - 0.1;
-    b.cyl(tx, tz, y0 + 4.4, y0 + 5.5, 0.15, 1.05, 8, TRIM, { cap: false });
-    b.cyl(tx, tz, y0 + 5.5, wingTop, 1.0, 1.0, 8, LIMESTONE);
-    for (const a of [PI / 2, w.outer * 0.0 + (w.outer > 0 ? 0 : PI)]) {
-      const sx = tx + Math.cos(a) * 0.96, sz = tz + Math.sin(a) * 0.96;
-      b.moved(sx, 0, sz, yawFacing(Math.cos(a), Math.sin(a)), () => b.quad([-0.14, y0 + 6.4, 0.02], [0.14, y0 + 6.4, 0.02], [0.14, y0 + 8.6, 0.02], [-0.14, y0 + 8.6, 0.02], [0, 0, 1], PANE, { win: interior(2.2) }));
-    }
-    b.cyl(tx, tz, wingTop, wingTop + 1.1, 1.0, 1.0, 8, LIMESTONE);
-    solid(b, tx - 1.12, wingTop + 1.1, tz - 1.12, tx + 1.12, wingTop + 1.3, tz + 1.12, TRIM);
-    b.cyl(tx, tz, wingTop + 1.3, Math.min(l.top, ceilingAt(tx, tz + 1)) - 0.2, 1.15, 0.05, 8, SLATE, { cap: false });
-    // ivy up the outer corner
-    b.moved(outerX - w.outer * 1.4, 0, front, 0, () => ivy(b, w.outer > 0 ? 41 : 43, 2.6, y0, wingTop - 2));
-  }
-
-  // --- the study: the west wing's great window, set in a recess, with the grandfather clock inside it
-  {
-    const w = wings[0], mid = (w.x0 + w.x1) / 2, hw = 1.5, sy0 = plinth + 0.4, sy1 = eaves - 1.3, head = sy1 + 0.8, back = front - 0.45;
-    const warm = interior(2.6);
-    b.quad([mid - hw, sy0, back], [mid + hw, sy0, back], [mid + hw, head, back], [mid - hw, head, back], [0, 0, 1], 0x4a3420, { win: warm });
-    for (const s of [-1, 1]) b.quad([mid + s * hw, sy0, front + 0.02], [mid + s * hw, sy0, back], [mid + s * hw, head, back], [mid + s * hw, head, front + 0.02], [-s, 0, 0], LIMESTONE_DARK);
-    b.quad([mid - hw, sy0, front + 0.02], [mid + hw, sy0, front + 0.02], [mid + hw, sy0, back], [mid - hw, sy0, back], [0, 1, 0], TRIM);
-    b.quad([mid - hw, head, back], [mid + hw, head, back], [mid + hw, head, front + 0.02], [mid - hw, head, front + 0.02], [0, -1, 0], LIMESTONE_DARK);
-    // the clock: a tall case, its hood, its dial with two hands at no particular hour, and its pendulum's window
-    const cz = back + 0.06;
-    solid(b, mid - 0.42, sy0, cz, mid + 0.42, sy0 + 2.4, cz + 0.28, 0x3b2618, 'NESWT');
-    solid(b, mid - 0.5, sy0 + 2.4, cz - 0.02, mid + 0.5, sy0 + 2.85, cz + 0.32, 0x4a3020, 'NESWT');
-    solid(b, mid - 0.56, sy0 + 2.85, cz - 0.02, mid + 0.56, sy0 + 2.97, cz + 0.34, BRASS, 'NESWT');
-    roundel(b, [mid, sy0 + 2.62, cz + 0.33], 0.2, 'S', 0xefe4c8);
-    for (const [a, len] of [[1.2, 0.17], [3.9, 0.12]]) b.beam([mid, sy0 + 2.62, cz + 0.35], [mid + Math.cos(a) * len, sy0 + 2.62 + Math.sin(a) * len, cz + 0.35], 0.02, 0.015, 0x1a1a1a);
-    roundel(b, [mid, sy0 + 1.0, cz + 0.29], 0.13, 'S', BRASS, {}, 8);
-    k.glows.push({ x: mid - 1.0, y: sy0 + 1.2, z: back + 0.25, sx: 0.25, sy: 0.3, sz: 0.25, color: '#ffd28a' });
-    // the wall round the recess, and the stone bars of three lights in front of it, leaving the clock in the middle light
-    b.quad([w.x0, plinth, front], [mid - hw, plinth, front], [mid - hw, wingTop, front], [w.x0, wingTop, front], [0, 0, 1], LIMESTONE);
-    b.quad([mid + hw, plinth, front], [w.x1, plinth, front], [w.x1, wingTop, front], [mid + hw, wingTop, front], [0, 0, 1], LIMESTONE);
-    b.quad([mid - hw, plinth, front], [mid + hw, plinth, front], [mid + hw, sy0, front], [mid - hw, sy0, front], [0, 0, 1], LIMESTONE);
-    b.quad([mid - hw, head, front], [mid + hw, head, front], [mid + hw, wingTop, front], [mid - hw, wingTop, front], [0, 0, 1], LIMESTONE);
-    for (const s of [-1, 1]) b.box(mid + s * 0.52 - 0.07, sy0, front, mid + s * 0.52 + 0.07, head, front + 0.1, TRIM, { faces: 'SEW' });
-    b.box(mid - hw, sy1 - 0.07, front, mid + hw, sy1 + 0.07, front + 0.1, TRIM, { faces: 'STB' });
-    b.box(mid - hw - 0.16, sy0 - 0.2, front, mid + hw + 0.16, sy0, front + 0.18, TRIM, { faces: 'SEWTB' });
-  }
-
-  // --- the entrance bay: a pointed door onto the terrace, an oriel over it, battlements and pinnacles
-  {
-    const { x0, x1 } = bay, z0 = bay.z0, mid = xc;
-    b.box(x0 - 0.15, y0 - 0.4, z0, x1 + 0.15, plinth, front + 0.15, LIMESTONE_DARK, { faces: 'ESW' });
-    b.box(x0, plinth, z0, x1, wingTop, front, LIMESTONE, { faces: 'EW', win: GOTHIC_WIN, seed: 7.7 });
-    b.box(x0, plinth, z0, x1, wingTop, front, LIMESTONE, { faces: 'ST', top: LEAD });
-    solid(b, x0 - 0.1, plinth - 0.1, z0, x1 + 0.1, plinth + 0.15, front + 0.12, TRIM, 'ESWT');
-    battlement(b, x0 - 0.1, x1 + 0.1, front + 0.12, 1, wingTop);
-    for (const [x, za, zb] of [[x0 - 0.1, z0, front + 0.12], [x1 - 0.22, z0, front + 0.12]] as const) b.box(x, wingTop, za, x + 0.32, wingTop + 0.7, zb, LIMESTONE, { faces: 'NESWT' });
-    for (const [x, z] of [[x0, front], [x1, front], [x0, z0 + 0.3], [x1, z0 + 0.3]]) pinnacle(b, x, z, wingTop + 0.7, Math.min(1.8, ceilingAt(x, z) - wingTop - 0.9), 0.22, TRIM);
-    // the door: oak in a pointed arch with a stone surround, a lamp each side
-    const dw = 1.9, dt = y0 + 3.0;
-    b.quad([mid - dw / 2, y0 + 0.04, front + 0.03], [mid + dw / 2, y0 + 0.04, front + 0.03], [mid + dw / 2, dt, front + 0.03], [mid - dw / 2, dt, front + 0.03], [0, 0, 1], TIMBER_DARK, { win: interior(0.5) });
-    tri(b, [mid - dw / 2, dt, front + 0.03], [mid + dw / 2, dt, front + 0.03], [mid, dt + 0.9, front + 0.03], [0, 0, 1], TIMBER_DARK, { win: interior(0.5) });
-    for (const s of [-1, 1]) {
-      b.box(mid + s * (dw / 2 + 0.12) - 0.14, y0, front, mid + s * (dw / 2 + 0.12) + 0.14, dt, front + 0.22, TRIM, { faces: 'SEWT' });
-      b.beam([mid + s * (dw / 2 + 0.12), dt - 0.05, front + 0.1], [mid, dt + 1.05, front + 0.1], 0.13, 0.13, TRIM);
-      gasLamp(k, mid + s * 1.55, y0 + 2.6, front + 0.35, 0, AMBER);
-    }
-    b.box(mid - 0.07, y0 + 0.04, front + 0.03, mid + 0.07, dt + 0.85, front + 0.07, 0x2a1c12, { faces: 'SEW' });
-    // the oriel over the door: a window bay on corbels
-    const oy = eaves + 0.2;
-    b.box(mid - 1.2, oy - 0.5, front, mid + 1.2, oy, front + 0.7, TRIM, { faces: 'SEWB' });
-    b.cyl(mid, front + 0.2, oy - 1.4, oy - 0.5, 0.1, 0.75, 4, TRIM, { cap: false, phase: PI / 4 });
-    b.box(mid - 1.2, oy, front + 0.02, mid + 1.2, wingTop - 0.9, front + 0.7, LIMESTONE, { faces: 'EW', win: interior(2.2) });
-    b.box(mid - 1.2, oy, front + 0.02, mid + 1.2, wingTop - 0.9, front + 0.7, LIMESTONE, { faces: 'S' });
-    b.moved(mid, 0, front + 0.7, 0, () => lancet(b, 2.0, oy + 0.2, wingTop - 1.6, { lights: 3, head: 0.25 }));
-    solid(b, mid - 1.3, wingTop - 0.9, front - 0.05, mid + 1.3, wingTop - 0.6, front + 0.8, TRIM);
-    b.moved(x1, 0, front - 0.6, 0, () => ivy(b, 47, 1.2, y0, eaves + 2));
-  }
-
-  // --- the paving before the house between the wings, a step down from the door to the terrace, the lawn's edge
-  for (const [a, c] of [[wings[0].x1, bay.x0], [bay.x1, wings[1].x0]]) b.quad([a, TERRACE.top, front], [c, TERRACE.top, front], [c, TERRACE.top, zS + 0.15], [a, TERRACE.top, zS + 0.15], [0, 1, 0], LIMESTONE);
-  // the path from the house's east door to the forecourt
-  const fc = lotOf('forecourt');
-  b.quad([X1 + 0.15, Y.crest + 0.04, zN + 1.5], [fc.x0 + 0.2, Y.crest + 0.04, zN + 1.5], [fc.x0 + 0.2, Y.crest + 0.04, zN + 4.5], [X1 + 0.15, Y.crest + 0.04, zN + 4.5], [0, 1, 0], GRAVEL);
-  // a side door into the east wing's range
-  b.box(X1, y0, zN + 2.2, X1 + 0.24, y0 + 2.6, zN + 3.8, TIMBER_DARK, { faces: 'NEST', win: interior(0.5) });
-  gasLamp(k, X1 + 0.35, y0 + 3.1, zN + 4.3, 0, AMBER);
-  k.lights.push({ x: xc, z: l.z1 + 1.5, r: 11, color: AMBER, k: 0.5 });
-  k.lights.push({ x: X0 + 3, z: l.z1 - 1, r: 8, color: AMBER, k: 0.4 });
-  k.lights.push({ x: X1 - 3, z: l.z1 - 1, r: 8, color: AMBER, k: 0.4 });
+  for (const p of PAV) pavilion(k, p.x0, p.x1, p.outer);
+  for (const r of RANGES) range(k, r.x0, r.x1, r.dir);
+  tower(k);
+  serviceRange(k, l);
+  porteCochere(k);
+  terraceWalk(k, l);
+  cliffFront(k);
+  // the house's lamps by night: before the front door, before the pavilions, in the porte-cochère
+  k.lights.push({ x: COVE_MID, z: M.z1 + 1.4, r: 12, color: AMBER, k: 0.5 });
+  for (const p of PAV) k.lights.push({ x: (p.x0 + p.x1) / 2, z: M.z1 + 1, r: 8, color: AMBER, k: 0.4 });
 }
 
-// ---------------------------------------------------------------------------
-// The Batcave
-// ---------------------------------------------------------------------------
+/** An end pavilion: three storeys to a gable over the front, a bay window through two of them, a stair turret at its outer front corner. */
+function pavilion(k: Build, x0: number, x1: number, outer: number): void {
+  const b = k.b, mid = (x0 + x1) / 2, hw = (x1 - x0) / 2, ox = outer < 0 ? x0 : x1, seed = outer < 0 ? 5.3 : 5.9;
+  const EAVE = 24, RIDGE = EAVE + 4;
 
-/** A round deck that faces the sky and glows a little at night, as if lit from under: a turntable's top, the pad's. */
-function disc(b: GeoBuilder, x: number, z: number, y: number, r: number, color: number, lit = 0.6, n = 12): void {
-  for (let i = 0; i < n; i++) {
-    const a0 = PI / n + (i / n) * PI * 2, a1 = PI / n + ((i + 1) / n) * PI * 2;
-    b.up([x, y, z], [x + Math.cos(a0) * r, y, z + Math.sin(a0) * r], [x + Math.cos(a1) * r, y, z + Math.sin(a1) * r], color, { win: interior(lit) });
-  }
-}
+  // the plinth, the walls, and the string courses and cornice round them
+  solid(b, x0 - 0.15, FOOT, ZB - 0.15, x1 + 0.15, PLINTH, ZP + 0.15, LIMESTONE_DARK, 'NESWT');
+  b.box(x0, PLINTH, ZB, x1, EAVE, ZP, LIMESTONE, { faces: 'NEW', win: GOTHIC_WIN, seed });
+  b.box(x0, PLINTH, ZB, x1, EAVE, ZP, LIMESTONE, { faces: 'S' });
+  for (const y of [16, 20]) solid(b, x0 - 0.1, y - 0.12, ZB - 0.1, x1 + 0.1, y + 0.1, ZP + 0.1, TRIM, 'NESWTB');
+  solid(b, x0 - 0.18, EAVE - 0.25, ZB - 0.18, x1 + 0.18, EAVE + 0.05, ZP + 0.18, TRIM, 'NESWTB');
 
-/** A turntable's drum: an outer step and an inner top, with lamps round its rim. */
-function turntable(k: Build, x: number, z: number, r: number, top: number, lamp: string): void {
-  const b = k.b;
-  b.cyl(x, z, Y.shelf, top - 0.08, r, r, 12, STEEL_DARK, { cap: STEEL });
-  b.cyl(x, z, top - 0.1, top, r - 0.5, r - 0.5, 12, STEEL_DECK, { cap: false });
-  disc(b, x, z, top, r - 0.5, STEEL_DECK, 0.5);
-  for (let i = 0; i < 8; i++) {
-    const a = (i / 8) * PI * 2 + 0.2;
-    k.glows.push({ x: x + Math.cos(a) * (r - 0.25), y: top - 0.05, z: z + Math.sin(a) * (r - 0.25), sx: 0.22, sy: 0.06, sz: 0.22, color: lamp });
-  }
-}
-
-/** The giant Lincoln penny, standing on its edge in a cradle, its face to the way (nx, nz). */
-function penny(b: GeoBuilder, x: number, z: number, nx: number, nz: number): void {
-  const r = 2.25, t = 0.2, y = Y.cave + 0.45 + r, n = 14, yaw = yawFacing(nx, nz);
-  b.moved(x, y, z, yaw, () => {
-    const p = (i: number, rr: number, lz: number): V3 => [Math.cos((i / n) * PI * 2) * rr, Math.sin((i / n) * PI * 2) * rr, lz];
-    for (let i = 0; i < n; i++) {
-      const m = ((i + 0.5) / n) * PI * 2;
-      b.quad(p(i, r, -t), p(i + 1, r, -t), p(i + 1, r, t), p(i, r, t), [Math.cos(m), Math.sin(m), 0], COPPER);
-      for (const s of [-1, 1]) {
-        tri(b, [0, 0, s * t], p(i, r, s * t), p(i + 1, r, s * t), [0, 0, s], COPPER);
-        tri(b, [0, 0, s * (t + 0.04)], p(i, r - 0.22, s * (t + 0.04)), p(i + 1, r - 0.22, s * (t + 0.04)), [0, 0, s], 0xa8662f);
-      }
-    }
-    // Lincoln's bust in profile, facing right as on the coin: head, beard, neck and shoulders, in relief
-    const R = (x0: number, y0: number, x1: number, y1: number, c = COPPER_DEEP): void => b.box(x0, y0, t + 0.04, x1, y1, t + 0.2, c, { faces: 'NESWT' });
-    R(-0.55, 0.15, 0.45, 1.25);
-    R(-0.2, -0.35, 0.65, 0.35);
-    R(0.45, 0.35, 0.62, 0.75);
-    R(-0.4, -0.8, 0.25, -0.3);
-    R(-1.3, -1.75, 0.9, -0.75);
-    R(-0.6, 1.1, 0.3, 1.45, 0x7a4622);
-  });
-  // the cradle it stands in
-  b.moved(x, 0, z, yaw, () => {
-    solid(b, -1.3, Y.cave, -0.55, 1.3, Y.cave + 0.55, 0.55, STEEL_DARK, 'NESWT');
-    solid(b, -1.45, Y.cave, -0.65, 1.45, Y.cave + 0.12, 0.65, IRON_DARK, 'NESWT');
-  });
-}
-
-/** The mechanical Tyrannosaurus, on a low plinth, facing the way `yaw` turns +x to: a toy's blocky robot of one. Its head reaches about `Y.cave + 6.7`. */
-function rex(k: Build, x: number, z: number, yaw: number): void {
-  const b = k.b, y = Y.cave + 0.3;
-  b.moved(x, y, z, yaw, () => {
-    solid(b, -2.0, -0.3, -1.0, 1.6, 0, 1.0, STONE_DARK, 'NESWT');
-    // the spine, from the tail's tip, which rests on the floor, to the neck
-    const spine: V3[] = [[-4.4, 0.35, -0.6], [-3.3, 1.2, -0.35], [-2.0, 2.4, -0.1], [-0.6, 3.4, 0], [0.5, 4.2, 0], [1.2, 4.9, 0], [1.6, 5.4, 0]];
-    b.sweep(spine, [0.12, 0.3, 0.55, 0.9, 0.95, 0.7, 0.5], REX);
-    // the belly, paler
-    b.beam([-0.4, 2.85, 0], [1.1, 4.1, 0], 0.62, 0.5, REX_BELLY);
-    // the head and the jaw, a little open, with a row of teeth
-    b.obox(2.2, 5.8, 0, 0.95, 0.42, 0.42, -0.12, REX);
-    b.obox(2.1, 5.22, 0, 0.82, 0.16, 0.34, 0.18, REX_DARK);
-    b.obox(2.25, 5.45, 0, 0.7, 0.08, 0.3, 0.05, 0xe9e4d4);
-    for (const s of [-1, 1]) b.box(2.0, 6.1, s * 0.3 - 0.12, 2.35, 6.32, s * 0.3 + 0.12, REX_DARK, { faces: 'NESWT' });
-    // the legs: thigh, shin and a foot of three toes
-    for (const s of [-1, 1]) {
-      b.beam([-0.5, 3.2, s * 0.75], [0.35, 1.7, s * 0.85], 0.55, 0.38, REX);
-      b.beam([0.35, 1.7, s * 0.85], [-0.3, 0.45, s * 0.85], 0.32, 0.24, REX_DARK);
-      b.obox(0.25, 0.15, s * 0.85, 0.7, 0.15, 0.36, 0, REX_DARK);
-      // the small arms
-      b.beam([1.0, 4.5, s * 0.55], [1.6, 3.9, s * 0.65], 0.14, 0.09, REX_DARK);
-    }
-    // plates of the machine along its back
-    for (let i = 0; i < 5; i++) {
-      const t = 0.15 + i * 0.17, p = spine[Math.min(spine.length - 1, Math.round(t * (spine.length - 1)))];
-      b.box(p[0] - 0.22, p[1] + 0.45, p[2] - 0.08, p[0] + 0.22, p[1] + 0.85, p[2] + 0.08, REX_DARK, { faces: 'NESWT' });
-    }
-  });
-  // its eyes glow red at night, as a machine's would
+  // the roof: a gable to the front, a hip behind under the ceiling; the gable's coping, kneelers and finial
+  pitchedZ(b, x0, x1, ZB, ZP, EAVE, RIDGE - EAVE, { ends: ['h', 'g'], over: 0.35, wall: LIMESTONE });
   for (const s of [-1, 1]) {
-    const [ex, ez] = toWorld(x, z, yaw, 2.55, s * 0.43);
-    k.glows.push({ x: ex, y: y + 5.95, z: ez, sx: 0.12, sy: 0.12, sz: 0.12, color: '#ff4030' });
+    b.beam([mid + s * (hw + 0.2), EAVE - 0.05, ZP + 0.12], [mid, RIDGE + 0.2, ZP + 0.12], 0.17, 0.17, TRIM);
+    solid(b, mid + s * hw - 0.4, EAVE - 0.1, ZP - 0.25, mid + s * hw + 0.4, EAVE + 0.55, ZP + 0.3, TRIM);
   }
-}
+  pinnacle(b, mid, ZP + 0.1, RIDGE + 0.1, 1.5, 0.2, TRIM);
+  b.moved(mid, 0, ZP, 0, () => {
+    lancet(b, 0.7, EAVE + 0.7, EAVE + 1.8, { lights: 1, lit: 1.8 });
+    lancet(b, 1.8, 21.2, 22.9, { lights: 2, head: 0.45 });
+  });
+  chimney(b, mid, ZB + 1.4, RIDGE - 2.1, RIDGE + 1.8);
 
-function batcave(k: Build, l: Lot): void {
-  const b = k.b, F = Y.cave, R = rng(0xba7c);
-  const m = lotOf('manor');
-
-  // --- the floor: a concrete apron over the rock, with lines to the tunnel
-  b.quad([l.x0 + 0.2, F + 0.035, l.z1 - 0.15], [l.x1 - 0.2, F + 0.035, l.z1 - 0.15], [l.x1 - 0.2, F + 0.035, l.z0 + 0.05], [l.x0 + 0.2, F + 0.035, l.z0 + 0.05], [0, 1, 0], CONCRETE);
-  for (const s of [-1, 1]) b.quad([l.x0 + 1.4, F + 0.06, WEST_TUNNEL.z + s * 1.9 + 0.08], [TABLE.x - TABLE.r + 0.2, F + 0.06, WEST_TUNNEL.z + s * 1.9 + 0.08], [TABLE.x - TABLE.r + 0.2, F + 0.06, WEST_TUNNEL.z + s * 1.9 - 0.08], [l.x0 + 1.4, F + 0.06, WEST_TUNNEL.z + s * 1.9 - 0.08], [0, 1, 0], HAZARD);
-
-  // --- the terrace over the cave's back: a slab of rock faced in stone, its paving on top, a balustrade along its edges
+  // the bay window through the two lower storeys, battlemented, with pinnacles at its front corners
   {
-    const x0 = m.x0, x1 = m.x1, zb = l.z0, zf = TERRACE.z1, top = TERRACE.top, under = TERRACE.under;
-    b.quad([x0, top, m.z1 - 0.3], [x1, top, m.z1 - 0.3], [x1, top, zf], [x0, top, zf], [0, 1, 0], LIMESTONE);
-    b.quad([x0, under, zb], [x1, under, zb], [x1, under, zf], [x0, under, zf], [0, -1, 0], ROCK_DARK, { win: interior(0.9) });
-    b.quad([x0, under, zf], [x1, under, zf], [x1, top, zf], [x0, top, zf], [0, 0, 1], LIMESTONE_DARK);
-    for (const [x, nx] of [[x0, -1], [x1, 1]] as const) b.quad([x, under, zb], [x, under, zf], [x, top, zf], [x, top, zb], [nx, 0, 0], LIMESTONE_DARK);
-    balustrade(b, [[x0 + 0.2, zf - 0.2], [x1 - 0.2, zf - 0.2]], top, TRIM);
-    balustrade(b, [[x0 + 0.2, zb - 0.1], [x0 + 0.2, zf - 0.2]], top, TRIM);
-    balustrade(b, [[x1 - 0.2, zf - 0.2], [x1 - 0.2, zb - 0.1]], top, TRIM);
-    for (const x of [x0 + 10, x1 - 10]) gasLamp(k, x, top + 1.7, zf - 0.2, 0.6, AMBER);
-    // lamps under it, lighting the cave's back
-    for (let x = x0 + 3; x < x1 - 1; x += 6.5) k.glows.push({ x, y: under - 0.32, z: zf - 0.5, sx: 0.9, sy: 0.08, sz: 0.25, color: '#d8ecff' });
-    // stalactites, and a few roosting bats
-    for (let i = 0; i < 18; i++) {
-      const x = x0 + 1 + R() * (x1 - x0 - 2), z = zb + 0.4 + R() * (zf - zb - 0.8), len = 0.5 + R() * 0.7;
-      if (x > DESK.x0 - 1.5 && x < DESK.x1 + 1.5) continue;
-      b.cyl(x, z, under - len - 0.25, under - 0.2, 0.03, 0.22 + R() * 0.15, 5, i % 3 ? ROCK : ROCK_LIGHT, { cap: false });
+    const bx0 = mid - 1.6, bx1 = mid + 1.6, zf = M.z1, top = 20.3;
+    solid(b, bx0 - 0.12, FOOT, ZP, bx1 + 0.12, PLINTH, zf + 0.12, LIMESTONE_DARK, 'ESWT');
+    b.box(bx0, PLINTH, ZP, bx1, top, zf, LIMESTONE, { faces: 'ESWT', top: LEAD });
+    b.moved(mid, 0, zf, 0, () => lancet(b, 2.6, 12.5, 18.6, { lights: 3, transom: 15.5, head: 0.32 }));
+    for (const [x, face] of [[bx0, 'W'], [bx1, 'E']] as const) {
+      onFace(b, face, x, (ZP + zf) / 2, () => {
+        lancet(b, 0.45, 12.6, 15.0, { lights: 1 });
+        lancet(b, 0.45, 16.6, 18.9, { lights: 1 });
+      });
+      solid(b, x - 0.16, top, ZP, x + 0.16, top + 0.6, zf - 0.2, TRIM, 'NESWT');
     }
-    for (let i = 0; i < 8; i++) {
-      const x = x0 + 3 + R() * (x1 - x0 - 6), z = zb + 0.8 + R() * (zf - zb - 1.4), yb = under - 0.25;
-      b.box(x - 0.09, yb - 0.42, z - 0.09, x + 0.09, yb, z + 0.09, 0x141418, { faces: 'NESWB' });
-      b.box(x - 0.2, yb - 0.36, z - 0.05, x + 0.2, yb - 0.05, z + 0.05, 0x1c1c22, { faces: 'NESWB' });
-    }
+    battlement(b, bx0 - 0.05, bx1 + 0.05, zf + 0.05, 1, top);
+    for (const x of [bx0 + 0.05, bx1 - 0.05]) pinnacle(b, x, zf - 0.1, top + 0.7, 1.3, 0.17, TRIM);
   }
 
-  // --- the turntables and the Batplane's pad
-  turntable(k, TABLE.x, TABLE.z, TABLE.r, TABLE.top, '#cfe6ff');
-  turntable(k, GUEST.x, GUEST.z, GUEST.r, GUEST.top, '#ffd28a');
-  b.cyl(PAD.x, PAD.z, Y.shelf, PAD.top - 0.06, PAD.r, PAD.r, 12, STEEL_DARK, { cap: STEEL });
-  b.cyl(PAD.x, PAD.z, PAD.top - 0.08, PAD.top, PAD.r - 0.6, PAD.r - 0.6, 12, STEEL_DECK, { cap: false });
-  disc(b, PAD.x, PAD.z, PAD.top, PAD.r - 0.6, STEEL_DECK, 0.5);
-  b.cyl(PAD.x, PAD.z, PAD.top - 0.08, PAD.top + 0.02, 1.3, 1.3, 12, HAZARD, { cap: STEEL_DECK });
-  for (let i = 0; i < 10; i++) {
-    const a = (i / 10) * PI * 2;
-    k.glows.push({ x: PAD.x + Math.cos(a) * (PAD.r - 0.3), y: PAD.top - 0.04, z: PAD.z + Math.sin(a) * (PAD.r - 0.3), sx: 0.2, sy: 0.06, sz: 0.2, color: '#ff7a3a' });
-  }
-
-  // --- the tunnel's mouth in the west wall, in line with the Batmobile's turntable
+  // the stair turret at the outer front corner: round, banded, lit by slits, with a conical cap
   {
-    const x0 = l.x0, z0 = WEST_TUNNEL.z - WEST_TUNNEL.half, z1 = WEST_TUNNEL.z + WEST_TUNNEL.half, top = F + WEST_TUNNEL.h, d = 1.3;
-    b.quad([x0 + 0.06, F, z1], [x0 + 0.06, F, z0], [x0 + 0.06, top, z0], [x0 + 0.06, top, z1], [1, 0, 0], DARK, { win: interior(0.6) });
-    for (const [za, zb] of [[z0 - 0.6, z0], [z1, z1 + 0.6]]) solid(b, x0, F, za, x0 + d, top, zb, STEEL_DARK, 'NESW');
-    solid(b, x0, top, z0 - 0.6, x0 + d, top + 0.8, z1 + 0.6, STEEL_DARK, 'ESTB');
-    b.box(x0 + d, top + 0.15, z0 - 0.4, x0 + d + 0.04, top + 0.55, z1 + 0.4, HAZARD, { faces: 'E' });
-    // the floor inside, the tunnel's lamps running in, and two lamps at its mouth
-    b.quad([x0, F + 0.055, z1], [x0 + d, F + 0.055, z1], [x0 + d, F + 0.055, z0], [x0, F + 0.055, z0], [0, 1, 0], STEEL_DECK);
-    for (let i = 0; i < 3; i++) k.glows.push({ x: x0 + 0.25 + i * 0.4, y: top - 0.12, z: WEST_TUNNEL.z, sx: 0.12, sy: 0.06, sz: 3.6, color: '#ffcf7a' });
-    for (const zz of [z0 - 0.3, z1 + 0.3]) k.glows.push({ x: x0 + d + 0.08, y: top + 0.4, z: zz, sx: 0.08, sy: 0.25, sz: 0.25, color: '#ff4a3a' });
-  }
-
-  // --- the stair from the Manor's study: a lit doorway in the back wall, a landing, and a flight down to the floor
-  {
-    const z0 = STAIR.z0, z1 = STAIR.z1, top = STAIR.top, warm = interior(2.6);
-    b.quad([STAIR.x0 + 0.25, top, z0], [STAIR.land - 0.35, top, z0], [STAIR.land - 0.35, TERRACE.under - 0.3, z0], [STAIR.x0 + 0.25, TERRACE.under - 0.3, z0], [0, 0, 1], 0x4a3420, { win: warm });
-    for (const x of [STAIR.x0 + 0.1, STAIR.land - 0.35]) solid(b, x, top, z0 - 0.05, x + 0.25, TERRACE.under - 0.1, z0 + 0.15, STONE_TRIM, 'NESWT');
-    solid(b, STAIR.x0 + 0.1, TERRACE.under - 0.35, z0 - 0.05, STAIR.land - 0.1, TERRACE.under - 0.05, z0 + 0.2, STONE_TRIM, 'NESWB');
-    solid(b, STAIR.x0, top - 0.3, z0, STAIR.land, top, z1, STONE, 'NESWTB');
-    b.beam([STAIR.x0 + 0.3, top - 0.3, z1 - 0.2], [STAIR.x0 + 0.3, F, z1 - 0.2], 0.12, 0.12, STONE_DARK);
-    const steps = 9, run = (STAIR.x1 - STAIR.land) / steps, rise = (top - F) / (steps + 1);
-    for (let i = 0; i < steps; i++) {
-      const xa = STAIR.land + i * run, yt = top - (i + 1) * rise;
-      b.box(xa, yt - 0.35, z0, xa + run + 0.02, yt, z1, STONE, { faces: 'NESWTB' });
-    }
-    // a rail on its open side
-    b.beam([STAIR.x0 + 0.1, top + 1.0, z1 - 0.06], [STAIR.land, top + 1.0, z1 - 0.06], 0.05, 0.05, IRON);
-    b.beam([STAIR.land, top + 1.0, z1 - 0.06], [STAIR.x1, F + 1.0, z1 - 0.06], 0.05, 0.05, IRON);
-    for (const t of [0, 0.5, 1]) {
-      const x = STAIR.land + (STAIR.x1 - STAIR.land) * t, yy = top - (top - F) * t;
-      b.beam([x, yy - 0.1, z1 - 0.06], [x, yy + 1.0, z1 - 0.06], 0.04, 0.04, IRON);
-    }
-    k.lights.push({ x: STAIR.land, z: z1 + 1, r: 6, color: AMBER, k: 0.45 });
-  }
-
-  // --- the Batcomputer on its platform under the terrace: a desk, a great screen and two side screens
-  {
-    const { x0, x1, z0, z1, top } = DESK, mid = (x0 + x1) / 2;
-    b.box(x0, F, z0, x1, top, z1, STEEL_DARK, { faces: 'NESWT', top: STEEL_DECK });
-    solid(b, x0 - 0.6, F, z0 + 0.9, x0, F + 0.4, z0 + 1.9, STEEL, 'NESWT');
-    solid(b, x1, F, z0 + 0.9, x1 + 0.6, F + 0.4, z0 + 1.9, STEEL, 'NESWT');
-    b.beam([x0 + 0.1, top + 1.0, z1 - 0.1], [x1 - 0.1, top + 1.0, z1 - 0.1], 0.05, 0.05, IRON);
-    for (const x of [x0 + 0.1, mid, x1 - 0.1]) b.beam([x, top, z1 - 0.1], [x, top + 1.0, z1 - 0.1], 0.04, 0.04, IRON);
-    // the desk, its keys glowing
-    solid(b, mid - 2.8, top, z0 + 0.95, mid + 2.8, top + 0.85, z0 + 1.45, STEEL_DARK, 'NESWT');
-    k.glows.push({ x: mid, y: top + 0.88, z: z0 + 1.3, sx: 4.6, sy: 0.03, sz: 0.25, color: '#7fc8ff' });
-    // the great screen on its frame
-    const sz = z0 + 0.72;
-    solid(b, mid - 2.1, top + 0.85, sz - 0.12, mid + 2.1, top + 3.55, sz, DARK, 'NESWTB');
-    k.sign('bristol-screen', mid, top + 2.2, sz + 0.03, 0, 1, 2.4, 3.9);
-    for (const s of [-1, 1]) {
-      const sx = mid + s * 3.0, sz2 = z0 + 1.05, nx = -s * 0.45, nz = 0.89, yaw = Math.atan2(-nx, nz);
-      b.moved(sx, 0, sz2, yaw, () => solid(b, -0.95, top + 1.2, -0.14, 0.95, top + 2.75, 0, DARK, 'NESWTB'));
-      k.sign('bristol-screen-side', sx + nx * 0.03, top + 1.97, sz2 + nz * 0.03, nx, nz, 1.3, 1.8);
-    }
-    k.lights.push({ x: mid, z: z1 + 0.8, r: 7, color: '#7fb8ff', k: 0.6 });
-  }
-
-  // --- the workbench and the lockers along the back, oil drums by the pad
-  {
-    const z0 = l.z0 + 0.08;
-    solid(b, 18.6, F, z0, 24.8, F + 1.05, z0 + 1.0, TIMBER_DARK, 'NESWT');
-    solid(b, 18.5, F + 1.05, z0 - 0.02, 24.9, F + 1.15, z0 + 1.08, STEEL, 'NESWT');
-    solid(b, 19.2, F + 1.15, z0 + 0.2, 20.4, F + 1.6, z0 + 0.7, 0xa03028, 'NESWT');
-    solid(b, 22.2, F + 1.15, z0 + 0.3, 22.7, F + 1.55, z0 + 0.6, IRON, 'NESWT');
-    b.quad([18.8, F + 1.5, z0 - 0.03], [24.6, F + 1.5, z0 - 0.03], [24.6, F + 3.1, z0 - 0.03], [18.8, F + 3.1, z0 - 0.03], [0, 0, 1], TIMBER);
-    k.glows.push({ x: 21.7, y: F + 3.3, z: z0 + 0.4, sx: 1.4, sy: 0.08, sz: 0.2, color: '#ffe6b0' });
-    solid(b, 44.4, F, z0, 48.8, F + 2.6, z0 + 0.65, STEEL, 'NESWT');
-    for (let x = 45.5; x < 48.7; x += 1.1) b.box(x - 0.03, F + 0.1, z0 + 0.65, x + 0.03, F + 2.5, z0 + 0.68, IRON_DARK, { faces: 'S' });
-    for (const [x, zz] of [[39.6, z0 + 0.6], [40.7, z0 + 0.5], [40.1, z0 + 1.35]]) b.cyl(x, zz, F, F + 1.2, 0.45, 0.45, 8, zz > z0 + 1 ? 0x7a3a2c : 0x3a5a7a);
-  }
-
-  // --- the trophies: the penny and the Tyrannosaurus at the back of the open part, the Joker card at the cut's mouth
-  penny(b, 22.6, -93.0, 0.34, 0.94);
-  rex(k, 36.2, -92.6, 1.15);
-  {
-    const cx = l.x0 + 1.8, cz = l.z1 - 1.3, nx = TO_VIEW[0], nz = TO_VIEW[2], yaw = yawFacing(nx, nz), cy = F + 0.4 + 2.5;
-    b.moved(cx, 0, cz, yaw, () => {
-      solid(b, -1.8, cy - 2.5, -0.06, 1.8, cy + 2.5, 0.06, 0xe9e4d8);
-      solid(b, -1.0, F, -0.5, 1.0, F + 0.4, 0.3, STEEL_DARK, 'NESWT');
-      b.beam([0, F + 0.3, -0.45], [0, cy + 0.6, -0.08], 0.08, 0.06, IRON);
-    });
-    k.sign('bristol-card', cx + nx * 0.09, cy, cz + nz * 0.09, nx, nz, 5, 3.6);
-    k.sign('bristol-card-back', cx - nx * 0.09, cy, cz - nz * 0.09, -nx, -nz, 5, 3.6);
-  }
-
-  // --- the cave's rock: lips that overhang its cut along the top of its walls, stalactites under them, stalagmites at its edges
-  for (const [x, dir] of [[l.x0, 1], [l.x1, -1]] as const) {
-    const cuts = [l.z0, l.z0 + 3, l.z0 + 6.2, l.z0 + 9.1, l.z1 - 0.3];
-    for (let i = 0; i + 1 < cuts.length; i++) {
-      const za = cuts[i] + 0.05, zb = cuts[i + 1] - 0.05, overPortal = dir > 0 && za < WEST_TUNNEL.z + WEST_TUNNEL.half + 1.2 && zb > WEST_TUNNEL.z - WEST_TUNNEL.half - 1.2;
-      const overCard = dir > 0 && zb > l.z1 - 3.4;
-      const reach = overCard ? 0.45 : 0.6 + R() * 0.8;
-      let yb = Y.crest - 1.3 - R() * 0.9;
-      if (overPortal) yb = Math.max(yb, Y.cave + WEST_TUNNEL.h + 1.05);
-      if (overCard) yb = Math.max(yb, Y.crest - 0.3);
-      const xa = dir > 0 ? x - 0.4 : x - reach, xb = dir > 0 ? x + reach : x + 0.4;
-      solid(b, xa, yb, za, xb, Y.crest + 0.25 + R() * 0.35, zb, i % 2 ? ROCK : ROCK_LIGHT);
-      for (let j = 0; j < 3; j++) {
-        if (overPortal || overCard) continue;
-        const sx = dir > 0 ? x + 0.15 + R() * (reach - 0.25) : x - 0.15 - R() * (reach - 0.25), sz = za + 0.4 + R() * (zb - za - 0.8);
-        b.cyl(sx, sz, yb - 0.5 - R() * 0.5, yb, 0.03, 0.18, 5, ROCK_DARK, { cap: false });
+    const tx = ox - outer * 0.1, tz = ZP, r = 0.85, ap = r * Math.cos(PI / 8);
+    b.cyl(tx, tz, FOOT, PLINTH, r + 0.12, r + 0.12, 8, LIMESTONE_DARK, { cap: false });
+    b.cyl(tx, tz, PLINTH, 25.3, r, r, 8, LIMESTONE, { cap: false });
+    for (const y of [16, 20]) b.cyl(tx, tz, y - 0.14, y + 0.08, r + 0.08, r + 0.08, 8, TRIM, { cap: false });
+    for (const a of outer < 0 ? [PI, (3 * PI) / 4, PI / 2] : [0, PI / 4, PI / 2]) {
+      for (const y of [13.0, 17.0, 21.0]) {
+        b.moved(tx + Math.cos(a) * ap, 0, tz + Math.sin(a) * ap, yawFacing(Math.cos(a), Math.sin(a)), () =>
+          b.quad([-0.1, y, 0.02], [0.1, y, 0.02], [0.1, y + 1.5, 0.02], [-0.1, y + 1.5, 0.02], [0, 0, 1], PANE, { win: interior(2.0) }));
       }
     }
+    b.cyl(tx, tz, 25.3, 25.55, r + 0.15, r + 0.15, 8, TRIM);
+    b.cyl(tx, tz, 25.55, 30.0, r + 0.13, 0.04, 8, SLATE, { cap: false });
+    b.cyl(tx, tz, 29.85, 30.4, 0.09, 0.02, 4, BRASS, { cap: false });
   }
-  for (const [x, z, h] of [[49.4, -88.4, 1.4], [49.5, -89.6, 0.9], [6.7, -95.0, 1.1]]) b.cyl(x, z, F, F + h, 0.5, 0.05, 6, ROCK, { cap: false });
-  // a column of rock at the mouth's east corner, where a stalagmite has met its stalactite: it frames the cutaway
+
+  // ivy up the outer side, near the front
+  onFace(b, outer < 0 ? 'W' : 'E', ox, ZP - 2.4, () => ivy(b, outer < 0 ? 41 : 43, 2.2, FOOT + 0.3, 19, 0.15));
+
+  // the garden door in the west pavilion's end, and three steps down into the pool garden
+  if (outer < 0) {
+    onFace(b, 'W', x0, GARDEN_DOOR_Z, () => {
+      const dw = 0.7, d0 = SILL + 0.25, dt = 13.0, z = 0.18;
+      b.quad([-dw, d0, z + 0.02], [dw, d0, z + 0.02], [dw, dt, z + 0.02], [-dw, dt, z + 0.02], [0, 0, 1], TIMBER_DARK, { win: interior(0.5) });
+      tri(b, [-dw, dt, z + 0.02], [dw, dt, z + 0.02], [0, dt + 0.8, z + 0.02], [0, 0, 1], TIMBER_DARK, { win: interior(0.5) });
+      for (const s of [-1, 1]) {
+        b.box(s * (dw + 0.12) - 0.13, FOOT, 0, s * (dw + 0.12) + 0.13, dt, z + 0.1, TRIM, { faces: 'SEWT' });
+        b.beam([s * (dw + 0.12), dt - 0.05, z + 0.05], [0, dt + 0.95, z + 0.05], 0.13, 0.13, TRIM);
+      }
+      // the steps: a landing at the sill, then two more down to the walk
+      for (const [z0, z1, y] of [[0, 0.45, d0], [0.45, 0.85, SILL], [0.85, 1.25, SILL - 0.23]]) b.box(-1.0, FOOT, z0, 1.0, y, z1, STONE_LIGHT, { faces: 'ESWT' });
+    });
+    gasLamp(k, x0 - 0.35, 13.4, GARDEN_DOOR_Z + 1.2, 0, AMBER);
+  }
+}
+
+/** A range between a pavilion and the tower: two storeys of tall mullioned windows, battlemented, with a steep roof, two dormers and a tall stack. */
+function range(k: Build, x0: number, x1: number, dir: number): void {
+  const b = k.b, EAVE = 20, rise = 5, half = (ZR - ZB) / 2, slope = rise / half;
+  // the plinth stops short of its neighbours', so that their tops never lie in one plane
+  solid(b, x0 + 0.15, FOOT, ZB, x1 - 0.15, PLINTH, ZR + 0.15, LIMESTONE_DARK, 'ST');
+  b.box(x0, PLINTH, ZB, x1, EAVE, ZR, LIMESTONE, { faces: 'S' });
+  solid(b, x0, 15.85, ZR, x1, 16.05, ZR + 0.1, TRIM, 'STB');
+  solid(b, x0, EAVE - 0.25, ZR, x1, EAVE, ZR + 0.14, TRIM, 'STB');
+  for (let i = 0; i < 3; i++) {
+    const x = x0 + ((i + 0.5) * (x1 - x0)) / 3;
+    b.moved(x, 0, ZR, 0, () => {
+      lancet(b, 1.5, 12.6, 14.9, { lights: 2, transom: 13.9 });
+      lancet(b, 1.5, 16.6, 18.9, { lights: 2, transom: 17.9 });
+    });
+  }
+  battlement(b, x0, x1, ZR + 0.14, 1, EAVE);
+  // the roof reaches into the pavilion's, so that its end is buried there; the tower is taller and hides the other
+  roofX(b, x0 - (dir < 0 ? 0.75 : 0), x1 + (dir > 0 ? 0.75 : 0), ZB, ZR, EAVE, rise, { overS: 0, overN: 0.3, overX: 0, gables: false });
+  // two dormers on its front slope
+  for (const xd of [x0 + 2.2, x1 - 2.2]) {
+    const zf = ZR - 0.8, yb = EAVE + 0.8 * slope - 0.25;
+    b.box(xd - 0.75, yb, zf - 1.6, xd + 0.75, 22.9, zf, LIMESTONE, { faces: 'SEW' });
+    gable(b, xd - 0.75, zf - 1.8, xd + 0.75, zf, 22.9, 0.85, SLATE, LIMESTONE, 'z', 0.15);
+    b.moved(xd, 0, zf, 0, () => lancet(b, 0.75, 21.5, 22.3, { lights: 1, lit: 2 }));
+  }
+  chimney(b, (x0 + x1) / 2, (ZB + ZR) / 2, EAVE + rise - 0.6, EAVE + rise + 3.6);
+}
+
+/** The great tower in the middle: a porch with the front door, a great traceried window, a clock, a battlemented top with corner turrets, a steep roof with cresting, and a flag. */
+function tower(k: Build): void {
+  const b = k.b, T = TOWER, cx = COVE_MID, cz = (T.z0 + T.z1) / 2, top = T.top;
+
+  // the body, on its plinth; its top stage is the leads behind the parapet
+  solid(b, T.x0 - 0.15, FOOT, T.z0, T.x1 + 0.15, PLINTH, T.z1 + 0.15, LIMESTONE_DARK, 'ESWT');
+  b.box(T.x0, PLINTH, T.z0, T.x1, 28, T.z1, LIMESTONE, { faces: 'NEW', win: GOTHIC_WIN, seed: 7.7 });
+  b.box(T.x0, PLINTH, T.z0, T.x1, 28, T.z1, LIMESTONE, { faces: 'S' });
+  b.box(T.x0, 28, T.z0, T.x1, top, T.z1, LIMESTONE, { faces: 'NESWT', top: LEAD });
+  for (const [y0, y1] of [[22.85, 23.1], [27.3, 27.6]]) solid(b, T.x0 - 0.14, y0, T.z0 - 0.14, T.x1 + 0.14, y1, T.z1 + 0.14, TRIM);
+  // quoins up its two front corners
+  for (const x of [T.x0 - 0.1, T.x1 - 0.32]) solid(b, x, PLINTH, T.z1 - 0.3, x + 0.42, 22.85, T.z1 + 0.1, TRIM, 'ESWT');
+
+  // the porch, standing out onto the terrace, with the front door in a pointed arch
   {
-    const x = l.x1 - 0.9, z = l.z1 - 1.0;
-    b.cyl(x, z, F - 0.1, F + 3.2, 1.15, 0.42, 7, ROCK);
-    b.cyl(x, z, F + 3.2, Y.crest + 0.3, 0.42, 1.2, 7, ROCK_LIGHT, { cap: ROCK });
-  }
-  // the walls of the cut and its back, faced in rock that glows a little at night, as a cave lit from within does
-  b.quad([l.x0 + 0.03, F, l.z0 + 0.02], [l.x0 + 0.03, F, l.z1], [l.x0 + 0.03, Y.crest - 0.3, l.z1], [l.x0 + 0.03, Y.crest - 0.3, l.z0 + 0.02], [1, 0, 0], ROCK, { win: interior(0.7) });
-  b.quad([l.x1 - 0.03, F, l.z1], [l.x1 - 0.03, F, l.z0 + 0.02], [l.x1 - 0.03, Y.crest - 0.3, l.z0 + 0.02], [l.x1 - 0.03, Y.crest - 0.3, l.z1], [-1, 0, 0], ROCK, { win: interior(0.7) });
-  b.quad([l.x0, F, l.z0 + 0.02], [l.x1, F, l.z0 + 0.02], [l.x1, TERRACE.under, l.z0 + 0.02], [l.x0, TERRACE.under, l.z0 + 0.02], [0, 0, 1], ROCK_DARK, { win: interior(0.9) });
-  // rocks along the clifftop on either side of the cut, so that its rim reads as rock and not lawn
-  for (const [xa, xb] of [[CREST.cove.x1 + 0.5, l.x0 - 0.3], [l.x1 + 0.3, CREST.spur.x0 - 0.3]]) {
-    for (let x = xa; x < xb - 0.8; ) {
-      const w = 1.2 + R() * 1.6, x1 = Math.min(xb, x + w);
-      solid(b, x, Y.crest - 0.6, CREST.cliff - 1.3 - R() * 0.6, x1, Y.crest + 0.3 + R() * 0.55, CREST.cliff - 0.1, R() > 0.5 ? ROCK : ROCK_LIGHT, 'NESWT');
-      x = x1 + 0.2 + R() * 0.8;
+    const P = PORCH, dh = P.door, spring = 13.0, r = 1.35, deep = 0.45;
+    b.box(P.x0, FOOT, P.z0, P.x1, P.top, P.z1, LIMESTONE, { faces: 'EW' });
+    b.quad([P.x0, FOOT, P.z1], [cx - dh, FOOT, P.z1], [cx - dh, P.top, P.z1], [P.x0, P.top, P.z1], [0, 0, 1], LIMESTONE);
+    b.quad([cx + dh, FOOT, P.z1], [P.x1, FOOT, P.z1], [P.x1, P.top, P.z1], [cx + dh, P.top, P.z1], [0, 0, 1], LIMESTONE);
+    flat(b, P.x0, P.z0, P.x1, P.z1, P.top, LEAD);
+    pointedArch(b, cx, P.z1 - deep, P.z1, dh, r, spring, P.top, LIMESTONE, LIMESTONE_DARK, 5);
+    for (const s of [-1, 1]) b.quad([cx + s * dh, SILL, P.z1 - deep], [cx + s * dh, SILL, P.z1], [cx + s * dh, spring, P.z1], [cx + s * dh, spring, P.z1 - deep], [-s, 0, 0], LIMESTONE_DARK);
+    solid(b, cx - dh, FOOT, P.z1 - deep, cx + dh, SILL, P.z1, STONE_LIGHT, 'ST');
+    // the door: oak, in two leaves, lit through a fanlight at night
+    const apex = spring + archRise(dh, r) - 0.03, zl = P.z1 - deep + 0.02;
+    b.quad([cx - dh, SILL, zl], [cx + dh, SILL, zl], [cx + dh, spring, zl], [cx - dh, spring, zl], [0, 0, 1], TIMBER_DARK);
+    tri(b, [cx - dh, spring, zl], [cx + dh, spring, zl], [cx, apex, zl], [0, 0, 1], PANE, { win: interior(2.4) });
+    b.box(cx - 0.05, SILL, zl, cx + 0.05, spring, zl + 0.05, 0x2a1c12, { faces: 'SEW' });
+    // its surround of trim, the plinth's band each side, and a lamp on each side
+    for (const s of [-1, 1]) {
+      b.beam([cx + s * (dh + 0.16), FOOT, P.z1 + 0.08], [cx + s * (dh + 0.16), spring, P.z1 + 0.08], 0.14, 0.14, TRIM);
+      b.beam([cx + s * (dh + 0.16), spring - 0.05, P.z1 + 0.08], [cx, apex + 0.3, P.z1 + 0.08], 0.14, 0.14, TRIM);
+      const bx0 = s < 0 ? P.x0 - 0.1 : cx + dh + 0.3, bx1 = s < 0 ? cx - dh - 0.3 : P.x1 + 0.1;
+      solid(b, bx0, FOOT, P.z0, bx1, PLINTH, P.z1 + 0.1, LIMESTONE_DARK, 'ESWT');
+      b.beam([cx + s * 2.0, 13.0, P.z1], [cx + s * 2.0, 13.0, P.z1 + 0.4], 0.05, 0.05, IRON_DARK);
+      gasLamp(k, cx + s * 2.0, 12.6, P.z1 + 0.45, 0, AMBER);
     }
+    // battlements, and pinnacles at its front corners
+    battlement(b, P.x0, P.x1, P.z1 + 0.1, 1, P.top);
+    for (const x of [P.x0, P.x1]) pinnacle(b, x, P.z1, P.top + 0.7, 1.4, 0.2, TRIM);
+    // the two steps up from the terrace to the sill
+    solid(b, cx - 1.6, FOOT, P.z1, cx + 1.6, SILL - 0.15, P.z1 + 0.4, STONE_LIGHT, 'ESWT');
+    solid(b, cx - 1.9, FOOT, P.z1 + 0.4, cx + 1.9, SILL - 0.3, P.z1 + 0.75, STONE_LIGHT, 'ESWT');
   }
 
-  // the cave glows from within at night
-  k.lights.push({ x: TABLE.x, z: TABLE.z, r: 10, color: COLD, k: 0.7 });
-  k.lights.push({ x: GUEST.x, z: GUEST.z, r: 9, color: AMBER, k: 0.65 });
-  k.lights.push({ x: PAD.x, z: PAD.z, r: 9, color: COLD, k: 0.65 });
-  k.lights.push({ x: 36, z: -88, r: 8, color: '#9ad0ff', k: 0.5 });
-  // guide lamps let into the floor along the mouth, lamps on the west wall, and lamps that light the trophies from below
-  for (let x = l.x0 + 1.5; x < l.x1 - 2; x += 2.6) k.glows.push({ x, y: F + 0.06, z: l.z1 - 0.35, sx: 0.5, sy: 0.04, sz: 0.14, color: '#6fb8ff' });
-  for (let z = l.z0 + 3.4; z < l.z1 - 1; z += 3.6) if (Math.abs(z - WEST_TUNNEL.z) > WEST_TUNNEL.half + 0.9) k.glows.push({ x: l.x0 + 0.15, y: Y.crest - 2.2, z, sx: 0.12, sy: 0.3, sz: 0.5, color: '#d8ecff' });
-  for (const [x, z] of [[21.6, -91.9], [23.6, -92.3], [37.4, -91.2]]) k.glows.push({ x, y: F + 0.12, z, sx: 0.3, sy: 0.12, sz: 0.3, color: '#ffe0a0' });
-  k.lights.push({ x: 22.6, z: -91.5, r: 6, color: '#ffd28a', k: 0.45 });
-
-  // the name, as a museum labels a cutaway: a small board at the cut's edge, on the hill east of it
+  // the great window over the porch, traceried, and the clock over it
+  b.moved(cx, 0, T.z1, 0, () => lancet(b, 3.4, 16.0, 20.4, { lights: 3, transom: 18.2, head: 0.62, tracery: true }));
   {
-    const x = l.x1 + 1.6, z = l.z1 - 1.3, y = Y.crest, h = 0.8;
-    const w = k.sign('bristol-batcave', x + TO_VIEW[0] * 0.03, y + 1.25, z + TO_VIEW[2] * 0.03, TO_VIEW[0], TO_VIEW[2], h, 5);
-    const yaw = Math.atan2(TO_VIEW[0], -TO_VIEW[2]);
-    b.obox(x - TO_VIEW[0] * 0.05, y + 1.25, z - TO_VIEW[2] * 0.05, w / 2 + 0.1, h / 2 + 0.08, 0.05, yaw, DARK, { faces: 'B' });
-    for (const s of [-1, 1]) b.beam([x + Math.cos(yaw) * s * (w / 2 - 0.2), y, z + Math.sin(yaw) * s * (w / 2 - 0.2)], [x + Math.cos(yaw) * s * (w / 2 - 0.2), y + 0.85, z + Math.sin(yaw) * s * (w / 2 - 0.2)], 0.07, 0.07, IRON);
-    BOARDS.push({ x, z, w });
+    const cy = 25.2, z = T.z1;
+    roundel(b, [cx, cy, z + 0.04], 1.62, 'S', TRIM, {}, 16);
+    roundel(b, [cx, cy, z + 0.08], 1.4, 'S', DIAL, { win: interior(1.6) }, 16);
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * PI * 2, tx = cx + Math.cos(a) * 1.18, ty = cy + Math.sin(a) * 1.18, s = i % 3 === 0 ? 0.11 : 0.06;
+      b.quad([tx - s, ty - s, z + 0.1], [tx + s, ty - s, z + 0.1], [tx + s, ty + s, z + 0.1], [tx - s, ty + s, z + 0.1], [0, 0, 1], 0x24221f);
+    }
+    // the hands at ten past ten
+    b.beam([cx, cy, z + 0.13], [cx - 0.62, cy + 0.36, z + 0.13], 0.07, 0.04, 0x24221f);
+    b.beam([cx, cy, z + 0.14], [cx + 0.85, cy + 0.5, z + 0.14], 0.05, 0.03, 0x24221f);
+  }
+
+  // the top stage, lit at night: three small lancets to the front, two on each other face
+  b.moved(cx, 0, T.z1, 0, () => { for (const x of [-2, 0, 2]) b.moved(x, 0, 0, 0, () => lancet(b, 0.7, 27.85, 28.9, { lights: 1, lit: 2.8 })); });
+  for (const [face, x, z, along] of [['E', T.x1, cz, 'z'], ['W', T.x0, cz, 'z'], ['N', cx, T.z0, 'x']] as const) {
+    for (const d of [-1.5, 1.5]) onFace(b, face, along === 'z' ? x : x + d, along === 'z' ? z + d : z, () => lancet(b, 0.7, 27.85, 28.9, { lights: 1, lit: 2.8 }));
+  }
+
+  // gargoyles on the string course under the clock, one out at each corner
+  for (const [x, z, yaw] of [[T.x0 - 0.05, T.z1 + 0.05, (3 * PI) / 4], [T.x1 + 0.05, T.z1 + 0.05, PI / 4], [T.x0 - 0.05, T.z0 - 0.05, (-3 * PI) / 4], [T.x1 + 0.05, T.z0 - 0.05, -PI / 4]] as const) {
+    gargoyle(b, x, 23.1, z, yaw, 0.8);
+  }
+
+  // the parapet, battlemented, and a turret corbelled out at each corner
+  battlement(b, T.x0, T.x1, T.z1 + 0.12, 1, top);
+  battlement(b, T.x0, T.x1, T.z0 - 0.12, -1, top);
+  for (const [face, x] of [['E', T.x1], ['W', T.x0]] as const) onFace(b, face, x, cz, () => battlement(b, -(T.z1 - T.z0) / 2, (T.z1 - T.z0) / 2, 0.12, 1, top));
+  for (const [x, z] of [[T.x0, T.z1], [T.x1, T.z1], [T.x0, T.z0], [T.x1, T.z0]]) {
+    b.cyl(x, z, 25.3, 26.4, 0.12, 0.9, 8, TRIM, { cap: false });
+    b.cyl(x, z, 26.4, 31.4, 0.85, 0.85, 8, LIMESTONE, { cap: false });
+    b.cyl(x, z, 31.4, 31.65, 1.0, 1.0, 8, TRIM);
+    b.cyl(x, z, 31.65, 34.1, 0.97, 0.04, 8, SLATE, { cap: false });
+    const a = Math.atan2(z - cz, x - cx), ap = 0.85 * Math.cos(PI / 8) + 0.02;
+    b.moved(x + Math.cos(a) * ap, 0, z + Math.sin(a) * ap, yawFacing(Math.cos(a), Math.sin(a)), () =>
+      b.quad([-0.1, 28.2, 0], [0.1, 28.2, 0], [0.1, 29.7, 0], [-0.1, 29.7, 0], [0, 0, 1], PANE, { win: interior(2.4) }));
+  }
+
+  // the roof: steep, its slopes leaning in to a small flat top with iron cresting round it, and a lucarne to the front
+  {
+    const rx0 = T.x0 + 1.0, rx1 = T.x1 - 1.0, rz0 = T.z0 + 0.9, rz1 = T.z1 - 1.3, ry = 36.4;
+    const inX = (rx1 - rx0 - 1) / 2, inZ = (rz1 - rz0 - 1) / 2, rzc = (rz0 + rz1) / 2;
+    hipped(b, rx0, rz0, rx1, rz1, top, ry, inX, inZ, SLATE, LEAD);
+    const c: V3[] = [[cx - 0.5, ry, rzc - 0.5], [cx + 0.5, ry, rzc - 0.5], [cx + 0.5, ry, rzc + 0.5], [cx - 0.5, ry, rzc + 0.5]];
+    for (let i = 0; i < 4; i++) cresting(b, c[i], c[(i + 1) % 4], 0.33);
+    // the lucarne: a small gabled window on the front slope
+    const ly = 31.2, lz = rz1 - ((ly - top) / (ry - top)) * inZ;
+    b.box(cx - 0.6, ly - 0.3, lz - 0.8, cx + 0.6, ly + 1.2, lz, LIMESTONE, { faces: 'SEW' });
+    gable(b, cx - 0.6, lz - 1.0, cx + 0.6, lz, ly + 1.2, 0.7, SLATE, LIMESTONE, 'z', 0.12);
+    b.moved(cx, 0, lz, 0, () => lancet(b, 0.55, ly, ly + 0.8, { lights: 1, lit: 2.6, head: 0.4 }));
+    // the mast and the flag, flying east
+    b.cyl(cx, rzc, ry, 41.0, 0.13, 0.07, 6, 0xd8d8d8, { cap: false });
+    b.cyl(cx, rzc, 40.95, 41.25, 0.15, 0.15, 6, BRASS);
+    for (const s of [-1, 1]) b.quad([cx + 0.1, 39.55, rzc + s * 0.02], [cx + 1.9, 39.65, rzc + s * 0.02], [cx + 1.9, 40.7, rzc + s * 0.02], [cx + 0.1, 40.8, rzc + s * 0.02], [0, 0, s], FLAG);
+  }
+
+  // ivy on the tower's foot, beside the porch
+  b.moved(T.x1 - 1.0, 0, T.z1, 0, () => ivy(b, 47, 1.4, FOOT + 0.3, 17, 0.15));
+}
+
+/** The service ranges along the back, under the ceiling: plain windows, a hipped roof, two chimneys and a back door. */
+function serviceRange(k: Build, l: Lot): void {
+  const b = k.b, x0 = PAV[0].x0 + 0.6, x1 = PAV[1].x1 - 0.6, z0 = l.z0 + 0.1, z1 = ZB - 0.2, EAVE = 20;
+  solid(b, x0 - 0.12, FOOT, z0 - 0.12, x1 + 0.12, PLINTH, z1, LIMESTONE_DARK, 'NEWT');
+  b.box(x0, PLINTH, z0, x1, EAVE, z1, LIMESTONE, { faces: 'NEW', win: SMALL_WIN, seed: 9.3 });
+  solid(b, x0 - 0.1, EAVE - 0.25, z0 - 0.1, x1 + 0.1, EAVE, z1, TRIM, 'NEWB');
+  pitched(b, x0, x1, z0, z1, EAVE, 2.2, { ends: ['h', 'h'], over: 0.3 });
+  for (const x of [x0 + 8, x1 - 8]) chimney(b, x, z0 + 1.6, EAVE + 0.8, Math.min(ceilingAt(x, z0 + 1.1) - 0.6, 24.6));
+  // the back door and its lamp
+  const dx = COVE_MID + 4;
+  b.quad([dx - 0.7, SILL, z0 - 0.15], [dx + 0.7, SILL, z0 - 0.15], [dx + 0.7, 12.8, z0 - 0.15], [dx - 0.7, 12.8, z0 - 0.15], [0, 0, -1], TIMBER_DARK, { win: interior(0.5) });
+  solid(b, dx - 1.0, FOOT, z0 - 0.75, dx + 1.0, SILL, z0 - 0.12, STONE_LIGHT, 'NEWT');
+  gasLamp(k, dx + 1.2, 13.0, z0 - 0.35, 0, AMBER);
+}
+
+/** The porte-cochère: a carriage porch of three pointed arches with a flat balustraded roof, before the east door. */
+function porteCochere(k: Build): void {
+  const b = k.b, P = PORTE, pier = 0.55, spring = Y.crest + 2.2, half = (P.x1 - P.x0) / 2 - pier, sideHalf = (P.z1 - P.z0) / 2 - 0.5;
+  // the piers at its corners
+  for (const [x0, z0] of [[P.x0, P.z0], [P.x1 - pier, P.z0], [P.x0, P.z1 - 0.5], [P.x1 - pier, P.z1 - 0.5]]) solid(b, x0, FOOT, z0, x0 + pier, P.top, z0 + 0.5, LIMESTONE, 'NESWT');
+  // its arches: one at each end, which the carriages pass through, and one to the court
+  for (const z of [P.z0, P.z1 - 0.5]) pointedArch(b, (P.x0 + P.x1) / 2, z, z + 0.5, half, half * 1.3, spring, P.top, LIMESTONE, LIMESTONE_DARK, 5);
+  b.moved(P.x1 - 0.25, 0, PORTE_Z, PI / 2, () => pointedArch(b, 0, -0.25, 0.25, sideHalf, sideHalf * 1.3, spring, P.top, LIMESTONE, LIMESTONE_DARK, 5));
+  // its roof: a slab with a cornice, a ceiling under it, and a balustrade round it
+  solid(b, P.x0, P.top, P.z0 - 0.1, P.x1 + 0.1, P.top + 0.45, P.z1 + 0.1, TRIM, 'NESWT');
+  b.quad([P.x0, P.top, P.z0 + 0.5], [P.x1 - 0.5, P.top, P.z0 + 0.5], [P.x1 - 0.5, P.top, P.z1 - 0.5], [P.x0, P.top, P.z1 - 0.5], [0, -1, 0], LIMESTONE_DARK);
+  const piers = balustrade(b, [[P.x1 - 0.15, P.z0 + 0.15], [P.x1 - 0.15, P.z1 - 0.15]], P.top + 0.45, TRIM, 2.4);
+  balustrade(b, [[P.x0 + 0.2, P.z0 + 0.15], [P.x1 - 0.6, P.z0 + 0.15]], P.top + 0.45, TRIM, 2.4);
+  balustrade(b, [[P.x0 + 0.2, P.z1 - 0.15], [P.x1 - 0.6, P.z1 - 0.15]], P.top + 0.45, TRIM, 2.4);
+  for (const [x, z] of [piers[0], piers[piers.length - 1]]) urn(b, x, P.top + 1.65, z);
+  // the flags under it, the east door with its step, and the lamp that hangs inside
+  flat(b, P.x0, P.z0, COURT.x0 + 0.2, P.z1, TERRACE.top, FLAGS);
+  onFace(b, 'E', P.x0, PORTE_Z, () => {
+    const dw = 0.75, dt = 12.9, z = 0.18;
+    b.quad([-dw, SILL, z + 0.02], [dw, SILL, z + 0.02], [dw, dt, z + 0.02], [-dw, dt, z + 0.02], [0, 0, 1], TIMBER_DARK, { win: interior(0.5) });
+    tri(b, [-dw, dt, z + 0.02], [dw, dt, z + 0.02], [0, dt + 0.8, z + 0.02], [0, 0, 1], PANE, { win: interior(2.2) });
+    for (const s of [-1, 1]) b.box(s * (dw + 0.12) - 0.13, FOOT, 0, s * (dw + 0.12) + 0.13, dt + 0.2, z + 0.1, TRIM, { faces: 'SEWT' });
+    b.box(-1.0, FOOT, 0, 1.0, SILL, 0.5, STONE_LIGHT, { faces: 'ESWT' });
+  });
+  b.beam([(P.x0 + P.x1) / 2, P.top, PORTE_Z], [(P.x0 + P.x1) / 2, P.top - 0.6, PORTE_Z], 0.03, 0.03, IRON_DARK);
+  k.glows.push({ x: (P.x0 + P.x1) / 2, y: P.top - 0.8, z: PORTE_Z, sx: 0.3, sy: 0.36, sz: 0.3, color: AMBER });
+  k.lights.push({ x: (P.x0 + P.x1) / 2, z: PORTE_Z, r: 8, color: AMBER, k: 0.5 });
+}
+
+/** The terrace walk along the cliff's edge before the house: flags, and a balustrade along the edge from the pool garden to the court, with urns and lamps on its piers. */
+function terraceWalk(k: Build, l: Lot): void {
+  const b = k.b, x0 = PAV[0].x0 - 0.15, x1 = l.x1 + 1.0;
+  flat(b, x0, ZR, x1, TERRACE.z1, TERRACE.top, FLAGS);
+  // the joints between the flags
+  for (let x = x0 + 2.4; x < x1 - 0.5; x += 2.4) flat(b, x - 0.04, ZP + 0.05, x + 0.04, TERRACE.z1 - 0.05, TERRACE.top + 0.008, JOINT);
+  // the balustrade runs on west along the pool garden's front
+  const piers = balustrade(b, [[lotOf('pool-garden').x0 + 0.2, TERRACE.rail], [x1 - 0.2, TERRACE.rail]], TERRACE.top);
+  piers.forEach(([x, z], i) => {
+    const nearDoor = Math.abs(x - COVE_MID) < 9 && Math.abs(x - COVE_MID) > 4;
+    if (nearDoor || i === 2) {
+      b.beam([x, TERRACE.top + 1.2, z], [x, TERRACE.top + 2.3, z], 0.08, 0.06, IRON_DARK);
+      gasLamp(k, x, TERRACE.top + 2.3, z, 0, AMBER);
+    } else if (i % 2 === 1) urn(b, x, TERRACE.top + 1.2, z);
+  });
+}
+
+/**
+ * The cliff under the house, dressed so that the house rises out of it:
+ * masonry piers under the pavilions and either side of the grotto, a
+ * cornice along the cliff's top under the balustrade, two drain spouts and
+ * hanging ivy. Nothing stands more than 0.5 out from the rock's face.
+ */
+function cliffFront(k: Build): void {
+  const b = k.b, z = CLIFF, R = rng(0xc11f);
+  // the cornice along the top, broken where the grotto's rock is
+  for (const [xa, xc] of [[lotOf('pool-garden').x0, TOWER.x0 - 1.4], [TOWER.x1 + 1.4, M.x1 + 1.0]]) solid(b, xa, GROTTO_ROOF + 0.15, z - 0.05, xc, Y.crest + 0.1, z + 0.28, TRIM, 'ESWTB');
+  // the piers: battered, a set-off half way, their feet on the shelf
+  const piers: [number, number][] = [];
+  for (const p of PAV) piers.push([p.x0 + 0.3, p.x0 + 1.5], [p.x1 - 1.5, p.x1 - 0.3]);
+  piers.push([TOWER.x0 - 1.4, TOWER.x0], [TOWER.x1, TOWER.x1 + 1.4]);
+  for (const [xa, xc] of piers) {
+    solid(b, xa - 0.1, Y.shelf - 0.1, z - 0.05, xc + 0.1, 6.6, z + 0.48, STONE_LIGHT, 'ESWT');
+    slab(b, [(xa + xc) / 2, 6.95, z + 0.33], [(xa + xc) / 2, 6.6, z + 0.48], (xc - xa) / 2 + 0.1, 0.05, TRIM);
+    solid(b, xa, 6.6, z - 0.05, xc, GROTTO_ROOF + 0.15, z + 0.33, STONE_LIGHT, 'ESW');
+    solid(b, xa - 0.06, Y.shelf - 0.1, z + 0.48, xc + 0.06, Y.shelf + 0.35, z + 0.5, TRIM, 'ESWT');
+  }
+  // two drain spouts out of the cornice, with the stain of the water under each
+  for (const x of [(RANGES[0].x0 + RANGES[0].x1) / 2, (RANGES[1].x0 + RANGES[1].x1) / 2]) {
+    solid(b, x - 0.16, GROTTO_ROOF - 0.05, z, x + 0.16, GROTTO_ROOF + 0.25, z + 0.48, TRIM, 'NESWTB');
+    b.quad([x - 0.3, Y.shelf + 0.3, z + 0.02], [x + 0.3, Y.shelf + 0.3, z + 0.02], [x + 0.25, GROTTO_ROOF + 0.1, z + 0.02], [x - 0.25, GROTTO_ROOF + 0.1, z + 0.02], [0, 0, 1], ROCK_DARK);
+  }
+  // ivy hanging from the cornice
+  for (let i = 0; i < 6; i++) {
+    const x = PAV[0].x0 + R() * (PAV[1].x1 - PAV[0].x0);
+    if (x > TOWER.x0 - 1.6 && x < TOWER.x1 + 1.6) continue;
+    // a few trailing strands of different lengths, not a curtain
+    for (let j = 0; j < 4; j++) {
+      const xs = x + (j - 1.5) * 0.28 + (R() - 0.5) * 0.1, y0 = GROTTO_ROOF - 0.8 - R() * 2.4, w = 0.09 + R() * 0.06;
+      b.quad([xs - w, y0, z + 0.03 + j * 0.005], [xs + w, y0, z + 0.03 + j * 0.005], [xs + w, GROTTO_ROOF + 0.12, z + 0.03 + j * 0.005], [xs - w, GROTTO_ROOF + 0.12, z + 0.03 + j * 0.005], [0, 0, 1], (i + j) % 2 ? IVY : IVY_DARK);
+    }
   }
 }
 
 // ---------------------------------------------------------------------------
-// The waterfall's cove
+// The grotto under the tower, behind the waterfall
 // ---------------------------------------------------------------------------
+
+/** Half the width of the waterfall's curtain at a height, as air.ts hangs it: 2.2 at its lip, 3.05 at its foot. */
+const curtainHalf = (y: number): number => 2.2 + 0.85 * Math.min(1, Math.max(0, (FALL.top - y) / (FALL.top - POOL_Y)));
 
 function cove(k: Build, l: Lot): void {
-  const b = k.b, F = Y.cave, mid = (l.x0 + l.x1) / 2, R = rng(0xc07e);
+  const b = k.b, F = l.base, mid = COVE_MID, R = rng(0xc07e);
+  const front = FALL.z + 0.25, face = CLIFF + 0.45;
 
-  // --- the tunnel's mouth in the middle of its north wall, dark, which the waterfall hides
-  {
-    const z = l.z0, x0 = mid - 2.5, x1 = mid + 2.5, top = F + 3.4;
-    b.quad([x0, F, z + 0.04], [x1, F, z + 0.04], [x1, top, z + 0.04], [x0, top, z + 0.04], [0, 0, 1], DARK, { win: interior(0.5) });
-    solid(b, x0 - 0.8, F - 0.2, z, x0, top + 0.6, z + 0.5, ROCK_LIGHT, 'NESWT');
-    solid(b, x1, F - 0.2, z, x1 + 0.8, top + 0.6, z + 0.5, ROCK_LIGHT, 'NESWT');
-    solid(b, x0 - 0.8, top, z, x1 + 0.8, top + 0.9, z + 0.5, ROCK, 'NESWTB');
-    for (let i = 0; i < 2; i++) k.glows.push({ x: mid, y: top - 0.15, z: z + 0.15 + i * 0.01, sx: 4.4, sy: 0.05, sz: 0.06, color: '#ffcf7a' });
+  // --- the roof: the underside of the terrace's slab and of the tower's floor, with stalactites hanging from it
+  b.quad([l.x0, GROTTO_ROOF, l.z0], [l.x1, GROTTO_ROOF, l.z0], [l.x1, GROTTO_ROOF, front], [l.x0, GROTTO_ROOF, front], [0, -1, 0], ROCK_DARK, { win: interior(0.6) });
+  for (let i = 0; i < 12; i++) {
+    const x = l.x0 + 0.4 + R() * (l.x1 - l.x0 - 0.8), z = l.z0 + 0.4 + R() * (front - l.z0 - 0.9), len = 0.4 + R() * 0.6;
+    b.cyl(x, z, GROTTO_ROOF - len, GROTTO_ROOF + 0.02, 0.03, 0.16 + R() * 0.12, 5, i % 3 ? ROCK : ROCK_LIGHT, { cap: false });
   }
 
-  // --- the lip the water comes over, in a notch at the cliff's top, between two shoulders of rock
+  // --- the mouth: rock in uneven courses either side of an arch, in front of the curtain, closing everything outside it
   {
-    const z = l.z0;
-    solid(b, mid - 2.2, Y.crest - 0.3, z - 0.3, mid + 2.2, Y.crest + 0.03, FALL_Z + 0.05, ROCK_DARK, 'NESWTB');
-    for (const s of [-1, 1]) {
-      solid(b, mid + s * 2.2 - (s > 0 ? 0 : 1.9), Y.crest - 0.6, z - 1.8, mid + s * 2.2 + (s > 0 ? 1.9 : 0), Y.crest + 1.1, z + 0.55, ROCK);
-      solid(b, mid + s * 3.4 - 0.8, Y.crest - 0.2, z - 3.2, mid + s * 3.4 + 0.8, Y.crest + 0.6, z - 1.6, ROCK_LIGHT);
-    }
-  }
-
-  // --- the pool on its floor, its sill at the mouth, and the ford of setts across it from the tunnel to the mouth
-  {
-    const x0 = l.x0 + 0.05, x1 = l.x1 - 0.05, z0 = l.z0 + 0.05, zs = l.z1 - 0.6;
-    waterOf(k, [{ pts: [[x0, z0], [x1, z0], [x1, zs], [x0, zs]], y: POOL_Y }], WATER_POOL);
-    b.quad([x0, F + 0.035, z0], [x1, F + 0.035, z0], [x1, F + 0.035, zs], [x0, F + 0.035, zs], [0, 1, 0], 0x2c3a3e);
-    for (const [a, c] of [[x0, mid - 2.1], [mid + 2.1, x1]]) solid(b, a, F - 0.2, zs, c, POOL_Y + 0.2, l.z1 - 0.05, STONE_LIGHT, 'NESWT');
-    b.box(mid - 2, F, z0, mid + 2, FORD_Y, zs, SETT, { faces: 'EWT' });
-    // the setts' joints: a few darker courses across it
-    for (let z = z0 + 0.8; z < zs - 0.3; z += 1.2) b.quad([mid - 2, FORD_Y + 0.012, z + 0.06], [mid + 2, FORD_Y + 0.012, z + 0.06], [mid + 2, FORD_Y + 0.012, z - 0.06], [mid - 2, FORD_Y + 0.012, z - 0.06], [0, 1, 0], 0x4f4a44);
-    // out of the mouth and down onto the shelf
-    slab(b, [mid, FORD_Y, zs], [mid, Y.shelf + 0.045, l.z1 + 0.6], 2, 0.4, SETT);
-    // boulders in the pool and along its walls
-    for (const [x, z, s] of [[l.x0 + 1.3, l.z0 + 2.5, 1.2], [l.x0 + 1.0, l.z1 - 2.8, 0.9], [l.x1 - 1.2, l.z0 + 3.2, 1.0], [l.x1 - 1.6, l.z1 - 2.2, 0.7]]) {
-      solid(b, x - s, F - 0.2, z - s * 0.8, x + s, F + s * 0.9 + 0.3, z + s * 0.8, R() > 0.5 ? ROCK : ROCK_LIGHT, 'NESWT');
-    }
-    // outcrops on its side walls, climbing to the rim
-    for (const [x, dir] of [[l.x0, 1], [l.x1, -1]] as const) {
-      for (let i = 0; i < 3; i++) {
-        const z = l.z0 + 1.2 + i * 2.4 + R(), y0 = F + 1.5 + R() * 2.5, reach = 0.4 + R() * 0.5;
-        solid(b, dir > 0 ? x - 0.3 : x - reach, y0, z - 0.9, dir > 0 ? x + reach : x + 0.3, y0 + 1.2 + R() * 1.5, z + 0.9, i % 2 ? ROCK_LIGHT : ROCK);
-      }
-      solid(b, dir > 0 ? x - 1.6 : x - 0.4, Y.crest - 0.8, l.z0 - 0.5, dir > 0 ? x + 0.4 : x + 1.6, Y.crest + 0.8, l.z1 - 0.4, ROCK);
-    }
-  }
-
-  // --- the stream from the lip back north to a small pond on the hill
-  {
-    const line: P2[] = [[mid, FALL_Z], [mid - 0.1, l.z0 - 0.6], [mid - 0.8, l.z0 - 2.4], [mid - 1.6, l.z0 - 4.0], [mid - 2.3, l.z0 - 5.4]];
-    const pond = { x: mid - 3.0, z: l.z0 - 7.2, r: 2.1 };
-    laid(b, line.slice(1), 0.85, 0x2f3a34, 0.035, 1.2, Y.crest);
-    const band: P2[] = [];
-    const side = (i: number): P2 => {
-      const a = line[Math.max(0, i - 1)], c = line[Math.min(line.length - 1, i + 1)], dx = c[0] - a[0], dz = c[1] - a[1], ln = Math.hypot(dx, dz) || 1;
-      return [-dz / ln, dx / ln];
+    const crown = FALL.top - 0.1;
+    const opening = (y: number): number => {
+      if (y >= crown) return 0;
+      const t = Math.max(0, (y - 7.4) / (crown - 7.4));
+      return Math.min(curtainHalf(y) - 0.14, 3.0) * (1 - 0.42 * t * t);
     };
-    line.forEach((p, i) => band.push([p[0] + side(i)[0] * 0.6, p[1] + side(i)[1] * 0.6]));
-    for (let i = line.length - 1; i >= 0; i--) band.push([line[i][0] - side(i)[0] * 0.6, line[i][1] - side(i)[1] * 0.6]);
-    const ring = (r: number, n = 12): P2[] => Array.from({ length: n }, (_, i): P2 => [pond.x + Math.cos((i / n) * PI * 2) * r, pond.z + Math.sin((i / n) * PI * 2) * r * 0.8]);
-    b.quad([pond.x - pond.r - 0.3, Y.crest + 0.045, pond.z + pond.r], [pond.x + pond.r + 0.3, Y.crest + 0.045, pond.z + pond.r], [pond.x + pond.r + 0.3, Y.crest + 0.045, pond.z - pond.r], [pond.x - pond.r - 0.3, Y.crest + 0.045, pond.z - pond.r], [0, 1, 0], 0x2f3a34);
-    waterOf(k, [{ pts: band, y: Y.crest + 0.06 }, { pts: ring(pond.r), y: Y.crest + 0.08 }], WATER_STREAM);
-    // stones on its banks and round the pond
-    for (let i = 0; i < 9; i++) {
-      const a = (i / 9) * PI * 2 + 0.3, x = pond.x + Math.cos(a) * (pond.r + 0.2), z = pond.z + Math.sin(a) * (pond.r + 0.2) * 0.8, s = 0.25 + R() * 0.25;
-      solid(b, x - s, Y.crest - 0.05, z - s, x + s, Y.crest + s * 0.9, z + s, R() > 0.5 ? STONE_LIGHT : ROCK_LIGHT, 'NESWT');
-    }
-    for (let i = 1; i < line.length - 1; i++) {
-      for (const s of [-1, 1]) {
-        const x = line[i][0] + side(i)[0] * 0.95 * s, z = line[i][1] + side(i)[1] * 0.95 * s, r = 0.2 + R() * 0.2;
-        solid(b, x - r, Y.crest - 0.05, z - r, x + r, Y.crest + r, z + r, ROCK_LIGHT, 'NESWT');
+    // courses of 0.55 low down, finer where the arch turns, so that it reads as an arch and not as steps
+    for (let y = Y.shelf - 0.1, step = 0.55; y < Y.crest - 0.05; y += step, step = y > 7.2 && y < crown ? 0.3 : 0.55) {
+      const y1 = Math.min(Y.crest - 0.04, y + step + 0.04);
+      const half = Math.min(opening(y), opening(Math.min(y1, crown - 0.01)));
+      const c = R() > 0.5 ? ROCK : ROCK_LIGHT, z1 = face - R() * 0.12;
+      if (half <= 0.05) {
+        // over the arch: the rock that closes it up to the terrace's edge
+        solid(b, l.x0 - 0.15, y, front, l.x1 + 0.15, y1 - R() * 0.06, z1, c, 'NESWTB');
+        continue;
       }
+      const j = (R() - 0.5) * 0.16;
+      solid(b, l.x0 - 0.15, y, front, mid - half + j, y1, z1, c, 'NESWTB');
+      solid(b, mid + half + j, y, front, l.x1 + 0.15, y1, face - R() * 0.12, R() > 0.5 ? ROCK : ROCK_DARK, 'NESWTB');
     }
+    // stalactites along the arch's lip
+    for (let i = 0; i < 7; i++) {
+      const x = mid - 1.5 + (i / 6) * 3 + (R() - 0.5) * 0.3, len = 0.25 + R() * 0.45;
+      b.cyl(x, face - 0.2, crown - len, crown + 0.02, 0.03, 0.14, 5, ROCK_LIGHT, { cap: false });
+    }
+    // the lip the water comes over, under the slab
+    solid(b, mid - 2.2, FALL.top - 0.02, FALL.z - 0.7, mid + 2.2, GROTTO_ROOF - 0.01, FALL.z + 0.1, ROCK_DARK, 'NESWB');
   }
 
-  // --- the culvert's mouth in the river wall south of the cove, where the pool drains
+  // --- the pool on its floor, its sill at the mouth, and the ford of setts through it from the door to the mouth
+  {
+    const x0 = l.x0 + 0.05, x1 = l.x1 - 0.05, z0 = l.z0 + 0.05, zs = CLIFF - 0.25;
+    waterOf(k, [{ pts: [[x0, z0], [x1, z0], [x1, zs], [x0, zs]], y: POOL_Y }], WATER_POOL);
+    flat(b, x0, z0, x1, zs, F + 0.035, 0x2c3a3e);
+    for (const [a, c] of [[l.x0, mid - 2.05], [mid + 2.05, l.x1]]) solid(b, a, Y.shelf - 0.1, zs, c, POOL_Y + 0.14, CLIFF + 0.05, STONE_LIGHT, 'NESWT');
+    b.box(mid - 2, F, z0, mid + 2, FORD_Y, CLIFF + 0.02, SETT, { faces: 'EWT' });
+    for (let z = z0 + 0.8; z < zs - 0.3; z += 1.2) flat(b, mid - 2, z - 0.06, mid + 2, z + 0.06, FORD_Y + 0.012, 0x4f4a44);
+    // out over the sill and down onto the shelf
+    slab(b, [mid, FORD_Y, CLIFF + 0.02], [mid, Y.shelf + 0.045, CLIFF + 0.48], 2, 0.4, SETT);
+    // stalagmites in its back corners, clear of the ford
+    for (const [x, z, h] of [[l.x0 + 1.5, l.z0 + 0.6, 1.4], [l.x1 - 1.4, l.z0 + 0.7, 1.1]]) b.cyl(x, z, F, F + h, 0.4, 0.05, 6, ROCK, { cap: false });
+  }
+
+  // --- the door at the back: riveted steel in a frame of rock, shut, in shadow
+  {
+    const z = l.z0, x0 = mid - 1.9, x1 = mid + 1.9, top = F + 3.6;
+    b.box(x0, F, z, x1, top, z + 0.15, STEEL_DARK, { faces: 'SEWT' });
+    for (const y of [F + 0.9, F + 1.9, F + 2.9]) b.box(x0 + 0.1, y - 0.05, z + 0.15, x1 - 0.1, y + 0.05, z + 0.19, IRON_DARK, { faces: 'STB' });
+    b.box(mid - 0.04, F, z + 0.15, mid + 0.04, top - 0.1, z + 0.2, IRON_DARK, { faces: 'SEW' });
+    for (const s of [-1, 1]) solid(b, s < 0 ? x0 - 0.7 : x1, F - 0.1, z, s < 0 ? x0 : x1 + 0.7, top + 0.5, z + 0.45, ROCK_LIGHT, 'NESWT');
+    solid(b, x0 - 0.7, top, z, x1 + 0.7, top + 0.8, z + 0.5, ROCK, 'NESWTB');
+    k.glows.push({ x: mid, y: top + 0.05, z: z + 0.6, sx: 0.5, sy: 0.12, sz: 0.12, color: '#ff4a3a' });
+  }
+
+  // --- blue light inside at night, behind the fall
+  for (const x of [l.x0 + 0.12, l.x1 - 0.12]) k.glows.push({ x, y: F + 3.4, z: l.z0 + 2.2, sx: 0.08, sy: 0.3, sz: 0.6, color: '#bfe4ff' });
+  k.glows.push({ x: mid, y: F + 1.0, z: l.z0 + 1.2, sx: 2.0, sy: 0.6, sz: 0.15, color: '#5f8fbf' });
+  k.lights.push({ x: mid, z: CLIFF - 1.5, r: 8, color: COLD, k: 0.6 });
+
+  // --- the culvert's mouth in the river wall south of the grotto, where its pool drains
   {
     const z = -67, cx = mid, half = 1.2, spring = 0.4;
     b.quad([cx - half, Y.water, z + 0.04], [cx + half, Y.water, z + 0.04], [cx + half, spring + half, z + 0.04], [cx - half, spring + half, z + 0.04], [0, 0, 1], DARK);
@@ -957,39 +954,229 @@ function cove(k: Build, l: Lot): void {
     for (const s of [-1, 1]) solid(b, cx + s * half - (s > 0 ? 0 : 0.6), Y.water - 0.3, z, cx + s * half + (s > 0 ? 0.6 : 0), spring + half + 0.7, z + 0.4, STONE_LIGHT, 'NESWT');
     solid(b, cx - half - 0.7, spring + half + 0.7, z, cx + half + 0.7, spring + half + 0.95, z + 0.5, STONE_TRIM, 'NESWTB');
   }
-  k.lights.push({ x: mid, z: l.z0 + 2.5, r: 8, color: '#9ad0ff', k: 0.45 });
 }
 
 // ---------------------------------------------------------------------------
-// The forecourt
+// The pool garden, and the shaft under its pool
+// ---------------------------------------------------------------------------
+
+/** A slender statue on a pedestal: a robed figure with a staff, `h` from the ground to its head. */
+function statue(b: GeoBuilder, x: number, z: number, y: number): void {
+  solid(b, x - 0.38, y, z - 0.38, x + 0.38, y + 0.7, z + 0.38, TRIM, 'NESWT');
+  solid(b, x - 0.47, y + 0.7, z - 0.47, x + 0.47, y + 0.8, z + 0.47, TRIM, 'NESWTB');
+  b.cyl(x, z, y + 0.8, y + 1.95, 0.3, 0.16, 6, MARBLE, { cap: false });
+  b.cyl(x, z, y + 1.95, y + 2.12, 0.2, 0.1, 6, MARBLE, { cap: false });
+  b.cyl(x, z, y + 2.12, y + 2.45, 0.13, 0.1, 6, MARBLE);
+  b.beam([x + 0.22, y + 0.82, z + 0.05], [x + 0.26, y + 2.6, z + 0.05], 0.035, 0.03, MARBLE);
+}
+
+/** The giant Lincoln penny, standing on its edge, its face to the way a frame turned by `yaw` faces: `r` its radius. */
+function penny(b: GeoBuilder, x: number, y: number, z: number, r: number, yaw: number): void {
+  const t = 0.12, n = 12, s = r / 2.25;
+  b.moved(x, y, z, yaw, () => {
+    const p = (i: number, rr: number, lz: number): V3 => [Math.cos((i / n) * PI * 2) * rr, Math.sin((i / n) * PI * 2) * rr, lz];
+    for (let i = 0; i < n; i++) {
+      const m = ((i + 0.5) / n) * PI * 2;
+      b.quad(p(i, r, -t), p(i + 1, r, -t), p(i + 1, r, t), p(i, r, t), [Math.cos(m), Math.sin(m), 0], COPPER);
+      tri(b, [0, 0, t], p(i, r, t), p(i + 1, r, t), [0, 0, 1], COPPER);
+      tri(b, [0, 0, t + 0.03], p(i, r - 0.16, t + 0.03), p(i + 1, r - 0.16, t + 0.03), [0, 0, 1], 0xa8662f);
+    }
+    // Lincoln's bust in profile, facing right as on the coin: head, beard, neck and shoulders, in relief
+    const Q = (x0: number, y0: number, x1: number, y1: number, c = COPPER_DEEP): void => b.box(x0 * s, y0 * s, t + 0.03, x1 * s, y1 * s, t + 0.15, c, { faces: 'NESWT' });
+    Q(-0.55, 0.15, 0.45, 1.25);
+    Q(-0.2, -0.35, 0.65, 0.35);
+    Q(0.45, 0.35, 0.62, 0.75);
+    Q(-0.4, -0.8, 0.25, -0.3);
+    Q(-1.3, -1.75, 0.9, -0.75);
+    Q(-0.6, 1.1, 0.3, 1.45, 0x7a4622);
+  });
+}
+
+/** The mechanical Tyrannosaurus's head and neck, coming out of a niche in the shaft's west wall: a toy robot's, in relief, for the room there is. */
+function rexHead(k: Build, zc: number): void {
+  const b = k.b, x = SHAFT.x0;
+  // in this frame +z is out of the wall (east), and the head points along -x (south)
+  b.moved(x, 0, zc, yawFacing(1, 0), () => {
+    b.quad([-1.4, 5.6, 0.03], [1.4, 5.6, 0.03], [1.4, 8.1, 0.03], [-1.4, 8.1, 0.03], [0, 0, 1], DARK);
+    tri(b, [-1.4, 8.1, 0.03], [1.4, 8.1, 0.03], [0, 8.85, 0.03], [0, 0, 1], DARK);
+    for (const s of [-1, 1]) {
+      solid(b, s < 0 ? -1.75 : 1.4, 5.3, 0, s < 0 ? -1.4 : 1.75, 8.15, 0.2, ROCK_LIGHT, 'NESWT');
+      b.beam([s * 1.57, 8.05, 0.1], [0, 9.0, 0.1], 0.15, 0.1, ROCK_LIGHT);
+    }
+    solid(b, -2.3, 5.15, 0, 1.8, 5.4, 0.35, ROCK, 'NESWT');
+    // the neck out of the niche's back, the skull, the snout, the jaw a little open with its teeth, the brow
+    b.box(-0.3, 6.6, 0.04, 1.1, 7.5, 0.34, REX, { faces: 'NESWT' });
+    b.box(-1.5, 7.0, 0.06, 0.15, 7.85, 0.44, REX, { faces: 'NESWTB' });
+    b.box(-2.2, 7.08, 0.1, -1.45, 7.6, 0.42, REX, { faces: 'NESWTB' });
+    b.box(-2.05, 6.5, 0.08, -0.15, 6.82, 0.4, REX_DARK, { faces: 'NESWTB' });
+    b.box(-2.0, 6.82, 0.14, -0.6, 6.95, 0.38, 0xe9e4d4, { faces: 'SEWT' });
+    b.box(-2.15, 6.95, 0.14, -1.5, 7.08, 0.38, 0xe9e4d4, { faces: 'SEWB' });
+    b.box(-1.15, 7.85, 0.08, -0.35, 8.02, 0.44, REX_DARK, { faces: 'NESWT' });
+    for (let i = 0; i < 3; i++) b.box(0.1 + i * 0.35, 7.5, 0.1, 0.32 + i * 0.35, 7.75, 0.3, REX_DARK, { faces: 'NESWT' });
+  });
+  // its eye glows red at night, as a machine's would
+  k.glows.push({ x: x + 0.46, y: 7.6, z: zc + 0.85, sx: 0.1, sy: 0.1, sz: 0.1, color: '#ff4030' });
+}
+
+/** Hazard chevrons along a wall of the shaft, just under the lid: from `a` to `c` along the wall, `n` the way its face looks. */
+function chevrons(b: GeoBuilder, a: P2, c: P2, n: P2): void {
+  const L = Math.hypot(c[0] - a[0], c[1] - a[1]), ux = (c[0] - a[0]) / L, uz = (c[1] - a[1]) / L, y0 = 8.95, y1 = 9.3, N: V3 = [n[0], 0, n[1]];
+  const at = (t: number, y: number, off: number): V3 => [a[0] + ux * t + n[0] * off, y, a[1] + uz * t + n[1] * off];
+  b.quad(at(0, y0 - 0.05, 0.02), at(L, y0 - 0.05, 0.02), at(L, y1 + 0.05, 0.02), at(0, y1 + 0.05, 0.02), N, 0x1c1c20);
+  for (let t = 0.1; t + 0.6 < L; t += 0.7) b.quad(at(t, y0, 0.03), at(t + 0.35, y0, 0.03), at(t + 0.6, y1, 0.03), at(t + 0.25, y1, 0.03), N, HAZARD);
+}
+
+function poolGarden(k: Build, l: Lot): void {
+  const b = k.b, S = SHAFT, y = TERRACE.top;
+
+  // --- the flagged walks round the pool, and the walk on to the house's garden door
+  const hedgeX = l.x0 + 0.55, hedgeZ = l.z0 + 0.55;
+  flat(b, hedgeX, hedgeZ, S.x0, TERRACE.z1, y, FLAGS);
+  flat(b, S.x1, hedgeZ, l.x1, TERRACE.z1, y, FLAGS);
+  flat(b, S.x0, hedgeZ, S.x1, S.z0, y, FLAGS);
+  flat(b, S.x0, S.z1, S.x1, TERRACE.z1, y, FLAGS);
+  flat(b, l.x1, ZB, PAV[0].x0 - 0.15, TERRACE.z1, y, FLAGS);
+
+  // --- a clipped hedge round its west and north sides, urns at its north corners, a statue at each south corner
+  solid(b, l.x0 + 0.05, Y.crest - 0.1, hedgeZ, hedgeX, Y.crest + 0.85, M.z1 - 0.2, HEDGE, 'NESWT');
+  solid(b, l.x0 + 0.05, Y.crest - 0.1, l.z0 + 0.05, l.x1 - 0.05, Y.crest + 0.85, hedgeZ, HEDGE, 'NESWT');
+  for (const x of [(hedgeX + S.x0) / 2, (S.x1 + l.x1) / 2]) {
+    solid(b, x - 0.3, y, S.z0 - 0.35, x + 0.3, y + 0.5, S.z0 + 0.25, TRIM, 'NESWT');
+    urn(b, x, y + 0.5, S.z0 - 0.05);
+  }
+  for (const x of [(hedgeX + S.x0) / 2, (S.x1 + l.x1) / 2]) statue(b, x, S.z1 + 0.9, Y.crest);
+
+  // --- the shaft's inside, seen only while the pool is open: the screens, the penny on its ledge, the Tyrannosaurus, the card
+  {
+    // the Batcomputer's screens on the north wall
+    const zn = S.z0 + 0.02;
+    solid(b, S.x0 + 5.6, 5.3, zn, S.x0 + 10.4, 8.5, zn + 0.12, DARK, 'NESWTB');
+    k.sign('bristol-screen', S.x0 + 8, 6.9, zn + 0.15, 0, 1, 2.8, 4.6);
+    solid(b, S.x0 + 11.05, 5.9, zn, S.x0 + 13.55, 7.9, zn + 0.1, DARK, 'NESWTB');
+    k.sign('bristol-screen-side', S.x0 + 12.3, 6.9, zn + 0.13, 0, 1, 1.6, 2.3);
+    // a desk's edge of light under them
+    k.glows.push({ x: S.x0 + 8, y: 5.15, z: zn + 0.25, sx: 4.2, sy: 0.05, sz: 0.1, color: '#7fc8ff' });
+    // the penny on a ledge of rock in the north-west corner
+    solid(b, S.x0 + 0.02, 5.0, zn, S.x0 + 4.2, 5.32, zn + 0.4, ROCK_LIGHT, 'NESWTB');
+    penny(b, S.x0 + 2.4, 5.32 + 1.45 + 0.02, zn + 0.2, 1.45, 0);
+    // the Tyrannosaurus out of its niche in the west wall, the card on the east wall
+    rexHead(k, SHAFT_Z - 0.5);
+    solid(b, S.x1 - 0.1, 5.2, SHAFT_Z - 1.35, S.x1 - 0.02, 8.8, SHAFT_Z + 1.35, 0xe9e4d8, 'NESWTB');
+    k.sign('bristol-card', S.x1 - 0.13, 7.0, SHAFT_Z, -1, 0, 3.5, 2.6);
+    // blue-white lamps down its walls, and chevrons round its rim under the lid
+    for (const x of [S.x0 + 1.2, S.x0 + 4.6, S.x1 - 1.4]) k.glows.push({ x, y: 8.55, z: zn + 0.12, sx: 0.5, sy: 0.12, sz: 0.1, color: '#d8ecff' });
+    for (const x of [S.x0 + 2.5, SHAFT_X, S.x1 - 2.5]) k.glows.push({ x, y: 8.55, z: S.z1 - 0.12, sx: 0.5, sy: 0.12, sz: 0.1, color: '#d8ecff' });
+    for (const z of [S.z0 + 2.5, S.z1 - 2.5]) for (const x of [S.x0 + 0.12, S.x1 - 0.12]) k.glows.push({ x, y: 8.55, z, sx: 0.1, sy: 0.12, sz: 0.5, color: '#d8ecff' });
+    chevrons(b, [S.x0, S.z0], [S.x1, S.z0], [0, 1]);
+    chevrons(b, [S.x1, S.z1], [S.x0, S.z1], [0, -1]);
+    chevrons(b, [S.x0, S.z1], [S.x0, S.z0], [1, 0]);
+    chevrons(b, [S.x1, S.z0], [S.x1, S.z1], [-1, 0]);
+  }
+
+  // the pool's faint blue glow at night, as if lit from below
+  k.lights.push({ x: SHAFT_X, z: SHAFT_Z, r: 9, color: COLD, k: 0.35 });
+}
+
+/**
+ * The mirror pool, which is the lid of the Batcave's lift, and the lift: as
+ * meshes of their own, which the show moves. `open(0)` is shut, one pool with
+ * its water at the garden's level; from 0 to 0.15 its two halves sink by 0.4,
+ * and from 0.15 to 1 they slide apart, west under the lawn and east under the
+ * house, where the ground hides them. `lift(0)` has the platform down at the
+ * shaft's floor, `lift(1)` up level with the garden. Both start at 0.
+ */
+export function buildHatch(k: Build): { open(f: number): void; lift(f: number): void } {
+  const H = HATCH, mat = k.mat.city();
+  const mesh = (g: GeoBuilder, name: string): THREE.Mesh => {
+    const m = new THREE.Mesh(g.build(), mat);
+    m.name = name;
+    m.castShadow = false;
+    m.receiveShadow = true;
+    k.group.add(m);
+    return m;
+  };
+
+  // --- the two halves, each built with the seam at x 0 and the water's surface at y 0
+  const halves = [-1, 1].map((s) => {
+    const g = new GeoBuilder(), inner = s * H.seam, outer = s * H.hw, kerbIn = s * (H.hw - H.kerb);
+    const [a, c] = s < 0 ? [outer, inner] : [inner, outer], [ka, kc] = s < 0 ? [outer, kerbIn] : [kerbIn, outer];
+    // the body under the water, and the water, lit faintly from below at night
+    g.box(a, -0.6, -H.hd + 0.02, c, 0, H.hd - 0.02, STONE_DARK, { faces: 'NESWB' });
+    const [wa, wc] = s < 0 ? [kerbIn, inner] : [inner, kerbIn];
+    g.quad([wa, 0, H.hd - H.kerb], [wc, 0, H.hd - H.kerb], [wc, 0, -H.hd + H.kerb], [wa, 0, -H.hd + H.kerb], [0, 1, 0], MIRROR, { win: interior(0.4) });
+    // the kerb: its outer side, and its two ends up to the seam
+    g.box(ka, -0.6, -H.hd + 0.02, kc, 0.25, H.hd - 0.02, TRIM, { faces: 'NESWT' });
+    for (const z of [-H.hd + 0.02, H.hd - H.kerb]) g.box(s < 0 ? kerbIn : inner, -0.6, z, s < 0 ? inner : kerbIn, 0.25, z + H.kerb - 0.02, TRIM, { faces: 'NESWT' });
+    return mesh(g, s < 0 ? 'bristol-pool-west' : 'bristol-pool-east');
+  });
+
+  // --- the lift: a steel platform with a hazard-striped edge and a pale ring, on a ram
+  const g = new GeoBuilder();
+  g.box(-LIFT.hw, -1.0, -LIFT.hd, LIFT.hw, 0, LIFT.hd, STEEL_DARK, { faces: 'NESWTB', top: STEEL_DECK });
+  g.cyl(0, 0, -6.4, -1.0, 1.1, 1.1, 6, STEEL, { cap: false });
+  const band = 0.45, stripe = (x0: number, z0: number, x1: number, z1: number): void => g.quad([x0, 0.012, z1], [x1, 0.012, z1], [x1, 0.012, z0], [x0, 0.012, z0], [0, 1, 0], HAZARD);
+  for (let x = -LIFT.hw; x + 0.45 <= LIFT.hw + 1e-6; x += 0.9) {
+    stripe(x, -LIFT.hd, x + 0.45, -LIFT.hd + band);
+    stripe(x, LIFT.hd - band, x + 0.45, LIFT.hd);
+  }
+  for (let z = -LIFT.hd + band + 0.45; z + 0.45 <= LIFT.hd - band + 1e-6; z += 0.9) {
+    stripe(-LIFT.hw, z, -LIFT.hw + band, z + 0.45);
+    stripe(LIFT.hw - band, z, LIFT.hw, z + 0.45);
+  }
+  for (let i = 0; i < 16; i++) {
+    const a0 = (i / 16) * PI * 2, a1 = ((i + 1) / 16) * PI * 2, r0 = 3.0, r1 = 3.4;
+    g.quad([Math.cos(a0) * r0, 0.012, Math.sin(a0) * r0], [Math.cos(a0) * r1, 0.012, Math.sin(a0) * r1], [Math.cos(a1) * r1, 0.012, Math.sin(a1) * r1], [Math.cos(a1) * r0, 0.012, Math.sin(a1) * r0], [0, 1, 0], 0xcfd6df, { win: interior(0.9) });
+  }
+  const lift = mesh(g, 'bristol-lift');
+
+  const place = { open: 0, lift: 0 };
+  const set = (): void => {
+    const f = place.open, sink = Math.min(1, f / 0.15) * H.sink, slide = f <= 0.15 ? 0 : ((f - 0.15) / 0.85) * H.slide;
+    halves[0].position.set(SHAFT_X - slide, Y.crest - sink, SHAFT_Z);
+    halves[1].position.set(SHAFT_X + slide, Y.crest - sink, SHAFT_Z);
+    lift.position.set(SHAFT_X, LIFT.down + (LIFT.up - LIFT.down) * place.lift, SHAFT_Z);
+  };
+  set();
+  return {
+    open(f: number): void { place.open = Math.min(1, Math.max(0, f)); set(); },
+    lift(f: number): void { place.lift = Math.min(1, Math.max(0, f)); set(); },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// The entrance court
 // ---------------------------------------------------------------------------
 
 function forecourt(k: Build, l: Lot): void {
-  const b = k.b, y = l.base + 0.04;
-  b.quad([l.x0 + 0.2, y, l.z1 - 0.2], [l.x1 - 0.2, y, l.z1 - 0.2], [l.x1 - 0.2, y, l.z0 + 0.2], [l.x0 + 0.2, y, l.z0 + 0.2], [0, 1, 0], GRAVEL);
-  // a low kerb round it
-  for (const [x0, z0, x1, z1] of [[l.x0, l.z0, l.x1, l.z0 + 0.2], [l.x0, l.z1 - 0.2, l.x1, l.z1], [l.x0, l.z0, l.x0 + 0.2, l.z1], [l.x1 - 0.2, l.z0, l.x1, l.z1]]) {
-    b.box(x0, l.base - 0.1, z0, x1, l.base + 0.16, z1, TRIM, { faces: 'NESWT' });
+  const b = k.b, y = l.base;
+  flat(b, l.x0 + 0.2, l.z0 + 0.2, l.x1 - 0.2, l.z1 - 0.2, y + 0.04, GRAVEL);
+  // a low kerb round it, open where the drive comes in and under the porte-cochère
+  const kerb = (x0: number, z0: number, x1: number, z1: number): void => b.box(x0, y - 0.1, z0, x1, y + 0.16, z1, TRIM, { faces: 'NESWT' });
+  kerb(l.x0, l.z0, l.x1, l.z0 + 0.2);
+  kerb(l.x0, l.z1 - 0.2, l.x1, l.z1);
+  kerb(l.x1 - 0.2, l.z0 + 0.2, l.x1, DRIVE_IN - 1.75);
+  kerb(l.x1 - 0.2, DRIVE_IN + 1.75, l.x1, l.z1 - 0.2);
+  kerb(l.x0, l.z0 + 0.2, l.x0 + 0.2, PORTE.z0);
+  kerb(l.x0, PORTE.z1, l.x0 + 0.2, l.z1 - 0.2);
+  // gate piers with lamps where the drive comes in
+  for (const s of [-1, 1]) {
+    const px = l.x1 - 0.45, pz = DRIVE_IN + s * 2.15;
+    solid(b, px - 0.45, y - 0.1, pz - 0.45, px + 0.45, y + 2.4, pz + 0.45, LIMESTONE_DARK, 'NESWT');
+    solid(b, px - 0.56, y + 2.4, pz - 0.56, px + 0.56, y + 2.6, pz + 0.56, TRIM, 'NESWTB');
+    gasLamp(k, px, y + 2.6, pz, 0, SODIUM);
   }
-  // a low fountain at its west side: a basin, a bowl on a stem
-  const fx = l.x0 + 2.3, fz = (l.z0 + l.z1) / 2;
-  b.cyl(fx, fz, l.base, l.base + 0.55, 1.75, 1.75, 10, TRIM, { cap: false });
-  b.cyl(fx, fz, l.base + 0.4, l.base + 0.47, 1.6, 1.6, 10, 0x5d8aa0);
-  b.cyl(fx, fz, l.base + 0.4, l.base + 1.3, 0.25, 0.18, 6, TRIM);
-  b.cyl(fx, fz, l.base + 1.3, l.base + 1.55, 0.35, 0.75, 8, TRIM, { cap: 0x5d8aa0 });
-  k.glows.push({ x: fx, y: l.base + 1.75, z: fz, sx: 0.2, sy: 0.35, sz: 0.2, color: '#cfefff' });
-  // lamps at its two back corners
-  for (const x of [l.x0 + 0.7, l.x1 - 0.7]) {
-    b.beam([x, l.base, l.z0 + 0.7], [x, l.base + 3.2, l.z0 + 0.7], 0.12, 0.08, IRON_DARK);
-    gasLamp(k, x, l.base + 3.2, l.z0 + 0.7, 0, SODIUM);
-  }
+  // a lamp at its north-west corner (the north-east one is the gate pier's)
+  b.beam([l.x0 + 0.7, y, l.z0 + 0.7], [l.x0 + 0.7, y + 3.2, l.z0 + 0.7], 0.12, 0.08, IRON_DARK);
+  gasLamp(k, l.x0 + 0.7, y + 3.2, l.z0 + 0.7, 0, SODIUM);
+  // the name, once, at its south-west corner, facing the view
+  nameBoard(k, 'bristol-manor', l.x0 + 1.4, l.z1 - 0.5, y, TO_VIEW, 0.9);
 }
 
 // ---------------------------------------------------------------------------
 // The Kane Memorial Bridge
 // ---------------------------------------------------------------------------
 
-function kaneBridge(k: Build, l: Lot): void {
+function kaneBridge(k: Build, _l: Lot): void {
   const b = k.b, cx = KANE.x, road = kaneRoad();
   // the towers: one on each bank, straddling the river wall, each two piers joined over the road by a pointed arch
   const inner = 5.85, outer = 7.85, top = 26.6;
@@ -1085,7 +1272,7 @@ function kaneBridge(k: Build, l: Lot): void {
 
 /** The old tunnel's mouth in the spur's west face, where the service lane ends: a stone portal, dark inside. */
 function oldTunnel(b: GeoBuilder): void {
-  const x = SPUR.x0, zc = CREST.cliff + 2, y = Y.shelf, half = 1.8, spring = 2.4, top = 5.2;
+  const x = SPUR.x0, zc = CLIFF + 2, y = Y.shelf, half = 1.8, spring = 2.4, top = 5.2;
   b.moved(x, y, zc, PI / 2, () => {
     // in this frame +z is west, out of the rock: lz 0 is the rock's face, and the portal stands out to lz 0.8
     b.quad([-half, 0, 0.05], [half, 0, 0.05], [half, spring + half, 0.05], [-half, spring + half, 0.05], [0, 0, 1], DARK, { win: interior(0.3) });
@@ -1112,7 +1299,7 @@ function boathouse(k: Build): void {
   b.cyl(x + half + 4.2, z + 0.8, 0.15, 0.75, 0.22, 0.2, 6, IRON_DARK);
 }
 
-/** The gates on stone piers, the lodge beside them, and the drive up the hill's east slope to the forecourt. */
+/** The gates on stone piers, the lodge beside them, and the drive up the hill's east slope to the entrance court. */
 function gatesAndDrive(k: Build): void {
   const b = k.b, { x, z } = GATES, y = Y.shelf, gap = 2.4;
   // the piers, with caps and lamps
@@ -1133,8 +1320,6 @@ function gatesAndDrive(k: Build): void {
     });
   }
   k.lights.push({ x, z: z + 1, r: 9, color: SODIUM, k: 0.5 });
-  // the name, on a board beside the gates
-  nameBoard(k, 'bristol-manor', x + 1.5, z + 3.9, y);
 
   // the lodge, west of the gates: one storey of stone under a steep slate roof, its gable to the south
   {
@@ -1158,12 +1343,12 @@ function gatesAndDrive(k: Build): void {
     k.lights.push({ x: mid, z: z1 + 1.5, r: 7, color: AMBER, k: 0.4 });
   }
 
-  // the drive: north from the gates, round the hill's east foot, and west up its slope to the forecourt
+  // the drive: north from the gates, round the hill's east foot, and west up its slope to the court
   laid(b, DRIVE, 1.6, GRAVEL, 0.08, 1.4);
 }
 
-/** The drive's middle line, from the gates to the forecourt. */
-const DRIVE: P2[] = [[GATES.x, GATES.z - 0.6], [GATES.x + 0.4, -83.0], [100.6, -85.2], [101.0, -89.5], [99.8, -94.5], [94.8, -98.6], [87.5, -100.6], [76, -101.1], [lotOf('forecourt').x1 - 0.2, -101.0]];
+/** The drive's middle line, from the gates to the entrance court's east side, clear of the helicopter's ring. */
+const DRIVE: P2[] = [[GATES.x, GATES.z - 0.6], [GATES.x + 0.4, -83.0], [100.6, -85.2], [101.0, -89.5], [99.8, -94.5], [94.8, -98.6], [87.5, -100.2], [80.0, -99.8], [76.6, -98.1], [COURT.x1 + 0.2, DRIVE_IN]];
 
 /** How far a place is from the drive's middle line. */
 function toDrive(x: number, z: number): number {
@@ -1194,7 +1379,7 @@ function riverParapet(k: Build): void {
 
 /** The dark cleft in the cliff's west end that the bats pour out of at dusk. */
 function cleft(b: GeoBuilder): void {
-  const x = -18, z = CREST.cliff + 0.03, y = Y.shelf;
+  const x = -18, z = CLIFF + 0.03, y = Y.shelf;
   b.quad([x - 0.5, y + 0.5, z], [x + 0.45, y + 0.5, z], [x + 0.3, y + 2.9, z], [x - 0.35, y + 2.9, z], [0, 0, 1], DARK);
   tri(b, [x - 0.35, y + 2.9, z], [x + 0.3, y + 2.9, z], [x + 0.05, y + 3.5, z], [0, 0, 1], DARK);
   tri(b, [x - 0.5, y + 0.5, z], [x + 0.45, y + 0.5, z], [x - 0.1, y + 0.1, z], [0, 0, 1], DARK);
@@ -1202,7 +1387,7 @@ function cleft(b: GeoBuilder): void {
 }
 
 /**
- * The ring on the lawn south of the forecourt where Wayne Enterprises' helicopter sets down, which the collector
+ * The ring on the lawn east of the entrance court where Wayne Enterprises' helicopter sets down, which the collector
  * asked for with Bruce Wayne's flight home: a round of gravel edged in pale stone, its markings and its lamps.
  */
 function helipad(k: Build): void {
@@ -1212,28 +1397,92 @@ function helipad(k: Build): void {
   k.lights.push({ x, z, r: 7, color: COLD, k: 0.35 });
 }
 
+/** The round stone stand on the lawn north-west of the pool garden, where the collector's car stands: a low kerb round it and nothing on it. */
+function heroStand(b: GeoBuilder): void {
+  const { x, z, y } = STAND;
+  b.cyl(x, z, Y.crest - 0.3, Y.crest + 0.14, 3.75, 3.75, 16, TRIM, { cap: LIMESTONE_DARK });
+  b.cyl(x, z, Y.crest - 0.3, y, 3.4, 3.4, 16, LIMESTONE, { cap: STONE_LIGHT });
+}
+
+/** The west lawn, mown in stripes, which is Damian's: open, for him and his animals. */
+function lawn(b: GeoBuilder): void {
+  for (let x = -11; x < 0; x += 4) laid(b, [[x, -98.4], [x, -109.6]], 1.0, MOWN, 0.04, 1.6);
+}
+
+/** What stands behind the house, low under the ceiling: yews, a walled kitchen garden and a coach house. */
+const BACK = {
+  garden: { x0: 25.5, z0: -108, x1: 40, z1: -101.5 },
+  coach: { x0: 44, z0: -107.4, x1: 54, z1: -102 },
+  yews: { x0: 24, z0: -101, x1: 43, z1: -99.4 },
+};
+
+function backOfHill(k: Build): void {
+  const b = k.b, y = Y.crest;
+  // yews along the house's back
+  for (let x = BACK.yews.x0 + 1.5; x < BACK.yews.x1; x += 3) {
+    const z = (BACK.yews.z0 + BACK.yews.z1) / 2;
+    b.cyl(x, z, y - 0.1, y + 2.6, 0.62, 0.06, 7, YEW, { cap: false });
+  }
+  // the kitchen garden: a wall of old brick with a gap to the south, and its beds
+  {
+    const G = BACK.garden, h = 1.5, t = 0.28, gap = [G.x0 + 6.5, G.x0 + 8.3];
+    for (const [x0, z0, x1, z1] of [[G.x0, G.z0, G.x1, G.z0 + t], [G.x0, G.z1 - t, gap[0], G.z1], [gap[1], G.z1 - t, G.x1, G.z1], [G.x0, G.z0 + t, G.x0 + t, G.z1 - t], [G.x1 - t, G.z0 + t, G.x1, G.z1 - t]]) {
+      b.box(x0, y - 0.1, z0, x1, y + h, z1, BRICK_OLD, { faces: 'NESWT', top: TRIM });
+    }
+    for (let i = 0; i < 3; i++) {
+      const z0 = G.z0 + 0.9 + i * 2.0, z1 = z0 + 1.3;
+      for (const [x0, x1] of [[G.x0 + 0.8, gap[0] - 0.3], [gap[1] + 0.3, G.x1 - 0.8]]) {
+        flat(b, x0, z0, x1, z1, y + 0.05, EARTH);
+        for (let j = 0; j < 2; j++) flat(b, x0 + 0.2, z0 + 0.3 + j * 0.55, x1 - 0.2, z0 + 0.5 + j * 0.55, y + 0.09, i === 1 ? 0x6f8a4a : 0x5a7a40);
+      }
+    }
+  }
+  // the coach house: one storey of stone, two carriage doors, a hipped roof and a small cupola, all under the ceiling
+  {
+    const C = BACK.coach, eave = y + 3.6, mid = (C.x0 + C.x1) / 2, zc = (C.z0 + C.z1) / 2;
+    solid(b, C.x0 - 0.1, y - 0.2, C.z0 - 0.1, C.x1 + 0.1, y + 0.5, C.z1 + 0.1, LIMESTONE_DARK, 'NESWT');
+    b.box(C.x0, y + 0.5, C.z0, C.x1, eave, C.z1, LIMESTONE, { faces: 'NESW' });
+    pitched(b, C.x0, C.x1, C.z0, C.z1, eave, 2.0, { ends: ['h', 'h'], over: 0.3 });
+    for (const dx of [-2.4, 2.4]) {
+      b.moved(mid + dx, 0, C.z1, 0, () => {
+        b.quad([-1.2, y + 0.5, 0.03], [1.2, y + 0.5, 0.03], [1.2, y + 2.6, 0.03], [-1.2, y + 2.6, 0.03], [0, 0, 1], TIMBER_DARK);
+        for (const s of [-1, 1]) b.box(s * 1.32 - 0.12, y + 0.5, 0, s * 1.32 + 0.12, y + 2.6, 0.12, TRIM, { faces: 'SEWT' });
+        b.box(-1.44, y + 2.6, 0, 1.44, y + 2.85, 0.14, TRIM, { faces: 'SEWTB' });
+      });
+    }
+    b.moved(mid, 0, C.z1, 0, () => lancet(b, 0.7, y + 1.0, y + 2.4, { lights: 1, lit: 1.6 }));
+    const cy = eave + 1.75;
+    solid(b, mid - 0.45, cy - 0.3, zc - 0.45, mid + 0.45, cy + 0.8, zc + 0.45, TRIM, 'NESW');
+    b.cyl(mid, zc, cy + 0.8, Math.min(ceilingAt(mid, zc) - 0.3, cy + 1.6), 0.7, 0.04, 4, LEAD, { phase: PI / 4, cap: false });
+    k.lights.push({ x: mid, z: C.z1 + 1.2, r: 6, color: AMBER, k: 0.35 });
+  }
+  // a gravel path from the court to the coach house
+  laid(b, [[COURT.x0 + 0.5, COURT.z0 + 0.6], [BACK.coach.x1 + 1.0, -100.6], [BACK.coach.x1 - 2.4, BACK.coach.z1 + 0.6]], 0.8, GRAVEL, 0.05, 1.4);
+}
+
+/** Whether a place is within `room` of something this file has put down where no lot is. */
+const inBack = (x: number, z: number, room: number): boolean => Object.values(BACK).some((r) => x > r.x0 - room && x < r.x1 + room && z > r.z0 - room && z < r.z1 + room);
+
 /** The woods on the hill's west end, its east end and its back: dark slender trees on the ground as built, kept under the ceiling. */
 function woods(k: Build): void {
   const R = rng(0x30d5);
   const plant = (x: number, z: number, s: number): void => {
     const y = landAt(x, z);
-    if (y < Y.shelf + 0.3 || z > CREST.cliff - 1.5) return;
+    if (y < Y.shelf + 0.3 || z > CLIFF - 1.5) return;
     if (!open(x, z, 1.0)) return;
-    if (toDrive(x, z) < 3) return;
+    if (toDrive(x, z) < 3 || inBack(x, z, 1.2) || Math.hypot(x - STAND.x, z - STAND.z) < 7) return;
     const room = Math.min(ceilingAt(x, z) - 0.3, underBoards(x, z) + y) - y, size = Math.min(s, room / 9);
     if (size < 0.28) return;
     k.tree(x, z, size, true, y);
   };
-  // the west end: round the cove, its pond and its stream, and clear of the lawn
-  for (let i = 0; i < 40; i++) {
-    const x = -21.5 + R() * 15.5, z = -112 + R() * 25, s = 0.7 + R() * 0.5;
-    if (x > CREST.cove.x0 - 2 && x < CREST.cove.x1 + 1 && z > CREST.cove.z0 - 8.5) continue;
-    plant(x, z, s);
-  }
+  // the west end, round the lawn, with a tree or two at its west edge
+  for (let i = 0; i < 40; i++) plant(-21.5 + R() * 17, -112 + R() * 25, 0.7 + R() * 0.5);
+  plant(-13.6, -101.5, 0.9);
+  plant(-13.9, -106.8, 0.8);
   // the east end, round the drive
   for (let i = 0; i < 60; i++) plant(66 + R() * 35, -112 + R() * 25, 0.7 + R() * 0.55);
-  // the back of the hill, behind the Manor, low under the ceiling
-  for (let i = 0; i < 30; i++) plant(-6 + R() * 72, -112.6 + R() * 4.4, 0.5);
+  // the back of the hill, behind the house, low under the ceiling
+  for (let i = 0; i < 30; i++) plant(-6 + R() * 72, -112.6 + R() * 6, 0.5);
 }
 
 /** Whatever is not one of the plan's lots. */
@@ -1244,15 +1493,19 @@ export function extras(k: Build): void {
   riverParapet(k);
   cleft(k.b);
   helipad(k);
+  heroStand(k.b);
+  lawn(k.b);
+  backOfHill(k);
   woods(k);
-  // a few people: a visitor at the lodge, two on the gravel by the gates
+  // a few people: a visitor at the lodge, two on the gravel by the gates, a gardener in the kitchen garden
   for (const [x, z] of [[GATES.x - 7, GATES.z + 3.2], [GATES.x + 4.6, GATES.z + 3.6], [GATES.x + 5.6, GATES.z + 3.3]]) if (open(x, z, 0.6)) k.person(x, z, Y.shelf);
+  k.person(BACK.garden.x0 + 7.4, BACK.garden.z0 + 2.4, Y.crest);
 }
 
 /** A model for each lot this file builds, by the lot's id. */
 export const MODELS: Record<string, Model> = {
   manor,
-  batcave,
+  'pool-garden': poolGarden,
   cove,
   forecourt,
   'kane-bridge': kaneBridge,
