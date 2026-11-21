@@ -16,9 +16,9 @@ import * as THREE from 'three';
 import type { V3 } from '../../engine/geo';
 import type { Build } from '../../engine/tile';
 import type { Beast, BeastKind, Flock, FlockKind } from './beasts';
-import { EXTRAS, blend, bow, caught, drive, fly, glide, hang, idle, kneel, laugh, leap, lunge, parry, perch, point, run, salute, shrug, sit, star, strike, toss, walk, waddle, type Pose } from './figures';
+import { EXTRAS, blend, bow, caught, drive, fly, glide, swing, hang, idle, kneel, laugh, leap, lunge, parry, perch, point, run, salute, shrug, sit, star, strike, toss, walk, waddle, type Pose } from './figures';
 import type { Machine, MachineKind } from './machines';
-import { SHOW_LANES, SIGNAL, STAGES, Y, lotOf } from './plan';
+import { HERO_SPOTS, SHOW_LANES, SIGNAL, STAGES, Y, groundAt, lotOf } from './plan';
 import {
   E, N, S, TAU, TO_VIEW, W as WEST, at, beside, clamp, ease, hidden, lerp, lineLeg, span, still, toward, turnTo, walkLeg, RUN,
   type Leg, type Rest, type Spot, type State, type World,
@@ -53,8 +53,20 @@ const dim = (c: number, f: number): number => {
   return (Math.round(((c >> 16) & 255) * k) << 16) | (Math.round(((c >> 8) & 255) * k) << 8) | Math.round((c & 255) * k);
 };
 const facing = (s: Spot, x: number, z: number): Spot => at(s.x, s.y, s.z, toward(s.x, s.z, x, z));
+/** A walk by way of corners: each corner faces the way on from it, and the last place its own way. */
+const route = (pts: Spot[], speed = 2.2): Track => {
+  const ps = pts.map((p, i) => (i > 0 && i < pts.length - 1 ? facing(p, pts[i + 1].x, pts[i + 1].z) : p));
+  const legs: Track[] = [];
+  for (let i = 1; i < ps.length; i++) legs.push(walkLeg(ps[i - 1], ps[i], speed));
+  return seq(legs);
+};
 /** A figure's hand, roughly: `up` over its feet, `fwd` ahead and `side` to its right. */
 const handOf = (s: State, up: number, fwd = 0.3, side = 0.3): V3 => [s.x + Math.cos(s.h) * fwd - Math.sin(s.h) * side, s.y + up, s.z + Math.sin(s.h) * fwd + Math.cos(s.h) * side];
+
+/** A machine as it stands at one moment, for the check of what it touches. */
+interface Pose3 { x: number; y: number; z: number; h: number; pitch?: number }
+/** A machine's plan as layers of points in its own frame (x ahead, z to its right), each with the heights over its `y` that its body fills there. */
+type Shape = { pts: [number, number][]; ys: number[] }[];
 
 /** A way along a line of corners on the ground, measured by distance: where on it, and heading which way. */
 interface Path { len: number; at(s: number): [number, number, number] }
@@ -98,6 +110,57 @@ export function west(k: Build, W: World, book: Book): void {
     if (m) { m.at(x, y, z, h, pitch, 0); return m.seat(i); }
     return [x + Math.cos(h) * local[0] - Math.sin(h) * local[2], y + local[1], z + Math.sin(h) * local[0] + Math.cos(h) * local[2]];
   };
+  /**
+   * For the console (`gothamWest.machines()`): whether a machine on its way touches anything built, at the level of
+   * its drawn mesh. Its plan is sampled every 0.25 in its own frame, and at each of a few heights over its `y` the
+   * point is asked whether it lies inside something built. `ignore` leaves out what cannot be seen (inside the hill).
+   */
+  const devChecks: Record<string, () => string> = {};
+  const faces = (W.solid as unknown as { faces(x: number, z: number, each: (y: number, up: number) => void): void }).faces.bind(W.solid);
+  /**
+   * Whether a point lies inside something built: as the show's check asks it, but leaving out a roof's face high over
+   * it that has no underside drawn (a keystone, a slab's lip): only what begins within `reach` over it counts, or
+   * the ground itself.
+   */
+  const within = (x: number, y: number, z: number, reach: number): boolean => {
+    if (y < groundAt(x, z) - 0.05) return true;
+    let near = Infinity, lean = 0;
+    faces(x, z, (fy, up) => { if (fy > y + 0.02 && fy < near) { near = fy; lean = up; } });
+    return near < y + reach && lean > 0.1;
+  };
+  const touching = (poses: Pose3[], shape: Shape, ignore: (x: number, z: number) => boolean = () => false): string => {
+    let n = 0, first = '';
+    for (const q of poses) {
+      const c = Math.cos(q.h), s = Math.sin(q.h), tp = Math.tan(q.pitch ?? 0);
+      let hit = false;
+      for (const layer of shape) {
+        for (const [lx, lz] of layer.pts) {
+          const x = q.x + c * lx - s * lz, z = q.z + s * lx + c * lz, y = q.y + lx * tp;
+          if (ignore(x, z)) continue;
+          for (const dy of layer.ys) if (within(x, y + dy, z, 2.2)) { hit = true; if (!first) first = `(${x.toFixed(2)}, ${(y + dy).toFixed(2)}, ${z.toFixed(2)}), its own (${lx.toFixed(2)}, ${dy}, ${lz.toFixed(2)}), it at (${q.x.toFixed(2)}, ${q.y.toFixed(2)}, ${q.z.toFixed(2)}) heading ${q.h.toFixed(3)}`; break; }
+          if (hit) break;
+        }
+        if (hit) break;
+      }
+      if (hit) n++;
+    }
+    return n ? `touches at ${n} of ${poses.length} moments, first at ${first}` : `touches nothing at ${poses.length} moments`;
+  };
+  /** A plan in a machine's own frame, sampled: `parts` are boxes [x0, x1, half-width]. */
+  const shapeOf = (parts: [number, number, number][], ys: number[], step = 0.25): Shape[number] => {
+    const pts: [number, number][] = [];
+    for (const [x0, x1, hw] of parts) for (let x = x0; x <= x1 + 1e-6; x += (x1 - x0) / Math.ceil((x1 - x0) / step)) for (let z = -hw; z <= hw + 1e-6; z += hw / Math.ceil(hw / step)) pts.push([x, z]);
+    return { pts, ys };
+  };
+  // the Batmobile: its pods and body to 1.7 either side from 0.72 up, its narrow body, nose and canopy, and low
+  // down only its wheels (0.72 round, their outer faces 1.56 out)
+  const CAR_SHAPE: Shape = [
+    shapeOf([[-4.9, 4.1, 1.75]], [0.8, 1.5]),
+    shapeOf([[-4.9, 4.87, 0.93]], [0.35, 0.9, 1.6, 2.15]),
+    shapeOf([[2.13, 3.67, 1.6], [-3.77, -2.23, 1.6]], [0.3]),
+  ];
+  // the Batwing: its wings to 4.65 either side, its head narrower; from its belly to its canopy and fins
+  const WING_SHAPE: Shape = [shapeOf([[-4.8, 3.3, 4.7], [3.3, 4.15, 1.65], [4.15, 5.37, 1.05]], [0.08, 0.6, 1.2, 1.95], 0.45)];
 
   // ------------------------------------------------------------------ places
   const PERCH = W.place('towers', 'perch', at(tower.x1 - 0.6, tower.top, tower.z1 - 0.6, TO_VIEW));
@@ -111,6 +174,10 @@ export function west(k: Build, W: World, book: Book): void {
   // Gordon's post: just east of the Signal's lamp, beside its beam and not behind it as the opening view looks.
   const GORDON_PLACE = W.place('civic', 'gordon', at(SIGNAL.lamp[0] - 1.4, gcpd.top, SIGNAL.lamp[2] - 1.4, TO_VIEW));
   const GORDON = spot(SIGNAL.lamp[0] + 1.9, SIGNAL.lamp[2] - 0.9, TO_VIEW, GORDON_PLACE.y + 1);
+  // The lamp is a drum 0.98 in radius: whoever walks from Gordon's post to the south parapet goes round it by its
+  // south-east, 2 clear of its middle.
+  const ROUND_LAMP = at(SIGNAL.lamp[0] + 2.0, GORDON.y, SIGNAL.lamp[2] + 1.8, S);
+  const lampWalk = (from: Spot, to: Spot): Track => route([from, ROUND_LAMP, to]);
   const ROOF_DOOR = W.place('civic', 'roofDoor', at(gcpd.x0 + 4.5, gcpd.top, gcpd.z0 + 4, S));
   const GCPD_DOOR = W.place('civic', 'gcpdDoor', at(gcpd.x1 + 1.7, Y.upper, (gcpd.z0 + gcpd.z1) / 2, E));
   const COURT_STEPS = W.place('civic', 'courtSteps', at(-34, Y.upper + 0.8, 39.25, S));
@@ -130,15 +197,16 @@ export function west(k: Build, W: World, book: Book): void {
   const SKYLIGHT = W.place('waterfront', 'skylight', at(-36.9, 14, 2, WEST));
   const CAT_ROOF = W.place('waterfront', 'catwoman', at(-16.4, 12, 22.6, TO_VIEW));
   const RIDDLER = W.place('waterfront', 'riddler', at(28.7, 1.2, 42.2, S));
-  const BATMOBILE = W.place('bristol', 'batmobile', at(14, Y.cave + 0.25, -90.5, WEST));
-  const CAVE_TUNNEL = W.place('bristol', 'caveTunnel', at(6.6, Y.cave + 0.05, -90.5, WEST));
-  const PAD = W.place('bristol', 'batplane', at(43.5, Y.cave + 0.6, -90.5, S));
-  const FALL_FOOT = W.place('bristol', 'fallFoot', at(-8, Y.cave + 0.25, -91.7, S));
-  const COVE_TUNNEL = W.place('bristol', 'coveTunnel', at(-8, Y.cave + 0.22, -92.6, S));
-  const FORD = W.place('bristol', 'fordSouth', at(-8, Y.cave + 0.22, -85.4, S));
+  // The new Bristol (bristol.ts): the grotto under the Manor's tower with the waterfall across its mouth, the terrace
+  // walk along the cliff's edge before the house, the pool garden whose mirror pool is the lid of the cave's lift, and
+  // the entrance court with the helicopter's ring east of it. Fallbacks are worked out from the plan's lots.
+  const BATMOBILE = W.place('bristol', 'batmobile', at(40, Y.cave + 0.22, -89.1, S));
+  const PAD = W.place('bristol', 'batplane', at(11, Y.cave + 0.6, -93, S));
+  const HATCH = W.place('bristol', 'hatch', at(11, Y.crest, -93, E));
+  const FALL_FOOT = W.place('bristol', 'fallFoot', at(40, Y.cave + 0.25, -85.4, S));
   const OLD_TUNNEL = W.place('bristol', 'oldTunnel', at(SHOW_LANES.service.x1 + 0.55, Y.shelf, -83, E));
-  const ALFRED = W.place('bristol', 'alfred', at(28, Y.crest + 0.04, -95.5, S));
-  const DAMIAN = W.place('bristol', 'damian', at(-1.5, Y.crest, -100.5, TO_VIEW));
+  const ALFRED = W.place('bristol', 'alfred', at(40, Y.crest + 0.04, -85.8, S));
+  const MANOR_DOOR = W.place('bristol', 'manorDoor', at(40, Y.crest + 0.5, -87.2, S));  const DAMIAN = W.place('bristol', 'damian', at(-1.5, Y.crest, -100.5, TO_VIEW));
   const TITUS = W.place('bristol', 'titus', at(0.8, Y.crest, -99.2, TO_VIEW));
   const BAT_COW = W.place('bristol', 'batCow', at(-4.8, Y.crest, -104, 1.05));
   const ALFRED_CAT = W.place('bristol', 'alfredCat', at(3.6, Y.crest, -103.6, TO_VIEW));
@@ -313,9 +381,11 @@ export function west(k: Build, W: World, book: Book): void {
   });
   // Duke Thomas as Signal on the bank's roof, by day only.
   book.post('signal', BANK_ROOF, (t, post) => (night() > 0.5 ? hidden(post) : still(post, { ...idle((t * 0.06) % 1), head: 0.6 * Math.sin(t * 0.2) }, { glow: 0.2 })));
-  // Hush at the Elliot Tower's door, his hands behind him.
+  // Hush before the Elliot Tower, his hands behind him: on the Crown's terrace off its east side, where the opening
+  // view sees him. (At its south door he stood in an alley two wide behind a building 24 high, and no turn of the
+  // view found him.)
   const elliot = lotOf('elliot-tower');
-  book.post('hush', spot(elliot.x0 + 9, elliot.z1 + 0.95, TO_VIEW, Y.crown + 3), (t, post) => still(post, { armL: -0.35, armR: -0.35, elbowL: 0.9, elbowR: 0.9, tilt: 0.1 * Math.sin(t * 0.1), head: 0.5 * Math.sin(t * 0.12), nod: 0.15 }));
+  book.post('hush', spot(elliot.x1 + 1.5, (elliot.z0 + elliot.z1) / 2 + 2, TO_VIEW, Y.crown + 3),(t, post) => still(post, { armL: -0.35, armR: -0.35, elbowL: 0.9, elbowR: 0.9, tilt: 0.1 * Math.sin(t * 0.1), head: 0.5 * Math.sin(t * 0.12), nod: 0.15 }));
 
   // ------------------------------------------------------------------ the animals, and what goes on by itself
   const titus = beast('titus'), batCow = beast('batCow'), alfredCat = beast('alfredCat'), blackCat = beast('blackCat');
@@ -365,7 +435,7 @@ export function west(k: Build, W: World, book: Book): void {
     const G2 = at(ROLL[3].x, roof, ROLL[3].z, S);
     const behind = at(G2.x - 0.6, roof, G2.z - 2.4, S);
     const edge = at(gcpd.x1 - 0.9, roof, behind.z - 4, E), out = at(gcpd.x1 + 1.7, roof, behind.z - 4, E);
-    const gTo = walkLeg(GORDON, G2), gBack = walkLeg(at(G2.x, roof, G2.z, toward(G2.x, G2.z, GORDON.x, GORDON.z)), GORDON);
+    const gTo = lampWalk(GORDON, G2), gBack = lampWalk(at(G2.x, roof, G2.z, E), GORDON);
     const LIT = 1.5, UP = 5, LAND = UP + 0.6, GONE = 22, BACK = 25, OFF = BACK + gBack.dur;
     let down: Leg | null = null;
     const lit = (tb: number): number => (tb < OFF + 0.4 ? ease(span(tb, LIT, LIT + 2)) : 1 - ease(span(tb, OFF + 0.4, OFF + 2.2)));
@@ -421,76 +491,181 @@ export function west(k: Build, W: World, book: Book): void {
   book.opening.push('signal');
 
   // ================================================================== 2. Out of the Batcave
-  // Det. 83 (1944) and the cave of 1946 to 1950 [wp Batcave]; the waterfall over the door is the collector's
-  // decision. Bats pour out of the cleft, Batman and Robin come down into the cave and board the Batmobile, it goes
-  // west into the tunnel, out of the cove through the parted waterfall with its lamps on, over the ford, and east
-  // along the service lane under the cliff into the old tunnel. Alfred on the terrace raises his arm and lowers it.
+  // Det. 83 (1944) and the cave of 1946 to 1950 [wp Batcave]; the waterfall over the door and the hidden cave are the
+  // collector's decisions. Laid again on the new Manor: the bats pour out of their cleft; Batman and Robin come to the
+  // terrace walk, one to each side of the tower, vault the balustrade and swing down on their lines and in through the
+  // waterfall, which parts a little for each; Alfred looks over the balustrade after them. A beat, and the fall parts
+  // wide: the Batmobile comes out through it with its lamps on, over the ford's sill, round onto the service lane and
+  // east under the cliff into the old tunnel's mouth. The fall closes, and Alfred raises his arm and lowers it.
+  //
+  // The grotto is only 6 deep and its mouth about 5.1 wide between the rock at the height of the car's pods, so the car
+  // (9.6 long, 3.4 across) cannot come out straight and then turn: it turns while its tail is still in the mouth. Its
+  // nose then reaches 1.7 past the service lane's outer edge (z -80) for a moment, over the river road's verge, and no
+  // way out does better: a search of every pose of the car between the mouth's rock, the sill and the piers says the
+  // same. It runs into the old tunnel on a line that clears the house's cliff piers (0.07) and the portal's jambs (0.1),
+  // and is gone when its nose would come out of the spur's far side.
   {
     const car = machine('batmobile');
-    const cave = Y.cave;
-    const BL = spot(BATMOBILE.x - 2.0, BATMOBILE.z + 3.7, N, cave + 1), RL = spot(BATMOBILE.x + 5.0, BATMOBILE.z + 3.7, N, cave + 1);
-    const lane = SHOW_LANES.service;
-    const ARC: [number, number][] = [];
-    for (let i = 0; i <= 8; i++) { const a = Math.PI - (Math.PI / 2) * (i / 8); ARC.push([FORD.x + 3 + Math.cos(a) * 3, FORD.z + Math.sin(a) * 3]); }
-    const B = pathOf([[COVE_TUNNEL.x, COVE_TUNNEL.z - 4.8], ...ARC, [OLD_TUNNEL.x + 6, lane.z]]);
-    const T_IN = 7, T_TUN = 10.5, T_OUT = 11.5, T_END = 30;
-    const sB = (tb: number): number => B.len * ease(span(tb, T_OUT, T_END));
-    // when the car's tail has cleared the waterfall
-    let tPast = T_OUT + 4;
-    for (let t = T_OUT; t < T_END; t += 0.05) { const p = B.at(sB(t)); if (p[1] - 4.8 > FALL_FOOT.z + 0.4 || p[0] > FORD.x + 1) { tPast = t; break; } }
-    /** Where the car is at body time tb, which way it heads, how fast, and whether it shows. */
-    const carAt = (tb: number): { x: number; z: number; h: number; v: number; shown: boolean; riders: boolean } => {
-      if (tb < T_TUN) {
-        const u = span(tb, T_IN, T_TUN), x = lerp(BATMOBILE.x, CAVE_TUNNEL.x - 6, u * u);
-        return { x, z: BATMOBILE.z, h: WEST, v: tb > T_IN ? (2 * u * (BATMOBILE.x - CAVE_TUNNEL.x + 6)) / (T_TUN - T_IN) : 0, shown: x > CAVE_TUNNEL.x - 4.9, riders: x + 1.0 > CAVE_TUNNEL.x };
+    const terraceY = ALFRED.y;
+    // the two marks on the terrace walk, either side of the tower's porch, and where each comes in through the fall
+    const BL = spot(BATMOBILE.x - 5.7, -86.0, S, terraceY + 1), RL = spot(BATMOBILE.x + 5.7, -86.0, S, terraceY + 1);
+    const curtainZ = FALL_FOOT.z;
+    const DIVE = 2.2;
+    /** Over the balustrade and down on the line, in through the curtain at `xe`, and gone: `t0` when it begins. */
+    const dive = (m: Spot, xe: number, t0: number, tb: number): State => {
+      const g = glowB();
+      if (tb < t0) return still(m, { head: 0.2 * Math.sin(tb * 0.7) }, g);
+      const t = tb - t0, fast: V3 = [m.x, terraceY + 0.9, curtainZ + 0.1];
+      if (t < 0.4) return still(m, leap(0.1 + 0.25 * (t / 0.4)), { ...g, cape: 0.3 });
+      const V: V3 = [m.x, m.y + 1.6, curtainZ + 0.4];
+      if (t < 0.9) {
+        const u = ease((t - 0.4) / 0.5);
+        return still(at(m.x, lerp(m.y, V[1], u), lerp(m.z, V[2], u), S), leap(0.35 + 0.3 * u), { ...g, aloft: true, cape: 0.6, line: fast });
       }
-      if (tb < T_OUT) return { x: COVE_TUNNEL.x, z: COVE_TUNNEL.z - 4.8, h: S, v: 0, shown: false, riders: false };
-      const p = B.at(sB(tb)), q = B.at(sB(tb + 0.05));
-      return { x: p[0], z: p[1], h: p[2], v: Math.hypot(q[0] - p[0], q[1] - p[1]) / 0.05, shown: p[0] < OLD_TUNNEL.x + 4.9 && tb < T_END, riders: p[1] - 1.0 > COVE_TUNNEL.z && p[0] - 1.0 < OLD_TUNNEL.x };
+      if (t < DIVE) {
+        const u = (t - 0.9) / (DIVE - 0.9), Q: V3 = [lerp(m.x, xe, 0.35), m.y - 2.5, -81.2], E3: V3 = [xe, BATMOBILE.y + 1.0, curtainZ - 0.4];
+        const bz = (a: number, b: number, c: number): number => (1 - u) * (1 - u) * a + 2 * u * (1 - u) * b + u * u * c;
+        const dx = 2 * (1 - u) * (Q[0] - V[0]) + 2 * u * (E3[0] - Q[0]), dz = 2 * (1 - u) * (Q[2] - V[2]) + 2 * u * (E3[2] - Q[2]);
+        const rising = u < 0.5;
+        return still(at(bz(V[0], Q[0], E3[0]), bz(V[1], Q[1], E3[1]), bz(V[2], Q[2], E3[2]), Math.atan2(dz, dx)), rising ? swing(u / 0.5) : glide((u - 0.5) / 0.5), {
+          ...g, aloft: true, cape: 1, spread: rising ? 0.2 : ease((u - 0.5) / 0.3), line: rising ? fast : null, pitch: rising ? 0.3 : 0.45,
+        });
+      }
+      return hidden(at(xe, BATMOBILE.y, BATMOBILE.z, S));
     };
-    const carY = (x: number, z: number): number => { const y = gy(x, z, cave + 1.2); return Number.isFinite(y) && y > Y.shelf - 0.5 ? y : Y.shelf; };
-    /** Whether a rider at a seat is out in the open, and not still in a tunnel. */
-    const outside = (tb: number, s: V3): boolean => (tb < T_TUN ? s[0] > CAVE_TUNNEL.x + 0.4 : s[2] > COVE_TUNNEL.z + 0.6 && s[0] < OLD_TUNNEL.x - 0.4);
-    let seats: [V3, V3] = [[0, 0, 0], [0, 0, 0]];
+    // Robin's line from the Elliot Tower would clip a spire of the Crown on its way to the walk by the porch, so he lands
+    // further west on the walk, by the west pavilion, and runs along it to his place
+    const RM = spot(BATMOBILE.x - 14, -86.2, E, terraceY + 1), robRun = walkLeg(RM, BL, RUN);
+    const T_BAT = 1.0, T_ROB = 0.2 + robRun.dur + 0.1, XB = BATMOBILE.x - 0.6, XR = BATMOBILE.x + 0.6;
+
+    // ---- the car's way. A point a pace behind its middle (about the driver's seat) follows it, as a car's would: south
+    // out of the grotto down the ford's middle, a left turn of 5 through a third of the way round while its tail is in
+    // the mouth, a tight one of 2 the rest of the way, and east along the lane, easing onto a line that runs 0.24
+    // north of the portal's middle over the east pavilion's second pier (x 56.3) and onto it at the portal, 7.2 on.
+    // (Found by a search of such ways against the mouth's rock, the stalagmites in the grotto's back corners, the
+    // sill's blocks under its wheels and the piers.)
+    const REF = -1, X0 = BATMOBILE.x + 0.3, Z_OUT = -82.6, R1 = 5, A1 = 0.6, R2 = 2;
+    const line = (x: number): number => OLD_TUNNEL.z + 0.24 - (0.24 / 7.2) * (Math.min(x, 63.5) - 56.3);
+    const way: [number, number, number][] = [];
+    const NOSE = 4.82;
+    /** How far along its way the turn ends, where it may go faster. */
+    let S_TURN = 0;
+    {
+      // the two arcs from where they begin, as a heading and a place
+      let x = 0, z = 0, h = S;
+      const arc: [number, number, number][] = [];
+      const bend = (r: number, a: number): void => { const n = Math.ceil(a / 0.02); for (let i = 0; i < n; i++) { arc.push([x, z, h]); x += Math.cos(h) * (r * a) / n; z += Math.sin(h) * (r * a) / n; h -= a / n; } };
+      bend(R1, A1);
+      bend(R2, Math.PI / 2 - A1);
+      arc.push([x, z, E]);
+      // it is shown when its nose is at the curtain
+      const z0 = Z_OUT - z, zIn = curtainZ - 0.1 - NOSE + REF;
+      for (let zz = zIn; zz < z0; zz += 0.1) way.push([X0, zz, S]);
+      S_TURN = z0 - zIn + R1 * A1 + R2 * (Math.PI / 2 - A1);
+      for (const [ax, az, ah] of arc) way.push([X0 + ax, z0 + az, ah]);
+      const xe = X0 + x;
+      for (let xx = xe + 0.1; xx <= OLD_TUNNEL.x + 12; xx += 0.1) {
+        const zz = (q: number): number => line(q) + (Z_OUT - line(xe)) * (1 - ease(span(q, xe, xe + 8)));
+        way.push([xx, zz(xx), Math.atan2(zz(xx + 0.05) - zz(xx - 0.05), 0.1)]);
+      }
+    }
+    // measured along the way, and turned into where the car's middle is
+    const wayLen: number[] = [0];
+    for (let i = 1; i < way.length; i++) wayLen.push(wayLen[i - 1] + Math.hypot(way[i][0] - way[i - 1][0], way[i][1] - way[i - 1][1]));
+    const B: Path = {
+      len: wayLen[wayLen.length - 1],
+      at(s) {
+        const d = clamp(s, 0, wayLen[wayLen.length - 1]);
+        let i = 1;
+        while (i < way.length - 1 && wayLen[i] < d) i++;
+        const a = way[i - 1], b = way[i], f = (d - wayLen[i - 1]) / Math.max(1e-6, wayLen[i] - wayLen[i - 1]), h = turnTo(a[2], b[2], f);
+        return [lerp(a[0], b[0], f) - Math.cos(h) * REF, lerp(a[1], b[1], f) - Math.sin(h) * REF, h];
+      },
+    };
+    /** How fast it goes at a distance along its way: a careful roll out, and then away. */
+    const speed = (s: number): number => (s < S_TURN ? 1.6 + 0.12 * s : Math.min(15, 1.6 + 0.12 * S_TURN + 1.0 * (s - S_TURN)));
+    const T_PART = 7, T_OUT = 8.5;
+    // where it is along its way at each tenth of a second, and when it is gone
+    const sAt: number[] = [0];
+    const S_GONE = (() => { let s = 0; while (s < B.len && B.at(s)[0] + NOSE < OLD_TUNNEL.x + 6.0) s += 0.05; return s; })();
+    while (sAt[sAt.length - 1] < S_GONE) { const s = sAt[sAt.length - 1]; let x = s; for (let i = 0; i < 10; i++) x += speed(x) * 0.01; sAt.push(x); }
+    const T_GONE = T_OUT + (sAt.length - 1) * 0.1;
+    const sOf = (tb: number): number => { if (tb <= T_OUT) return 0; const f = (tb - T_OUT) / 0.1, i = Math.floor(f); return i >= sAt.length - 1 ? sAt[sAt.length - 1] : lerp(sAt[i], sAt[i + 1], f - i); };
+    // (inside the hill, behind the grotto's door or in the old tunnel, the floor is the ford's or the lane's)
+    const yAt = (x: number, z: number): number => { const y = gy(x, z, BATMOBILE.y + 0.3); return Number.isFinite(y) && y > Y.shelf - 0.3 ? y : x > OLD_TUNNEL.x - 1 ? SHOW_LANES.service.y : BATMOBILE.y; };
+    /** Where the car is at body time tb: its wheels' height and its nose's pitch from its axles, which way, how fast, and whether it shows. */
+    const carAt = (tb: number): { x: number; y: number; z: number; h: number; pitch: number; v: number; shown: boolean } => {
+      const s = sOf(tb), p = B.at(s), c = Math.cos(p[2]), sn = Math.sin(p[2]);
+      // each axle rides on the higher of its two wheels' ground, so that no wheel sinks into the ford's sill
+      // (and a little ahead and behind it, so that the car's belly rides over the sill's edge rather than through it)
+      const wheel = (d: number): number => Math.max(yAt(p[0] + c * d - sn * 1.22, p[1] + sn * d + c * 1.22), yAt(p[0] + c * d + sn * 1.22, p[1] + sn * d - c * 1.22), yAt(p[0] + c * d, p[1] + sn * d));
+      const axle = (d: number): number => Math.max(wheel(d - 1.2), wheel(d), wheel(d + 1.2));
+      const yF = axle(2.9), yR = axle(-3.0);
+      return { x: p[0], y: (yF + yR) / 2, z: p[1], h: p[2], pitch: Math.atan2(yF - yR, 5.9), v: tb > T_OUT && s < S_GONE ? speed(s) : 0, shown: tb >= T_OUT && s < S_GONE };
+    };
+    // when its tail has cleared the curtain, so that the fall may close
+    let T_CLEAR = T_OUT + 6;
+    for (let t = T_OUT; t < T_GONE; t += 0.05) {
+      const q = carAt(t), c = Math.cos(q.h), sn = Math.sin(q.h);
+      if (Math.min(...[-1.7, 1.7].map((w) => q.z - sn * 4.85 + c * w)) > curtainZ + 0.6) { T_CLEAR = t; break; }
+    }
+    const BODY = Math.max(T_GONE + 1.5, T_CLEAR + 6.5);
+    const part = (tb: number): number => {
+      const each = (t: number): number => 0.42 * Math.sin(Math.PI * span(tb, t - 0.6, t + 0.5));
+      return Math.max(each(T_BAT + DIVE - 0.15), each(T_ROB + DIVE - 0.15), ease(span(tb, T_PART, T_OUT)) * (1 - ease(span(tb, T_CLEAR, T_CLEAR + 2))));
+    };
     let lastTb = 0;
+    if (import.meta.env.DEV) {
+      devChecks.batcave = () => {
+        const poses: Pose3[] = [];
+        for (let t = T_OUT; t < T_GONE; t += 0.1) { const q = carAt(t); if (q.shown) poses.push(q); }
+        let far = -Infinity;
+        for (const q of poses) for (const [lx, lz] of [[NOSE, 0.88], [NOSE, -0.88], [4.05, 1.7], [4.05, -1.7], [-4.85, 1.7], [-4.85, -1.7]]) far = Math.max(far, q.z + Math.sin(q.h) * lx + Math.cos(q.h) * lz);
+        // what is behind the grotto's back door and its frame of rock, and inside the old tunnel's portal, is inside the
+        // hill and not seen (the car is shown from the moment its nose reaches the curtain, as the plan has it)
+        const hill = (x: number, z: number): boolean => (z < -90.5 && Math.abs(x - BATMOBILE.x) < 4) || (x > OLD_TUNNEL.x + 0.4 && Math.abs(z - OLD_TUNNEL.z) < 1.9);
+        return `${touching(poses, CAR_SHAPE, hill)}; its nose at most ${(far - (SHOW_LANES.service.z + 2.5)).toFixed(2)} past the lane's outer edge; out at ${T_OUT} s, the fall shut at ${(T_CLEAR + 2).toFixed(1)} s, gone at ${T_GONE.toFixed(1)} s`;
+      };
+    }
     book.stories.push({
-      id: 'batcave', name: 'Out of the Batcave', cast: ['batman', 'robin', 'alfred'], holds: ['cave', 'batmobile', 'terrace'], weight: 1,
-      marks: { batman: BL, robin: RL, alfred: 'post' }, body: 32,
+      id: 'batcave', name: 'Out of the Batcave', cast: ['batman', 'robin', 'alfred'], holds: ['grotto', 'batmobile', 'terrace'], weight: 1,
+      // Robin comes from the Elliot Tower in the west, Batman from Wayne Tower: each to the side his line reaches soonest
+      marks: { batman: RL, robin: RM, alfred: 'post' }, body: BODY,
       play(tb, P) {
-        const c = carAt(tb), y = carY(c.x, c.z);
-        seats = [seatOn(car, c.x, y, c.z, c.h, 0, 0, [-1.0, 0.5, 0]), seatOn(car, c.x, y, c.z, c.h, 0, 1, [-1.95, 0.56, 0])];
-        // the two come to the car's side, hop in, and ride
-        const parked0 = seatOn(null, BATMOBILE.x, carY(BATMOBILE.x, BATMOBILE.z), BATMOBILE.z, WEST, 0, 0, [-1.0, 0.5, 0]);
-        const parked1 = seatOn(null, BATMOBILE.x, carY(BATMOBILE.x, BATMOBILE.z), BATMOBILE.z, WEST, 0, 1, [-1.95, 0.56, 0]);
-        const rider = (id: string, from: Spot, seat: V3, side: V3, t0: number): void => {
-          const by = at(side[0], gy(side[0], side[2], cave + 1), side[2], N);
-          const l = walkLeg(from, by, 2.6);
-          if (tb < 0.5) P.put(id, still(from, { head: 0.3 }, glowB()));
-          else if (tb < 0.5 + l.dur) P.put(id, { ...l.at(tb - 0.5), ...glowB() });
-          else if (tb < t0) P.put(id, still(by, {}, glowB()));
-          else if (tb < t0 + 0.8) {
-            const u = ease(span(tb, t0, t0 + 0.8));
-            P.put(id, still(at(lerp(by.x, seat[0], u), lerp(by.y, seat[1], u) + 0.9 * Math.sin(Math.PI * u), lerp(by.z, seat[2], u), turnTo(N, WEST, u)), leap(0.3 + 0.6 * u), glowB({ aloft: true, close: true })));
-          } else if (!c.shown || (tb > T_IN && !outside(tb, seat))) P.put(id, hidden(at(seat[0], seat[1], seat[2], c.h)));
+        const c = carAt(tb);
+        const s0 = seatOn(car, c.x, c.y, c.z, c.h, c.pitch, 0, [-1.0, 0.5, 0]), s1 = seatOn(car, c.x, c.y, c.z, c.h, c.pitch, 1, [-1.95, 0.56, 0]);
+        // the two over the balustrade and in through the fall; then in the car as it comes out, and gone with it
+        const ride = (id: string, m: Spot, xe: number, t0: number, seat: V3): void => {
+          if (tb < T_OUT - 0.5) P.put(id, dive(m, xe, t0, tb));
+          // (hidden while the seat is still behind the grotto's back door, in the hill)
+          else if (!c.shown || seat[2] < -90.4) P.put(id, hidden(at(seat[0], seat[1], seat[2], c.h)));
           else P.put(id, still(at(seat[0], seat[1], seat[2], c.h), drive((tb * 0.3) % 1), glowB({ aloft: true, close: true })));
         };
-        rider('batman', P.from('batman'), tb < 4 ? parked0 : seats[0], [parked0[0], 0, BATMOBILE.z + 2.1], 3.0);
-        rider('robin', P.from('robin'), tb < 4.3 ? parked1 : seats[1], [parked1[0] + 0.15, 0, BATMOBILE.z + 2.1], 3.3);
-        // Alfred watches from the terrace, raises his arm as the car goes, and lowers it
-        const a = P.from('alfred'), arm = ease(span(tb, 6.5, 8)) * (1 - ease(span(tb, 13, 14.5)));
-        P.put('alfred', still(a, { ...blend({ armL: -0.35, spreadL: -0.1, elbowL: 0.9 }, { armR: 2.7, spreadR: 0.3, elbowR: 0.25 }, arm), nod: 0.35, head: tb < 12 ? 0.25 : -0.6 * span(tb, 12, 24) }));
+        ride('batman', P.from('batman'), XR, T_BAT, s0);
+        if (tb < 0.2) P.put('robin', still(P.from('robin'), {}, glowB()));
+        else if (tb < 0.2 + robRun.dur) P.put('robin', { ...robRun.at(tb - 0.2), ...glowB() });
+        else ride('robin', BL, XB, T_ROB, s1);
+        // Alfred looks over the balustrade after each, watches the car away east, and raises his arm when the fall has closed
+        const a = P.from('alfred');
+        const over = Math.max(Math.sin(Math.PI * span(tb, T_BAT + 0.5, T_BAT + DIVE + 1.2)), Math.sin(Math.PI * span(tb, T_ROB + 0.5, T_ROB + DIVE + 1.2)));
+        // (Batman to the east of the porch, his left; Robin to the west, his right)
+        const look = tb < T_ROB + 0.9 ? -0.75 * ease(span(tb, T_BAT, T_BAT + 0.6)) : tb < T_OUT ? lerp(-0.75, 0.7, ease(span(tb, T_ROB + 0.9, T_ROB + 1.6))) * (1 - ease(span(tb, T_ROB + DIVE + 1.2, T_ROB + DIVE + 2.2))) : -0.75 * ease(span(tb, T_OUT + 1.5, T_OUT + 4));
+        const arm = ease(span(tb, T_CLEAR + 2.2, T_CLEAR + 3.2)) * (1 - ease(span(tb, T_CLEAR + 4.6, T_CLEAR + 5.8)));
+        P.put('alfred', still(a, { ...blend({ armL: -0.35, armR: -0.35, spreadL: -0.1, spreadR: -0.1, elbowL: 0.9, elbowR: 0.9 }, { armR: 2.7, spreadR: 0.3, elbowR: 0.25, armL: -0.35, spreadL: -0.1, elbowL: 0.9 }, arm), nod: 0.15 + 0.5 * over, head: look }));
       },
       props(tb, live) {
         const dt = clamp(tb - lastTb, 0, 0.1);
         lastTb = tb;
         const c = carAt(tb);
         if (car) {
+          car.at(c.x, c.y, c.z, c.h, c.pitch, 0);
           car.shown(c.shown);
-          car.lights(tb > 5 ? 1 : ease(span(tb, 3.5, 5)));
-          car.trick('canopy', tb < 3.6 ? ease(span(tb, 0, 1)) : 1 - ease(span(tb, 3.8, 4.8)));
+          car.lights(c.shown ? 1 : 0);
+          car.trick('canopy', 0);
+          car.trick('jet', clamp((c.v - 9) / 5));
           if (live && c.shown) car.run(c.v, dt);
         }
-        W.air?.waterfall(ease(span(tb, T_OUT - 2, T_OUT)) * (1 - ease(span(tb, tPast, tPast + 2))));
+        W.air?.waterfall(part(tb));
         // the bats pour out of the cleft and away into the night
         if (bats) {
           const u = span(tb, 0, 11), n = Math.round(40 * ease(span(tb, 0, 2)) * (1 - span(tb, 9, 12)));
@@ -498,14 +673,15 @@ export function west(k: Build, W: World, book: Book): void {
           if (n > 0) bats.set({ x: CREVICE.x + 12 * u, y: CREVICE.y + 2 + 18 * u, z: CREVICE.z + 14 * u, spread: 2 + 9 * u, tall: 1.5 + 4 * u, n, swirl: 1.4, heading: Math.atan2(14, 12), stream: 0.6 });
         }
       },
-      end() { car?.shown(false); car?.lights(0); car?.trick('canopy', 0); W.air?.waterfall(0); bats?.shown(false); lastTb = 0; },
+      end() { car?.shown(false); car?.lights(0); car?.trick('canopy', 0); car?.trick('jet', 0); W.air?.waterfall(0); bats?.shown(false); lastTb = 0; },
     });
   }
 
   // ================================================================== 3. The Batwing's patrol
   // The Batplane of Det. 31 (1939) and its line of flyers [wp Batplane], here as the hovering Batwing the collector
-  // asked for. It rises on its rotors out of the cave's cut, patrols slowly over the city at 60 to 75, hovers with its
-  // searchlight on the police roof, the harbour and the East End, and comes home. Its pilot is one of the Robins in
+  // asked for. The Manor's mirror pool opens, the lift brings it up into the pool garden, and it rises on its fans,
+  // patrols slowly over the city at 60 to 75, hovers with its searchlight on the police roof, the harbour and the East
+  // End, and comes home to the lift, which takes it down under the pool again. Its pilot is one of the Robins in
   // turn, or now and then Batman himself: four stories that share the craft and never play together.
   {
     let craft: Machine | null = null;
@@ -513,7 +689,9 @@ export function west(k: Build, W: World, book: Book): void {
     try { craft = machine('batwing'); kind = craft ? 'batwing' : 'none'; } catch { craft = null; }
     if (!craft) { craft = machine('batplane'); kind = craft ? 'batplane' : 'none'; }
     if (import.meta.env.DEV) console.info(`Gotham: the west's patrol flies the ${kind}.`);
-    const pad = PAD, padY = PAD.y;
+    // The pad is the lift under the Manor's mirror pool: down at `padY` in the shaft, up at `topY` level with the
+    // garden. The craft stands on it nose east, to the garden's east walk, where a pilot who comes on a line lands.
+    const pad = at(HATCH.x, PAD.y, HATCH.z, E), padY = PAD.y, topY = HATCH.y;
     /** How high a leg must fly: over 62 and 9 clear of everything within 8 of its line. */
     const cruise = (ax: number, az: number, bx: number, bz: number, least = 62): number => {
       let top = 0;
@@ -530,17 +708,21 @@ export function west(k: Build, W: World, book: Book): void {
       { x: 26, z: 66, tx: 18, tz: 61 },
       { x: 47, z: 6, tx: 47, tz: -5 },
     ];
-    interface Phase { t0: number; t1: number; kind: 'pad' | 'spin' | 'lift' | 'turn' | 'move' | 'hover' | 'land' | 'sink' | 'settle'; a: [number, number, number]; b: [number, number, number]; h0: number; h1: number; light?: [number, number, number] }
+    type Kind = 'open' | 'rise' | 'board' | 'pad' | 'spin' | 'lift' | 'turn' | 'move' | 'hover' | 'land' | 'sink' | 'settle' | 'rest' | 'alight' | 'lower' | 'shut';
+    interface Phase { t0: number; t1: number; kind: Kind; a: [number, number, number]; b: [number, number, number]; h0: number; h1: number; light?: [number, number, number] }
     const phases: Phase[] = [];
-    let t = 3.0;
-    const add = (p: Omit<Phase, 't0' | 't1'>, dur: number): void => { phases.push({ ...p, t0: t, t1: t + dur }); t += dur; };
+    let t = 0;
+    const add = (p: Omit<Phase, 't0' | 't1'>, dur: number): Phase => { const ph = { ...p, t0: t, t1: t + dur }; phases.push(ph); t += dur; return ph; };
     const legY = [cruise(pad.x, pad.z, STOPS[0].x, STOPS[0].z), cruise(STOPS[0].x, STOPS[0].z, STOPS[1].x, STOPS[1].z), cruise(STOPS[1].x, STOPS[1].z, STOPS[2].x, STOPS[2].z), cruise(STOPS[2].x, STOPS[2].z, pad.x, pad.z)];
-    const P0: [number, number, number] = [pad.x, padY, pad.z];
+    const P0: [number, number, number] = [pad.x, padY, pad.z], PU: [number, number, number] = [pad.x, topY, pad.z];
     let here: [number, number, number] = [pad.x, legY[0], pad.z], head = pad.h;
-    // the fans to full first, a beat, and then it lifts
-    add({ kind: 'spin', a: P0, b: P0, h0: head, h1: head }, 2.0);
-    add({ kind: 'pad', a: P0, b: P0, h0: head, h1: head }, 0.7);
-    add({ kind: 'lift', a: P0, b: here, h0: head, h1: head }, 4.8);
+    // the pool opens, the lift brings it up into the garden, the pilot climbs in, the fans to full, a beat, and it lifts
+    const OPEN = add({ kind: 'open', a: P0, b: P0, h0: head, h1: head }, 3.0);
+    const RISE = add({ kind: 'rise', a: P0, b: PU, h0: head, h1: head }, 3.5);
+    const BOARD = add({ kind: 'board', a: PU, b: PU, h0: head, h1: head }, 1.0);
+    const SPIN = add({ kind: 'spin', a: PU, b: PU, h0: head, h1: head }, 2.0);
+    add({ kind: 'pad', a: PU, b: PU, h0: head, h1: head }, 0.7);
+    const LIFT = add({ kind: 'lift', a: PU, b: here, h0: head, h1: head }, 4.8);
     const route = [...STOPS.map((s, i) => ({ x: s.x, z: s.z, y: legY[i], light: [s.tx, W.solid.top(s.tx, s.tz), s.tz] as [number, number, number] })), { x: pad.x, z: pad.z, y: legY[3], light: undefined }];
     route.forEach((r, i) => {
       const to: [number, number, number] = [r.x, Math.max(legY[i], i > 0 ? legY[i - 1] : 0, r.y), r.z];
@@ -555,17 +737,35 @@ export function west(k: Build, W: World, book: Book): void {
         head = hl;
       }
     });
-    add({ kind: 'turn', a: here, b: here, h0: head, h1: pad.h }, 1.1);
-    // down on its belly: to ten over the pad, slowly to two, more slowly still to rest, and the fans down once it has settled
-    add({ kind: 'land', a: here, b: [pad.x, padY + 10, pad.z], h0: pad.h, h1: pad.h }, 3.2);
-    add({ kind: 'sink', a: [pad.x, padY + 10, pad.z], b: [pad.x, padY + 2, pad.z], h0: pad.h, h1: pad.h }, 3.6);
-    add({ kind: 'settle', a: [pad.x, padY + 2, pad.z], b: P0, h0: pad.h, h1: pad.h }, 2.8);
-    add({ kind: 'pad', a: P0, b: P0, h0: pad.h, h1: pad.h }, 2.2);
-    const BODY = t + 4.4;
+    // over the garden, the pool opens and the lift comes up under it
+    const HOME = add({ kind: 'turn', a: here, b: here, h0: head, h1: pad.h }, 1.1);
+    // down on its belly: to ten over the platform, slowly to two, more slowly still to rest, and the fans down once it
+    // has settled; the pilot who lives here climbs out; the lift takes it down and the pool shuts over it
+    add({ kind: 'land', a: here, b: [pad.x, topY + 10, pad.z], h0: pad.h, h1: pad.h }, 3.2);
+    add({ kind: 'sink', a: [pad.x, topY + 10, pad.z], b: [pad.x, topY + 2, pad.z], h0: pad.h, h1: pad.h }, 3.6);
+    add({ kind: 'settle', a: [pad.x, topY + 2, pad.z], b: PU, h0: pad.h, h1: pad.h }, 2.8);
+    const REST = add({ kind: 'rest', a: PU, b: PU, h0: pad.h, h1: pad.h }, 2.2);
+    const ALIGHT = add({ kind: 'alight', a: PU, b: PU, h0: pad.h, h1: pad.h }, 1.3);
+    const LOWER = add({ kind: 'lower', a: PU, b: P0, h0: pad.h, h1: pad.h }, 3.5);
+    const SHUT = add({ kind: 'shut', a: P0, b: P0, h0: pad.h, h1: pad.h }, 3.0);
+    const BODY = t + 0.4;
+    // once it is 12 clear of the garden on the way up, the lift goes down and the pool shuts under it
+    let T_CLEAR = LIFT.t1;
+    for (let q = LIFT.t0; q < LIFT.t1; q += 0.05) if (lerp(topY, LIFT.b[1], ease(span(q, LIFT.t0, LIFT.t1))) > topY + 12) { T_CLEAR = q; break; }
+    /** The pool and the lift at body time tb: how far open, and how far up. */
+    const hatchAt = (tb: number): { open: number; lift: number } => (tb < HOME.t0
+      ? { open: ease(span(tb, OPEN.t0, OPEN.t1)) * (1 - ease(span(tb, T_CLEAR + 3.5, T_CLEAR + 6.5))), lift: ease(span(tb, RISE.t0, RISE.t1)) * (1 - ease(span(tb, T_CLEAR, T_CLEAR + 3.5))) }
+      : { open: ease(span(tb, HOME.t0, HOME.t0 + 3)) * (1 - ease(span(tb, SHUT.t0, SHUT.t1))), lift: ease(span(tb, HOME.t0 + 3, HOME.t0 + 6.5)) * (1 - ease(span(tb, LOWER.t0, LOWER.t1))) });
     const craftAt = (tb: number): { x: number; y: number; z: number; h: number; pitch: number; v: number; rotors: number; light: [number, number, number] | null; lf: number } => {
-      const ph = phases.find((p) => tb >= p.t0 && tb < p.t1) ?? (tb < 3 ? phases[0] : phases[phases.length - 1]);
+      const ph = phases.find((p) => tb >= p.t0 && tb < p.t1) ?? (tb < 0 ? phases[0] : phases[phases.length - 1]);
       const u = span(tb, ph.t0, ph.t1);
-      const rotors = tb < 3 ? 0 : ph === phases[0] ? ease(u) : ph === phases[phases.length - 1] ? (u < 0.5 ? lerp(1, 0.3, ease(u * 2)) : lerp(0.3, 0, ease(u * 2 - 1))) : 1;
+      const rotors = tb < SPIN.t0 || tb >= ALIGHT.t0 ? 0 : ph === SPIN ? ease(u) : ph === REST ? (u < 0.5 ? lerp(1, 0.3, ease(u * 2)) : lerp(0.3, 0, ease(u * 2 - 1))) : 1;
+      if (ph.kind === 'rise' || ph.kind === 'lower') {
+        // on the lift, its belly on the platform: exactly as the lift goes
+        const y = padY + (topY - padY) * hatchAt(tb).lift;
+        return { x: pad.x, y, z: pad.z, h: pad.h, pitch: 0, v: 0, rotors, light: null, lf: 0 };
+      }
+      if (ph.kind === 'open' || ph.kind === 'board' || ph.kind === 'alight' || ph.kind === 'shut' || ph.kind === 'rest') return { x: ph.a[0], y: ph.a[1], z: ph.a[2], h: pad.h, pitch: 0, v: ph.kind === 'rest' ? rotors : 0, rotors, light: null, lf: 0 };
       if (ph.kind === 'sink' || ph.kind === 'settle') {
         const e = ph.kind === 'sink' ? u : 1 - (1 - u) * (1 - u);
         return { x: ph.a[0], y: lerp(ph.a[1], ph.b[1], e), z: ph.a[2], h: ph.h0, pitch: 0, v: 1, rotors, light: null, lf: 0 };
@@ -582,44 +782,61 @@ export function west(k: Build, W: World, book: Book): void {
       const lf = ph.kind === 'hover' ? Math.sin(Math.PI * clamp(u * 1.4)) : 0;
       return { x: ph.a[0], y: ph.a[1] + (ph.kind === 'hover' ? 0.4 * Math.sin(tb * 2) : 0), z: ph.a[2], h: turnTo(ph.h0, ph.h1, ease(u)), pitch: 0, v: ph.kind === 'pad' && tb >= phases[phases.length - 1].t0 ? 0 : 1, rotors, light: ph.light ?? null, lf };
     };
-    const BOARD_AT = spot(pad.x - 7, pad.z + 3.5, E, Y.cave + 1);
+    // on the garden's east walk, between the shaft and the house's west end, before the craft's nose
+    const BOARD_AT = spot(pad.x + 8.2, pad.z, WEST, topY + 1);
     const seatAt = (s: V3, h: number): Spot => at(s[0], s[1], s[2], h);
     let lastTb = 0;
-    // the back of the cave, where a pilot who came the Manor's way goes back up its stair
-    const STAIR = W.place('bristol', 'caveStairFoot', at(16.6, Y.cave + 0.04, -96.4, E));
-    const BACK = spot(lerp(pad.x - 5.2, STAIR.x, 0.25), lerp(pad.z + 2.2, STAIR.z, 0.25) + 1.5, WEST, Y.cave + 1);
-    /** A patrol with this pilot. One who boards comes down into the cave on his line; one who would come too far is in the seat as it lifts, and leaves by the cave's stair. */
+    if (import.meta.env.DEV) {
+      devChecks.batwing = () => {
+        const poses: Pose3[] = [];
+        for (let q = 0; q < BODY; q += 0.1) { const c = craftAt(q); if (c.y < topY + 16) poses.push(c); }
+        // and how near it comes to the hero's place on the lawn, which is kept 5 clear
+        const hero = HERO_SPOTS.find((s) => s.id === 'garden') ?? { x: 2.5, z: -104.5 };
+        let near = Infinity;
+        for (const q of poses) for (const [lx, lz] of WING_SHAPE[0].pts) near = Math.min(near, Math.hypot(q.x + Math.cos(q.h) * lx - Math.sin(q.h) * lz - hero.x, q.z + Math.sin(q.h) * lx + Math.cos(q.h) * lz - hero.z));
+        return `${touching(poses, WING_SHAPE)} below ${topY + 16}; ${near.toFixed(1)} from the hero's place; the pool shut at ${(T_CLEAR + 6.5).toFixed(1)} s and again at ${SHUT.t1.toFixed(1)} s of ${BODY.toFixed(1)}`;
+      };
+    }
+    /**
+     * A patrol with this pilot. One who lives at the Manor comes on his line to the garden's walk, climbs in when the
+     * lift is up, and climbs out on the garden when it is home; one who rests far off is in the seat as it rises, and
+     * goes down with it into the shaft.
+     */
     const patrol = (id: string, pilot: 'robin' | 'damian' | 'nightwing' | 'batman', weight: number, boards: boolean, may?: (w: World) => boolean): void => {
       book.stories.push({
-        id, name: `the Batwing's patrol (${pilot})`, cast: [pilot], holds: ['sky', 'batwingCraft', 'cave'], weight, marks: { [pilot]: boards ? BOARD_AT : 'post' }, body: BODY, may,
+        id, name: `the Batwing's patrol (${pilot})`, cast: [pilot], holds: ['sky', 'batwingCraft', 'hatch'], weight, marks: { [pilot]: boards ? BOARD_AT : 'post' }, body: BODY,
+        may: (w) => !!w.hatch && (may?.(w) ?? true),
         play(tb, P) {
           const c = craftAt(tb);
-          const seat = seatOn(craft, c.x, c.y, c.z, c.h, c.pitch, 0, [2.1, 0.5, 0]);
-          const by = boards ? P.from(pilot) : BOARD_AT, side = at(pad.x - 5.2, by.y, pad.z + 2.2, E);
-          const walkIn = walkLeg(by, side, 2.4), walkOut = boards ? walkLeg(side, by, 2.4) : walkLeg(at(side.x, side.y, side.z, WEST), BACK, 2.4);
-          const tOut = phases[phases.length - 1].t1;
+          const seat = seatOn(craft, c.x, c.y, c.z, c.h, c.pitch, 0, [3.3, 0.05, 0]);
           const g = glowB();
-          const post = W.posts[pilot];
-          if (!boards && !post) P.put(pilot, hidden(seatAt(seat, c.h)));
-          else if (!boards && tb < 2.2) P.put(pilot, tb < 2.0 && post ? still(post, perch(0), g) : hidden(seatAt(seat, c.h)));
-          else if (!boards && tb > tOut + 0.8 + walkOut.dur) P.put(pilot, hidden(BACK));
-          else if (tb < walkIn.dur) P.put(pilot, { ...walkIn.at(tb), ...g });
-          else if (tb < 2.2) {
-            const u = ease(span(tb, walkIn.dur, 2.2));
-            P.put(pilot, still(at(lerp(side.x, seat[0], u), lerp(side.y, seat[1], u) + 1.0 * Math.sin(Math.PI * u), lerp(side.z, seat[2], u), turnTo(E, c.h, u)), leap(0.3 + 0.6 * u), { ...g, aloft: true, close: true }));
-          } else if (tb < tOut) P.put(pilot, still(at(seat[0], seat[1], seat[2], c.h), drive((tb * 0.25) % 1), { ...g, aloft: true, close: true, cape: 0.1 }));
-          else if (tb < tOut + 0.8) {
-            const u = ease(span(tb, tOut, tOut + 0.8));
-            P.put(pilot, still(at(lerp(seat[0], side.x, u), lerp(seat[1], side.y, u) + 1.0 * Math.sin(Math.PI * u), lerp(seat[2], side.z, u), WEST), leap(0.3 + 0.6 * u), { ...g, aloft: true, close: true }));
-          } else P.put(pilot, { ...walkOut.at(Math.min(walkOut.dur, tb - tOut - 0.8)), ...g });
+          const sat = (): State => still(at(seat[0], seat[1], seat[2], c.h), drive((tb * 0.25) % 1), { ...g, aloft: true, close: true, cape: 0.1 });
+          if (!boards) {
+            const post = W.posts[pilot];
+            if (post && tb < 0.3) P.put(pilot, still(post, perch(0), g));
+            else if (tb < SHUT.t1) P.put(pilot, sat());
+            else P.put(pilot, hidden(seatAt(seat, c.h)));
+            return;
+          }
+          const by = P.from(pilot);
+          /** A hop between the walk and the seat, up over the craft's nose. */
+          const hop = (u: number, a: Spot, b: V3, h0: number, h1: number): State => still(at(lerp(a.x, b[0], ease(u)), lerp(a.y, b[1], ease(u)) + 1.6 * Math.sin(Math.PI * u), lerp(a.z, b[2], ease(u)), turnTo(h0, h1, ease(u))), leap(0.3 + 0.6 * u), { ...g, aloft: true, close: true });
+          if (tb < BOARD.t0) P.put(pilot, still(by, { head: tb > OPEN.t0 + 1 ? 0.3 * Math.sin(tb * 0.5) : 0, nod: tb > OPEN.t0 + 0.5 ? 0.35 : 0 }, g));
+          else if (tb < BOARD.t1) P.put(pilot, hop(span(tb, BOARD.t0, BOARD.t1), by, seat, by.h, c.h));
+          else if (tb < ALIGHT.t0) P.put(pilot, sat());
+          else if (tb < ALIGHT.t0 + 1.0) {
+            P.put(pilot, hop(span(tb, ALIGHT.t0, ALIGHT.t0 + 1.0), at(seat[0], seat[1], seat[2], c.h), [by.x, by.y, by.z], c.h, by.h));
+          } else P.put(pilot, still(by, { nod: tb > LOWER.t0 ? 0.35 : 0, head: 0.2 * Math.sin(tb * 0.4) }, g));
         },
         props(tb, live) {
           const dt = clamp(tb - lastTb, 0, 0.1);
           lastTb = tb;
-          const c = craftAt(tb);
+          const c = craftAt(tb), hq = hatchAt(tb);
+          W.hatch?.open(hq.open);
+          W.hatch?.lift(hq.lift);
           if (craft) {
             craft.shown(true);
-            craft.lights(Math.max(0.35, night()) * (tb > 2 ? 1 : 0.4));
+            craft.lights(Math.max(0.35, night()) * (tb > SPIN.t0 ? 1 : 0.4));
             craft.trick('rotors', c.rotors);
             craft.trick('light', c.lf);
             if (live) craft.run(c.v * c.rotors, dt);
@@ -628,7 +845,7 @@ export function west(k: Build, W: World, book: Book): void {
           if (c.light && c.lf > 0.02) W.rings.set(6, [c.light[0], c.light[1] + 0.12, c.light[2]], 3.2, c.lf * (0.3 + 0.5 * night()), 0xfff1c8);
           else W.rings.set(6, [0, 0, 0], 1, 0);
         },
-        end() { craft?.shown(false); craft?.lights(0); craft?.trick('rotors', 0); craft?.trick('light', 0); W.rings.set(6, [0, 0, 0], 1, 0); lastTb = 0; },
+        end() { craft?.shown(false); craft?.lights(0); craft?.trick('rotors', 0); craft?.trick('light', 0); W.rings.set(6, [0, 0, 0], 1, 0); W.hatch?.open(0); W.hatch?.lift(0); lastTb = 0; },
       });
     };
     patrol('batwing', 'robin', 0.45, false);
@@ -1331,10 +1548,12 @@ export function west(k: Build, W: World, book: Book): void {
     // out of the beam's way, along the roof's south parapet, where the opening view sees them
     const BUL = at(ROLL[1].x, roof, ROLL[1].z, S), G2 = at(ROLL[2].x, roof, ROLL[2].z, S);
     const BAT = at(ROLL[3].x + 0.2, roof, ROLL[3].z, S);
-    const gTo = walkLeg(GORDON, G2), gBack = walkLeg(at(G2.x, roof, G2.z, toward(G2.x, G2.z, GORDON.x, GORDON.z)), GORDON);
+    // back behind Batman, who stays at the parapet, and round the lamp
+    const gTo = lampWalk(GORDON, G2), gBack = route([at(G2.x, roof, G2.z, N), at(G2.x + 1.3, roof, G2.z - 1.3, E), at(SIGNAL.lamp[0] - 1.3, roof, G2.z - 0.6, E), ROUND_LAMP, GORDON]);
     const bulIn = walkLeg(BULLOCK, BUL, 2.0), bulOut = walkLeg(facing(BUL, BULLOCK.x, BULLOCK.z), BULLOCK, 2.0);
     let batLeg: Leg | null = null;
-    const BAT_LAND = 10, DARK = 25, BODY = DARK + 3 + gBack.dur + 0.4;
+    // Batman lands once Gordon, who goes round the lamp and along the parapet, has passed the place
+    const BAT_LAND = 6.6 + gTo.dur, DARK = 25, BODY = DARK + 3 + gBack.dur + 0.4;
     const disc = (tb: number): number => ease(span(tb, 0.5, 2.5)) * (1 - ease(span(tb, DARK, DARK + 2)));
     const up = (tb: number, k0: number): Partial<Pose> => ({ nod: -0.65 + 0.05 * Math.sin(tb + k0), head: 0.15 * Math.sin(tb * 0.3 + k0) });
     book.stories.push({
@@ -1451,10 +1670,10 @@ export function west(k: Build, W: World, book: Book): void {
     const copter = machine('wayneCopter');
     const DECK = W.place('towers', 'helipad', at(tower.x1 + 3.8, Y.crown + 51.3, (tower.z0 + tower.z1) / 2, TO_VIEW));
     const DOOR = W.place('towers', 'heliDoor', at(tower.x1 - 3.2, DECK.y, DECK.z, E));
-    const MPAD = W.place('bristol', 'manorPad', at(56.5, Y.crest + 0.09, -91.6, TO_VIEW));
-    const EDOOR = W.place('bristol', 'eastDoor', at(46.75, Y.crest + 0.04, -102.5, E));
-    const EPATH = W.place('bristol', 'eastPath', at(49.6, Y.crest + 0.04, -102.5, E));
-    const MDOOR = W.place('bristol', 'manorDoor', at(28, Y.crest + 0.04, -97.15, S));
+    const MPAD = W.place('bristol', 'manorPad', at(81, Y.crest + 0.09, -91, TO_VIEW));
+    const EDOOR = W.place('bristol', 'eastDoor', at(57.95, Y.crest + 0.04, -91.9, E));
+    const EPATH = W.place('bristol', 'eastPath', at(60.95, Y.crest + 0.04, -91.9, E));
+    const MDOOR = MANOR_DOOR;
     /** Where it rests: on the tower's deck facing the tower, its left side (seat 0) to the south and the view; on the Manor's ring facing north, its left side to the west and the house. */
     const ATTOWER = { x: DECK.x, y: DECK.y, z: DECK.z, h: WEST }, ATMANOR = { x: MPAD.x, y: MPAD.y, z: MPAD.z, h: N };
     let restsAt: 'tower' | 'manor' = 'tower';
@@ -1471,8 +1690,14 @@ export function west(k: Build, W: World, book: Book): void {
     // the tower's end: the ledge by the door, the gap in the parapet, the gangway onto the deck, and round the nose
     const GAP = at(DOOR.x + 1.3, DECK.y, DOOR.z, E), G0 = at(DECK.x - 4.0, DECK.y, DECK.z + 0.4, E), G1 = at(DECK.x - 3.2, DECK.y, TOWER_SIDE.z, E);
     const LEDGE = at(DOOR.x + 0.3, DECK.y, DOOR.z + 2.1, N);
-    // the Manor's end: by the east door's path, one pace east of where Alfred stands, and a pace aside for him
-    const MEET = at(EPATH.x + 1.3, EPATH.y, EPATH.z, WEST), ASIDE = at(EPATH.x - 0.2, EPATH.y, EPATH.z - 1.2, S);
+    // the Manor's end: on the court's gravel just outside the porte-cochère's east arch, a pace and a half from where
+    // Alfred stands on its flags, and a pace aside for him. The arch is walked through off its middle (where its
+    // soffit stands over the porch's roof, and the check finds a figure inside it), and the court's place for a hero is
+    // walked round by its south side, 5 clear of it.
+    const MEET = at(EPATH.x + 1.45, EPATH.y, EPATH.z + 0.9, WEST), ASIDE = at(EPATH.x - 0.2, EPATH.y, EPATH.z - 1.2, S);
+    const IN_ARCH = at(EPATH.x + 0.05, EPATH.y, MEET.z, WEST);
+    const COURT_HERO = HERO_SPOTS.find((s) => s.id === 'manor') ?? { x: 67, z: -94 };
+    const COURT_W = at(MEET.x + 0.8, EPATH.y, COURT_HERO.z + 5.2, E), COURT_E = at(COURT_HERO.x + 5, EPATH.y, COURT_HERO.z + 5.2, E);
     // the way between, round the north side of the Signal's beam: up the tower's east face and away north-east
     const WP: [number, number] = [tower.x1 + 0.4, tower.z0 - 8];
     /** How high a leg must fly to be 9 clear of everything within `r` of its line. */
@@ -1561,19 +1786,20 @@ export function west(k: Build, W: World, book: Book): void {
       const B_OUT = 3.4, B_HOP = B_OUT + out.dur;
       const fl = flightOf(ATTOWER, [{ x: WP[0], z: WP[1], y: Y_TOWER }, { x: MPAD.x, z: MPAD.z, y: Y_AWAY }], ATMANOR, B_HOP + 1.0);
       const SEAT0 = seatAt(ATTOWER);
-      const OUT_T = fl.settled + 0.6, toMeet = seq([walkLeg(at(MANOR_SIDE.x, MANOR_SIDE.y, MANOR_SIDE.z, toward(MANOR_SIDE.x, MANOR_SIDE.z, MEET.x, MEET.z)), MEET, 2.4)]);
-      const MET = OUT_T + 0.8 + toMeet.dur, BOWED = MET + 1.8, IN = walkLeg(MEET, at(EDOOR.x, EDOOR.y, EDOOR.z, WEST), 2.0);
+      const OUT_T = fl.settled + 0.6, toMeet = route([facing(MANOR_SIDE, COURT_E.x, COURT_E.z), COURT_E, COURT_W, MEET], 2.4);
+      const MET = OUT_T + 0.8 + toMeet.dur, BOWED = MET + 1.8, IN = route([MEET, IN_ARCH, at(EDOOR.x, EDOOR.y, EDOOR.z, WEST)], 2.0);
       const aIn = walkLeg(ALFRED, at(MDOOR.x, MDOOR.y, MDOOR.z, N), 1.6), A_GO = fl.segs[4].t0, A_OUT = fl.settled - 3.6;
       const aOut = walkLeg(EDOOR, at(EPATH.x, EPATH.y, EPATH.z, toward(EPATH.x, EPATH.z, MANOR_SIDE.x, MANOR_SIDE.z)), 1.8);
       const aAside = walkLeg(at(EPATH.x, EPATH.y, EPATH.z, N), ASIDE, 1.2), aBack = walkLeg(ASIDE, at(EDOOR.x, EDOOR.y, EDOOR.z, WEST), 1.8);
       const B_IN = BOWED + 0.8 + IN.dur, A_IN = B_IN + 1.0 + aBack.dur;
       book.stories.push({
-        id: 'heliHome', name: "Bruce Wayne's helicopter home", cast: ['bruce', 'batman', 'alfred'], holds: ['sky', 'wayneCopter', 'towerCorner', 'cave'], weight: 0.7,
+        id: 'heliHome', name: "Bruce Wayne's helicopter home", cast: ['bruce', 'batman', 'alfred'], holds: ['sky', 'wayneCopter', 'towerCorner', 'terrace', 'manorPad'], weight: 0.7,
         marks: { bruce: DOOR, batman: LEDGE, alfred: 'post' }, body: A_IN + 0.6,
         may: () => restsAt === 'tower',
         play(tb, P) {
-          // Batman goes in at the door, and stays in
-          P.put('batman', tb < 0.5 ? still(LEDGE, {}, glowB()) : tb < 0.5 + toDoor.dur ? { ...toDoor.at(tb - 0.5), ...glowB() } : hidden(DOOR));
+          // Batman goes in at the tower's door, and once Bruce has gone in at the Manor's east door he is in the Manor:
+          // the director brings him home from its front door
+          P.put('batman', tb < 0.5 ? still(LEDGE, {}, glowB()) : tb < 0.5 + toDoor.dur ? { ...toDoor.at(tb - 0.5), ...glowB() } : tb < B_IN ? hidden(DOOR) : hidden(MDOOR));
           // Bruce Wayne: out of the same door, a look over the city, over the gangway, in, flown, out, to Alfred, a bow, in
           let b: State;
           if (tb < B_OUT) b = hidden(DOOR);
@@ -1609,10 +1835,12 @@ export function west(k: Build, W: World, book: Book): void {
 
     // ------------------------------------------------------------ to work: Manor to tower
     {
-      const toDoor = walkLeg(at(LEDGE.x, LEDGE.y, LEDGE.z, toward(LEDGE.x, LEDGE.z, DOOR.x, DOOR.z)), at(DOOR.x, DOOR.y, DOOR.z, WEST), 1.8);
-      const aIn = walkLeg(ALFRED, at(MDOOR.x, MDOOR.y, MDOOR.z, N), 1.6);
-      const B_OUT = 3.0, A_OUT = 3.9;
-      const bWalk = seq([walkLeg(at(EDOOR.x, EDOOR.y, EDOOR.z, E), MEET, 2.0), walkLeg(MEET, at(MANOR_SIDE.x, MANOR_SIDE.y, MANOR_SIDE.z, E), 2.2)]);
+      // Batman's mark on the terrace walk west of the front door: he goes in there as the body begins, before Alfred
+      const BT = spot(MDOOR.x - 2.4, ALFRED.z - 0.6, E, ALFRED.y + 1);
+      const batIn = route([BT, at(MDOOR.x - 0.4, ALFRED.y, ALFRED.z - 0.9, E), at(MDOOR.x, MDOOR.y, MDOOR.z, N)], 1.8);
+      const aIn = walkLeg(ALFRED, at(MDOOR.x, MDOOR.y, MDOOR.z, N), 1.6), A_IN0 = 0.3 + batIn.dur + 0.2;
+      const B_OUT = 3.0, A_OUT = Math.max(3.9, A_IN0 + aIn.dur + 0.4);
+      const bWalk = seq([route([at(EDOOR.x, EDOOR.y, EDOOR.z, E), IN_ARCH, MEET], 2.0), route([MEET, COURT_W, COURT_E, at(MANOR_SIDE.x, MANOR_SIDE.y, MANOR_SIDE.z, E)], 2.2)]);
       const aWalk = walkLeg(at(EDOOR.x, EDOOR.y, EDOOR.z, E), at(EPATH.x, EPATH.y, EPATH.z, E), 1.8);
       const B_HOP = B_OUT + bWalk.dur, SEATM = seatAt(ATMANOR);
       const fl = flightOf(ATMANOR, [{ x: WP[0], z: WP[1], y: Math.max(Y_TOWER, Y_AWAY) }, { x: DECK.x, z: DECK.z, y: Y_TOWER }], ATTOWER, B_HOP + 1.0);
@@ -1622,12 +1850,12 @@ export function west(k: Build, W: World, book: Book): void {
       const B_IN = OUT_T + 0.8 + toIn.dur, BAT_OUT = B_IN + 3;
       const batOut = walkLeg(at(DOOR.x, DOOR.y, DOOR.z, E), LEDGE, 1.8);
       book.stories.push({
-        id: 'heliWork', name: "Bruce Wayne's helicopter to work", cast: ['bruce', 'batman', 'alfred'], holds: ['sky', 'wayneCopter', 'towerCorner', 'cave'], weight: 0.7,
-        marks: { bruce: EDOOR, batman: LEDGE, alfred: 'post' }, body: BAT_OUT + batOut.dur + 0.6,
+        id: 'heliWork', name: "Bruce Wayne's helicopter to work", cast: ['bruce', 'batman', 'alfred'], holds: ['sky', 'wayneCopter', 'towerCorner', 'terrace', 'manorPad'], weight: 0.7,
+        marks: { bruce: EDOOR, batman: BT, alfred: 'post' }, body: BAT_OUT + batOut.dur + 0.6,
         may: () => restsAt === 'manor',
         play(tb, P) {
-          // Batman goes in at the tower's door at the start, and comes out of it at the end
-          P.put('batman', tb < 0.5 ? still(LEDGE, {}, glowB()) : tb < 0.5 + toDoor.dur ? { ...toDoor.at(tb - 0.5), ...glowB() } : tb < BAT_OUT ? hidden(DOOR) : { ...batOut.at(tb - BAT_OUT), ...glowB() });
+          // Batman goes in at the Manor's front door as the body begins, and comes out of the tower's door at the end
+          P.put('batman', tb < 0.3 ? still(BT, {}, glowB()) : tb < 0.3 + batIn.dur ? { ...batIn.at(tb - 0.3), ...glowB() } : tb < BAT_OUT ? hidden(DOOR) : { ...batOut.at(tb - BAT_OUT), ...glowB() });
           // Bruce Wayne: out of the east door, past Alfred to the ring, in, flown, out on the deck, over the gangway, in
           let b: State;
           if (tb < B_OUT) b = hidden(EDOOR);
@@ -1640,8 +1868,8 @@ export function west(k: Build, W: World, book: Book): void {
           P.put('bruce', b);
           // Alfred: in at the front door, out of the east door behind Bruce, an arm up as he goes, and back in
           let a: State;
-          if (tb < 0.4) a = still(P.from('alfred'), {});
-          else if (tb < 0.4 + aIn.dur) a = aIn.at(tb - 0.4);
+          if (tb < A_IN0) a = still(P.from('alfred'), { head: tb > 0.3 ? -0.5 : 0 });
+          else if (tb < A_IN0 + aIn.dur) a = aIn.at(tb - A_IN0);
           else if (tb < A_OUT) a = hidden(MDOOR);
           else if (tb < A_OUT + aWalk.dur) a = aWalk.at(tb - A_OUT);
           else if (tb < LIFTED + 2) {
@@ -1666,5 +1894,12 @@ export function west(k: Build, W: World, book: Book): void {
       copter.trick('rotors', 0);
       copter.lights(0.25 * night());
     });
+  }
+
+  if (import.meta.env.DEV) {
+    (window as unknown as { gothamWest: object }).gothamWest = {
+      /** Whether each machine of the west touches anything built on its way, at the level of its drawn mesh. */
+      machines: () => Object.entries(devChecks).map(([id, f]) => `${id}: ${f()}`).join('\n'),
+    };
   }
 }
