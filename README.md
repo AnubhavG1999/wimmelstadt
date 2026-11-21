@@ -32,7 +32,7 @@ It is deliberately not a collection manager: no prices, no wish lists, no checkl
 | Research | Kept for the tiles on the board, with sources: what stands in each place, and what was and was not checked. A new tile is researched when its turn comes. See [docs/districts/research](docs/districts/research). |
 | A first attempt at the city | Built and set aside: one continuous island of 23 districts. Beside the prototype its density and its layout did not hold up. It is kept in the repository's history. |
 | A first try at tiles | Built and set aside: two larger tiles, blocked out side by side. Beside the prototype they were too thinly filled. It is kept in the repository's history. |
-| The city | Nine tiles are built and stand together on a board: North America, Japan, Hong Kong, Europe, Delhi, Urbana-Champaign, Westeros, Blackwater Bay and the Iron Rain. More are to come, and the board holds nine at a time. See [app](app), [0009](docs/adr/0009-a-city-of-hand-built-tiles.md), [0010](docs/adr/0010-the-tiles-stand-together-on-a-table.md) and [0012](docs/adr/0012-the-board-holds-nine-tiles-at-a-time.md). |
+| The city | Ten tiles are built: North America, Japan, Hong Kong, Europe, Delhi, Urbana-Champaign, Westeros, Blackwater Bay, the Iron Rain and Gotham City. Nine of them stand together on the board at a time, and more are to come. See [app](app), [0009](docs/adr/0009-a-city-of-hand-built-tiles.md), [0010](docs/adr/0010-the-tiles-stand-together-on-a-table.md) and [0012](docs/adr/0012-the-board-holds-nine-tiles-at-a-time.md). |
 | Heroes | Fifteen: the black Countach from the generator trial, and fourteen more made from Mini GT's own pictures and finished by hand, each with a party trick of its own. They drive in the published city for whoever has the collector's PIN. See [0011](docs/adr/0011-the-heroes-sit-behind-a-pin.md). The pipeline that makes a hero from the phone is not built. |
 | Music | Begun. A big screen on every tile shows what is playing on Spotify, through a link made with the listener's own account, and a picture of its own when nothing is. A device is linked from the Music row of the options. Steering the music is not built. |
 
@@ -42,7 +42,7 @@ The order of building is: this prototype, then the city, then the pipeline that 
 
 The city is made of tiles. A tile is one district on a board of its own, built by hand, lot by lot, until nothing in it is filler. It is the size of the look prototype's board, because that board turned out to be the right size: small enough that its landmarks stand shoulder to shoulder, with roads squeezed between them and streets passing underneath. Each tile stands on its own base, like a model on a table, with its name on a brass plate. The tiles stand together on one table, edge to edge, and that table is the board.
 
-Nine tiles are built, each to the same [page for tile builders](docs/building-a-tile.md). Each keeps notes in its own folder: what stands on it, the liberties taken with the real place, and every real name on a sign.
+Ten tiles are built, each to the same [page for tile builders](docs/building-a-tile.md). Each keeps notes in its own folder: what stands on it, the liberties taken with the real place, and every real name on a sign.
 
 ### North America
 
@@ -177,6 +177,23 @@ The dome of Mars at dusk, under its fleet and the Rain.
 
 See its [notes](app/src/tiles/red-rising/NOTES.md).
 
+### Gotham City
+
+Batman's city, after DC's comics, drawn as the tile's own. Old Gotham stands on terraces along the west bank of the Sprang River: Wayne Tower with Wayne Enterprises' sign and a helipad, the Kane Building, the cathedral, and police headquarters with the Bat-Signal's lamp on its roof. Across the river are River Street's towers, the Bowery, Amusement Mile with its wheel, Ace Chemicals and the docks. Wayne Manor stands on a cliff on the north shore, with the Batcave hidden behind a waterfall under its tower. Arkham Asylum is on its island in the north-west corner, and Blackgate, the Statue of Justice and the Iceberg Casino are in the harbour. Its streets run on five levels, some of them through buildings, and an elevated railway loops over them. Fifty-eight named figures of the comics are on it at the size of the tile's people, among them Batman and four Robins, the Joker, Catwoman, the Penguin, the Riddler and Two-Face, and the Justice League on its visits. They play thirty-four small stories, up to four at once, and nobody is hurt in any of them: the Signal is lit, the Batmobile comes out through the waterfall and launches under two plumes of flame, the Jokermobile is chased over a rising drawbridge, and Bruce Wayne flies home from Wayne Tower by helicopter. The Batmobile is the collector's own design. Its traffic is police cruisers, yellow cabs and old sedans in dark paint, with a launch, a tug and a police boat on the harbour. Portraying named characters is the collector's own choice for this tile, as on the Iron Rain. It has 54 things to find.
+
+| | |
+| --- | --- |
+| ![A dark tile of a Gothic city on two banks of a river: a tall black tower with a spire and a clock tower at the left, grey towers with green caps on the right bank, a mansion on a green cliff at the back, a big wheel at the right, and bridges and an island fort in the harbour at the front](app/screenshots/gotham.jpg) | ![The same tile at night: every tower lit in strips of warm windows, a yellow bat shining on a cloud over the police roof, a searchlight in a square, and the wheel lit at the right](app/screenshots/gotham-night.jpg) |
+| Gotham City. | At night, with the Signal lit. |
+| ![A Gothic mansion with a clock tower on a cliff at night, a waterfall in an arch under it, and a low black car with a yellow canopy coming out through the fall onto a lane beside a river road, with police cars passing and a stone bridge tower in front](app/screenshots/gotham-batcave.jpg) | ![Docks at night: a purple and white open car with a grinning face on its nose on a quay beside vats that glow green, a black car behind it on a ramp, a freighter and a police boat on the water, and a lit sign with a crowned K over a card factory](app/screenshots/gotham-chase.jpg) |
+| The Batmobile out of the Batcave, through the waterfall under Wayne Manor. | The Jokermobile on the docks by Ace Chemicals' vats, with the Batmobile after it. |
+
+![A city quarter at night: tall towers with lit windows, low brick houses under an elevated railway on black trestles, a lit big wheel and a roller coaster beside a boardwalk, a red and white chimney, and the gatehouse of a suspension bridge behind](app/screenshots/gotham-mile.jpg)
+
+The East End at night: River Street's towers, the Bowery under the railway, and Amusement Mile's wheel.
+
+See its [notes](app/src/tiles/gotham/NOTES.md).
+
 ### The board
 
 | | |
@@ -184,7 +201,7 @@ See its [notes](app/src/tiles/red-rising/NOTES.md).
 | ![The whole board at night, nine lit tiles on a dark table, with beams of light rising from one of them and a clear dome glowing over a city at the front](app/screenshots/board-night.jpg) | ![The whole board under snow, with flakes falling and every roof white](app/screenshots/board-snow.jpg) |
 | The board at night. | Snow. |
 
-The board has nine places, in three rows of three, and it stays that size however many tiles are built: [0012](docs/adr/0012-the-board-holds-nine-tiles-at-a-time.md) says why. Each time the page loads, nine tiles are dealt onto it by chance, so that whoever opens it finds a board they have not seen. With nine tiles built, that changes only where each one stands. When there are more, the ones that are left out wait in the box for another load. The key with nine squares, beside the dial, opens the picker. It shows the table from above with a postcard of each tile, and there anybody can drag a tile to another place, bring one in from the box, deal afresh, or have their device keep the board they have set. These pictures show the tiles in the order they were built, which `?order=fixed` gives: North America, Japan and Hong Kong at the back, Europe, Delhi and Urbana-Champaign in the middle, and Westeros, Blackwater Bay and the Iron Rain at the front. Most of the tiles' own pictures were taken before the Iron Rain joined them, whose fleet hangs over whatever stands behind it. [0010](docs/adr/0010-the-tiles-stand-together-on-a-table.md) says why the tiles are joined like this. How a hero will get from one tile to the next is not decided yet: for now each hero is put on a tile at random whenever the page loads.
+The board has nine places, in three rows of three, and it stays that size however many tiles are built: [0012](docs/adr/0012-the-board-holds-nine-tiles-at-a-time.md) says why. Each time the page loads, nine tiles are dealt onto it by chance, so that whoever opens it finds a board they have not seen. Ten tiles are built, so every load leaves one of them in the box, where it waits for another load. The key with nine squares, beside the dial, opens the picker. It shows the table from above with a postcard of each tile, and there anybody can drag a tile to another place, bring one in from the box, deal afresh, or have their device keep the board they have set. These pictures show the tiles in the order they were built, which `?order=fixed` gives: North America, Japan and Hong Kong at the back, Europe, Delhi and Urbana-Champaign in the middle, and Westeros, Blackwater Bay and the Iron Rain at the front. Gotham City, the tenth, is in the box in that order. Most of the tiles' own pictures were taken before the Iron Rain joined them, whose fleet hangs over whatever stands behind it. [0010](docs/adr/0010-the-tiles-stand-together-on-a-table.md) says why the tiles are joined like this. How a hero will get from one tile to the next is not decided yet: for now each hero is put on a tile at random whenever the page loads.
 
 Two other forms of the city were built first and set aside. One was a continuous island with a coast, rivers and mountains. It was too large to build by hand, so the ground between its landmarks was filled with ordinary buildings made by rule, and it looked empty where the prototype looks full. The other was a pair of larger tiles joined by an avenue, which thinned out in the same way. Both are kept only in the repository's history, and [0009](docs/adr/0009-a-city-of-hand-built-tiles.md) records them.
 
@@ -234,7 +251,7 @@ Famous landmarks stand in the city as toy versions of themselves, each on the ti
 | [docs/adr](docs/adr) | Twelve short records of decisions that would be hard to undo, each with its reason. |
 | [docs/building-a-tile.md](docs/building-a-tile.md) | The page for whoever builds a tile: what a tile is, the kit, the checks, and what the earlier tiles taught their builders. |
 | [docs/districts/research](docs/districts/research) | The research notes behind the tiles on the board: what stands where, what it looks like, and what was and was not checked. |
-| [app](app) | The real app, built with three.js: an engine, and a folder for each tile. So far nine tiles. |
+| [app](app) | The real app, built with three.js: an engine, and a folder for each tile. So far ten tiles. |
 | [app/src/engine/room](app/src/engine/room) | The collector's room round the table: the desk, the map on it with a pin for each tile, and the room the desk stands in. |
 | [app/src/music](app/src/music) | The link to Spotify, which puts what is playing on the big screens of the city. |
 | [supabase](supabase) | The backend's database, as the changes that made it: the heroes, the store for their models, and who may see them. |

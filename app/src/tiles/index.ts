@@ -16,7 +16,7 @@ const found = import.meta.glob<{ default: TileDef }>('./*/index.ts', { eager: tr
 const pictures = import.meta.glob<string>('./*/postcard.jpg', { eager: true, query: '?url', import: 'default' });
 
 /** The order the tiles were built in, which `?order=fixed` sets them out in. A tile that is not named here comes after these, by name. */
-const ORDER = ['north-america', 'japan', 'hong-kong', 'europe', 'delhi', 'uiuc', 'westeros', 'blackwater-bay', 'red-rising'];
+const ORDER = ['north-america', 'japan', 'hong-kong', 'europe', 'delhi', 'uiuc', 'westeros', 'blackwater-bay', 'red-rising', 'gotham'];
 const rank = (t: TileDef): number => (ORDER.includes(t.id) ? ORDER.indexOf(t.id) : ORDER.length);
 
 /** The folder each tile was found in, for the picture that lies beside it. */
