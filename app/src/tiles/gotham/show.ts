@@ -266,12 +266,16 @@ export function buildShow(k: Build, hatch: Hatch | null = null): Show {
        * or in a doorway, or beyond the board's edge; and of every figure of the story whether it is beyond the edge.
        * For each machine it gives the moment when most of it was so, from when to when, and how far above it the
        * nearest such face was: a deck is several units up, a thing driven into is not. What floats is not asked about
-       * under the waterline. It takes the show's clock with it and leaves the show held: load the page afresh
+       * under the waterline. What is built to move as a mesh of its own, such as a drawbridge's leaf, is not in
+       * `Solid`: a mesh that says what it is made of, as boxes in its own frame (`userData.boxes`), is asked about
+       * here too, with every vertex of every machine, and a machine is said to be in it when a vertex is more than
+       * 0.02 inside one of its boxes. It takes the show's clock with it and leaves the show held: load the page afresh
        * afterwards.
        */
       checkMachines: (ids: string[] = defs.map((d) => d.id), step = 0.1): string[] => {
         const advance = (dt: number): void => (window as unknown as { wimmel: { advance(dt: number): void } }).wimmel.advance(dt);
         const roots = k.group.children.filter((o) => o.name.startsWith('machine-'));
+        const movers = k.group.children.filter((o) => Array.isArray((o.userData as { boxes?: unknown }).boxes));
         const gap = (x: number, y: number, z: number): number => { for (const d of [0.3, 0.6, 1, 1.5, 2.5, 4, 6, 10, 20, 40, 150]) if (solid.under(x, z, y + d) > y + 0.02) return d; return Infinity; };
         const through = (e: ArrayLike<number>, x: number, y: number, z: number): [number, number, number] => [e[0] * x + e[4] * y + e[8] * z + e[12], e[1] * x + e[5] * y + e[9] * z + e[13], e[2] * x + e[6] * y + e[10] * z + e[14]];
         const out: string[] = [];
@@ -282,6 +286,7 @@ export function buildShow(k: Build, hatch: Hatch | null = null): Show {
           start(def);
           held = true;
           const worst = new Map<string, { n: number; of: number; tb: number; from: number; to: number; gap: number }>(), said = new Set<string>();
+          const inMover = new Map<string, { deep: number; tb: number; from: number; to: number }>();
           for (let i = 0; i < 6000; i++) {
             advance(step);
             const r = running.find((x) => x.def === def);
@@ -309,6 +314,27 @@ export function buildShow(k: Build, hatch: Hatch | null = null): Show {
                 }
               });
               const kind = root.name.slice(8);
+              for (const mover of movers) {
+                mover.updateWorldMatrix(true, false);
+                // (only of a machine within 40 of it: a machine and what it puts out are 20 long at most)
+                if (Math.hypot(root.matrixWorld.elements[12] - mover.matrixWorld.elements[12], root.matrixWorld.elements[14] - mover.matrixWorld.elements[14]) > 40) continue;
+                const to = mover.matrixWorld.clone().invert().elements, boxes = (mover.userData as { boxes: number[][] }).boxes;
+                let deep = 0;
+                root.traverseVisible((o) => {
+                  const m = o as unknown as { isMesh?: boolean; isInstancedMesh?: boolean; material?: { type: string }; geometry: { getAttribute(name: string): { count: number; getX(i: number): number; getY(i: number): number; getZ(i: number): number } }; matrixWorld: { elements: ArrayLike<number> } };
+                  if (!m.isMesh || m.isInstancedMesh || m.material?.type === 'MeshBasicMaterial') return;
+                  const p = m.geometry.getAttribute('position');
+                  for (let j = 0; j < p.count; j++) {
+                    const w = through(m.matrixWorld.elements, p.getX(j), p.getY(j), p.getZ(j)), [x, y, z] = through(to, w[0], w[1], w[2]);
+                    for (const b of boxes) deep = Math.max(deep, Math.min(x - b[0], b[3] - x, y - b[1], b[4] - y, z - b[2], b[5] - z));
+                  }
+                });
+                if (deep > 0.02) {
+                  const key = `${kind} is in ${mover.name}`, w = inMover.get(key);
+                  if (!w) inMover.set(key, { deep, tb, from: tb, to: tb });
+                  else { w.to = tb; if (deep > w.deep) { w.deep = deep; w.tb = tb; } }
+                }
+              }
               if (off && !said.has(kind)) { said.add(kind); out.push(`${id} at ${tb.toFixed(1)} s: the ${kind} is beyond the board's edge with ${off} of ${of} points, at (${root.position.x.toFixed(1)}, ${root.position.y.toFixed(1)}, ${root.position.z.toFixed(1)})`); }
               if (n) {
                 const w = worst.get(kind);
@@ -321,6 +347,7 @@ export function buildShow(k: Build, hatch: Hatch | null = null): Show {
               if (a && a.now.shown && (Math.abs(a.now.x) > 104 || Math.abs(a.now.z) > 113) && !said.has(cid)) { said.add(cid); out.push(`${id} at ${tb.toFixed(1)} s: ${cid} is beyond the board's edge at (${a.now.x.toFixed(1)}, ${a.now.y.toFixed(1)}, ${a.now.z.toFixed(1)})`); }
             }
           }
+          for (const [what, w] of inMover) out.push(`${id}: the ${what}, ${w.deep.toFixed(2)} deep at ${w.tb.toFixed(1)} s (so from ${w.from.toFixed(1)} to ${w.to.toFixed(1)} s)`);
           for (const [kind, w] of worst) out.push(`${id}: the ${kind} has ${w.n} of ${w.of} points under a face that looks up at ${w.tb.toFixed(1)} s (so from ${w.from.toFixed(1)} to ${w.to.toFixed(1)} s); the nearest such face is ${w.gap} above`);
         }
         for (const r of [...running]) finish(r);

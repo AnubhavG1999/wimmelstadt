@@ -320,17 +320,47 @@ export function east(k: Build, W: World, book: Book): void {
   // ================================================================== 1. The Jokermobile on the docks
   // Batman 37 (1946) gave the Joker his car, white "to resemble the Joker's skin"; B&B 191 (1982) its boxing glove;
   // the rogues note's story 2 its plank over an opening bridge. It comes out of the card company's roller door with
-  // cards streaming, the Batmobile comes up out of the dock tunnel behind it, the drawbridge goes up, the Jokermobile
-  // takes the rising leaf like a ramp with its plank out and is over; the Batmobile stops at the leaf. Over the cut the
-  // glove springs at nobody, a puff of smoke, car and Joker are gone: he is laughing on his catwalk again.
+  // cards streaming, the Batmobile comes up out of the dock tunnel behind it, the drawbridge's near leaf goes up, the
+  // Jokermobile takes it like a ramp, leaps with its plank out and comes down on the far leaf and the quay; the
+  // Batmobile stops at the standing leaf. Over the cut the glove springs at nobody, a puff of smoke, car and Joker are
+  // gone: he is laughing on his catwalk again.
+  // Nothing of either car passes through a leaf at any moment: the collector asked for that. The west leaf is short
+  // (it was one leaf right across, and the car's tail went through its far end as it came down), each wheel is rolled
+  // as a circle on the quay and the leaf, the plank comes out only past the leaf's tip, and both cars' drawn meshes
+  // were measured against both leaves at every sixtieth of a second.
   const leaf = (() => { try { return buildDrawbridge(k); } catch { return null; } })();
   const shutter = (() => { try { return rollerDoor(k); } catch { return null; } })();
   {
     const jm = machine('jokermobile'), bm = machine('batmobile');
-    // (the leaf's hinge, and where the Jokermobile's middle is as it leaves the leaf)
-    const lane = SHOW_LANES.apron, LZ = lane.z, HINGE = DRAWBRIDGE.hinge, TAKE = 95.5;
-    const leafF = (tb: number): number => ease(span(tb, 3.0, 5.2)) * 0.22 + ease(span(tb, 6.6, 9)) * 0.63 - ease(span(tb, 15.5, 19.5)) * 0.85;
-    const leafA = (tb: number): number => leafF(tb) * ((70 * Math.PI) / 180);
+    const lane = SHOW_LANES.apron, LZ = lane.z, HINGE = DRAWBRIDGE.hinge;
+    /** Nothing of a machine beyond this: the board's edge, less a margin. And the Jokermobile: its nose and its axles from its middle, and its wheels' radius. */
+    const EDGE = 103.6, NOSE = 4.23, AXLE_F = 2.75, AXLE_R = 2.7, WHEEL = 0.78;
+    // The west leaf is the ramp, and the east one stays down for the Jokermobile's back wheels to land on. The west
+    // leaf is at RIDE of its turn when the car's back wheels leave its tip (14 degrees), having been at less than half
+    // of that as its front wheels took it, which its nose, 0.36 over the road, clears; and it stands at STAND once
+    // the car is over.
+    const RIDE = 0.2, STAND = 0.85, TURN_ALL = (70 * Math.PI) / 180;
+    const leafF = (tb: number): number => RIDE * ease(span(tb, 3.4, 5.6)) + (STAND - RIDE) * ease(span(tb, 6.6, 9)) - STAND * ease(span(tb, 15.5, 19.5));
+    const leafA = (tb: number): number => leafF(tb) * TURN_ALL;
+    /** Where the Jokermobile's middle is as its back wheels leave the west leaf's tip. */
+    const TAKE = HINGE + (DRAWBRIDGE.length + AXLE_R) * Math.cos(RIDE * TURN_ALL);
+    /**
+     * How the car stands with its middle at x, heading east, while the west leaf is at the angle a: each wheel, a
+     * circle, rests on what is under it, the quay or the leaf's top, and the leaf's top is taken to go on past its
+     * tip (the front wheels are in the air there, on the leaf's line, until the back wheels leave the tip). Gone
+     * round a few times, since where a wheel's middle is depends on how the car leans.
+     */
+    const ride = (x: number, a: number): { y: number; pitch: number } => {
+      const up = (cx: number): number => Math.max(0, (cx - HINGE) * Math.tan(a) + WHEEL * (1 / Math.cos(a) - 1));
+      let y = 0, pitch = 0;
+      for (let i = 0; i < 6; i++) {
+        const c = Math.cos(pitch), sn = Math.sin(pitch);
+        const hf = up(x + AXLE_F * c - WHEEL * sn), hr = up(x - AXLE_R * c - WHEEL * sn);
+        pitch = Math.asin(clamp((hf - hr) / (AXLE_F + AXLE_R), -0.9, 0.9));
+        y = hr + WHEEL + AXLE_R * Math.sin(pitch) - WHEEL * Math.cos(pitch);
+      }
+      return { y, pitch };
+    };
     // the Jokermobile: out of the door southward, round onto the lane, east, up the leaf and over
     // it waits inside with its nose in the doorway, 0.6 out: the door's shutter rolls up before it shows itself
     // (the building is 8 deep and the car 8.45 long, so that is as far in as it goes)
@@ -351,22 +381,21 @@ export function east(k: Build, W: World, book: Book): void {
     // quick from the door to the viaduct, which the Cobblepot Bridge hides from the opening view; the leap, the stop,
     // the glove and the smoke are east of it, where they are seen, and have the time
     const J0 = 0.3, J1 = 5.6, JUMP = 6.6, LANDX = 99.2, GONE = 12.6;
-    /** Nothing of a machine beyond this: the board's edge, less a margin. */
-    const EDGE = 103.6, NOSE = 4.23, AXLE_F = 2.75, AXLE_R = 2.7;
     const jokerCar = (tb: number): { x: number; y: number; z: number; h: number; pitch: number; v: number; shown: boolean } => {
       if (tb < J0) return { x: JX, y: 0, z: IN_Z, h: S, pitch: 0, v: 0, shown: false };
       if (tb < J1) {
         const u = span(tb, J0, J1), s = L * Math.pow(u, 1.4), p = along(s);
-        // each axle rides what is under it, the quay or the leaf beyond its hinge, so that its tail does not sink
+        // each wheel rides what is under it, the quay or the leaf beyond its hinge, so that its tail does not sink
         // into the quay as its nose goes up (its axles are 2.75 ahead of its middle and 2.7 behind)
-        const a = leafA(tb), up = (x: number): number => Math.max(0, x - HINGE) * Math.tan(a);
-        const hf = up(p[0] + AXLE_F), hr = up(p[0] - AXLE_R);
-        return { x: p[0], y: hr + ((hf - hr) * AXLE_R) / (AXLE_F + AXLE_R), z: p[1], h: p[2], pitch: Math.atan2(hf - hr, AXLE_F + AXLE_R), v: (1.4 * Math.pow(u, 0.4) * L) / (J1 - J0), shown: true };
+        const r = ride(p[0], leafA(tb));
+        return { x: p[0], y: r.y, z: p[1], h: p[2], pitch: r.pitch, v: (1.4 * Math.pow(u, 0.4) * L) / (J1 - J0), shown: true };
       }
       if (tb < JUMP) {
-        // nose up off the leaf, nose down over the cut, and level again as it comes down, so that it lands on its wheels
-        const u = span(tb, J1, JUMP), x0 = TAKE, y0 = (TAKE - HINGE) * Math.tan(leafA(J1));
-        return { x: lerp(x0, LANDX, u), y: lerp(y0, 0, u) + 1.6 * Math.sin(Math.PI * u), z: LZ, h: E, pitch: leafA(J1) * (1 - 2 * u) * (1 - ease(span(u, 0.7, 1))), v: 12, shown: true };
+        // nose up off the leaf, nose down over the cut, and level again as it comes down, so that it lands on its
+        // wheels: the front ones on the far quay, the back ones on the east leaf. Its tail is over the west leaf for
+        // the first half of the way and rises all that time; it is past the tip before the car comes down.
+        const u = span(tb, J1, JUMP), r0 = ride(TAKE, leafA(J1));
+        return { x: lerp(TAKE, LANDX, u), y: lerp(r0.y, 0, u) + 1.6 * Math.sin(Math.PI * u), z: LZ, h: E, pitch: r0.pitch * (1 - 2 * u) * (1 - ease(span(u, 0.7, 1))), v: 12, shown: true };
       }
       return { x: LANDX, y: 0, z: LZ, h: E, pitch: 0, v: 0, shown: tb < GONE };
     };
@@ -430,9 +459,12 @@ export function east(k: Build, W: World, book: Book): void {
           jm.shown(c.shown);
           jm.lights(1);
           jm.trick('cards', span(tb, 0.8, 1.4) * (1 - span(tb, 6.5, 7.5)));
-          // the plank reaches out over the cut, but never past the board's edge: it is drawn in as the car lands
+          // the plank reaches out over the cut, but never past the board's edge: it is drawn in as the car lands.
+          // It comes out only once the car's nose is past the west leaf's tip, with nothing under it but the east
+          // leaf, far below: let out sooner, while the car leaned less than the leaf, it dipped into the leaf.
           const room = Math.max(0, (EDGE - (c.x + NOSE * Math.cos(c.pitch))) / 10);
-          jm.trick('plank', Math.min(room, ease(span(tb, 4.6, 5.4)) * (1 - ease(span(tb, 6.0, 6.6)))));
+          const past = ease(span(c.x, HINGE + DRAWBRIDGE.length - NOSE + 0.6, TAKE - 0.3));
+          jm.trick('plank', Math.min(room, past * (1 - ease(span(tb, 6.0, 6.6)))));
           jm.trick('glove', ease(span(tb, 8.6, 9.0)) * (1 - ease(span(tb, 10.4, 11.0))));
           if (live && c.shown) jm.run(c.v, dt);
         }
