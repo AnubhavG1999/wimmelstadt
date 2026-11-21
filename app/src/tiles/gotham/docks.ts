@@ -23,3 +23,11 @@ export const PLACES: Record<string, Place> = {};
 export function extras(_k: Build): void {
   // nothing yet
 }
+
+/**
+ * The dock cut's drawbridge: one bascule leaf as a mesh of its own, down at 0
+ * and standing up at 1. The show calls it, once.
+ */
+export function buildDrawbridge(_k: Build): { lift(f: number): void } {
+  return { lift() {} };
+}

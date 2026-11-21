@@ -14,6 +14,7 @@ import { buildAir, type Air } from './air';
 import { buildBeasts, type Beasts } from './beasts';
 import { buildCast, type Cast } from './figures';
 import { buildMachines, type Machines } from './machines';
+import { buildBoats } from './traffic';
 
 export interface Show { air: Air | null; cast: Cast | null; machines: Machines | null; beasts: Beasts | null }
 
@@ -32,6 +33,7 @@ export function buildShow(k: Build): Show {
   const cast = tried('the cast', () => buildCast(k));
   const machines = tried('the machines', () => buildMachines(k));
   const beasts = tried('the animals', () => buildBeasts(k));
+  const boats = tried('the boats', () => buildBoats(k));
 
   k.each((dt) => {
     if (dt <= 0) return;
@@ -40,6 +42,6 @@ export function buildShow(k: Build): Show {
   });
 
   const show: Show = { air, cast, machines, beasts };
-  if (import.meta.env.DEV) (window as unknown as { gothamShow: Show }).gothamShow = show;
+  if (import.meta.env.DEV) (window as unknown as { gothamShow: object }).gothamShow = { ...show, boats };
   return show;
 }

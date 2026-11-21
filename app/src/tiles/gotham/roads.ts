@@ -20,6 +20,7 @@ import { flat, rect } from '../../engine/ground';
 import type { Path } from '../../engine/paths';
 import { lampsAlong, street } from '../../engine/roads';
 import type { Build, Route } from '../../engine/tile';
+import { MIX } from './traffic';
 import { BLUFF, CIRCUIT, KANE, LANE, RING, ROADS, SHOW_LANES, SPRANG, TRIGATE, TURNS, Y, avenueY, inside, sprang, type P2 } from './plan';
 
 const H2 = LANE / 2, TAU = Math.PI * 2;
@@ -282,7 +283,8 @@ export const SPANS: Record<string, { a: P2; b: P2; y: number; half: number }> = 
  */
 function routesOf(): Route[] {
   const paint = [0x1f2126, 0x2c3340, 0x3d2a2a, 0x4a4d55, 0x70757f, 0x8c8473, 0x26352f, 0xd9b23a];
-  const route = (id: string, speed: number, count: number): Route => ({ id, segs: segsOf(LANES[id], true), speed, count, paint });
+  // a route with kinds of its own is not repainted: a route's paint would repaint its cabs and cruisers too
+  const route = (id: string, speed: number, count: number): Route => ({ id, segs: segsOf(LANES[id], true), speed, count, ...(MIX[id]?.length ? { types: MIX[id] } : { paint }) });
   return [
     route('circuitOuter', 11, 6), route('circuitInner', 11, 5),
     route('ringOuter', 10, 5), route('ringInner', 10, 5),
