@@ -17,7 +17,8 @@ import { LOTS, Y, lotOf, type Lot } from './plan';
 
 /** A band of pale stone round a box, a little proud of it: a cornice, a string course. */
 function band(b: GeoBuilder, x0: number, z0: number, x1: number, z1: number, y: number, h: number, out = 0.25, color = STONE_TRIM): void {
-  b.box(x0 - out, y, z0 - out, x1 + out, y + h, z1 + out, color, { faces: 'NESWTB' });
+  // a hair higher than it is asked to be, so that its top never lies in the plane of the wall's own top
+  b.box(x0 - out, y, z0 - out, x1 + out, y + h + 0.06, z1 + out, color, { faces: 'NESWTB' });
 }
 
 /**
