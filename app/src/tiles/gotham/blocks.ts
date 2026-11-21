@@ -13,7 +13,7 @@ import type { SignDef } from '../../engine/signs';
 import type { Build } from '../../engine/tile';
 import { BRICK, BRICK_DARK, BRICK_RED, COPPER, COPPER_DARK, DARK, GOTHIC_WIN, IRON, LEAD, RUST, SLATE, SMALL_WIN, SODIUM, STEEL, STONE, STONE_DARK, STONE_LIGHT, STONE_TRIM, TENEMENT_WIN, gargoyle, gasLamp, waterTank } from './look';
 import type { Model, Place } from './models';
-import { LOTS, type Lot } from './plan';
+import { LOTS, Y, lotOf, type Lot } from './plan';
 
 /** A band of pale stone round a box, a little proud of it: a cornice, a string course. */
 function band(b: GeoBuilder, x0: number, z0: number, x1: number, z1: number, y: number, h: number, out = 0.25, color = STONE_TRIM): void {
@@ -168,7 +168,35 @@ export const COVERS: string[] = FABRIC.map((l) => l.id);
 export const SIGNS: SignDef[] = [];
 export const PLACES: Record<string, Place> = {};
 
+/**
+ * A covered bridge between two towers that stand side by side, a storey of
+ * lit windows over the lane between them: Pinkney's raised walkways, as the
+ * Crown has them. It reaches a little way into each tower's wall.
+ */
+function skybridge(k: Build, west: string, east: string, y: number, z: number): void {
+  const a = lotOf(west), b = lotOf(east), x0 = a.x1 - 2, x1 = b.x0 + 2;
+  k.b.box(x0, y, z - 1.2, x1, y + 3.4, z + 1.2, STONE_DARK, { win: GOTHIC_WIN, faces: 'NSB', seed: x0 * 0.31 });
+  band(k.b, x0, z - 1.2, x1, z + 1.2, y + 3.4, 0.3, 0.14, LEAD);
+  band(k.b, x0, z - 1.2, x1, z + 1.2, y - 0.3, 0.3, 0.14, STONE_TRIM);
+  k.glows.push({ x: (x0 + x1) / 2, y: y - 0.45, z, sx: x1 - x0 - 3.6, sy: 0.12, sz: 1.4, color: SODIUM });
+}
+
+/** A footbridge from River Street's terrace to a tower's door on that level. */
+function terraceDoor(k: Build, id: string): void {
+  const l = lotOf(id), cx = (l.x0 + l.x1) / 2, wall = -34;
+  k.b.box(cx - 1.3, Y.bluff - 0.35, wall - 0.2, cx + 1.3, Y.bluff, l.z0 + 0.7, STONE_LIGHT, { faces: 'EWTB' });
+  for (const s of [-1, 1]) k.b.box(cx + s * 1.3 - 0.1, Y.bluff, wall, cx + s * 1.3 + 0.1, Y.bluff + 0.9, l.z0 + 0.5, IRON, { faces: 'NESWT' });
+  k.b.box(cx - 0.8, Y.bluff, l.z0 + 0.48, cx + 0.8, Y.bluff + 2.6, l.z0 + 0.62, DARK, { faces: 'NEWT' });
+  k.glows.push({ x: cx, y: Y.bluff + 3, z: l.z0 + 0.3, sx: 1.2, sy: 0.2, sz: 0.2, color: SODIUM });
+}
+
 export function extras(k: Build): void {
+  // the East End's towers: bridges between them, and a door from each onto River Street's terrace
+  skybridge(k, 'uptown-1', 'uptown-2', 28, -28.5);
+  skybridge(k, 'uptown-2', 'uptown-3', 32, -29.5);
+  skybridge(k, 'uptown-2', 'uptown-3', 20, -27);
+  skybridge(k, 'uptown-3', 'uptown-4', 24, -28.5);
+  for (const id of ['uptown-1', 'uptown-2', 'uptown-3', 'uptown-4']) terraceDoor(k, id);
   ordinaryBuildings(k, FABRIC.map((l, i): Plot => {
     const h = l.top - l.base, tall = l.style === 'stone' && h >= 20;
     return {
