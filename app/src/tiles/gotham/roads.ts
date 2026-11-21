@@ -31,7 +31,7 @@ import { station, track, train, trestle, type Bent } from '../../engine/rail';
 import { lampsAlong, roadDeck, street } from '../../engine/roads';
 import type { Build, Route } from '../../engine/tile';
 import { MIX } from './traffic';
-import { BRIDGE, BRIDGE_ROAD, CIRCUIT, EL, HARBOUR_RD, KANE, KANE_ST, LANE, RING, ROADS, SHOW_LANES, SOUTH_ST, SPRANG, TRIGATE, TURNS, Y, avenueY, bySprang, groundAt, riverY, sprang, streetY, type P2 } from './plan';
+import { BRIDGE, BRIDGE_ROAD, CIRCUIT, EL, HARBOUR_RD, KANE, KANE_ST, LANE, LOTS, RING, RIVER_ROW, ROADS, SHOW_LANES, SOUTH_ST, SPRANG, TRIGATE, TURNS, Y, avenueY, bySprang, groundAt, riverY, sprang, streetY, type P2 } from './plan';
 
 const H2 = LANE / 2, TAU = Math.PI * 2;
 
@@ -297,11 +297,36 @@ export function buildRoads(k: Build): Route[] {
   lampsAlong(k, circuit, LANE + 1.2, 24);
   lampsAlong(k, kane, LANE + 1.2, 20);
   lampsAlong(k, harbour, LANE + 1.2, 20);
-  lampsAlong(k, ring, LANE + 1.2, 20);
   lampsAlong(k, south, LANE + 1.2, 20);
-  lampsAlong(k, avenue, LANE + 1.2, 20);
+  // the ring and the avenue run under buildings in places: no lamp post stands under one
+  lampsClear(k, ring, LANE + 1.2, 20);
+  lampsClear(k, avenue, LANE + 1.2, 20);
 
   return routesOf();
+}
+
+/** Whether a place is under something built over a road: the river row, or a lot whose `base` is its underside. */
+export function underBuilt(x: number, z: number, room = 0): boolean {
+  const s = bySprang(x, z), R = RIVER_ROW;
+  if (-s.d > R.d1 - room && -s.d < R.d0 + room && R.blocks.some((b) => s.t > b.from - room && s.t < b.to + room)) return true;
+  return LOTS.some((l) => l.file === 'blocks' && l.base > groundAt(l.x0 + 0.5, l.z0 + 0.5) + 4 && x > l.x0 - room && x < l.x1 + room && z > l.z0 - room && z < l.z1 + room);
+}
+
+/**
+ * Street lamps along a street as `lampsAlong` stands them, on alternate sides, but none under what is built over
+ * the street, and none where anything drives.
+ */
+function lampsClear(k: Build, path: Path, off: number, every: number): void {
+  const n = Math.floor(path.length / (every / 2)), p = new THREE.Vector3(), q = new THREE.Vector3();
+  for (let i = 0; i < n; i++) {
+    const s = (i + 0.5) * (every / 2);
+    path.at(s, p);
+    path.at(s + 0.5, q);
+    const tx = q.x - p.x, tz = q.z - p.z, l = Math.hypot(tx, tz) || 1, side = i % 2 ? 1 : -1;
+    const x = p.x + (-tz / l) * off * side, z = p.z + (tx / l) * off * side;
+    if (Math.abs(x) > 103 || Math.abs(z) > 112 || underBuilt(x, z, 1.5) || toLane(x, z) < 3.3) continue;
+    k.lamp(x, z, Math.atan2(-(tx / l) * side, (tz / l) * side), p.y);
+  }
 }
 
 /** Where the Sprang's two bascule bridges cross, each from quay to quay, the Kane Bridge, and the Cobblepot Bridge: for whoever builds them, and for the blockout. */
@@ -332,7 +357,8 @@ function buildEl(k: Build): void {
   const line = new Path(pts, false);
   MIDDLES.el = line;
   // a column stands on the line between the quay road's two lanes, and nowhere that anything drives or floats
-  const bent = (x: number, z: number): Bent => (groundAt(x, z) < 0 || toLane(x, z) < 2.1 ? null : 'T');
+  // and none where the lanes swing round the north bridge's head, where the longest of what drives needs the room
+  const bent = (x: number, z: number): Bent => (groundAt(x, z) < 0 || toLane(x, z) < 2.1 || bySprang(x, z).t < SPRANG.north + 10 ? null : 'T');
   trestle(k, line, { every: 8, bent, color: 0x3d4247 });
   track(k, line);
   // a buffer at each end, with a red lamp on it

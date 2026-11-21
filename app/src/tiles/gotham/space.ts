@@ -8,7 +8,7 @@
 import { inWater, landAt } from './land';
 import { BOARDS } from './look';
 import { HERO_SPOTS, LOTS, SHOW_LANES, STAGES, TRIGATE, TURNS, type P2 } from './plan';
-import { EL_ENDS, LANES } from './roads';
+import { EL_ENDS, LANES, underBuilt } from './roads';
 
 const d2 = (px: number, pz: number, ax: number, az: number, bx: number, bz: number): number => {
   const vx = bx - ax, vz = bz - az, l = vx * vx + vz * vz || 1;
@@ -56,6 +56,8 @@ export function open(x: number, z: number, room = 2, own: string[] = []): boolea
   if (inWater(x, z, room)) return false;
   for (const l of LOTS) if (!own.includes(l.id) && x > l.x0 - room && x < l.x1 + room && z > l.z0 - room && z < l.z1 + room) return false;
   if (toRoad(x, z) < ROAD_HALF + room) return false;
+  // what stands over a road on piers takes the ground under it
+  if (underBuilt(x, z, room)) return false;
   // the elevated railway's columns stand under its line
   if (d2(x, z, EL_ENDS[0][0], EL_ENDS[0][1], EL_ENDS[1][0], EL_ENDS[1][1]) < 2.4 + room) return false;
   if (onStage(x, z, room)) return false;

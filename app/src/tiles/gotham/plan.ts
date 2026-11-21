@@ -113,6 +113,14 @@ export const SPRANG = {
   south: 100,
 };
 const SL = Math.hypot(SPRANG.b[0] - SPRANG.a[0], SPRANG.b[1] - SPRANG.a[1]);
+/**
+ * The river row: buildings that stand over the west quay's road on piers, between the two bascule bridges, so that
+ * the road runs on under them beside the water, as Chicago's lower river drive does. Each is given by where it
+ * begins and ends along the Sprang and how high its top is; they lie the way the river runs, from `d0` to `d1`
+ * to the south-west of its middle, and their undersides are `soffit` over the quay.
+ */
+export const RIVER_ROW = { d0: 21.2, d1: 7.9, soffit: 8, blocks: [{ from: 47, to: 60, top: 32 }, { from: 62, to: 76, top: 48 }, { from: 78, to: 91, top: 28 }] };
+
 /** The way the Sprang runs, and the way across it to the north-east. */
 export const SPRANG_ALONG: P2 = [(SPRANG.b[0] - SPRANG.a[0]) / SL, (SPRANG.b[1] - SPRANG.a[1]) / SL];
 export const SPRANG_ACROSS: P2 = [SPRANG_ALONG[1], -SPRANG_ALONG[0]];
@@ -424,7 +432,7 @@ export function streetY(x: number, z: number): number {
  * north bascule bridge to one over the docks' yard. `y` is the height of its
  * rails.
  */
-export const EL = { from: 38, to: 132, y: 11, off: SPRANG.road };
+export const EL = { from: 46, to: 132, y: 11, off: SPRANG.road };
 
 /**
  * The lanes of the show, which no traffic enters. The service lane runs under
@@ -538,6 +546,13 @@ lot('blocks', 'uptown-4', '', 57, -33, 71, -24, Y.quay, 50);
 // A warehouse in the south-west, between the Clock Tower and the Gazette, and a shed behind the docks' named works.
 lot('blocks', 'warehouse-1', '', -88, 95, -80, 108, Y.quay, 12);
 lot('blocks', 'shed-2', '', 62, 27, 73, 33, Y.quay, 6);
+// Built over Grand Avenue, so that the avenue runs through them: a long building over the ramp in three lengths that
+// step up with it, and a gatehouse on the bastion that the avenue turns through. Each one's `base` is the height of
+// its underside over the road, not of its ground.
+lot('blocks', 'arcade-1', '', -52, 58, -36, 74.6, 8, 16);
+lot('blocks', 'arcade-2', '', -68, 58, -52, 74.6, 12, 16);
+lot('blocks', 'arcade-3', '', -84, 58, -68, 74.6, 16, 16);
+lot('blocks', 'gate-house', '', -103, 41.6, -84, 74.6, 16, 24);
 // ============================ Bristol: Wayne Manor and the Batcave ============================
 lot('bristol', 'manor', 'Wayne Manor', 8, -108, 48, -97, Y.crest, 14);
 lot('bristol', 'batcave', 'The Batcave', 6, -97, 50, -85, Y.cave, 6, true);
@@ -616,13 +631,10 @@ export const SIGHT: { id: string; x: number; y: number; z: number }[] = [
   { id: 'the courthouse steps', x: -34, y: Y.upper + 2, z: 41 },
   { id: 'the library steps', x: -53, y: Y.upper + 2, z: 41 },
   { id: 'the police roof', x: -50, y: Y.upper + 25, z: 20 },
-  { id: 'the rim road', x: -60, y: Y.upper + 1.6, z: 49.5 },
-  { id: 'the ramp, halfway', x: -59, y: 5.6, z: 66.5 },
   { id: 'the quad', x: -53, y: Y.upper + 1.5, z: -3 },
   { id: 'the park', x: -72, y: 1.5, z: -47 },
   { id: 'the Iceberg Lounge', x: -3, y: 4, z: 42 },
   { id: 'the Battery', x: 16, y: 1.5, z: 38 },
-  { id: 'the west quay', x: -10, y: 1.6, z: 5.5 },
   { id: 'the east quay', x: 11, y: 1.6, z: -13 },
   { id: 'Park Row', x: 61, y: 2, z: 11.5 },
   { id: "the museum's steps", x: 48.5, y: 2, z: 11.5 },
@@ -654,7 +666,6 @@ export const STAGES: Record<string, { x0: number; z0: number; x1: number; z1: nu
   policeRoof: { x0: -60, z0: 10, x1: -46, z1: 24, y: Y.upper + 24, what: "the police roof, flat and open: the Bat-Signal's lamp at its south-east corner, a stair head at its north-west, a parapet no higher than 1. Gordon's post; the Signal's stories; the League's roll-call" },
   courtSteps: { x0: -42, z0: 37, x1: -26, z1: 44.5, y: Y.upper, what: "the courthouse's steps and the sidewalk before them: Two-Face's post" },
   librarySteps: { x0: -60, z0: 37, x1: -46, z1: 44.5, y: Y.upper, what: "the library's steps and the sidewalk before them: Batgirl's post" },
-  rimWalk: { x0: -100, z0: 54.5, x1: -42, z1: 57.4, y: Y.upper, what: 'the promenade along the rim, over the ramp: kept clear to walk and run along' },
   quad: { x0: -60, z0: -12, x1: -46, z1: 6, y: Y.upper, what: "the university's quad: a lawn, with a scarecrow on a post in a patch of maize at its east end. The Scarecrow's post" },
   crownSteps: { x0: -82, z0: 36, x1: -64, z1: 41.5, y: Y.crown, what: "Wayne Tower's forecourt on the Crown: the place for a hero at its middle, the tower's door behind" },
   // ---- the quays
@@ -717,7 +728,6 @@ function watched(): Watched[] {
   along([[KANE_ST.x, KANE_ST.rampTop], [KANE_ST.x, KANE_ST.viaduct]], streetY);
   along(BRIDGE_ROAD, (x, z) => bridgeY(x, z) ?? 0);
   along([[KANE_ST.x, HARBOUR_RD.z], HARBOUR_RD.bend, RING[2]], () => Y.quay);
-  along(ROADS.avenue.slice(1), avenueY);
   return out;
 }
 
