@@ -323,7 +323,6 @@ export const MODELS: Record<string, Model> = {
   'pinkney-1': tower, 'pinkney-2': tower, 'uptown-1': tower, 'uptown-2': tower, 'uptown-3': tower, 'uptown-4': tower,
   'row-0': rowHouses, 'row-1': rowHouses, 'row-2': rowHouses,
   'warehouse-1': warehouse,
-  'shed-2': shed,
   'arcade-1': arcade, 'arcade-2': arcade, 'arcade-3': arcade,
   'gate-house': gateHouse,
   'kane-gate': gateTower,

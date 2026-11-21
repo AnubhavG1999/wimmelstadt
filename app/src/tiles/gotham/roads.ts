@@ -27,11 +27,11 @@ import * as THREE from 'three';
 import { beside, eased, fine, pathOf, rounded, segsOf, stretch, type P3 } from '../../engine/corners';
 import { flat, rect } from '../../engine/ground';
 import { Path, joined } from '../../engine/paths';
-import { station, track, train, trestle, type Bent } from '../../engine/rail';
+import { track, train, trestle, type Bent } from '../../engine/rail';
 import { lampsAlong, roadDeck, street } from '../../engine/roads';
 import type { Build, Route } from '../../engine/tile';
 import { MIX } from './traffic';
-import { BRIDGE, BRIDGE_ROAD, CIRCUIT, EL, EL_LOOP, HARBOUR_RD, KANE, KANE_ST, LANE, LOTS, RING, RIVER_ROW, ROADS, SHOW_LANES, SOUTH_ST, SPRANG, TRIGATE, TURNS, Y, avenueY, bySprang, groundAt, riverY, sprang, streetY, type P2 } from './plan';
+import { BRIDGE, BRIDGE_ROAD, CIRCUIT, EL, EL_LOOP, HARBOUR_RD, KANE, KANE_ST, LANE, LOTS, RING, RIVER_ROW, ROADS, SHOW_LANES, SOUTH_ST, SPRANG, STAGES, TRIGATE, TURNS, Y, avenueY, bySprang, groundAt, riverY, sprang, streetY, type P2 } from './plan';
 
 const H2 = LANE / 2, TAU = Math.PI * 2;
 
@@ -281,7 +281,8 @@ export function buildRoads(k: Build): Route[] {
   // the viaduct, the Cobblepot Bridge and Bridge Street's ramp: a deck, with what carries it. Its towers and cables are the bridge's builder's.
   const over = stretch(bridgeRoad(), 0, BRIDGE_LANDS + 0.2), overPath = pathOf(over, false);
   MIDDLES.bridge = overPath;
-  roadDeck(k, overPath, LANE + 0.6, { thick: 0.9, wall: 0.8, lanes: 2, skirt: 2.4, step: 1.5 });
+  // 0.8 thick, so that the docks' apron has 3.2 under it from edge to edge
+  roadDeck(k, overPath, LANE + 0.6, { thick: 0.8, wall: 0.8, lanes: 2, skirt: 2.4, step: 1.5 });
 
   // South Street, from where the ramp lands west to its ring; Bank Street and Grand Avenue, north from it and up the ramp to the rim
   const landed = over[over.length - 1];
@@ -295,9 +296,9 @@ export function buildRoads(k: Build): Route[] {
   // lamps, once every street is laid
   lampsAlong(k, river, LANE + 1.2, 24);
   lampsAlong(k, circuit, LANE + 1.2, 24);
-  lampsAlong(k, harbour, LANE + 1.2, 20);
   lampsAlong(k, south, LANE + 1.2, 20);
-  // the ring and the avenue run under buildings in places: no lamp post stands under one
+  // the ring and the avenue run under buildings in places: no lamp post stands under one, and none on a story's stage
+  lampsClear(k, harbour, LANE + 1.2, 20);
   lampsClear(k, ring, LANE + 1.2, 20);
   lampsClear(k, kane, LANE + 1.2, 20);
   lampsClear(k, avenue, LANE + 1.2, 20);
@@ -314,7 +315,7 @@ export function underBuilt(x: number, z: number, room = 0): boolean {
 
 /**
  * Street lamps along a street as `lampsAlong` stands them, on alternate sides, but none under what is built over
- * the street, and none where anything drives.
+ * the street, none where anything drives, and none on a stage of the stories: the museum's steps, the cinema's.
  */
 function lampsClear(k: Build, path: Path, off: number, every: number): void {
   const n = Math.floor(path.length / (every / 2)), p = new THREE.Vector3(), q = new THREE.Vector3();
@@ -325,6 +326,7 @@ function lampsClear(k: Build, path: Path, off: number, every: number): void {
     const tx = q.x - p.x, tz = q.z - p.z, l = Math.hypot(tx, tz) || 1, side = i % 2 ? 1 : -1;
     const x = p.x + (-tz / l) * off * side, z = p.z + (tx / l) * off * side;
     if (Math.abs(x) > 103 || Math.abs(z) > 112 || underBuilt(x, z, 1.5) || toLane(x, z) < 3.3) continue;
+    if (Object.values(STAGES).some((g) => x > g.x0 - 0.5 && x < g.x1 + 0.5 && z > g.z0 - 0.5 && z < g.z1 + 0.5)) continue;
     k.lamp(x, z, Math.atan2(-(tx / l) * side, (tz / l) * side), p.y);
   }
 }
@@ -404,10 +406,124 @@ function buildEl(k: Build): void {
       k.glows.push({ x: p[0], y: EL.y + 4.3, z: p[1], sx: 0.3, sy: 0.3, sz: 0.3, color: '#ff4a3a' });
     }
   }
-  // two stations, each on the side away from the buildings, and a train of two cars that goes round and round
-  const park = station(k, loop, loop.closest(56, EL.harbour), { length: 17, side: -1, roof: 0x2f4a44 });
-  const river = station(k, loop, loop.closest(38, CIRCUIT.riverStreet), { length: 17, side: -1, roof: 0x2f4a44 });
+  // Two stations, each on the side away from the buildings, and a train of two cars that goes round and round. The
+  // docks' stairs leave from the platform's east end and turn back, to land in the yard: straight on they would end
+  // in the river or under the viaduct. River Street's go on east, down to the terrace's sidewalk.
+  const park = elStation(k, loop, loop.closest(56, EL.harbour), { length: 17, side: -1, roof: 0x2f4a44, ground: Y.quay, stairs: { end: -1, back: true } });
+  const river = elStation(k, loop, loop.closest(38, CIRCUIT.riverStreet), { length: 17, side: -1, roof: 0x2f4a44, ground: Y.bluff, stairs: { end: 1, back: false } });
   train(k, loop, { cars: 2, speed: 12, stops: [river, park].sort((p, q) => p - q), from: loop.closest(60, CIRCUIT.riverStreet), body: 0x566068, stripe: 0x8a2f2a, dwell: 6 });
+}
+// ---------------------------------------------------------------------------
+// The elevated railway's stations
+// ---------------------------------------------------------------------------
+
+/** How far the floor of a car is above the line its track follows, and how far its side is from the track's middle: the engine's own, in rail.ts. */
+const CAR_FLOOR = 0.67, HALF_CAR = 1.32;
+
+interface ElStation {
+  length: number;
+  /** Which side of the track it is on, for someone riding along the line: 1 is the right, -1 the left. */
+  side: 1 | -1;
+  roof: number;
+  /** How high the ground under it is. */
+  ground: number;
+  /** Its stairs: from which end they leave (1 the far one, as the train goes), and whether they turn back on a landing half way down. */
+  stairs: { end: 1 | -1; back: boolean };
+}
+
+/**
+ * A station of the elevated railway. It is the engine's own (`station` in rail.ts) in its platform, its canopy, its
+ * lamps and the people who wait, but it stands on ground of any height, and its stairs are open flights that leave
+ * from either end and can turn back on a landing: the engine's run straight on to height 0, which here was into the
+ * river at the docks and into the terrace on River Street. Returns where a train stops for it.
+ */
+function elStation(k: Build, path: Path, at: number, o: ElStation): number {
+  const b = k.b, width = 4.6, inner = HALF_CAR + 0.43, outer = inner + width;
+  const IRONWORK = 0x5b4a42, WOOD = 0xb9a888, EDGE = 0xe9c94a, CREAM = 0xe9e3d6;
+  const P = new THREE.Vector3(), A = new THREE.Vector3(), B = new THREE.Vector3();
+  interface Frame { x: number; y: number; z: number; tx: number; tz: number; rx: number; rz: number }
+  const frame = (s: number): Frame => {
+    path.at(s, P); path.at(s + 0.6, A); path.at(s - 0.6, B);
+    const tx = A.x - B.x, tz = A.z - B.z, l = Math.hypot(tx, tz) || 1;
+    return { x: P.x, y: P.y, z: P.z, tx: tx / l, tz: tz / l, rx: -tz / l, rz: tx / l };
+  };
+  const mid = frame(at), deck = mid.y + CAR_FLOOR, G = o.ground;
+  const yawAlong = (f: Frame): number => Math.atan2(f.tz, f.tx);
+  const put = (f: Frame, lat: number): [number, number] => [f.x + f.rx * lat * o.side, f.z + f.rz * lat * o.side];
+
+  // the platform, in short lengths so that it follows the track round a bend
+  const steps = Math.max(1, Math.round(o.length / 2)), piece = o.length / steps;
+  for (let i = 0; i < steps; i++) {
+    const f = frame(at - o.length / 2 + (i + 0.5) * piece);
+    const [x, z] = put(f, (inner + outer) / 2);
+    b.obox(x, deck - 0.18, z, piece / 2 + 0.02, 0.18, width / 2, yawAlong(f), WOOD, { faces: 'B' });
+    const [ex, ez] = put(f, inner + 0.14);
+    b.obox(ex, deck + 0.01, ez, piece / 2 + 0.02, 0.012, 0.14, yawAlong(f), EDGE);
+    const [rx, rz] = put(f, outer - 0.07);
+    b.obox(rx, deck + 0.42, rz, piece / 2 + 0.02, 0.42, 0.06, yawAlong(f), IRONWORK);
+  }
+  // columns under its outer edge, from the ground, each with a beam back to the track's girders
+  const posts = Math.max(2, Math.round(o.length / 5.5));
+  for (let i = 0; i <= posts; i++) {
+    const f = frame(at - o.length / 2 + 0.6 + (i / posts) * (o.length - 1.2));
+    const yaw = Math.atan2(f.rz, f.rx);
+    const [x, z] = put(f, outer - 0.35);
+    b.obox(x, (G + deck - 0.36) / 2, z, 0.26, (deck - 0.36 - G) / 2, 0.26, yaw, IRONWORK);
+    const [bx, bz] = put(f, (outer + 1.0) / 2);
+    b.obox(bx, deck - 0.6, bz, (outer - 1.0) / 2, 0.24, 0.26, yaw, IRONWORK, { faces: 'B' });
+  }
+  // the canopy over the middle of it, on posts along the outer edge, with lamps under it
+  const cover = o.length * 0.62, top = deck + 3.5;
+  const covers = Math.max(1, Math.round(cover / 2)), cp = cover / covers;
+  for (let i = 0; i < covers; i++) {
+    const f = frame(at - cover / 2 + (i + 0.5) * cp);
+    const [x, z] = put(f, (inner + outer) / 2 + 0.2);
+    b.obox(x, top, z, cp / 2 + 0.02, 0.13, width / 2 + 0.25, yawAlong(f), CREAM, { top: o.roof, faces: 'B' });
+  }
+  for (const u of [-0.5, -0.17, 0.17, 0.5]) {
+    const f = frame(at + u * (cover - 0.8));
+    const [x, z] = put(f, outer - 0.3);
+    b.box(x - 0.1, deck, z - 0.1, x + 0.1, top - 0.13, z + 0.1, IRONWORK);
+    const [gx, gz] = put(f, (inner + outer) / 2);
+    k.glows.push({ x: gx, y: top - 0.22, z: gz, sx: 0.5, sy: 0.14, sz: 0.5, color: '#fff3dc' });
+  }
+  // people waiting
+  for (let i = 0; i < Math.round(o.length / 3); i++) {
+    const f = frame(at - o.length / 2 + 1 + k.rand() * (o.length - 2));
+    const [x, z] = put(f, inner + 0.8 + k.rand() * (width - 1.6));
+    k.person(x, z, deck);
+  }
+
+  // the stairs: open flights of treads on two strings, a landing on posts where they turn back, a rail each side
+  const end = frame(at + (o.stairs.end * o.length) / 2), out = o.stairs.end, yaw = yawAlong(end);
+  const flights = o.stairs.back ? 2 : 1, rise = (deck - G) / flights, n = Math.ceil(rise / 0.8), tread = 0.95, run = n * tread;
+  /** A place by the stairs: `a` out from the platform's end along the line, `lat` out from the track, `y` up. */
+  const S = (a: number, lat: number, y: number): [number, number, number] => { const [x, z] = put(end, lat); return [x + end.tx * out * a, y, z + end.tz * out * a]; };
+  for (let fl = 0; fl < flights; fl++) {
+    const lat = outer - 0.75 + fl * 1.5, y0 = deck - rise * fl, y1 = y0 - rise;
+    // the first flight goes out from the end, the second comes back beside it
+    const a0 = fl === 0 ? 0 : run, a1 = fl === 0 ? run : 0;
+    for (let i = 0; i < n; i++) {
+      // the last riser of a flight steps down onto the landing or the ground, so no tread lies in either's surface
+      const u = (i + 0.5) / n, p = S(a0 + (a1 - a0) * u, lat, y0 + (y1 - y0) * ((i + 1) / (n + 1)));
+      b.obox(p[0], p[1] - 0.07, p[2], tread / 2 + 0.02, 0.07, 0.7, yaw, WOOD, { faces: 'NESWTB' });
+    }
+    for (const s of [-0.72, 0.72]) {
+      b.beam(S(a0, lat + s, y0 - 0.25), S(a1, lat + s, y1 - 0.25), 0.11, 0.11, IRONWORK);
+      b.beam(S(a0, lat + s, y0 + 0.95), S(a1, lat + s, y1 + 0.95), 0.05, 0.05, IRONWORK);
+      for (const u of [0, 0.5, 1]) b.beam(S(a0 + (a1 - a0) * u, lat + s, y0 + (y1 - y0) * u - 0.2), S(a0 + (a1 - a0) * u, lat + s, y0 + (y1 - y0) * u + 0.95), 0.04, 0.04, IRONWORK);
+    }
+  }
+  if (o.stairs.back) {
+    // the landing where they turn, on four posts
+    const yL = deck - rise, c = S(run + 0.75, outer, yL - 0.09);
+    b.obox(c[0], c[1], c[2], 0.78, 0.09, 1.5, yaw, WOOD, { faces: 'NESWTB' });
+    for (const a of [run + 0.1, run + 1.4]) for (const lat of [outer - 1.4, outer + 1.4]) b.beam(S(a, lat, G), S(a, lat, yL - 0.15), 0.12, 0.12, IRONWORK);
+    b.beam(S(run + 1.5, outer - 1.45, yL + 0.95), S(run + 1.5, outer + 1.45, yL + 0.95), 0.05, 0.05, IRONWORK);
+  }
+  const [lx, lz] = put(mid, (inner + outer) / 2);
+  k.lights.push({ x: lx, z: lz, r: 11, color: '#fff0d6', k: 0.5 });
+  return at;
 }
 // ---------------------------------------------------------------------------
 // Who drives

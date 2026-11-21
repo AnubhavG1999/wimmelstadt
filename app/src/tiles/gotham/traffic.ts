@@ -273,8 +273,9 @@ const LAUNCH_LINE = new Line([
   [PIER.x1 + 2.5, PIER.z1 + 3.6],
   sprang(147, -2.5),
   sprang(154, 5.5),
-  sprang(BRIDGE.t, 6.5),
-  sprang(178, 6.5),
+  // a unit nearer the harbour's middle under the bridge, whose east tower stands in the water from 7.9 out
+  sprang(BRIDGE.t, 5.5),
+  sprang(178, 5.5),
   sprang(191, 6.2),
 ], 3, false);
 
