@@ -499,7 +499,7 @@ export const STAGES: Record<string, { x0: number; z0: number; x1: number; z1: nu
   quad: { x0: -60, z0: -12, x1: -46, z1: 6, y: Y.upper, what: "the university's quad: a lawn, with a scarecrow on a post in a patch of maize at its east end. The Scarecrow's post" },
   crownSteps: { x0: -82, z0: 36, x1: -64, z1: 41.5, y: Y.crown, what: "Wayne Tower's forecourt on the Crown: the place for a hero at its middle, the tower's door behind" },
   // ---- the quays and the bay shore
-  bankSquare: { x0: -22, z0: 40, x1: -10, z1: 54, y: 0, what: "the square before the bank's south door: the bank's stories, a charity collector's box" },
+  bankSquare: { x0: -19, z0: 40, x1: -10, z1: 54, y: 0, what: "the square before the bank's south door: the bank's stories, a charity collector's box" },
   loungeRoof: { x0: -9, z0: 31, x1: 2, z1: 42, y: 12, what: "the Iceberg Lounge's roof terrace, its south-east half flat and open: the Penguin's post, where he lands" },
   pier: { x0: 26, z0: 38, x1: 44, z1: 46, y: 1.2, what: "the pier's deck: the Riddler's booth at its landward end, and room for his glass maze, 8 by 5, on its seaward half" },
   diamondRoofNorth: { x0: -42, z0: -8, x1: -34, z1: 8, y: 14, what: "the northern jeweller's roof in the Diamond District, flat, with a skylight and a chimney: Catwoman's story begins here" },
