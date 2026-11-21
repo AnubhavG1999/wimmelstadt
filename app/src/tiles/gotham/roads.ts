@@ -31,7 +31,7 @@ import { station, track, train, trestle, type Bent } from '../../engine/rail';
 import { lampsAlong, roadDeck, street } from '../../engine/roads';
 import type { Build, Route } from '../../engine/tile';
 import { MIX } from './traffic';
-import { BRIDGE, BRIDGE_ROAD, CIRCUIT, EL, HARBOUR_RD, KANE, KANE_ST, LANE, LOTS, RING, RIVER_ROW, ROADS, SHOW_LANES, SOUTH_ST, SPRANG, TRIGATE, TURNS, Y, avenueY, bySprang, groundAt, riverY, sprang, streetY, type P2 } from './plan';
+import { BRIDGE, BRIDGE_ROAD, CIRCUIT, EL, EL_LOOP, HARBOUR_RD, KANE, KANE_ST, LANE, LOTS, RING, RIVER_ROW, ROADS, SHOW_LANES, SOUTH_ST, SPRANG, TRIGATE, TURNS, Y, avenueY, bySprang, groundAt, riverY, sprang, streetY, type P2 } from './plan';
 
 const H2 = LANE / 2, TAU = Math.PI * 2;
 
@@ -348,35 +348,67 @@ function toLane(x: number, z: number): number {
   return d;
 }
 
-/** The line's two ends on the ground, for whoever builds under it. */
-export const EL_ENDS: [P2, P2] = [sprang(EL.from, EL.off), sprang(EL.to, EL.off)];
+/** The line on the ground, a point every half unit, for whoever builds under it or beside it. */
+export const EL_LINE: P2[] = fine(rounded(EL_LOOP.map((c) => c.p), EL_LOOP.map((c) => c.r), true), 0.5);
 
-function buildEl(k: Build): void {
-  const [a, b] = EL_ENDS, length = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.ceil(length / 0.5);
-  const pts = Array.from({ length: n + 1 }, (_, i) => new THREE.Vector3(a[0] + ((b[0] - a[0]) * i) / n, EL.y, a[1] + ((b[1] - a[1]) * i) / n));
-  const line = new Path(pts, false);
-  MIDDLES.el = line;
-  // a column stands on the line between the quay road's two lanes, and nowhere that anything drives or floats
-  // and none where the lanes swing round the north bridge's head, where the longest of what drives needs the room
-  const bent = (x: number, z: number): Bent => (groundAt(x, z) < 0 || toLane(x, z) < 2.1 || bySprang(x, z).t < SPRANG.north + 10 ? null : 'T');
-  trestle(k, line, { every: 8, bent, color: 0x3d4247 });
-  track(k, line);
-  // a buffer at each end, with a red lamp on it
-  const along = unit(a, b);
-  for (const [p, way] of [[a, -1], [b, 1]] as const) {
-    const x = p[0] + along[0] * way * 0.6, z = p[1] + along[1] * way * 0.6;
-    k.b.obox(x, EL.y + 0.3, z, 0.3, 1, 1.5, Math.atan2(along[1], along[0]), 0x5b4a42);
-    k.glows.push({ x, y: EL.y + 1.5, z, sx: 0.3, sy: 0.3, sz: 0.3, color: '#ff4a3a' });
-  }
-  // a station at each end, on the side of the buildings, and a train of two cars that goes there and back
-  const STAND = 8.45;
-  station(k, line, STAND, { length: 17, side: -1, roof: 0x2f4a44 });
-  // the one over the docks stands on the harbour's side, clear of Harbour Road
-  station(k, line, length - STAND, { length: 17, side: 1, roof: 0x2f4a44 });
-  const run = joined([pts, [...pts].reverse()], true);
-  train(k, run.path, { cars: 2, speed: 11, from: STAND + 4.05, ends: [0, length], stops: [length - STAND, run.path.length - STAND], body: 0x566068, stripe: 0x8a2f2a, dwell: 6 });
+/** How far a place is from the railway's line, on the ground. */
+export function toEl(x: number, z: number): number {
+  let d = Infinity;
+  for (const p of EL_LINE) d = Math.min(d, Math.hypot(p[0] - x, p[1] - z));
+  return d;
 }
 
+function buildEl(k: Build): void {
+  const pts = EL_LINE.map((p) => new THREE.Vector3(p[0], EL.y, p[1]));
+  const loop = new Path(pts, true);
+  MIDDLES.el = loop;
+  // A column stands under the track where it may: not in the water, not inside what the line runs through, and
+  // nowhere that anything drives. Down Kane Street the columns stand on the west sidewalk, an arm's length from
+  // the track; along River Street they stand on the line between its two lanes.
+  const bent = (x: number, z: number): Bent => {
+    if (groundAt(x, z) < 0 || underBuilt(x, z, 0.6)) return null;
+    // none at the four heads of the bascule bridges, nor where the line swings from River Street into Kane Street: there
+    // the lanes below bend, and the longest of what drives needs the room
+    if (RING.some((c) => Math.hypot(c[0] - x, c[1] - z) < 11)) return null;
+    if (x > 68.2 && z < KANE_ST.rampTop && z > CIRCUIT.riverStreet + 0.6) return null;
+    if (Math.abs(x - EL.kane) < 0.4 && z > KANE_ST.rampTop && z < EL.harbour - 8) return toLane(x - 1.8, z) > 2.1 ? { arm: 1.8 } : null;
+    return toLane(x, z) < 2.1 ? null : 'T';
+  };
+  trestle(k, loop, { every: 8, bent, color: 0x3d4247 });
+  track(k, loop);
+  // where it crosses water it is a bridge: a truss each side of the track, from bank to bank
+  const wet = EL_LINE.map((p) => groundAt(p[0], p[1]) < 0), n = EL_LINE.length, STEELWORK = 0x4a5058;
+  for (let i = 0; i < n; i++) {
+    if (!wet[i] || wet[(i + n - 1) % n]) continue;
+    let j = i;
+    while (wet[(j + 1) % n] && j - i < n) j++;
+    // a little way onto each bank
+    const from = i - 8, to = j + 8, bay = 8;
+    for (const side of [-1, 1]) {
+      const at = (m: number, up: number): [number, number, number] => {
+        const p = EL_LINE[((m % n) + n) % n], q = EL_LINE[(((m + 1) % n) + n) % n], l = Math.hypot(q[0] - p[0], q[1] - p[1]) || 1;
+        return [p[0] + (-(q[1] - p[1]) / l) * 1.75 * side, EL.y - 0.4 + up, p[1] + ((q[0] - p[0]) / l) * 1.75 * side];
+      };
+      for (let m = from; m < to; m += bay) {
+        const e = Math.min(to, m + bay), mid = Math.round((m + e) / 2);
+        k.b.beam(at(m, 4.2), at(e, 4.2), 0.2, 0.2, STEELWORK);
+        k.b.beam(at(m, 0), at(m, 4.2), 0.16, 0.16, STEELWORK);
+        k.b.beam(at(m, 4.2), at(mid, 0), 0.14, 0.14, STEELWORK);
+        k.b.beam(at(mid, 0), at(e, 4.2), 0.14, 0.14, STEELWORK);
+      }
+      k.b.beam(at(to, 0), at(to, 4.2), 0.16, 0.16, STEELWORK);
+    }
+    // a tie over the track at each end, and a red lamp on it
+    for (const m of [from, to]) {
+      const p = EL_LINE[((m % n) + n) % n];
+      k.glows.push({ x: p[0], y: EL.y + 4.3, z: p[1], sx: 0.3, sy: 0.3, sz: 0.3, color: '#ff4a3a' });
+    }
+  }
+  // two stations, each on the side away from the buildings, and a train of two cars that goes round and round
+  const park = station(k, loop, loop.closest(56, EL.harbour), { length: 17, side: -1, roof: 0x2f4a44 });
+  const river = station(k, loop, loop.closest(38, CIRCUIT.riverStreet), { length: 17, side: -1, roof: 0x2f4a44 });
+  train(k, loop, { cars: 2, speed: 12, stops: [river, park].sort((p, q) => p - q), from: loop.closest(60, CIRCUIT.riverStreet), body: 0x566068, stripe: 0x8a2f2a, dwell: 6 });
+}
 // ---------------------------------------------------------------------------
 // Who drives
 // ---------------------------------------------------------------------------

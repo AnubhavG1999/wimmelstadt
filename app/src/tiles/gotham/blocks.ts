@@ -14,7 +14,8 @@ import type { SignDef } from '../../engine/signs';
 import type { Build } from '../../engine/tile';
 import { BRICK, BRICK_DARK, BRICK_RED, COPPER, COPPER_DARK, DARK, GOTHIC_WIN, IRON, LEAD, OFFICE_WIN, RUST, SLATE, SMALL_WIN, SODIUM, STEEL, STONE, STONE_DARK, STONE_LIGHT, STONE_TRIM, TENEMENT_WIN, gargoyle, gasLamp, waterTank } from './look';
 import type { Model, Place } from './models';
-import { LOTS, RIVER_ROW, SPRANG_ALONG, Y, avenueY, kaneRamp, lotOf, sprang, type Lot } from './plan';
+import { EL, LOTS, RIVER_ROW, SPRANG_ALONG, Y, avenueY, kaneRamp, lotOf, sprang, type Lot } from './plan';
+import { EL_LINE } from './roads';
 
 /** A band of pale stone round a box, a little proud of it: a cornice, a string course. */
 function band(b: GeoBuilder, x0: number, z0: number, x1: number, z1: number, y: number, h: number, out = 0.25, color = STONE_TRIM): void {
@@ -295,6 +296,19 @@ function riverRow(k: Build): void {
       if (j < n) { const [gx, gz] = P(lx + (2 * hx - 1.6) / n / 2, 0); k.glows.push({ x: gx, y: R.soffit - 0.95, z: gz, sx: 0.5, sy: 0.22, sz: 0.5, color: SODIUM }); }
     }
     k.lights.push({ x: cx, z: cz, r: 12, color: SODIUM, k: 0.5 });
+    // the elevated railway runs straight through it: a dark way in at each end, framed in pale stone, where the line is
+    for (const end of [-1, 1]) {
+      const [ex, ez] = P(end * hx, 0);
+      let near = EL_LINE[0], best = Infinity;
+      for (const q of EL_LINE) { const dq = Math.hypot(q[0] - ex, q[1] - ez); if (dq < best) { best = dq; near = q; } }
+      if (best > 4) continue;
+      // where the line meets the end wall, a hair outside it
+      const lz = -(near[0] - cx) * s + (near[1] - cz) * c, [px, pz] = P(end * (hx + 0.05), lz);
+      b.obox(px, EL.y + 1.5, pz, 0.05, 2.5, 1.9, yaw, DARK);
+      const [fx, fz] = P(end * (hx + 0.12), lz);
+      b.obox(fx, EL.y + 4.2, fz, 0.12, 0.25, 2.3, yaw, STONE_TRIM);
+      for (const sd of [-1, 1]) { const [jx, jz] = P(end * (hx + 0.12), lz + sd * 2.1); b.obox(jx, EL.y + 1.5, jz, 0.12, 2.5, 0.22, yaw, STONE_TRIM); }
+    }
     // a covered bridge to the next building
     const next = R.blocks[i + 1];
     if (next) {

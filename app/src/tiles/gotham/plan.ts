@@ -427,12 +427,31 @@ export function streetY(x: number, z: number): number {
 }
 
 /**
- * The elevated railway: one line on steel over the middle of the east quay's
- * road, straight along the line the view looks up, from a terminus at the
- * north bascule bridge to one over the docks' yard. `y` is the height of its
- * rails.
+ * The elevated railway: a loop on steel that goes over, under and through the
+ * city. From the west end of River Street it runs east over the middle of
+ * that street, on the terrace; turns south through the tower over Kane Street
+ * and down that street over its west kerb; turns west over Harbour Road's
+ * south sidewalk and crosses the mouth of the Sprang on a bridge of its own,
+ * over the south bascule bridge; runs up the west bank straight through the
+ * three buildings of the river row, in at one end of each and out at the
+ * other; and crosses the Sprang again, over the north bascule bridge, to
+ * where it began. `y` is the height of its rails.
  */
-export const EL = { from: 46, to: 132, y: 11, off: SPRANG.road };
+export const EL = { y: 11.5, kane: 75.6, harbour: 24.5, row: (RIVER_ROW.d0 + RIVER_ROW.d1) / 2, north: 44 };
+
+/** A place on the line across the Sprang at `t` along it, at a given z. */
+const acrossAt = (t: number, z: number): P2 => sprang(t, (z - SPRANG.a[1] - SPRANG_ALONG[1] * t) / SPRANG_ACROSS[1]);
+/** A place on the line beside the Sprang, `d` to the north-east of its middle, at a given z. */
+const besideAt = (d: number, z: number): P2 => sprang((z - SPRANG.a[1] - SPRANG_ACROSS[1] * d) / SPRANG_ALONG[1], d);
+
+/** The railway's corners, in the order a train runs them, each with how wide it is rounded. */
+export const EL_LOOP: { p: P2; r: number }[] = [
+  { p: acrossAt(EL.north, CIRCUIT.riverStreet), r: 10 },
+  { p: [EL.kane, CIRCUIT.riverStreet], r: 8 },
+  { p: [EL.kane, EL.harbour], r: 7.6 },
+  { p: besideAt(-EL.row, EL.harbour), r: 10 },
+  { p: sprang(EL.north, -EL.row), r: 7 },
+];
 
 /**
  * The lanes of the show, which no traffic enters. The service lane runs under
@@ -553,8 +572,9 @@ lot('blocks', 'arcade-1', '', -52, 58, -36, 74.6, 8, 16);
 lot('blocks', 'arcade-2', '', -68, 58, -52, 74.6, 12, 16);
 lot('blocks', 'arcade-3', '', -84, 58, -68, 74.6, 16, 16);
 lot('blocks', 'gate-house', '', -103, 41.6, -84, 74.6, 16, 24);
-// And over Kane Street, where its ramp leaves River Street's terrace: a tower that the street runs through.
-lot('blocks', 'kane-gate', '', 72, -34, 88, -24, 12, 36);
+// And over Kane Street, where its ramp leaves River Street's terrace: a tower that the street runs through, and the
+// elevated railway beside it.
+lot('blocks', 'kane-gate', '', 72, -34, 88, -24, 16, 32);
 // ============================ Bristol: Wayne Manor and the Batcave ============================
 lot('bristol', 'manor', 'Wayne Manor', 8, -108, 48, -97, Y.crest, 14);
 lot('bristol', 'batcave', 'The Batcave', 6, -97, 50, -85, Y.cave, 6, true);
@@ -770,7 +790,7 @@ const CORRIDORS: { pts: P2[]; half: number; closed?: boolean }[] = [
   { pts: [TRIGATE.bristol, [KANE_ST.x, CIRCUIT.riverRoad]], half: 8 },
   { pts: [[KANE_ST.x, HARBOUR_RD.z], HARBOUR_RD.bend, RING[2]], half: 8.6 },
   { pts: [[SOUTH_ST.bank, SOUTH_ST.z - 7], ...ROADS.avenue.slice(1)], half: 8.6 },
-  { pts: [sprang(EL.from, EL.off), sprang(EL.to + 2, EL.off)], half: 3 },
+  { pts: EL_LOOP.map((c) => c.p), half: 3, closed: true },
 ];
 const ROUNDS: { c: P2; r: number }[] = [...Object.values(TURNS).map((t) => ({ c: t.c, r: t.r + 5.2 })), { c: TRIGATE.c, r: TRIGATE.r + 5 }, { c: TRIGATE.arkham.c, r: TRIGATE.arkham.r + 5 }];
 
