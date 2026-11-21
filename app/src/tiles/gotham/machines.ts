@@ -110,7 +110,7 @@ export const REACH = { glove: 5, gloveY: 1, plank: 10, line: 10, hook: 7 };
 
 /** Each one's length, width and height as built (the rowing boat's width is across its oars). */
 const SIZES: Record<MachineKind, [number, number, number]> = {
-  batmobile: [5.4, 3.84, 1.45], batboat: [9.1, 3.0, 2.3], batplane: [9.9, 11, 2.55], batgyro: [6.0, 5.9, 2.75], batcycle: [4.1, 1.0, 2.05], redCycle: [4.0, 1.1, 1.8],
+  batmobile: [5.94, 4.22, 1.6], batboat: [9.1, 3.0, 2.3], batplane: [9.9, 11, 2.55], batgyro: [6.0, 5.9, 2.75], batcycle: [4.1, 1.0, 2.05], redCycle: [4.0, 1.1, 1.8],
   jokermobile: [8.45, 3.2, 2.36], rowboat: [4.0, 4.6, 0.75], invisiblePlane: [8.0, 9.0, 2.15], policeCopter: [7.0, 6.5, 2.75], batwing: [10.1, 9.3, 1.95], wayneCopter: [7.0, 6.5, 2.75],
 };
 
@@ -545,9 +545,9 @@ class Rig implements Machine {
   }
 
   /** A soft shadow on the ground under it. */
-  blob(l: number, w: number): void {
+  blob(l: number, w: number): THREE.Mesh {
     const mat = new THREE.MeshBasicMaterial({ color: 0x000000, map: roundTex(), transparent: true, opacity: 0.55, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 });
-    this.patch(this.root, -l / 2, l / 2, -w / 2, w / 2, 0.035, mat);
+    return this.patch(this.root, -l / 2, l / 2, -w / 2, w / 2, 0.035, mat);
   }
 
   /** Wheels of one shape, each at its place (its middle), turning as it goes. */
@@ -868,6 +868,9 @@ function batPoolTex(): THREE.Texture {
  * panels and two tall outlets, which are its jets. Its party trick folds the
  * wing's halves up into two tall fins and readies it to launch.
  */
+/** How much bigger the Batmobile is built than it measures in the collector's renders. `SIZES.batmobile` is its size as built. */
+const BAT_SCALE = 1.1;
+
 function batmobile(k: Build, mat: THREE.Material): Rig {
   const r = new Rig('batmobile', k, mat);
   // a little rake: everything on its springs is tipped forward about the front axle, so that the tail sits 0.06 higher
@@ -1304,7 +1307,7 @@ function batmobile(k: Build, mat: THREE.Material): Rig {
   r.wheel(slickGeo(REAR_R, 0.7, -1, false), REAR_R, [[REAR_AXLE, REAR_R, -1.35]]);
   // a bat's shape in the pool its lamps throw ahead of it
   const BEAM_X = 2.8, beam = r.beam(BEAM_X, 7, 6.0, 0xffd9a0, batPoolTex());
-  r.blob(5.9, 4.1);
+  const shade = r.blob(5.9, 4.1);
 
   // ---- its party trick: the wing folds up into two tall fins, and it readies itself to launch ----
   r.fx.party = (f) => {
@@ -1322,7 +1325,7 @@ function batmobile(k: Build, mat: THREE.Material): Rig {
   let lastT = -1, fresh = true, v = 0, acc = 0, pitch = 0, air = 0, due = 0;
   r.each = (dt, time, night) => {
     r.root.updateMatrix();
-    nose.setFromMatrixColumn(r.root.matrix, 0);
+    nose.setFromMatrixColumn(r.root.matrix, 0).normalize();
     step.copy(r.root.position).sub(lastAt);
     // a jump of more than a few units in a frame, or a long gap, is the car set down somewhere new
     if (lastT < 0 || time - lastT > 0.3 || step.length() > 3 || dt <= 0) fresh = true;
@@ -1385,6 +1388,13 @@ function batmobile(k: Build, mat: THREE.Material): Rig {
   // as it stands before the first frame: the glass and strip at their daytime glow
   glassMat.color.setScalar(0.62);
   redMat.color.setScalar(0.3);
+  // The whole car is a tenth bigger than it measures in his renders: he asked for it a little larger, to sit better
+  // beside his diecasts. Every number in this maker is in the renders' own units, where a front tyre is 1 across, and
+  // the car is scaled as one thing, its flames, its pools of light and its tricks with it.
+  r.root.scale.setScalar(BAT_SCALE);
+  for (const w of r.wheels) w.r *= BAT_SCALE;
+  // its shadow stays 0.035 over the road, as every machine's does: a tenth higher it lay in one plane with the apron's paving
+  shade.position.y = 0.035 / BAT_SCALE - 0.035;
   return r;
 }
 

@@ -530,25 +530,31 @@ export function west(k: Build, W: World, book: Book): void {
     const RM = spot(BATMOBILE.x - 14, -86.2, E, terraceY + 1), robRun = walkLeg(RM, BL, RUN);
     const T_BAT = 1.0, T_ROB = 0.2 + robRun.dur + 0.1, XB = BATMOBILE.x - 0.6, XR = BATMOBILE.x + 0.6;
 
-    // ---- the car's way, fitted to the car as built: 5.4 long and 3.84 across, its widest part the wing at its tail
-    // (OUTLINE, x forward from its middle and the half-width there), with 0.1 to spare all round. Its length and width
-    // come from the machine; the console says so if the machine is bigger than the car the way was fitted for.
+    // ---- the car's way, fitted to the car as it measures in the collector's renders, 5.4 long and 3.84 across, its
+    // widest part the wing at its tail (OUTLINE, x forward from its middle and the half-width there), with 0.1 to spare
+    // all round. The car has since been built a tenth bigger, 5.94 by 4.22 (BIG): the tile's session measured the
+    // bigger car's own vertices along this way, moved the line down the ford 0.15 east so that it passes the mouth's
+    // rock with a quarter of a unit either side, and found it clear everywhere. Its length and width come from the
+    // machine; the console says so if the machine is bigger again.
     const OUTLINE: [number, number][] = [[2.45, 0.2], [2.05, 0.66], [1.6, 1.06], [1.12, 1.66], [0.78, 1.66], [-0.05, 0.78], [-1.25, 0.78], [-1.62, 1.92], [-2.685, 1.92]];
     /** Its half-width at x along it: the outline, or its front tyres' outer faces where they stand out further. */
-    const halfAt = (x: number): number => {
+    const BIG = 1.1;
+    const halfAt = (at: number): number => {
+      const x = at / BIG;
       let w = x >= 1.565 && x <= 2.565 ? 1.755 : 0;
       for (let i = 0; i + 1 < OUTLINE.length; i++) { const [a, wa] = OUTLINE[i], [b, wb] = OUTLINE[i + 1]; if (x <= a && x >= b) w = Math.max(w, wb + ((wa - wb) * (x - b)) / (a - b)); }
-      return w;
+      return w * BIG;
     };
-    const FIT = { length: 5.4, width: 3.84 };
+    const FIT = { length: 5.4 * BIG, width: 3.84 * BIG };
     const LEN = car?.length ?? FIT.length, WID = car?.width ?? FIT.width, NOSE = LEN / 2;
     if (import.meta.env.DEV && (LEN > FIT.length + 0.05 || WID > FIT.width + 0.05)) console.warn(`Gotham: the Batmobile is ${LEN} by ${WID}, and its way out of the grotto was fitted for ${FIT.length} by ${FIT.width}.`);
-    // A point REF ahead of its middle follows the way: south down the ford 0.2 west of its middle, then one smooth left
+    // A point REF ahead of its middle follows the way: south down the ford 0.05 west of its middle, then one smooth left
     // sweep, its curvature easing up over 3 to 0.225 (a radius of 4.4), until it heads east on the lane with its middle
-    // on the old tunnel's middle (z -82.4); and so straight east into the tunnel. (Found by a search of such sweeps
-    // against the mouth's rock, the walls, the door and the cliff's piers: its wing then stands 0.18 off the piers and
-    // its south side at -80.48, and no part goes further south than that while it turns.)
-    const REF = 1.25, X0 = BATMOBILE.x - 0.2, K = 0.225, RAMP = 3, STEP = 0.1;
+    // on the old tunnel's middle (z -82.3); and so straight east into the tunnel. (Found by a search of such sweeps
+    // against the mouth's rock, the walls, the door and the cliff's piers. As built, the car's flat wing stands a
+    // hand's breadth off the piers where it rests, its south side is at -80.18, inside the lane, and no part goes
+    // further south than that while it turns.)
+    const REF = 1.25, X0 = BATMOBILE.x - 0.05, K = 0.225, RAMP = 3, STEP = 0.1;
     const way: [number, number, number][] = [];
     /** Where along its way the sweep ends and the car heads east on the lane, where it stands for a beat. */
     let STOP_I = 0;
@@ -638,12 +644,14 @@ export function west(k: Build, W: World, book: Book): void {
     let lastTb = 0;
     if (import.meta.env.DEV) {
       devChecks.batcave = () => {
-        const poses: Pose3[] = [];
-        for (let t = T_OUT; t < T_GONE; t += 0.1) { const q = carAt(t); if (q.shown) poses.push(q); }
+        // (its wing is flat until it launches, and up in two fins from then on)
+        const flat: Pose3[] = [], finned: Pose3[] = [];
+        for (let t = T_OUT; t < T_GONE; t += 0.1) { const q = carAt(t); if (q.shown) (t < T_LAUNCH ? flat : finned).push(q); }
         // its outline (and its front tyres) every 0.1 along it, as it is and with 0.1 to spare
+        const X_TAIL = -2.685 * BIG, X_NOSE = 2.565 * BIG;
         const rim = (spare: number): [number, number][] => {
           const pts: [number, number][] = [];
-          for (let x = -2.685 - spare; x <= 2.565 + spare + 1e-9; x += 0.1) { const w = halfAt(clamp(x, -2.685, 2.565)) + spare; for (let f = -1; f <= 1.0001; f += 0.25) pts.push([x, w * f]); }
+          for (let x = X_TAIL - spare; x <= X_NOSE + spare + 1e-9; x += 0.1) { const w = halfAt(clamp(x, X_TAIL, X_NOSE)) + spare; for (let f = -1; f <= 1.0001; f += 0.25) pts.push([x, w * f]); }
           return pts;
         };
         let south = -Infinity, north = Infinity, southT = 0, mx0 = Infinity, mx1 = -Infinity;
@@ -657,12 +665,19 @@ export function west(k: Build, W: World, book: Book): void {
             if (z > -85.35 && z < -84.55) { mx0 = Math.min(mx0, x); mx1 = Math.max(mx1, x); }
           }
         }
-        // from its splitter to its top
-        const body: Shape = [{ pts: rim(0.1), ys: [0.1, 0.6, 1.1, 1.45] }];
+        // from its splitter to its top, in two layers: its wing, the widest of it, begins 1.16 over the road in the
+        // renders' measure, and under that it is no wider than its front tyres (1.76 either side), which is what
+        // passes the plinths of the cliff's piers
+        const LOW = 1.76 * BIG + 0.1;
+        const low = rim(0.1).map(([x, z]): [number, number] => [x, clamp(z, -LOW, LOW)]);
+        const body: Shape = [{ pts: low, ys: [0.1, 0.6, 1.0].map((y) => y * BIG) }, { pts: rim(0.1), ys: [1.16, 1.45].map((y) => y * BIG) }];
+        // with its fins up it is no wider than its tyres at any height, and its fins' tips are 2.5 over the road: that
+        // is how it passes the old tunnel's portal, which is 4.1 wide, where its flat wing is 4.22
+        const fins: Shape = [{ pts: low, ys: [0.1, 0.6, 1.0, 1.45, 2.0, 2.5].map((y) => y * BIG) }];
         // what is through the door at the grotto's back, in the hill's passage, and inside the old tunnel's portal, is
         // inside the hill and not seen (the car is shown from the moment its nose reaches the curtain, as the plan has it)
         const hill = (x: number, z: number): boolean => (z < -91 && Math.abs(x - BATMOBILE.x) < 2.8) || (x > OLD_TUNNEL.x + 0.4 && Math.abs(z - OLD_TUNNEL.z) < 2.15);
-        return `${touching(poses, body, hill)} (${LEN} by ${WID}); its southmost at z ${south.toFixed(2)} at ${southT.toFixed(2)} s, its northmost at z ${north.toFixed(2)}; at the mouth's plate from x ${mx0.toFixed(2)} to ${mx1.toFixed(2)}; out at ${T_OUT} s, still at ${T_STOP.toFixed(1)} s, launched at ${T_LAUNCH.toFixed(1)} s, the door down from ${(T_DOOR + 0.3).toFixed(1)} s, the fall shut at ${(T_CLEAR + 2).toFixed(1)} s, gone at ${T_GONE.toFixed(1)} s at ${(PUSH * (T_GONE - T_LAUNCH)).toFixed(0)} a second`;
+        return `${touching(flat, body, hill)}, and with its fins up from the launch it ${touching(finned, fins, hill)} (${LEN} by ${WID}); its southmost at z ${south.toFixed(2)} at ${southT.toFixed(2)} s, its northmost at z ${north.toFixed(2)}; at the mouth's plate from x ${mx0.toFixed(2)} to ${mx1.toFixed(2)}; out at ${T_OUT} s, still at ${T_STOP.toFixed(1)} s, launched at ${T_LAUNCH.toFixed(1)} s, the door down from ${(T_DOOR + 0.3).toFixed(1)} s, the fall shut at ${(T_CLEAR + 2).toFixed(1)} s, gone at ${T_GONE.toFixed(1)} s at ${(PUSH * (T_GONE - T_LAUNCH)).toFixed(0)} a second`;
       };
     }
     book.stories.push({
@@ -1728,11 +1743,14 @@ export function west(k: Build, W: World, book: Book): void {
     // the Manor's end: on the court's gravel just outside the porte-cochère's east arch, a pace and a half from where
     // Alfred stands on its flags, and a pace aside for him. The arch is walked through off its middle (where its
     // soffit stands over the porch's roof, and the check finds a figure inside it), and the court's place for a hero is
-    // walked round by its south side, 5 clear of it.
+    // walked round by its south side, 5 clear of it. Between the two the way turns in by COURT_V, round the east end
+    // of the board that stands out from the porch's corner, 2.2 over the court: straight from the hero's side to the
+    // meeting place, Bruce walked through that board with his head.
     const MEET = at(EPATH.x + 1.45, EPATH.y, EPATH.z + 0.9, WEST), ASIDE = at(EPATH.x - 0.2, EPATH.y, EPATH.z - 1.2, S);
     const IN_ARCH = at(EPATH.x + 0.05, EPATH.y, MEET.z, WEST);
     const COURT_HERO = HERO_SPOTS.find((s) => s.id === 'manor') ?? { x: 67, z: -94 };
-    const COURT_W = at(MEET.x + 0.8, EPATH.y, COURT_HERO.z + 5.2, E), COURT_E = at(COURT_HERO.x + 5, EPATH.y, COURT_HERO.z + 5.2, E);
+    const COURT_W = at(MEET.x + 2.4, EPATH.y, COURT_HERO.z + 5.2, E), COURT_E = at(COURT_HERO.x + 5, EPATH.y, COURT_HERO.z + 5.2, E);
+    const COURT_V = at(MEET.x + 1.5, EPATH.y, MEET.z - 0.25, E);
     // the way between, round the north side of the Signal's beam: up the tower's east face and away north-east
     const WP: [number, number] = [tower.x1 + 0.4, tower.z0 - 8];
     /** How high a leg must fly to be 9 clear of everything within `r` of its line. */
@@ -1821,7 +1839,7 @@ export function west(k: Build, W: World, book: Book): void {
       const B_OUT = 3.4, B_HOP = B_OUT + out.dur;
       const fl = flightOf(ATTOWER, [{ x: WP[0], z: WP[1], y: Y_TOWER }, { x: MPAD.x, z: MPAD.z, y: Y_AWAY }], ATMANOR, B_HOP + 1.0);
       const SEAT0 = seatAt(ATTOWER);
-      const OUT_T = fl.settled + 0.6, toMeet = route([facing(MANOR_SIDE, COURT_E.x, COURT_E.z), COURT_E, COURT_W, MEET], 2.4);
+      const OUT_T = fl.settled + 0.6, toMeet = route([facing(MANOR_SIDE, COURT_E.x, COURT_E.z), COURT_E, COURT_W, COURT_V, MEET], 2.4);
       const MET = OUT_T + 0.8 + toMeet.dur, BOWED = MET + 1.8, IN = route([MEET, IN_ARCH, at(EDOOR.x, EDOOR.y, EDOOR.z, WEST)], 2.0);
       const aIn = walkLeg(ALFRED, at(MDOOR.x, MDOOR.y, MDOOR.z, N), 1.6), A_GO = fl.segs[4].t0, A_OUT = fl.settled - 3.6;
       const aOut = walkLeg(EDOOR, at(EPATH.x, EPATH.y, EPATH.z, toward(EPATH.x, EPATH.z, MANOR_SIDE.x, MANOR_SIDE.z)), 1.8);
@@ -1875,7 +1893,7 @@ export function west(k: Build, W: World, book: Book): void {
       const batIn = route([BT, at(MDOOR.x - 0.4, ALFRED.y, ALFRED.z - 0.9, E), at(MDOOR.x, MDOOR.y, MDOOR.z, N)], 1.8);
       const aIn = walkLeg(ALFRED, at(MDOOR.x, MDOOR.y, MDOOR.z, N), 1.6), A_IN0 = 0.3 + batIn.dur + 0.2;
       const B_OUT = 3.0, A_OUT = Math.max(3.9, A_IN0 + aIn.dur + 0.4);
-      const bWalk = seq([route([at(EDOOR.x, EDOOR.y, EDOOR.z, E), IN_ARCH, MEET], 2.0), route([MEET, COURT_W, COURT_E, at(MANOR_SIDE.x, MANOR_SIDE.y, MANOR_SIDE.z, E)], 2.2)]);
+      const bWalk = seq([route([at(EDOOR.x, EDOOR.y, EDOOR.z, E), IN_ARCH, MEET], 2.0), route([MEET, COURT_V, COURT_W, COURT_E, at(MANOR_SIDE.x, MANOR_SIDE.y, MANOR_SIDE.z, E)], 2.2)]);
       const aWalk = walkLeg(at(EDOOR.x, EDOOR.y, EDOOR.z, E), at(EPATH.x, EPATH.y, EPATH.z, E), 1.8);
       const B_HOP = B_OUT + bWalk.dur, SEATM = seatAt(ATMANOR);
       const fl = flightOf(ATMANOR, [{ x: WP[0], z: WP[1], y: Math.max(Y_TOWER, Y_AWAY) }, { x: DECK.x, z: DECK.z, y: Y_TOWER }], ATTOWER, B_HOP + 1.0);

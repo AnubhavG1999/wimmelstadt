@@ -19,7 +19,7 @@ import * as THREE from 'three';
 import type { V3 } from '../../engine/geo';
 import type { Build } from '../../engine/tile';
 import type { Beast, BeastKind, Flock, FlockKind } from './beasts';
-import { buildDrawbridge, rollerDoor } from './docks';
+import { buildDrawbridge, DRAWBRIDGE, rollerDoor } from './docks';
 import { EXTRAS, blend, bow, carry, climb, drive, fly, glide, hang, idle, kneel, laugh, leap, lunge, parry, perch, point, push, row, run, salute, shrug, sit, star, strike, swim, toss, walk, waddle, type ExtraKind, type Pose } from './figures';
 import type { Machine, MachineKind } from './machines';
 import { BOAT_LINES } from './traffic';
@@ -327,7 +327,8 @@ export function east(k: Build, W: World, book: Book): void {
   const shutter = (() => { try { return rollerDoor(k); } catch { return null; } })();
   {
     const jm = machine('jokermobile'), bm = machine('batmobile');
-    const lane = SHOW_LANES.apron, LZ = lane.z, HINGE = 88, LEAF = 10;
+    // (the leaf's hinge, and where the Jokermobile's middle is as it leaves the leaf)
+    const lane = SHOW_LANES.apron, LZ = lane.z, HINGE = DRAWBRIDGE.hinge, TAKE = 95.5;
     const leafF = (tb: number): number => ease(span(tb, 3.0, 5.2)) * 0.22 + ease(span(tb, 6.6, 9)) * 0.63 - ease(span(tb, 15.5, 19.5)) * 0.85;
     const leafA = (tb: number): number => leafF(tb) * ((70 * Math.PI) / 180);
     // the Jokermobile: out of the door southward, round onto the lane, east, up the leaf and over
@@ -336,7 +337,7 @@ export function east(k: Build, W: World, book: Book): void {
     const JX = GARAGE.x, TURN = 2.6, IN_Z = GARAGE.z - 5.85;
     const PATH: [number, number][] = [[JX, IN_Z]];
     for (let i = 0; i <= 8; i++) { const a = Math.PI - (Math.PI / 2) * (i / 8); PATH.push([JX + TURN + Math.cos(a) * TURN, LZ - TURN + Math.sin(a) * TURN]); }
-    PATH.push([HINGE + 7.5, LZ]);
+    PATH.push([TAKE, LZ]);
     const cum = [0];
     for (let i = 1; i < PATH.length; i++) cum.push(cum[i - 1] + Math.hypot(PATH[i][0] - PATH[i - 1][0], PATH[i][1] - PATH[i - 1][1]));
     const L = cum[cum.length - 1];
@@ -364,7 +365,7 @@ export function east(k: Build, W: World, book: Book): void {
       }
       if (tb < JUMP) {
         // nose up off the leaf, nose down over the cut, and level again as it comes down, so that it lands on its wheels
-        const u = span(tb, J1, JUMP), x0 = HINGE + 7.5, y0 = 7.5 * Math.tan(leafA(J1));
+        const u = span(tb, J1, JUMP), x0 = TAKE, y0 = (TAKE - HINGE) * Math.tan(leafA(J1));
         return { x: lerp(x0, LANDX, u), y: lerp(y0, 0, u) + 1.6 * Math.sin(Math.PI * u), z: LZ, h: E, pitch: leafA(J1) * (1 - 2 * u) * (1 - ease(span(u, 0.7, 1))), v: 12, shown: true };
       }
       return { x: LANDX, y: 0, z: LZ, h: E, pitch: 0, v: 0, shown: tb < GONE };
@@ -374,10 +375,15 @@ export function east(k: Build, W: World, book: Book): void {
     // brakes in the last second before the leaf, chutes out and air brakes up; it stands, its lid lifts and Batman
     // looks after the Joker; and it backs away into the tunnel behind a screen of smoke.
     const B0 = 2.6, B1 = 6.4, BRAKE = 1.0, BACK0 = 17.5, BACK1 = 23.5, INX = TUNNEL.x - 6;
-    // It stops with its nose 0.3 short of the hinge, as far east as it can: the road's viaduct hides the apron west of
-    // x 84 from the opening view, so only its front two thirds are seen there, with Batman standing up in it. Its
-    // chutes and air brakes are behind it under the viaduct, and are found by turning the view.
-    const BM_HALF = (bm?.length ?? 5.4) / 2, STOPX = HINGE - BM_HALF - 0.3;
+    // It stops as far east as it can: the road's viaduct covers the apron to x 85.96, its parapet's underside 3.26
+    // over it, so only the car's front is seen from the opening view, with Batman standing up in it. Half its length
+    // ends 0.3 short of the hinge. Its tow strap reaches 0.2 further forward than that, and its tip is a tenth short
+    // of the hinge, which is the west edge of the leaf's top: the leaf turns up there and comes no nearer (measured
+    // from the two meshes). The hinge stands on the quay's lip, 0.6 out over the cut, so that Batman's seat is 0.47
+    // east of the parapet and his cowl a fifth of a unit clear of it: with the hinge at the cut's side, and the car
+    // a tenth bigger than it was, his head stood in the parapet, which the collector saw.
+    // Its chutes and air brakes are behind it under the viaduct, and are found by turning the view.
+    const BM_HALF = (bm?.length ?? 5.94) / 2, STOPX = HINGE - BM_HALF - 0.3;
     const BV = (STOPX - INX) / (B1 - B0 - BRAKE / 2);
     const batCar = (tb: number): { x: number; v: number; shown: boolean } => {
       let x = INX, v = 0;
@@ -433,8 +439,11 @@ export function east(k: Build, W: World, book: Book): void {
         if (bm) {
           bm.shown(b.shown);
           bm.lights(1);
+          // Its wing is up in two fins while it is at speed and whenever it passes the tunnel's mouth, which is 4.4 wide
+          // and its flat wing 4.22: up as it comes out, flat as it brakes, and up again before it backs in.
+          bm.trick('party', 1 - ease(span(tb, B1 - BRAKE - 0.15, B1 - BRAKE + 0.25)) + ease(span(tb, BACK0 - 1.6, BACK0 - 0.4)));
           bm.trick('jet', span(tb, B0, B0 + 0.3) * (1 - span(tb, B1 - BRAKE - 0.3, B1 - BRAKE)));
-          bm.trick('brake', ease(span(tb, B1 - BRAKE, B1 - BRAKE + 0.2)) * (1 - ease(span(tb, B1 + 0.5, B1 + 1.3))));
+          bm.trick('brake', ease(span(tb, B1 - BRAKE + 0.2, B1 - BRAKE + 0.45)) * (1 - ease(span(tb, B1 + 0.5, B1 + 1.3))));
           // the chutes hang behind it while it stands, and are drawn in before its lid lifts
           bm.trick('chutes', ease(span(tb, B1 - BRAKE + 0.1, B1 - BRAKE + 0.4)) * (1 - ease(span(tb, B1 + 0.4, B1 + 1.0))));
           bm.trick('canopy', ease(span(tb, UP0 - 0.5, UP0)) * (1 - ease(span(tb, UP1, UP1 + 0.6))));
@@ -446,7 +455,7 @@ export function east(k: Build, W: World, book: Book): void {
         shutter?.open(ease(span(tb, 0, J0)) * (1 - ease(span(tb, 2.2, 3.2))));
         W.air?.burst(LANDX, 0.5, LZ, ease(span(tb, 11.6, 12.4)) * (1 - ease(span(tb, 14.5, 16.5))));
       },
-      end() { jm?.shown(false); jm?.trick('cards', 0); jm?.trick('plank', 0); jm?.trick('glove', 0); jm?.lights(0); bm?.shown(false); bm?.lights(0); for (const t of ['jet', 'brake', 'chutes', 'canopy', 'smoke']) bm?.trick(t, 0); leaf?.lift(0); shutter?.open(0); lastTb = 0; },
+      end() { jm?.shown(false); jm?.trick('cards', 0); jm?.trick('plank', 0); jm?.trick('glove', 0); jm?.lights(0); bm?.shown(false); bm?.lights(0); for (const t of ['party', 'jet', 'brake', 'chutes', 'canopy', 'smoke']) bm?.trick(t, 0); leaf?.lift(0); shutter?.open(0); lastTb = 0; },
     });
   }
 
@@ -897,12 +906,16 @@ export function east(k: Build, W: World, book: Book): void {
   // Batman 244, 1972; here Batman carries no sword, so it is Damian, Ra's's grandson since Batman and Son, 2006, who
   // crosses swords with him). Three passes on the Highway's court, never nearer than two blades' reach, turned about
   // between them; the League on the ledge rise to their feet; Talia lifts her hand and both stop; Ra's salutes,
-  // Damian bows; Batman, among the assassins on the ledge, has not moved.
+  // Damian bows; Batman, perched on the eave over the League's ledge, has not moved.
+  // (He stood on the ledge among them at first. The ledge is at the foot of a lean-to roof 26 high, and a line from
+  // his post came down through that roof: his head was in it for a tenth of a second on the way in.)
   {
     const MID = { x: (DUEL_A.x + DUEL_B.x) / 2, z: (DUEL_A.z + DUEL_B.z) / 2 }, R = Math.hypot(DUEL_A.x - MID.x, DUEL_A.z - MID.z);
     const side = (a: number, who: 0 | 1): Spot => { const ang = a + (who ? Math.PI : 0), x = MID.x + Math.cos(ang) * R, z = MID.z + Math.sin(ang) * R; return at(x, gy(x, z, 2), z, toward(x, z, MID.x, MID.z)); };
     const A0 = Math.atan2(DUEL_A.z - MID.z, DUEL_A.x - MID.x);
     const LEDGE = at((ASSASSINS[1].x + ASSASSINS[2].x) / 2, ASSASSINS[1].y, ASSASSINS[1].z, S);
+    /** Batman's place: on the roof's eave over the ledge, a pace west of the bracket that stands out from it there. */
+    const EAVE = at(LEDGE.x - 1, W.solid.top(LEDGE.x - 1, LEDGE.z - 0.75), LEDGE.z - 0.75, S);
     const D_LAND = 3, P1 = 4, P2 = 7.5, TURN1 = 10, P3 = 11.5, RISE = 8, STOP = 14.5, SALUTE = 15.5, BODY = 21;
     const passAt = (tb: number): number => (tb < TURN1 ? 0 : Math.PI * ease(span(tb, TURN1, P3)));
     book.stories.push({
@@ -933,12 +946,12 @@ export function east(k: Build, W: World, book: Book): void {
           const p = P.from(id), up = ease(span(tb, RISE + i * 0.2, RISE + 0.8 + i * 0.2)) * (1 - ease(span(tb, SALUTE + 2, SALUTE + 3)));
           P.put(id, still(facing(p, MID.x, MID.z), blend(kneel(1), {}, up)));
         });
-        // Batman, on the ledge among them: in while they fight, unmoving, and away when it is done
-        const bHome = P.from('batman'), bleg = lineLeg(W.solid, bHome, LEDGE), b0 = 9 - bleg.dur;
+        // Batman, on the eave over them: in while they fight, perched there unmoving, and away when it is done
+        const bHome = P.from('batman'), bleg = lineLeg(W.solid, bHome, EAVE), b0 = 9 - bleg.dur;
         if (tb < b0) P.put('batman', still(bHome, perch((tb * 0.05) % 1), { cape: 0.1, ...g }));
         else if (tb < 9) P.put('batman', { ...bleg.at(tb - b0), ...g });
-        else if (tb < SALUTE + 3.6) P.put('batman', still(facing(LEDGE, MID.x, MID.z), { nod: 0.3 }, { cape: 0.15, ...g }));
-        else P.put('batman', away(facing(LEDGE, MID.x, MID.z), SALUTE + 3.6, tb));
+        else if (tb < SALUTE + 3.6) P.put('batman', still(facing(EAVE, MID.x, MID.z), { ...perch(0), nod: 0.3 }, { cape: 0.15, ...g }));
+        else P.put('batman', away(facing(EAVE, MID.x, MID.z), SALUTE + 3.6, tb));
       },
     });
   }
@@ -947,8 +960,10 @@ export function east(k: Build, W: World, book: Book): void {
   // Det. 400 (1970), Kirk Langstrom's serum and its cure [wp Man-Bat; rogues note, story 12, where Batman holds up the
   // vial: so Batman here, not Batgirl]. By night Man-Bat drops from the belfry's eaves, opens his wings and flies a
   // round over Lower Gotham and the Gazette's roof, shrieking (rings spread from him); Vicki Vale's camera flashes at
-  // him from the Gazette's door; Batman lands on the belfry's ledge holding up a vial; Man-Bat comes back to the
-  // ledge, folds his wings, shrinks, and it is Langstrom who kneels there.
+  // him from the Gazette's door; Batman lands on the belfry's roof, over the ledge's corner, holding up a vial; Man-Bat
+  // comes back to the ledge under him, folds his wings, shrinks, and it is Langstrom who kneels there.
+  // (Batman stood on the ledge itself at first. The belfry's gallery is roofed all over, six high, and a line from his
+  // post comes down through that roof: his head was in its slab for a third of a second on the way in.)
   {
     const C = { x: -74, z: 98 }, RAD = 10;
     let FLY_Y = 0;
@@ -964,6 +979,8 @@ export function east(k: Build, W: World, book: Book): void {
       [lerp(C.x, M_LAND.x, 0.6), FLY_Y + 6, lerp(C.z, M_LAND.z, 0.6)], [M_LAND.x, M_LAND.y + 1.5, M_LAND.z], [M_LAND.x, M_LAND.y, M_LAND.z],
     ]);
     const DROP = 2, BACK = 20, FOLD = BACK + 1.2, CHANGE = FOLD + 1.6, BAT_LAND = 15.5, BODY = CHANGE + 5;
+    /** Batman's place: on the roof over the ledge's corner, under the open sky. */
+    const ROOF = at(BELFRY.x, W.solid.top(BELFRY.x, BELFRY.z), BELFRY.z, BELFRY.h);
     const flyAt = (tb: number): State => {
       const u = span(tb, DROP, BACK), q = PATH.at(PATH.len * (u < 0.5 ? 2 * u * u : 1 - 2 * (1 - u) * (1 - u)));
       const landing = u > 0.92;
@@ -981,12 +998,12 @@ export function east(k: Build, W: World, book: Book): void {
         else mb = hidden(M_LAND);
         P.put('manBat', mb);
         P.put('langstrom', tb < CHANGE ? hidden(M_LAND) : still(facing(M_LAND, BELFRY.x, BELFRY.z), kneel(1)));
-        // Batman: lands on the ledge and holds up the vial
-        const home = P.from('batman'), g = glowB(), leg = lineLeg(W.solid, home, BELFRY), t0 = BAT_LAND - leg.dur;
+        // Batman: lands on the roof over the ledge and holds up the vial
+        const home = P.from('batman'), g = glowB(), leg = lineLeg(W.solid, home, ROOF), t0 = BAT_LAND - leg.dur;
         if (tb < t0) P.put('batman', still(home, perch((tb * 0.05) % 1), { cape: 0.1, ...g }));
         else if (tb < BAT_LAND) P.put('batman', { ...leg.at(tb - t0), ...g });
-        else if (tb < CHANGE + 3) P.put('batman', still(facing(BELFRY, tb < BACK ? mb.x : M_LAND.x, tb < BACK ? mb.z : M_LAND.z), tb < CHANGE + 1 ? { armR: 2.2, elbowR: 0.5, spreadR: 0.1 } : { armR: 0.6, elbowR: 0.3, nod: 0.3 }, g));
-        else P.put('batman', away(facing(BELFRY, M_LAND.x, M_LAND.z), CHANGE + 3, tb));
+        else if (tb < CHANGE + 3) P.put('batman', still(facing(ROOF, tb < BACK ? mb.x : M_LAND.x, tb < BACK ? mb.z : M_LAND.z), tb < CHANGE + 1 ? { armR: 2.2, elbowR: 0.5, spreadR: 0.1 } : { armR: 0.6, elbowR: 0.3, nod: 0.3 }, g));
+        else P.put('batman', away(facing(ROOF, M_LAND.x, M_LAND.z), CHANGE + 3, tb));
         // Vicki Vale: her camera up at him
         const v = P.from('vicki');
         P.put('vicki', still(facing(v, mb.x, mb.z), tb > 5 && tb < 15 ? { armL: 1.4, armR: 1.4, elbowL: 1.6, elbowR: 1.6, nod: -0.4 } : idle(0), { hold: 1 }));
@@ -997,7 +1014,7 @@ export function east(k: Build, W: World, book: Book): void {
         // Vicki's flashes, and the vial
         const v = VICKI;
         if ((tb > 8 && tb < 8.15) || (tb > 12.5 && tb < 12.65)) W.glints.speck([v.x, v.y + 2.0, v.z - 0.3], 0.6, 0xffffff);
-        if (tb > BAT_LAND && tb < CHANGE + 1) W.glints.speck([BELFRY.x + Math.cos(BELFRY.h) * 0.3, BELFRY.y + 3.0, BELFRY.z + Math.sin(BELFRY.h) * 0.3], 0.22, 0x50ff70);
+        if (tb > BAT_LAND && tb < CHANGE + 1) W.glints.speck([ROOF.x + Math.cos(ROOF.h) * 0.3, ROOF.y + 3.0, ROOF.z + Math.sin(ROOF.h) * 0.3], 0.22, 0x50ff70);
       },
       end() { W.rings.set(0, [0, 0, 0], 1, 0); W.rings.set(1, [0, 0, 0], 1, 0); },
     });

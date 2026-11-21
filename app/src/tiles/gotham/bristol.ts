@@ -497,8 +497,13 @@ const GARDEN_DOOR_Z = ZP - 3.5, DRIVE_IN = COURT.z1 - 9;
 const HATCH = { hw: (SHAFT.x1 - SHAFT.x0) / 2, hd: (SHAFT.z1 - SHAFT.z0) / 2, kerb: 1, sink: 0.4, slide: 7.3, seam: 0.015 };
 /** The lift's platform: half its size, and where its top is when down and up. */
 const LIFT = { hw: 6.5, hd: 5.5, down: Y.cave + 0.6, up: Y.crest };
-/** The old tunnel's mouth in the spur's west face: where its middle is, and half its width. It is 4.1 wide for the Batmobile, whose wing is 3.84. */
-const OLD_TUNNEL = { z: CLIFF + 2.6, half: 2.05 };
+/**
+ * The old tunnel's mouth in the spur's west face: where its middle is, and half its width. The Batmobile leaves by
+ * it with its wing folded up, 3.86 wide at its front tyres, and the mouth is 4.1 wide. Its middle is the line the car
+ * runs on along the service lane: 2.7 from the cliff, which keeps the car's flat wing, 4.22 wide, a hand's breadth
+ * off the cliff's piers on one side and inside the lane on the other.
+ */
+const OLD_TUNNEL = { z: CLIFF + 2.7, half: 2.05 };
 /** The Batboat's arch in the shelf's river wall. */
 const BOATHOUSE = { x: 30, z: -67, half: 2.5 };
 /** The gates on the shelf. */
@@ -1301,9 +1306,9 @@ function oldTunnel(b: GeoBuilder): void {
     // in this frame +z is west, out of the rock: lz 0 is the rock's face, and the portal stands out to lz 0.8
     b.quad([-half, 0, 0.05], [half, 0, 0.05], [half, spring + half, 0.05], [-half, spring + half, 0.05], [0, 0, 1], DARK, { win: interior(0.3) });
     pointedArch(b, 0, 0.3, 0.8, half, half, spring, top, STONE, STONE_DARK, 5);
-    solid(b, -half - 0.3, 0, 0.1, -half, top, 0.8, STONE, 'NESWT');
-    solid(b, half, 0, 0.1, half + 0.3, top, 0.8, STONE, 'NESWT');
-    solid(b, -half - 0.4, top, 0.0, half + 0.4, top + 0.4, 0.95, STONE_TRIM, 'NESWTB');
+    solid(b, -half - 0.25, 0, 0.1, -half, top, 0.8, STONE, 'NESWT');
+    solid(b, half, 0, 0.1, half + 0.25, top, 0.8, STONE, 'NESWT');
+    solid(b, -half - 0.25, top, 0.0, half + 0.25, top + 0.4, 0.95, STONE_TRIM, 'NESWTB');
     // the keystone, and the old date-stone's blank panel over it
     solid(b, -0.25, spring + half - 0.15, 0.8, 0.25, spring + half + 0.45, 0.9, STONE_TRIM, 'NESWTB');
   });
