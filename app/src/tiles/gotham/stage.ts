@@ -195,6 +195,13 @@ export function footLeg(a: Spot, b: Spot, hurry: boolean, gait?: (t: number) => 
 
 /** The way a figure takes between two places, by how it gets about. */
 export function legBetween(solid: Solid, way: Way, a: Spot, b: Spot, hurry = false, gait?: (t: number) => Partial<Pose>): Leg {
+  // A place that is no place has no way to it. A mark worked out where nothing stands has a height of minus
+  // infinity; a line's arc to it would rise without end and take for ever, and whoever played the leg through, as the
+  // show's check does, would never finish: that once kept the whole page from loading.
+  if (![a.x, a.y, a.z, b.x, b.y, b.z].every(Number.isFinite)) {
+    console.warn('Gotham: a way was asked for between places of which one is no place.', a, b);
+    return { dur: 0, at: () => hidden(Number.isFinite(a.y) ? a : at(0, -30, 0, 0)) };
+  }
   const d = Math.hypot(b.x - a.x, b.z - a.z), dy = Math.abs(b.y - a.y);
   if (d < 0.05 && dy < 0.05) return { dur: 0, at: () => still(b) };
   // near and level, everyone walks
@@ -297,7 +304,14 @@ export interface Putter {
  * `open` slides its two halves apart, from 0 shut to 1 open, and `lift` raises the platform under it, from 0 down
  * on the cave's floor to 1 level with the garden. A story that moves either puts both back to 0 when it ends.
  */
-export interface Hatch { open(f: number): void; lift(f: number): void }
+export interface Hatch {
+  /** The mirror pool over the Batwing's lift, from 0 shut to 1 open. */
+  open(f: number): void;
+  /** The lift, from 0 down to 1 up. */
+  lift(f: number): void;
+  /** The steel door at the back of the grotto behind the waterfall, from 0 shut to 1 rolled up. */
+  door?(f: number): void;
+}
 
 /** Everything a story can reach. */
 export interface World {

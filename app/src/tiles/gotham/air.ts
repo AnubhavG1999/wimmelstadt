@@ -28,7 +28,7 @@ import { rng } from '../../engine/geo';
 import type { Build } from '../../engine/tile';
 import { landAt } from './land';
 import type { Place } from './models';
-import { CASINO, CREST, SIGNAL, STAGES, VENTS, Y, groundAt, lotOf } from './plan';
+import { CASINO, CREST, FALL_HALF, SIGNAL, STAGES, VENTS, Y, groundAt, lotOf } from './plan';
 import { REGIONS } from './regions';
 import { SPANS } from './roads';
 import { toRoad } from './space';
@@ -696,7 +696,7 @@ function buildWaterfall(k: Build, round: THREE.Texture): Fall {
   // it hangs just in front of the lip and of the tunnel's portal, and leans out a little as it falls
   const Z0 = (top?.z ?? cove.z0 + 0.7) + 0.15, Z1 = (foot?.z ?? cove.z0 + 1.3) - 0.35;
   /** Half the curtain's width at a share of the way down: as wide as the lip at its top, spreading as it falls. */
-  const half = (s: number): number => 2.2 + 0.85 * s;
+  const half = (s: number): number => FALL_HALF.lip + (FALL_HALF.foot - FALL_HALF.lip) * s;
   const COLS = 4, ROWS = 8;
 
   // --- the curtain: two halves, which draw aside from the middle
@@ -735,7 +735,8 @@ function buildWaterfall(k: Build, round: THREE.Texture): Fall {
   let part = 0, dirty = true;
   /** Where each half's inner and outer edges are at a share of the way down. */
   const edges = (hf: number, s: number): [number, number] => {
-    const gap = 1.85 * part, outer = half(s) + 0.45 * part;
+    // parted all the way it leaves 5 clear in its middle, which a car 3.4 wide drives through on a turn
+    const gap = 2.5 * part, outer = half(s) + 0.35 * part;
     return hf === 0 ? [X - outer, X - gap] : [X + gap, X + outer];
   };
   const shape = (): void => {

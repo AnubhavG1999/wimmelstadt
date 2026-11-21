@@ -234,6 +234,14 @@ export const CREST = {
   cove: { x0: 36, x1: 44, z0: -91, z1: -85 },
 };
 
+/**
+ * Half the width of the waterfall's curtain, at its lip and at its foot. The grotto's mouth is as wide as the curtain
+ * less a hand's breadth, so that the water hides all of it, and it is this wide for the Batmobile: a car 9.6 long
+ * that comes out of the cliff across a lane 5 deep and turns along it needs a mouth about 7 wide, or its nose swings
+ * out into the river road's traffic. (At 4.4 to 6.1 wide it reached 1.8 past the lane's edge, into a passing car.)
+ */
+export const FALL_HALF = { lip: 3.35, foot: 3.65 };
+
 /** The crag Arkham stands on, on Mercey Island. */
 export const CRAG: P2[] = [[-98, -100], [-92, -106], [-72, -107], [-63, -100], [-62, -90], [-68, -86], [-92, -86], [-99, -91]];
 /** How far the crag's sides take to fall to the island's low ground. */

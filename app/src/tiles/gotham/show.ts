@@ -294,8 +294,9 @@ export function buildShow(k: Build, hatch: Hatch | null = null): Show {
               root.updateWorldMatrix(false, true);
               let n = 0, of = 0, off = 0, near = Infinity;
               root.traverseVisible((o) => {
-                const m = o as unknown as { isMesh?: boolean; material?: { type: string }; geometry: { getAttribute(name: string): { count: number; getX(i: number): number; getY(i: number): number; getZ(i: number): number } }; matrixWorld: { elements: ArrayLike<number> } };
-                if (!m.isMesh || m.material?.type === 'MeshBasicMaterial') return;
+                const m = o as unknown as { isMesh?: boolean; isInstancedMesh?: boolean; material?: { type: string }; geometry: { getAttribute(name: string): { count: number; getX(i: number): number; getY(i: number): number; getZ(i: number): number } }; matrixWorld: { elements: ArrayLike<number> } };
+                // its body only: not its lamps and glows, and not what it throws out in many copies, such as cards
+                if (!m.isMesh || m.isInstancedMesh || m.material?.type === 'MeshBasicMaterial') return;
                 const p = m.geometry.getAttribute('position'), stride = Math.max(1, Math.floor(p.count / 160));
                 for (let j = 0; j < p.count; j += stride) {
                   const w = through(m.matrixWorld.elements, p.getX(j), p.getY(j), p.getZ(j)), [x, y, z] = through(inv, w[0], w[1], w[2]);

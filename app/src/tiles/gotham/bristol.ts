@@ -42,7 +42,7 @@ import {
   STEEL, STONE, STONE_DARK, STONE_LIGHT, STONE_TRIM, TIMBER_DARK, TO_VIEW, gargoyle, gasLamp, nameBoard, nameSign, padMark, parapet,
 } from './look';
 import type { Model, Place } from './models';
-import { CREST, HELIPADS, HERO_SPOTS, KANE, Y, lotOf, type Lot, type P2 } from './plan';
+import { CREST, FALL_HALF, HELIPADS, HERO_SPOTS, KANE, Y, lotOf, type Lot, type P2 } from './plan';
 import { MIDDLES } from './roads';
 import { ceilingAt, open, underBoards } from './space';
 
@@ -786,15 +786,17 @@ function serviceRange(k: Build, l: Lot): void {
 
 /** The porte-cochère: a carriage porch of three pointed arches with a flat balustraded roof, before the east door. */
 function porteCochere(k: Build): void {
-  const b = k.b, P = PORTE, pier = 0.55, spring = Y.crest + 2.2, half = (P.x1 - P.x0) / 2 - pier, sideHalf = (P.z1 - P.z0) / 2 - 0.5;
+  const b = k.b, P = PORTE, pier = 0.55, half = (P.x1 - P.x0) / 2 - pier, sideHalf = (P.z1 - P.z0) / 2 - 0.5;
+  // low pointed arches, struck from 1.15 times their half-width, and sprung so that the widest one's point stays 0.1
+  // under the roof's slab (struck from 1.3 times it and sprung 2.2 up, their points stood through the slab)
+  const POINT = 1.15, wide = Math.max(half, sideHalf), spring = P.top - 0.1 - archRise(wide, wide * POINT);
   // the piers at its corners
   for (const [x0, z0] of [[P.x0, P.z0], [P.x1 - pier, P.z0], [P.x0, P.z1 - 0.5], [P.x1 - pier, P.z1 - 0.5]]) solid(b, x0, FOOT, z0, x0 + pier, P.top, z0 + 0.5, LIMESTONE, 'NESWT');
   // its arches: one at each end, which the carriages pass through, and one to the court
-  for (const z of [P.z0, P.z1 - 0.5]) pointedArch(b, (P.x0 + P.x1) / 2, z, z + 0.5, half, half * 1.3, spring, P.top, LIMESTONE, LIMESTONE_DARK, 5);
-  b.moved(P.x1 - 0.25, 0, PORTE_Z, PI / 2, () => pointedArch(b, 0, -0.25, 0.25, sideHalf, sideHalf * 1.3, spring, P.top, LIMESTONE, LIMESTONE_DARK, 5));
-  // its roof: a slab with a cornice, a ceiling under it, and a balustrade round it
-  solid(b, P.x0, P.top, P.z0 - 0.1, P.x1 + 0.1, P.top + 0.45, P.z1 + 0.1, TRIM, 'NESWT');
-  b.quad([P.x0, P.top, P.z0 + 0.5], [P.x1 - 0.5, P.top, P.z0 + 0.5], [P.x1 - 0.5, P.top, P.z1 - 0.5], [P.x0, P.top, P.z1 - 0.5], [0, -1, 0], LIMESTONE_DARK);
+  for (const z of [P.z0, P.z1 - 0.5]) pointedArch(b, (P.x0 + P.x1) / 2, z, z + 0.5, half, half * POINT, spring, P.top, LIMESTONE, LIMESTONE_DARK, 5);
+  b.moved(P.x1 - 0.25, 0, PORTE_Z, PI / 2, () => pointedArch(b, 0, -0.25, 0.25, sideHalf, sideHalf * POINT, spring, P.top, LIMESTONE, LIMESTONE_DARK, 5));
+  // its roof: a slab with a cornice, whose underside is the porch's ceiling, and a balustrade round it
+  solid(b, P.x0, P.top, P.z0 - 0.1, P.x1 + 0.1, P.top + 0.45, P.z1 + 0.1, TRIM, 'NESWTB');
   const piers = balustrade(b, [[P.x1 - 0.15, P.z0 + 0.15], [P.x1 - 0.15, P.z1 - 0.15]], P.top + 0.45, TRIM, 2.4);
   balustrade(b, [[P.x0 + 0.2, P.z0 + 0.15], [P.x1 - 0.6, P.z0 + 0.15]], P.top + 0.45, TRIM, 2.4);
   balustrade(b, [[P.x0 + 0.2, P.z1 - 0.15], [P.x1 - 0.6, P.z1 - 0.15]], P.top + 0.45, TRIM, 2.4);
@@ -871,8 +873,12 @@ function cliffFront(k: Build): void {
 // The grotto under the tower, behind the waterfall
 // ---------------------------------------------------------------------------
 
-/** Half the width of the waterfall's curtain at a height, as air.ts hangs it: 2.2 at its lip, 3.05 at its foot. */
-const curtainHalf = (y: number): number => 2.2 + 0.85 * Math.min(1, Math.max(0, (FALL.top - y) / (FALL.top - POOL_Y)));
+/** Half the width of the waterfall's curtain at a height, as air.ts hangs it, from the plan's FALL_HALF. */
+const curtainHalf = (y: number): number => FALL_HALF.lip + (FALL_HALF.foot - FALL_HALF.lip) * Math.min(1, Math.max(0, (FALL.top - y) / (FALL.top - POOL_Y)));
+/** Half the width of the ford of setts through the grotto, which the Batmobile's wheels keep to on its turn. */
+const FORD_HALF = 3.45;
+/** The steel door at the grotto's back: half its width, its height, and the name of its shutter's mesh. */
+const BACK_DOOR = { half: 2.8, h: 3.6, name: 'bristol-grotto-door' };
 
 function cove(k: Build, l: Lot): void {
   const b = k.b, F = l.base, mid = COVE_MID, R = rng(0xc07e);
@@ -891,7 +897,7 @@ function cove(k: Build, l: Lot): void {
     const opening = (y: number): number => {
       if (y >= crown) return 0;
       const t = Math.max(0, (y - 7.4) / (crown - 7.4));
-      return Math.min(curtainHalf(y) - 0.14, 3.0) * (1 - 0.42 * t * t);
+      return (curtainHalf(y) - 0.14) * (1 - 0.42 * t * t);
     };
     // courses of 0.55 low down, finer where the arch turns, so that it reads as an arch and not as steps
     for (let y = Y.shelf - 0.1, step = 0.55; y < Y.crest - 0.05; y += step, step = y > 7.2 && y < crown ? 0.3 : 0.55) {
@@ -909,11 +915,11 @@ function cove(k: Build, l: Lot): void {
     }
     // stalactites along the arch's lip
     for (let i = 0; i < 7; i++) {
-      const x = mid - 1.5 + (i / 6) * 3 + (R() - 0.5) * 0.3, len = 0.25 + R() * 0.45;
+      const x = mid - 1.7 + (i / 6) * 3.4 + (R() - 0.5) * 0.3, len = 0.25 + R() * 0.45;
       b.cyl(x, face - 0.2, crown - len, crown + 0.02, 0.03, 0.14, 5, ROCK_LIGHT, { cap: false });
     }
     // the lip the water comes over, under the slab
-    solid(b, mid - 2.2, FALL.top - 0.02, FALL.z - 0.7, mid + 2.2, GROTTO_ROOF - 0.01, FALL.z + 0.1, ROCK_DARK, 'NESWB');
+    solid(b, mid - FALL_HALF.lip, FALL.top - 0.02, FALL.z - 0.7, mid + FALL_HALF.lip, GROTTO_ROOF - 0.01, FALL.z + 0.1, ROCK_DARK, 'NESWB');
   }
 
   // --- the pool on its floor, its sill at the mouth, and the ford of setts through it from the door to the mouth
@@ -921,23 +927,31 @@ function cove(k: Build, l: Lot): void {
     const x0 = l.x0 + 0.05, x1 = l.x1 - 0.05, z0 = l.z0 + 0.05, zs = CLIFF - 0.25;
     waterOf(k, [{ pts: [[x0, z0], [x1, z0], [x1, zs], [x0, zs]], y: POOL_Y }], WATER_POOL);
     flat(b, x0, z0, x1, zs, F + 0.035, 0x2c3a3e);
-    for (const [a, c] of [[l.x0, mid - 2.05], [mid + 2.05, l.x1]]) solid(b, a, Y.shelf - 0.1, zs, c, POOL_Y + 0.14, CLIFF + 0.05, STONE_LIGHT, 'NESWT');
-    b.box(mid - 2, F, z0, mid + 2, FORD_Y, CLIFF + 0.02, SETT, { faces: 'EWT' });
-    for (let z = z0 + 0.8; z < zs - 0.3; z += 1.2) flat(b, mid - 2, z - 0.06, mid + 2, z + 0.06, FORD_Y + 0.012, 0x4f4a44);
+    for (const [a, c] of [[l.x0, mid - FORD_HALF - 0.05], [mid + FORD_HALF + 0.05, l.x1]]) solid(b, a, Y.shelf - 0.1, zs, c, POOL_Y + 0.14, CLIFF + 0.05, STONE_LIGHT, 'NESWT');
+    b.box(mid - FORD_HALF, F, z0, mid + FORD_HALF, FORD_Y, CLIFF + 0.02, SETT, { faces: 'EWT' });
+    for (let z = z0 + 0.8; z < zs - 0.3; z += 1.2) flat(b, mid - FORD_HALF, z - 0.06, mid + FORD_HALF, z + 0.06, FORD_Y + 0.012, 0x4f4a44);
     // out over the sill and down onto the shelf
-    slab(b, [mid, FORD_Y, CLIFF + 0.02], [mid, Y.shelf + 0.045, CLIFF + 0.48], 2, 0.4, SETT);
-    // stalagmites in its back corners, clear of the ford
-    for (const [x, z, h] of [[l.x0 + 1.5, l.z0 + 0.6, 1.4], [l.x1 - 1.4, l.z0 + 0.7, 1.1]]) b.cyl(x, z, F, F + h, 0.4, 0.05, 6, ROCK, { cap: false });
+    slab(b, [mid, FORD_Y, CLIFF + 0.02], [mid, Y.shelf + 0.045, CLIFF + 0.48], FORD_HALF, 0.4, SETT);
+    // (no stalagmites on its floor: the car's tail swings to within a hand of its walls as it turns)
   }
 
-  // --- the door at the back: riveted steel in a frame of rock, shut, in shadow
+  // --- the door at the back: riveted steel in a frame of rock, in shadow. Its shutter is a mesh of its own, hung from
+  // the door's head, which the show rolls up for the car (`door` of `buildHatch`); behind it the way in is dark.
   {
-    const z = l.z0, x0 = mid - 1.9, x1 = mid + 1.9, top = F + 3.6;
-    b.box(x0, F, z, x1, top, z + 0.15, STEEL_DARK, { faces: 'SEWT' });
-    for (const y of [F + 0.9, F + 1.9, F + 2.9]) b.box(x0 + 0.1, y - 0.05, z + 0.15, x1 - 0.1, y + 0.05, z + 0.19, IRON_DARK, { faces: 'STB' });
-    b.box(mid - 0.04, F, z + 0.15, mid + 0.04, top - 0.1, z + 0.2, IRON_DARK, { faces: 'SEW' });
-    for (const s of [-1, 1]) solid(b, s < 0 ? x0 - 0.7 : x1, F - 0.1, z, s < 0 ? x0 : x1 + 0.7, top + 0.5, z + 0.45, ROCK_LIGHT, 'NESWT');
-    solid(b, x0 - 0.7, top, z, x1 + 0.7, top + 0.8, z + 0.5, ROCK, 'NESWTB');
+    const D = BACK_DOOR, z = l.z0, x0 = mid - D.half, x1 = mid + D.half, top = F + D.h;
+    b.quad([x0, F, z + 0.03], [x1, F, z + 0.03], [x1, top, z + 0.03], [x0, top, z + 0.03], [0, 0, 1], 0x08090b);
+    const g = new GeoBuilder();
+    g.box(-D.half, -D.h, 0.05, D.half, 0, 0.15, STEEL_DARK, { faces: 'SEWB' });
+    for (const y of [0.9, 1.9, 2.9]) g.box(-D.half + 0.1, y - D.h - 0.05, 0.15, D.half - 0.1, y - D.h + 0.05, 0.19, IRON_DARK, { faces: 'STB' });
+    g.box(-0.04, -D.h, 0.15, 0.04, -0.1, 0.2, IRON_DARK, { faces: 'SEW' });
+    const shutter = new THREE.Mesh(g.build(), k.mat.city());
+    shutter.name = D.name;
+    shutter.castShadow = false;
+    shutter.receiveShadow = true;
+    shutter.position.set(mid, top, z);
+    k.group.add(shutter);
+    for (const s of [-1, 1]) solid(b, s < 0 ? x0 - 0.6 : x1, F - 0.1, z, s < 0 ? x0 : x1 + 0.6, top + 0.5, z + 0.45, ROCK_LIGHT, 'NESWT');
+    solid(b, x0 - 0.6, top, z, x1 + 0.6, top + 0.8, z + 0.5, ROCK, 'NESWTB');
     k.glows.push({ x: mid, y: top + 0.05, z: z + 0.6, sx: 0.5, sy: 0.12, sz: 0.12, color: '#ff4a3a' });
   }
 
@@ -1084,8 +1098,12 @@ function poolGarden(k: Build, l: Lot): void {
  * and from 0.15 to 1 they slide apart, west under the lawn and east under the
  * house, where the ground hides them. `lift(0)` has the platform down at the
  * shaft's floor, `lift(1)` up level with the garden. Both start at 0.
+ *
+ * It also hands over the steel door at the grotto's back, whose shutter is
+ * built with the grotto, shut: `door(1)` rolls it up under its head for the
+ * Batmobile, `door(0)` lets it down.
  */
-export function buildHatch(k: Build): { open(f: number): void; lift(f: number): void } {
+export function buildHatch(k: Build): { open(f: number): void; lift(f: number): void; door(f: number): void } {
   const H = HATCH, mat = k.mat.city();
   const mesh = (g: GeoBuilder, name: string): THREE.Mesh => {
     const m = new THREE.Mesh(g.build(), mat);
@@ -1140,6 +1158,10 @@ export function buildHatch(k: Build): { open(f: number): void; lift(f: number): 
   return {
     open(f: number): void { place.open = Math.min(1, Math.max(0, f)); set(); },
     lift(f: number): void { place.lift = Math.min(1, Math.max(0, f)); set(); },
+    door(f: number): void {
+      const shutter = k.group.getObjectByName(BACK_DOOR.name);
+      if (shutter) shutter.scale.y = 1 - 0.95 * Math.min(1, Math.max(0, f));
+    },
   };
 }
 
@@ -1281,7 +1303,7 @@ function oldTunnel(b: GeoBuilder): void {
     solid(b, half, 0, 0.1, 2.15, top, 0.8, STONE, 'NESWT');
     solid(b, -2.15, top, 0.0, 2.3, top + 0.4, 0.95, STONE_TRIM, 'NESWTB');
     // the keystone, and the old date-stone's blank panel over it
-    solid(b, -0.25, spring + half - 0.15, 0.8, 0.25, spring + half + 0.45, 0.9, STONE_TRIM, 'NESWT');
+    solid(b, -0.25, spring + half - 0.15, 0.8, 0.25, spring + half + 0.45, 0.9, STONE_TRIM, 'NESWTB');
   });
 }
 
