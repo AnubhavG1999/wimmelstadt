@@ -7,12 +7,13 @@
 //
 // Written by the tile's main session.
 
+import { ordinaryBuildings, type BuildingRules, type Lot as Plot } from '../../engine/buildings';
 import { rng, type GeoBuilder } from '../../engine/geo';
 import type { SignDef } from '../../engine/signs';
 import type { Build } from '../../engine/tile';
 import { BRICK, BRICK_DARK, BRICK_RED, COPPER, COPPER_DARK, DARK, GOTHIC_WIN, IRON, LEAD, RUST, SLATE, SMALL_WIN, SODIUM, STEEL, STONE, STONE_DARK, STONE_LIGHT, STONE_TRIM, TENEMENT_WIN, gargoyle, gasLamp, waterTank } from './look';
 import type { Model, Place } from './models';
-import type { Lot } from './plan';
+import { LOTS, type Lot } from './plan';
 
 /** A band of pale stone round a box, a little proud of it: a cornice, a string course. */
 function band(b: GeoBuilder, x0: number, z0: number, x1: number, z1: number, y: number, h: number, out = 0.25, color = STONE_TRIM): void {
@@ -137,19 +138,47 @@ const stacks: Model = (k, l) => {
 };
 
 export const MODELS: Record<string, Model> = {
-  'pinkney-1': tower, 'pinkney-2': tower, 'uptown-1': tower, 'uptown-2': tower, 'uptown-3': tower,
+  'pinkney-1': tower, 'pinkney-2': tower, 'uptown-1': tower, 'uptown-2': tower, 'uptown-3': tower, 'uptown-4': tower,
   'row-0': rowHouses, 'row-1': rowHouses, 'row-2': rowHouses,
   'warehouse-1': warehouse,
-  'shed-1': shed, 'shed-2': shed, 'shed-3': shed,
-  'stacks-1': stacks,
+  'shed-2': shed,
 };
 
-export const COVERS: string[] = [];
+/** Kept for the docks' builder, who may stand stacks of containers where there is room. */
+export { stacks };
+
+/** The ordinary buildings that the plan lays out by rule: Lower Gotham's, Tricorner's and the wharf's. */
+const FABRIC: Lot[] = LOTS.filter((l) => l.file === 'fabric');
+
+/** Gotham's styles for them: brick tenements, dark stone with tall windows, brick works with small ones, and sheds of sheet. */
+const RULES: BuildingRules = {
+  styles: {
+    tenement: { palette: [BRICK, BRICK_DARK, BRICK_RED, 0x5a4a44, 0x4c4a52], win: TENEMENT_WIN },
+    stone: { palette: [STONE, STONE_DARK, STONE_LIGHT, 0x4a4650], win: GOTHIC_WIN },
+    works: { palette: [BRICK_DARK, 0x4a4744, 0x3f4650, 0x54463c], win: SMALL_WIN },
+    shed: { palette: [0x55606a, 0x6a5a4c, 0x4f5b55], win: { cell: 0, storey: 1, lit: 0, kind: 0 } },
+  },
+  roofs: [LEAD, SLATE, 0x3a3d44, 0x45413c],
+  hip: () => ({ colors: [SLATE, LEAD], chimneys: true }),
+  pool: () => ({ fascia: [], blade: [], billboard: [] }),
+  neon: [],
+};
+
+export const COVERS: string[] = FABRIC.map((l) => l.id);
 export const SIGNS: SignDef[] = [];
 export const PLACES: Record<string, Place> = {};
 
-export function extras(_k: Build): void {
-  // nothing besides the lots
+export function extras(k: Build): void {
+  ordinaryBuildings(k, FABRIC.map((l, i): Plot => {
+    const h = l.top - l.base, tall = l.style === 'stone' && h >= 20;
+    return {
+      x: l.x0, z: l.z0, w: l.x1 - l.x0, d: l.z1 - l.z0, y0: l.base, y1: tall ? l.top - 4 : l.top,
+      style: l.style ?? 'tenement', tint: i,
+      roof: l.style === 'shed' ? 'bare' : h > 14 ? 'tank' : 'bare',
+      ...(tall ? { crown: { inset: 1.4, h: 4 } } : {}),
+      signs: '',
+    };
+  }), RULES);
 }
 
 /** For whoever asks which of the plan's lots are ordinary buildings. */

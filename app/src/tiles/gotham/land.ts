@@ -1,8 +1,10 @@
 // The ground of Gotham and its water: the two banks of the Sprang with their
 // quays, Old Gotham's upper city behind its retaining walls and the ramp that
-// climbs it, Uptown's bluff, Bristol's shelf and Crest Hill with the Batcave
-// and the waterfall's cove cut into its cliff, Mercey Island and its crag, the
-// islets in the bay, and Robinson Park's knoll.
+// climbs it, Lower Gotham and Tricorner where the bay was, River Street's
+// terrace and the ramp Kane Street comes down from it, the wharf and the yard
+// along the canal, Bristol's shelf and Crest Hill with the Batcave and the
+// waterfall's cove cut into its cliff, Mercey Island and its crag, the islets
+// in the harbour, and Robinson Park's knoll.
 //
 // The shapes and the levels are in plan.ts. What stands on the ground is
 // built elsewhere.
@@ -12,7 +14,7 @@ import { flat, rect, walls, water, type P2 } from '../../engine/ground';
 import { drawField, field, heightOn, type Field } from '../../engine/terrain';
 import type { Build } from '../../engine/tile';
 import { ROCK, ROCK_DARK, ROCK_LIGHT, STONE, STONE_DARK } from './look';
-import { BLUFF, BOARD, CREST, CROWN, KNOLL, LANDS, RAMP, UPPER, Y, groundAt, inside, merceyAt, smooth } from './plan';
+import { BLUFF, BOARD, CREST, CROWN, KANE_ST, KNOLL, LANDS, RAMP, UPPER, Y, groundAt, inside, kaneRamp, merceyAt, smooth } from './plan';
 
 /** What the street material is told about a stretch of plain ground. */
 const GROUND: WinSpec = { cell: 0, storey: 1, lit: 0, kind: 1 };
@@ -204,8 +206,7 @@ export function buildLand(k: Build): void {
   flat(k.street, LANDS.west, 0, PAVING, { win: GROUND });
   flat(k.street, park, 0.02, LAWN_DARK, { win: GROUND });
   flat(k.street, LANDS.east, 0, PAVING, { win: GROUND });
-  flat(k.street, LANDS.tricorner, 0, PAVING, { win: GROUND });
-  for (const id of ['west', 'east', 'tricorner'] as const) walls(k.b, LANDS[id], -1.5, 0, QUAY);
+  for (const id of ['west', 'east'] as const) walls(k.b, LANDS[id], -1.5, 0, QUAY);
   for (const [id, y] of [['blackgate', 2], ['justice', 1.5]] as const) {
     flat(k.street, LANDS[id], y, id === 'blackgate' ? ROCK : STONE, { win: GROUND });
     walls(k.b, LANDS[id], -1.5, y, id === 'blackgate' ? ROCK_DARK : STONE_DARK);
@@ -219,13 +220,14 @@ export function buildLand(k: Build): void {
   flat(k.street, BLUFF, Y.bluff, PAVING_BLUFF, { win: FLAGGED });
   walls(k.b, BLUFF, 0, Y.bluff, RETAINING_BLUFF);
   ramp(k);
+  kaneWedge(k);
 
   // Bristol: the shelf, Crest Hill, and what is cut into its cliff
   BRISTOL = zoned(-22, -113, 104, -67, 2, bristolZone, bristolHeight);
   drawZoned(k, BRISTOL, bristolColour, rockAt);
 
   // Mercey Island, and its crag
-  MERCEY = zoned(-102, -110, -52, -64, 2, (x, z) => (inside(LANDS.mercey, x, z) ? 'isle' : null), merceyHeight);
+  MERCEY = zoned(-104, -114, -30, -64, 2, (x, z) => (inside(LANDS.mercey, x, z) ? 'isle' : null), merceyHeight);
   drawZoned(k, MERCEY, merceyColour, rockAt);
 
   // Robinson Park's knoll
@@ -234,6 +236,21 @@ export function buildLand(k: Build): void {
     return d < KNOLL.r ? KNOLL.h * (1 - smooth(4, KNOLL.r, d)) + 0.02 : 0;
   });
   drawField(k.b, KNOLL_FIELD, { color: (_y, level) => (level > 0.9 ? LAWN : LAWN_DARK), cut: ROCK, edges: '' });
+}
+
+/**
+ * The ramp Kane Street comes down from River Street's terrace to the East
+ * End's ground: a wedge of stone between the blocks, as wide as the street
+ * with its sidewalks. Its top lies a hair under the street.
+ */
+function kaneWedge(k: Build): void {
+  const K = KANE_ST, x0 = K.x - K.half, x1 = K.x + K.half, n = 14;
+  for (let i = 0; i < n; i++) {
+    const za = K.rampFoot + ((K.rampTop - K.rampFoot) * i) / n, zb = K.rampFoot + ((K.rampTop - K.rampFoot) * (i + 1)) / n, ya = kaneRamp(za), yb = kaneRamp(zb);
+    k.b.quad([x0, yb - 0.04, zb], [x1, yb - 0.04, zb], [x1, ya - 0.04, za], [x0, ya - 0.04, za], [0, 1, 0], PAVING_BLUFF);
+    k.b.quad([x0, 0, zb], [x0, 0, za], [x0, ya - 0.04, za], [x0, yb - 0.04, zb], [-1, 0, 0], RETAINING_BLUFF);
+    k.b.quad([x1, 0, za], [x1, 0, zb], [x1, yb - 0.04, zb], [x1, ya - 0.04, za], [1, 0, 0], RETAINING_BLUFF);
+  }
 }
 
 /**

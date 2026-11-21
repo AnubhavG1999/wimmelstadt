@@ -16,7 +16,7 @@ import { BOARDS, STONE, STONE_DARK, STONE_LIGHT, boardOf, nameBoard } from './lo
 import type { Model } from './models';
 import { HERO_SPOTS, LOTS, groundAt, lotOf, type Lot } from './plan';
 import { REGIONS } from './regions';
-import { MIDDLES, buildRoads } from './roads';
+import { MIDDLES, SPANS, buildRoads } from './roads';
 import { checkSight } from './sight';
 import { KINDS } from './traffic';
 
@@ -34,10 +34,10 @@ function box(k: Build, l: Lot): void {
  */
 function slabs(k: Build, covered: Set<string>): void {
   const p = new THREE.Vector3(), q = new THREE.Vector3();
-  const over: Record<string, string> = { circuit: 'kane-bridge', 'ring-trigate': 'trigate', 'arkham-arm': 'trigate', ring: 'bascules' };
+  const over: Record<string, string> = { circuit: 'trigate', river: 'trigate', 'ring-trigate': 'trigate', 'arkham-arm': 'trigate', ring: 'bascules' };
   for (const [id, path] of Object.entries(MIDDLES)) {
     if (!(id in over) || covered.has(over[id])) continue;
-    // the circuit's two arms belong to the Trigate, and its bridge to the Kane Bridge
+    // the river road's and River Street's ends over the reach are the Trigate's arms
     const half = id.startsWith('ring-') ? 3.6 : id === 'ring' ? 7.2 : 5.6, thick = 1.1;
     const n = Math.ceil(path.length / 1.5);
     for (let i = 0; i < n; i++) {
@@ -45,7 +45,6 @@ function slabs(k: Build, covered: Set<string>): void {
       path.at(((i + 1) / n) * path.length, q);
       const mx = (p.x + q.x) / 2, mz = (p.z + q.z) / 2;
       if (groundAt(mx, mz) >= 0) continue;
-      if (id === 'circuit' && covered.has(mx > 40 ? 'kane-bridge' : 'trigate')) continue;
       const dx = q.x - p.x, dz = q.z - p.z, l = Math.hypot(dx, dz) || 1, rx = (-dz / l) * half, rz = (dx / l) * half;
       const y1 = p.y - 0.02, y0 = p.y - thick;
       const a: V3 = [p.x - rx, y0, p.z - rz], b: V3 = [p.x + rx, y0, p.z + rz], c: V3 = [q.x + rx, y0, q.z + rz], d: V3 = [q.x - rx, y0, q.z - rz];
@@ -57,6 +56,29 @@ function slabs(k: Build, covered: Set<string>): void {
       k.b.quad(up(a), up(b), up(c), up(d), [0, 1, 0], STONE_LIGHT);
     }
   }
+}
+
+/**
+ * While the Cobblepot Bridge is not built: two plain stone towers, each two
+ * piers with a beam between them over the road, and a cable from tower to
+ * tower and down to each end, so that the deck reads as a bridge.
+ */
+function bridgeTowers(k: Build): void {
+  const S = SPANS.cobblepot, dx = S.b[0] - S.a[0], dz = S.b[1] - S.a[1], l = Math.hypot(dx, dz), ux = dx / l, uz = dz / l, yaw = Math.atan2(uz, ux);
+  const top = 30, at = [8, l - 8];
+  for (const side of [-1, 1]) {
+    const ox = -uz * side * (S.half + 1.1), oz = ux * side * (S.half + 1.1);
+    for (const s of at) k.b.obox(S.a[0] + ux * s + ox, top / 2 - 0.75, S.a[1] + uz * s + oz, 1.6, top / 2 + 0.75, 1.1, yaw, STONE);
+    const p = (s: number, y: number): V3 => [S.a[0] + ux * s + ox, y, S.a[1] + uz * s + oz];
+    k.b.beam(p(-4, S.y + 1), p(at[0], top - 1), 0.22, 0.22, STONE_DARK);
+    k.b.beam(p(at[1], top - 1), p(l + 4, S.y), 0.22, 0.22, STONE_DARK);
+    const n = 6;
+    for (let i = 0; i < n; i++) {
+      const sag = (f: number): number => top - 1 - 14 * 4 * f * (1 - f);
+      k.b.beam(p(at[0] + ((at[1] - at[0]) * i) / n, sag(i / n)), p(at[0] + ((at[1] - at[0]) * (i + 1)) / n, sag((i + 1) / n)), 0.22, 0.22, STONE_DARK);
+    }
+  }
+  for (const s of at) k.b.obox(S.a[0] + ux * s, top - 3, S.a[1] + uz * s, 1.6, 2, S.half + 2.2, yaw, STONE_LIGHT);
 }
 
 export function buildGotham(k: Build): TileParts {
@@ -105,6 +127,7 @@ export function buildGotham(k: Build): TileParts {
     }
   }
   counted('the blockout', () => slabs(k, new Set([...covered, ...models.keys()])));
+  if (!models.has('cobblepot-bridge')) counted('the blockout', () => bridgeTowers(k));
   // the screen, until the waterfront's builder hangs it: on a frame on the bank's roof, facing the view
   if (!models.has('bank')) {
     const t = lotOf('bank'), cx = (t.x0 + t.x1) / 2 + 1, cz = (t.z0 + t.z1) / 2 + 1;

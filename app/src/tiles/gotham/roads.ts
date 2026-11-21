@@ -1,27 +1,37 @@
-// The roads of Gotham: their surfaces, and the lanes that traffic follows.
+// The roads of Gotham: their surfaces, the lanes that traffic follows, and the
+// elevated railway.
 //
-// The pattern, which no other tile has. The Trigate: three arms meeting in a
-// ring over the water. The circuit of the river: River Street on Uptown's
-// bluff, the Kane Bridge, the river road on the shelf under Crest Hill, and
-// the Trigate, where the outer round goes out to Arkham's gate and back. The
-// Sprang's ring: its two quays joined over two bascule bridges, straight up
-// the middle of the view. Grand Avenue, which climbs the ramp along the upper
-// city's wall, turns back on the bastion and runs along the rim above its own
-// ramp. The bay shore road and Harbour Road, each there and back between two
-// rings.
+// The pattern is one long street, as a dense city has, and it runs on three
+// levels. From the Trigate, a ring over the reach with an arm out to Arkham's
+// gate, River Street runs along its terrace over the East End. Kane Street
+// leaves it down a ramp between the blocks, meets Harbour Road, and goes on
+// over the docks on a viaduct to the Cobblepot Bridge and Lower Gotham, where
+// South Street is the front street and Bank Street climbs to Grand Avenue's
+// ramp and the rim of the upper city. Harbour Road runs into the Sprang's two
+// quays, which are joined over two bascule bridges. North of River Street the
+// same street goes on over the Kane Bridge and back along the shelf under
+// Crest Hill to the Trigate.
 //
 // Traffic keeps right, so a lane lies half a lane to the right of the way it
-// goes, and a ring is driven the way the clock does not turn. No route shares
-// a lane with another and none crosses another: every route is a loop of its
-// own, and where one must pass another it is in the lane beside it.
+// goes. One route, the long one, drives every street's outer lanes, there and
+// back, and never crosses itself: at every junction it turns right, or goes
+// straight on past a street that joins from its left. Two short routes drive
+// the inner lanes round what the long one goes round: the Sprang's water
+// between its bridges, and the canal. So no route shares a lane with another
+// and none crosses another on the level.
+//
+// The elevated railway stands over the middle of the east quay's road, which
+// runs the way the view looks: so it hides nothing but its own shadow.
 
-import { beside, eased, fine, pathOf, rounded, segsOf, type P3 } from '../../engine/corners';
+import * as THREE from 'three';
+import { beside, eased, fine, pathOf, rounded, segsOf, stretch, type P3 } from '../../engine/corners';
 import { flat, rect } from '../../engine/ground';
-import type { Path } from '../../engine/paths';
-import { lampsAlong, street } from '../../engine/roads';
+import { Path, joined } from '../../engine/paths';
+import { station, track, train, trestle, type Bent } from '../../engine/rail';
+import { lampsAlong, roadDeck, street } from '../../engine/roads';
 import type { Build, Route } from '../../engine/tile';
 import { MIX } from './traffic';
-import { BLUFF, CIRCUIT, KANE, LANE, RING, ROADS, SHOW_LANES, SPRANG, TRIGATE, TURNS, Y, avenueY, inside, sprang, type P2 } from './plan';
+import { BRIDGE, BRIDGE_ROAD, CIRCUIT, EL, HARBOUR_RD, KANE, KANE_ST, LANE, RING, ROADS, SHOW_LANES, SOUTH_ST, SPRANG, TRIGATE, TURNS, Y, avenueY, bySprang, groundAt, riverY, sprang, streetY, type P2 } from './plan';
 
 const H2 = LANE / 2, TAU = Math.PI * 2;
 
@@ -100,105 +110,104 @@ function inSpace(pts: P2[], y: (x: number, z: number) => number, ease = 0): P3[]
 /** How far to either side of a ring's arm its two lanes meet the ring, as an angle. */
 const gapOf = (r: number): number => Math.asin(H2 / r);
 
-/**
- * The lane of a road that goes there and back between two rings: out along
- * the right of its middle, round the far ring the way the clock does not
- * turn, back along the other side, and round the near ring.
- */
-function thereAndBack(mid: P2[], near: Turn, far: Turn, r: number): P2[] {
-  const n = mid.length;
-  const a1 = angleOf(near.c, mid[1]), g1 = gapOf(near.r), a2 = angleOf(far.c, mid[n - 2]), g2 = gapOf(far.r);
-  const out = laneBeside(mid, r), back = laneBeside([...mid].reverse(), r);
-  // each lane meets its ring at the ring, not at its middle
-  out[0] = onCircle(near.c, near.r, a1 + g1);
-  out[out.length - 1] = onCircle(far.c, far.r, a2 - g2);
-  back[0] = onCircle(far.c, far.r, a2 + g2);
-  back[back.length - 1] = onCircle(near.c, near.r, a1 - g1);
-  return relaxed([
-    ...out,
-    ...arc(far.c, far.r, a2 - g2, a2 + g2 - TAU).slice(1, -1),
-    ...back,
-    ...arc(near.c, near.r, a1 - g1, a1 + g1 - TAU).slice(1, -1),
-  ]);
-}
-
 // ---------------------------------------------------------------------------
-// The circuit of the river, and the Trigate
+// The streets' corners
 // ---------------------------------------------------------------------------
 
-const T = TRIGATE;
+const T = TRIGATE, K = KANE_ST;
 const A_UPTOWN = angleOf(T.c, T.uptown), A_BRISTOL = angleOf(T.c, T.bristol), A_ARKHAM = angleOf(T.c, T.arkham.c);
 const GAP = gapOf(T.r);
 
-/** The circuit's middle, from the Trigate's ring out along its Uptown arm, round by the Kane Bridge, and back to the ring along its Bristol arm. */
-const CIRCUIT_CORNERS: P2[] = [
-  onCircle(T.c, T.r, A_UPTOWN), T.uptown, [CIRCUIT.bridge, CIRCUIT.riverStreet], [CIRCUIT.bridge, CIRCUIT.riverRoad], T.bristol, onCircle(T.c, T.r, A_BRISTOL),
-];
-const CIRCUIT_RADII = [0, 12, 8, 8, 12, 0];
+/** The four corners of the Sprang's ring: its bridges' heads, west and east. */
+const QW_N = RING[0], QW_S = RING[1], QE_S = RING[2], QE_N = RING[3];
+/** Where Kane Street meets River Street, the river road, and Harbour Road, and the bridge's east end. */
+const AT_RIVER_ST: P2 = [K.x, CIRCUIT.riverStreet], AT_RIVER_RD: P2 = [K.x, CIRCUIT.riverRoad], AT_HARBOUR: P2 = [K.x, HARBOUR_RD.z];
+/** Bank Street's two ends, and the bastion's two corners. */
+const BANK_S = ROADS.avenue[0], BANK_N = ROADS.avenue[1], BASTION_S = ROADS.avenue[2], BASTION_N = ROADS.avenue[3];
 
-function circuitLanes(): { outer: P2[]; inner: P2[] } {
-  // The outer round: out of the ring by the Uptown arm, east along River Street, north over the bridge, west along
-  // the river road, into the ring by the Bristol arm, round it to the island's arm, out to the ring before Arkham's
-  // gate and back, and on round the ring to the Uptown arm again.
-  const east = laneBeside(CIRCUIT_CORNERS, CIRCUIT_RADII);
-  east[0] = onCircle(T.c, T.r, A_UPTOWN + GAP);
-  east[east.length - 1] = onCircle(T.c, T.r, A_BRISTOL - GAP);
-  const G = T.arkham, back = angleOf(G.c, T.c), g = gapOf(G.r);
-  // the angles of the three arms, each brought below the one before it, the way the ring is driven
-  const arkham = A_ARKHAM > A_BRISTOL ? A_ARKHAM - TAU : A_ARKHAM, uptown = A_UPTOWN + GAP - TAU;
-  const outer = relaxed([
-    ...east,
-    ...arc(T.c, T.r, A_BRISTOL - GAP, arkham + GAP).slice(1),
-    ...arc(G.c, G.r, back - g, back + g - TAU),
-    ...arc(T.c, T.r, arkham - GAP, uptown).slice(0, -1),
-  ]);
-  // The inner round: into the ring by the Uptown arm, a few units round it, out by the Bristol arm, east along the
-  // river road, south over the bridge, and west along River Street.
-  const west = laneBeside([...CIRCUIT_CORNERS].reverse(), [...CIRCUIT_RADII].reverse());
-  west[0] = onCircle(T.c, T.r, A_BRISTOL + GAP);
-  west[west.length - 1] = onCircle(T.c, T.r, A_UPTOWN - GAP);
-  const inner = relaxed([...west, ...arc(T.c, T.r, A_UPTOWN - GAP, A_BRISTOL + GAP).slice(1, -1)]);
-  return { outer, inner };
+/**
+ * How high the long street is at a place: the circuit of the river north of
+ * the terrace, the Sprang's ring on its quays, Grand Avenue's ramp and the
+ * rim in the west, and Kane Street's ramp, the viaduct and the bridge in the
+ * east.
+ */
+function longY(x: number, z: number): number {
+  if (z < -49) return riverY(x, z);
+  const s = bySprang(x, z);
+  if (Math.abs(s.d) < SPRANG.road + 4 && s.t > SPRANG.north - 9 && s.t < SPRANG.south + 14) return Y.quay;
+  if (x < -20) return z > 40 && z < 76 ? avenueY(x, z) : Y.quay;
+  return streetY(x, z);
 }
 
 // ---------------------------------------------------------------------------
 // The lanes of every route
 // ---------------------------------------------------------------------------
 
-const level = (y: number) => (): number => y;
-
-/** Where the Trigate's Uptown arm comes ashore on the bluff, as a distance from the ring's middle. */
-const ASHORE = Math.hypot(-10.9 - T.c[0], -50 - T.c[1]);
-
 /**
- * How high the circuit is at a place: on the bluff along River Street, on the
- * shelf along the river road and round the Trigate, and sloping between the
- * two over the Kane Bridge and along the Trigate's Uptown arm.
+ * The long route. Out of the Trigate's ring by its Uptown arm, east along
+ * River Street, down Kane Street's ramp, west along Harbour Road, up the east
+ * quay, over the north bascule bridge, down the west quay, over the south
+ * one, east along Harbour Road again, over the viaduct and the Cobblepot
+ * Bridge, west along South Street, up Bank Street and Grand Avenue to the rim
+ * and back, on along South Street to its ring and back, over the bridge
+ * again, straight up Kane Street and over the Kane Bridge, west along the
+ * river road, round the Trigate and out to Arkham's gate and back.
  */
-function circuitY(x: number, z: number): number {
-  if (inside(BLUFF, x, z) || (z > -50.5 && x > -12)) return Y.bluff;
-  if (Math.abs(x - KANE.x) < 12 && z > KANE.z0 && z < KANE.z1) return KANE.north + ((KANE.south - KANE.north) * (z - KANE.z0)) / (KANE.z1 - KANE.z0);
-  // the Uptown arm: it leaves the ring towards the south-east
-  const d = Math.hypot(x - T.c[0], z - T.c[1]);
-  if (x > T.c[0] && z > T.c[1] - 2 && d > T.r + 1 && d < ASHORE + 2) return Y.shelf + (Y.bluff - Y.shelf) * Math.min(1, Math.max(0, (d - T.r - 1) / (ASHORE - T.r - 1)));
-  return Y.shelf;
+function longLane(): P2[] {
+  const rim = TURNS.rim, south = TURNS.south;
+  // out: to the rim's ring
+  const outMid: P2[] = [onCircle(T.c, T.r, A_UPTOWN), T.uptown, AT_RIVER_ST, AT_HARBOUR, HARBOUR_RD.bend, QE_S, QE_N, QW_N, QW_S, QE_S, HARBOUR_RD.bend, AT_HARBOUR, BRIDGE.east, BRIDGE.west, BRIDGE.foot, BANK_S, BANK_N, BASTION_S, BASTION_N, rim.c];
+  const outR = [0, 12, 6, 6, 12, 0, 7, 7, 7, 7, 12, 6, 10, 0, 12, 6, 6, 6, 6, 0];
+  const out = laneBeside(outMid, outR);
+  const aRim = angleOf(rim.c, BASTION_N), gRim = gapOf(rim.r);
+  out[0] = onCircle(T.c, T.r, A_UPTOWN + GAP);
+  out[out.length - 1] = onCircle(rim.c, rim.r, aRim - gRim);
+  // back from the rim, down Bank Street, and west along South Street to its ring
+  const midMid: P2[] = [rim.c, BASTION_N, BASTION_S, BANK_N, BANK_S, south.c];
+  const mid = laneBeside(midMid, [0, 6, 6, 6, 6, 0]);
+  const aSouth = angleOf(south.c, BANK_S), gSouth = gapOf(south.r);
+  mid[0] = onCircle(rim.c, rim.r, aRim + gRim);
+  mid[mid.length - 1] = onCircle(south.c, south.r, aSouth - gSouth);
+  // home: east along South Street, over the bridge, straight up Kane Street, over the Kane Bridge, and west along the river road
+  const homeMid: P2[] = [south.c, BRIDGE.foot, BRIDGE.west, BRIDGE.east, AT_RIVER_RD, T.bristol, onCircle(T.c, T.r, A_BRISTOL)];
+  const home = laneBeside(homeMid, [0, 12, 0, 10, 8, 12, 0]);
+  home[0] = onCircle(south.c, south.r, aSouth + gSouth);
+  home[home.length - 1] = onCircle(T.c, T.r, A_BRISTOL - GAP);
+  // round the Trigate to the island's arm, out to the ring before Arkham's gate and back, and on round to the Uptown arm
+  const G = T.arkham, back = angleOf(G.c, T.c), g = gapOf(G.r);
+  const arkham = A_ARKHAM > A_BRISTOL ? A_ARKHAM - TAU : A_ARKHAM, uptown = A_UPTOWN + GAP - TAU;
+  return relaxed([
+    ...out,
+    ...arc(rim.c, rim.r, aRim - gRim, aRim + gRim - TAU).slice(1, -1),
+    ...mid,
+    ...arc(south.c, south.r, aSouth - gSouth, aSouth + gSouth - TAU).slice(1, -1),
+    ...home,
+    ...arc(T.c, T.r, A_BRISTOL - GAP, arkham + GAP).slice(1),
+    ...arc(G.c, G.r, back - g, back + g - TAU),
+    ...arc(T.c, T.r, arkham - GAP, uptown).slice(0, -1),
+  ]);
+}
+
+/** The circuit of the river's middle between the Trigate's two arms, as the inner round drives it: the river road, the Kane Bridge, River Street. */
+const CANAL_CORNERS: P2[] = [onCircle(T.c, T.r, A_BRISTOL), T.bristol, AT_RIVER_RD, AT_RIVER_ST, T.uptown, onCircle(T.c, T.r, A_UPTOWN)];
+
+/** The inner round of the canal: out of the Trigate by its Bristol arm, east along the river road, south over the Kane Bridge, west along River Street, and a few units round the ring. */
+function canalLane(): P2[] {
+  const lane = laneBeside(CANAL_CORNERS, [0, 12, 8, 6, 12, 0]);
+  lane[0] = onCircle(T.c, T.r, A_BRISTOL + GAP);
+  lane[lane.length - 1] = onCircle(T.c, T.r, A_UPTOWN - GAP);
+  return relaxed([...lane, ...arc(T.c, T.r, A_UPTOWN - GAP, A_BRISTOL + GAP).slice(1, -1)]);
 }
 
 /** The Sprang's ring, as its middle: rounded at its four corners. */
 const RING_MIDDLE: P2[] = fine(rounded(RING, 7, true), 1.2);
 
 function lanes(): Record<string, P3[]> {
-  const { outer, inner } = circuitLanes();
-  // walked the way `RING` is given, the river is on the left: so the lane on its right is the outer one, by the buildings
-  const ringOut = beside(RING_MIDDLE, H2, true), ringIn = beside([...RING_MIDDLE].reverse(), H2, true);
   return {
-    circuitOuter: inSpace(outer, circuitY, 3),
-    circuitInner: inSpace(inner, circuitY, 3),
-    ringOuter: inSpace(ringOut, level(Y.quay)),
-    ringInner: inSpace(ringIn, level(Y.quay)),
-    bayshore: inSpace(thereAndBack(ROADS.bayshore, TURNS.battery, TURNS.market, 9), level(Y.quay)),
-    avenue: inSpace(thereAndBack(ROADS.avenue, TURNS.avenueFoot, TURNS.rim, 6), avenueY, 3),
-    harbour: inSpace(thereAndBack(ROADS.harbour, TURNS.harbourWest, TURNS.harbourEast, 6), level(Y.quay)),
+    long: inSpace(longLane(), longY, 3),
+    canal: inSpace(canalLane(), riverY, 3),
+    // walked the way `RING` is given, the river is on the left: the other way round, the lane on the right is the one by the water
+    pool: inSpace(beside([...RING_MIDDLE].reverse(), H2, true), () => Y.quay),
   };
 }
 
@@ -227,6 +236,14 @@ function ringOf(t: Turn, y: number): P3[] {
   return Array.from({ length: n }, (_, i): P3 => { const p = onCircle(t.c, t.r, (i / n) * TAU); return [p[0], y, p[1]]; });
 }
 
+/** The road from Harbour Road over the viaduct and the Cobblepot Bridge down to South Street, as its middle in space. */
+function bridgeRoad(): P3[] {
+  return middle(BRIDGE_ROAD, [0, 10, 0, 0], streetY, false, 3);
+}
+
+/** How far along that road its ramp into Lower Gotham comes down to the ground. */
+const BRIDGE_LANDS = (K.quay - K.viaduct) + Math.hypot(BRIDGE.west[0] - BRIDGE.east[0], BRIDGE.west[1] - BRIDGE.east[1]) + BRIDGE.ramp;
+
 export function buildRoads(k: Build): Route[] {
   const lay = (id: string, line: P3[], closed: boolean, o: Parameters<typeof street>[2]): Path => {
     const path = pathOf(line, closed);
@@ -235,47 +252,108 @@ export function buildRoads(k: Build): Route[] {
     return path;
   };
   const turn = (id: string, t: Turn, y: number): void => void lay(`ring-${id}`, ringOf(t, y), true, { lanes: 0, width: LANE + 1.2, sidewalk: 0, zebras: false });
+  const level = (y: number) => (): number => y;
 
-  // the circuit of the river: one road from the Trigate's ring round to the ring again, the ring, and the island's arm
-  const circuit = lay('circuit', middle(CIRCUIT_CORNERS, CIRCUIT_RADII, circuitY, false, 3), false, { lanes: 2, sidewalk: 0, zebras: false });
+  // River Street, from the Trigate's ring along its Uptown arm to Kane Street, which it meets a hair past the middle
+  const river = lay('river', middle([onCircle(T.c, T.r, A_UPTOWN), T.uptown, [K.x + 0.4, CIRCUIT.riverStreet]], [0, 12, 0], riverY, false, 3), false, { lanes: 2, sidewalk: 0, zebras: false });
+  // the Kane Bridge and the river road: from River Street's terrace north over the bridge, and west along the shelf to the ring
+  const circuit = lay('circuit', middle([[K.x, K.rampTop], AT_RIVER_RD, T.bristol, onCircle(T.c, T.r, A_BRISTOL)], [0, 8, 12, 0], riverY, false, 3), false, { lanes: 2, sidewalk: 0, zebras: false });
   turn('trigate', { c: T.c, r: T.r }, Y.shelf);
   const toGate = unit(T.c, T.arkham.c);
   lay('arkham-arm', middle([onCircle(T.c, T.r, A_ARKHAM), [T.arkham.c[0] - toGate[0] * T.arkham.r, T.arkham.c[1] - toGate[1] * T.arkham.r]], 0, level(Y.shelf)), false, { lanes: 2, sidewalk: 0, zebras: false });
   turn('arkham', T.arkham, Y.shelf);
-  // River Street's sidewalks on the bluff, and the river walk on the shelf under Crest Hill
+  // River Street's sidewalks on the terrace, and the river walk on the shelf under Crest Hill
   const walk = (x0: number, z0: number, x1: number, z1: number, y: number): void => flat(k.street, rect(x0, z0, x1, z1), y + 0.015, SIDEWALK, { win: { cell: 1.5, storey: 3, lit: 0.5, kind: 1 } });
-  walk(8, CIRCUIT.riverStreet - 8, CIRCUIT.bridge - 9, CIRCUIT.riverStreet - 5, Y.bluff);
-  walk(8, CIRCUIT.riverStreet + 5, CIRCUIT.bridge - 9, CIRCUIT.riverStreet + 8, Y.bluff);
-  walk(-10, CIRCUIT.riverRoad + 5, CIRCUIT.bridge - 9, CIRCUIT.riverRoad + 7.6, Y.shelf);
+  walk(8, CIRCUIT.riverStreet - 8, K.x - 9, CIRCUIT.riverStreet - 5, Y.bluff);
+  walk(8, CIRCUIT.riverStreet + 5, K.x - 8, CIRCUIT.riverStreet + 8, Y.bluff);
+  walk(-10, CIRCUIT.riverRoad + 5, K.x - 9, CIRCUIT.riverRoad + 7.6, Y.shelf);
   // the service lane under the cliff, which is the show's own: old setts, and no markings
   const S = SHOW_LANES.service;
   lay('service', [[S.x0, S.y, S.z], [S.x1, S.y, S.z]], false, { lanes: 0, width: LANE, sidewalk: 0, color: SETTS, zebras: false });
 
+  // Kane Street, from the viaduct's foot north past Harbour Road and up its ramp to the terrace
+  const kane = lay('kane', middle([[K.x, K.viaduct], [K.x, K.rampTop]], 0, streetY, false, 3), false, { lanes: 2, sidewalk: 3 });
+  // Harbour Road, from Kane Street west to the quay's road, which it runs on into at the bridge's head
+  const harbour = lay('harbour', middle([[K.x + 0.4, HARBOUR_RD.z], HARBOUR_RD.bend, QE_S], [0, 12, 0], level(Y.quay)), false, { lanes: 2, sidewalk: 3 });
   // the Sprang's ring
   const ring = lay('ring', RING_MIDDLE.map((p): P3 => [p[0], Y.quay, p[1]]), true, { lanes: 2, sidewalk: 2, zebras: false });
 
-  // the roads that go there and back, and their rings
-  const bayshore = lay('bayshore', middle(ROADS.bayshore, 9, level(Y.quay)), false, { lanes: 2, sidewalk: 2 });
-  const avenue = lay('avenue', middle(ROADS.avenue, 6, avenueY, false, 3), false, { lanes: 2, sidewalk: 3 });
-  const harbour = lay('harbour', middle(ROADS.harbour, 6, level(Y.quay)), false, { lanes: 2, sidewalk: 3 });
-  for (const [id, t] of Object.entries(TURNS)) turn(id, t, id === 'rim' ? Y.upper : Y.quay);
+  // the viaduct, the Cobblepot Bridge and Bridge Street's ramp: a deck, with what carries it. Its towers and cables are the bridge's builder's.
+  const over = stretch(bridgeRoad(), 0, BRIDGE_LANDS + 0.2), overPath = pathOf(over, false);
+  MIDDLES.bridge = overPath;
+  roadDeck(k, overPath, LANE + 0.6, { thick: 0.9, wall: 0.8, lanes: 2, skirt: 2.4, step: 1.5 });
+
+  // South Street, from where the ramp lands west to its ring; Bank Street and Grand Avenue, north from it and up the ramp to the rim
+  const landed = over[over.length - 1];
+  const south = lay('south', middle([[landed[0], landed[2]], BRIDGE.foot, [SOUTH_ST.west, SOUTH_ST.z]], [0, 12, 0], level(Y.quay)), false, { lanes: 2, sidewalk: 2.4 });
+  const avenue = lay('avenue', middle(ROADS.avenue, 6, (x, z) => (z > 76 ? Y.quay : avenueY(x, z)), false, 3), false, { lanes: 2, sidewalk: 3 });
+  turn('rim', TURNS.rim, Y.upper);
+  turn('south', TURNS.south, Y.quay);
+
+  buildEl(k);
 
   // lamps, once every street is laid
+  lampsAlong(k, river, LANE + 1.2, 24);
   lampsAlong(k, circuit, LANE + 1.2, 24);
+  lampsAlong(k, kane, LANE + 1.2, 20);
+  lampsAlong(k, harbour, LANE + 1.2, 20);
   lampsAlong(k, ring, LANE + 1.2, 20);
-  lampsAlong(k, bayshore, LANE + 1.2, 22);
+  lampsAlong(k, south, LANE + 1.2, 20);
   lampsAlong(k, avenue, LANE + 1.2, 20);
-  lampsAlong(k, harbour, LANE + 1.2, 22);
 
   return routesOf();
 }
 
-/** Where the Sprang's two bascule bridges cross, each from quay to quay, and the Kane Bridge: for whoever builds them, and for the blockout. */
+/** Where the Sprang's two bascule bridges cross, each from quay to quay, the Kane Bridge, and the Cobblepot Bridge: for whoever builds them, and for the blockout. */
 export const SPANS: Record<string, { a: P2; b: P2; y: number; half: number }> = {
   'bascule-north': { a: sprang(SPRANG.north, -SPRANG.half), b: sprang(SPRANG.north, SPRANG.half), y: Y.quay, half: 7.2 },
   'bascule-south': { a: sprang(SPRANG.south, -SPRANG.half), b: sprang(SPRANG.south, SPRANG.half), y: Y.quay, half: 7.2 },
   kane: { a: [KANE.x, KANE.z0], b: [KANE.x, KANE.z1], y: KANE.north, half: 6.2 },
+  cobblepot: { a: BRIDGE.east, b: BRIDGE.west, y: BRIDGE.y, half: BRIDGE.half },
 };
+
+// ---------------------------------------------------------------------------
+// The elevated railway
+// ---------------------------------------------------------------------------
+
+/** How far a place is from the middle of the nearest lane on the ground. */
+function toLane(x: number, z: number): number {
+  let d = Infinity;
+  for (const line of Object.values(LANES)) for (const p of line) if (p[1] < 3) d = Math.min(d, Math.hypot(p[0] - x, p[2] - z));
+  return d;
+}
+
+/** The line's two ends on the ground, for whoever builds under it. */
+export const EL_ENDS: [P2, P2] = [sprang(EL.from, EL.off), sprang(EL.to, EL.off)];
+
+function buildEl(k: Build): void {
+  const [a, b] = EL_ENDS, length = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.ceil(length / 0.5);
+  const pts = Array.from({ length: n + 1 }, (_, i) => new THREE.Vector3(a[0] + ((b[0] - a[0]) * i) / n, EL.y, a[1] + ((b[1] - a[1]) * i) / n));
+  const line = new Path(pts, false);
+  MIDDLES.el = line;
+  // a column stands on the line between the quay road's two lanes, and nowhere that anything drives or floats
+  const bent = (x: number, z: number): Bent => (groundAt(x, z) < 0 || toLane(x, z) < 2.1 ? null : 'T');
+  trestle(k, line, { every: 8, bent, color: 0x3d4247 });
+  track(k, line);
+  // a buffer at each end, with a red lamp on it
+  const along = unit(a, b);
+  for (const [p, way] of [[a, -1], [b, 1]] as const) {
+    const x = p[0] + along[0] * way * 0.6, z = p[1] + along[1] * way * 0.6;
+    k.b.obox(x, EL.y + 0.3, z, 0.3, 1, 1.5, Math.atan2(along[1], along[0]), 0x5b4a42);
+    k.glows.push({ x, y: EL.y + 1.5, z, sx: 0.3, sy: 0.3, sz: 0.3, color: '#ff4a3a' });
+  }
+  // a station at each end, on the side of the buildings, and a train of two cars that goes there and back
+  const STAND = 8.45;
+  station(k, line, STAND, { length: 17, side: -1, roof: 0x2f4a44 });
+  // the one over the docks stands on the harbour's side, clear of Harbour Road
+  station(k, line, length - STAND, { length: 17, side: 1, roof: 0x2f4a44 });
+  const run = joined([pts, [...pts].reverse()], true);
+  train(k, run.path, { cars: 2, speed: 11, from: STAND + 4.05, ends: [0, length], stops: [length - STAND, run.path.length - STAND], body: 0x566068, stripe: 0x8a2f2a, dwell: 6 });
+}
+
+// ---------------------------------------------------------------------------
+// Who drives
+// ---------------------------------------------------------------------------
 
 /**
  * Who drives the roads. Plain traffic for now, in Gotham's dark paint; the
@@ -285,9 +363,5 @@ function routesOf(): Route[] {
   const paint = [0x1f2126, 0x2c3340, 0x3d2a2a, 0x4a4d55, 0x70757f, 0x8c8473, 0x26352f, 0xd9b23a];
   // a route with kinds of its own is not repainted: a route's paint would repaint its cabs and cruisers too
   const route = (id: string, speed: number, count: number): Route => ({ id, segs: segsOf(LANES[id], true), speed, count, ...(MIX[id]?.length ? { types: MIX[id] } : { paint }) });
-  return [
-    route('circuitOuter', 11, 6), route('circuitInner', 11, 5),
-    route('ringOuter', 10, 5), route('ringInner', 10, 5),
-    route('bayshore', 10, 5), route('avenue', 9, 6), route('harbour', 9, 3),
-  ];
+  return [route('long', 11, 46), route('canal', 11, 6), route('pool', 10, 5)];
 }
