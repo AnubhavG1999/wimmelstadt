@@ -420,9 +420,12 @@ export function east(k: Build, W: World, book: Book): void {
     const WATER = Y.water;
     // north of the jetty, where the harbour is open: the casino lies close along its south side
     // off the quay's corner, 3 clear of the pier's piles (its south edge is z 46) with the oars out
-    const STOP = { x: FISH.x0 + 4.7, z: FISH.z0 + 3.0 };
+    // (and 5.1 off the stage's west side: at 4.7 an oar's tip swung into the quay's corner as he came in)
+    const STOP = { x: FISH.x0 + 5.1, z: FISH.z0 + 3.0 };
     const IN = curveOf([[STOP.x + 15, WATER, STOP.z + 1.2], [STOP.x + 7, WATER, STOP.z + 0.5], [STOP.x, WATER, STOP.z]]);
-    const OUT = curveOf([[STOP.x, WATER, STOP.z], [STOP.x + 6, WATER, STOP.z + 0.8], [STOP.x + 15, WATER, STOP.z + 1.8]]);
+    // he keeps north on his way out until he is past the fish jetty's landing stage, whose north edge is z 53.2:
+    // his south oar reaches 2.3 from his keel
+    const OUT = curveOf([[STOP.x, WATER, STOP.z], [STOP.x + 6, WATER, STOP.z + 0.1], [STOP.x + 15, WATER, STOP.z + 1.8]]);
     const R0 = 1, R1 = 9, R2 = 24, R3 = 33;
     const boat = (tb: number): { x: number; z: number; h: number; v: number; shown: boolean } => {
       if (tb < R1) { const s = IN.len * ease(span(tb, R0, R1)), q = IN.at(s); return { x: q.p[0], z: q.p[2], h: q.h, v: 2, shown: tb >= R0 }; }
