@@ -50,15 +50,23 @@ const CUT = (() => {
   return { x0: Math.min(...xs), x1: Math.max(...xs), z0: pts[0][1], z1: QUAY };
 })();
 /**
- * The drawbridge over the cut. The quay stands out over the cut's west abutment
- * in a lip as wide as the leaf, and the leaf is hinged at the lip's edge: so a
- * car stopped before the standing leaf has its front out from under Kane
- * Street's viaduct, whose parapet reaches to x 85.96 over the apron, 3.26 over
- * it, and whoever stands up in that car has his head clear of it. (Hinged at
- * the cut's own side, Batman's cowl stood in the parapet.)
+ * The drawbridge over the cut: two leaves that meet at its middle, the west one
+ * hinged at the edge of a lip of the quay and the east one at the far quay's
+ * edge. The lip stands out over the cut's west abutment, as wide as the leaves:
+ * so a car stopped before the standing west leaf has its front out from under
+ * Kane Street's viaduct, whose parapet reaches to x 85.96 over the apron, 3.26
+ * over it, and whoever stands up in that car has his head clear of it. (Hinged
+ * at the cut's own side, Batman's cowl stood in the parapet.)
+ *
+ * It was one leaf right across the cut at first. The far quay is six deep and
+ * the Jokermobile 8.45 long: it came to rest with its back wheels out over the
+ * cut, under the leaf it had leapt from, and its tail went through that leaf's
+ * far end on the way down. Now the west leaf is the ramp, short enough for the
+ * car's tail to be past its tip before it comes down, and the east leaf lies
+ * under its back wheels where it lands.
  */
 const LEAF_LIP = 0.6, LEAF_W = 5.2;
-export const DRAWBRIDGE = { hinge: CUT.x0 + LEAF_LIP, length: CUT.x1 - CUT.x0 - LEAF_LIP };
+export const DRAWBRIDGE = { hinge: CUT.x0 + LEAF_LIP, east: CUT.x1, length: (CUT.x1 - CUT.x0 - LEAF_LIP) / 2 };
 /** The west yard's quay, where the bank steps back north of the docks' quay: its edge, and its two ends. */
 const YARD_QUAY = (() => {
   const pts = LANDS.east.filter((p) => p[0] < KANE_ST.x && p[0] > 40 && p[1] > KANE_ST.viaduct && p[1] < QUAY);
@@ -729,7 +737,7 @@ function dockCut(k: Build): void {
   // the coping along the cut's two sides north of the apron, and the abutments under the leaf's two ends
   for (const [x0, x1] of [[C.x0 - 0.5, C.x0], [C.x1, C.x1 + 0.5]]) b.box(x0, 0, C.z0 + 0.05, x1, 0.12, A.z0 - 0.1, STONE_TRIM, { faces: 'NESWT' });
   for (const [x0, x1] of [[C.x0, C.x0 + 0.55], [C.x1 - 0.55, C.x1]]) b.box(x0, -1.6, A.z0 - 0.2, x1, -0.74, C.z1, STONE_LIGHT, { faces: 'NESWT' });
-  // the quay's lip on the west abutment, level with the quay and as wide as the leaf, which is hinged at its edge
+  // the quay's lip on the west abutment, level with the quay and as wide as the leaves: the west one is hinged at its edge
   b.box(C.x0, -0.74, APRON.z - LEAF_W / 2, DRAWBRIDGE.hinge, 0, APRON.z + LEAF_W / 2, 0x5d636b, { faces: 'NESWT', top: 0x3a3c41 });
   // the pedestals at the leaf's hinge and at its nose, the seaward ones on piers out of the water, with lamps for the boats
   for (const x of [C.x0, C.x1]) {
@@ -903,33 +911,49 @@ export function extras(k: Build): void {
 const LIFT = (70 * PI) / 180;
 
 /**
- * The dock cut's drawbridge: one bascule leaf as a mesh of its own, down at 0
- * and standing up at 1. The show calls it, once. It is hinged at the edge of
- * the quay's lip on the cut's west side (DRAWBRIDGE), across the cut along the
- * apron, its deck at 0.05 when down. Its hinge is the west edge of its deck's
- * top: turning there, no part of the deck comes back over the quay as it
- * stands up. (Hinged at its underside, the top's edge swung a fifth of a unit
- * back, into the nose of a car stopped before it.)
+ * The dock cut's drawbridge: two bascule leaves, each a mesh of its own, down
+ * at 0 and standing up at 1. The show calls it, once. The west leaf is hinged
+ * at the edge of the quay's lip and the east one at the far quay's edge
+ * (DRAWBRIDGE); they lie along the apron and meet at the cut's middle, their
+ * decks level with the quay when down, so that a wheel or a foot on the quay's
+ * level stands on them. Each turns about the outer edge of its deck's top:
+ * turning there, no part of a deck comes back over the quay as it stands up.
+ * (Hinged at its underside, the top's edge swung a fifth of a unit back, into
+ * the nose of a car stopped before it.)
  */
-export function buildDrawbridge(k: Build): { lift(f: number): void } {
-  const g = new GeoBuilder(), L = DRAWBRIDGE.length, W = LEAF_W, top = 0.25;
-  // built with the leaf along +x from the origin and its top 0.25 over it, and then let down by that much, so that
-  // the origin, its hinge, is the west edge of its top
-  g.box(0, 0, -W / 2, L, top, W / 2, 0x5d636b, { faces: 'NESWTB', top: 0x3a3c41 });
-  for (const s of [-1, 1]) {
-    g.box(0.1, -0.5, s * W / 2 - (s > 0 ? 0.3 : 0), L - 0.1, 0, s * W / 2 + (s < 0 ? 0.3 : 0), 0x4f555d, { faces: 'NESWB' });
-    g.box(0, top, s > 0 ? W / 2 - 0.18 : -W / 2, L, top + 0.22, s > 0 ? W / 2 : -W / 2 + 0.18, 0xc9a548, { faces: 'NESWT' });
-  }
-  for (let i = 0; i < 6; i++) g.quad([L - 0.9, top + 0.01, -W / 2 + 0.2 + (i * (W - 0.4)) / 6], [L - 0.15, top + 0.01, -W / 2 + 0.2 + (i * (W - 0.4)) / 6], [L - 0.15, top + 0.01, -W / 2 + 0.2 + ((i + 0.5) * (W - 0.4)) / 6], [L - 0.9, top + 0.01, -W / 2 + 0.2 + ((i + 0.5) * (W - 0.4)) / 6], [0, 1, 0], 0xd9b23a);
-  const geo = g.build();
-  geo.translate(0, -top, 0);
-  const mesh = new THREE.Mesh(geo, k.mat.city());
-  mesh.name = 'docks-drawbridge';
-  mesh.castShadow = false;
-  mesh.receiveShadow = true;
-  mesh.position.set(DRAWBRIDGE.hinge, 0.05, APRON.z);
-  k.group.add(mesh);
-  return { lift(f: number): void { mesh.rotation.z = Math.min(1, Math.max(0, f)) * LIFT; } };
+export function buildDrawbridge(k: Build): { lift(west: number, east?: number): void } {
+  const L = DRAWBRIDGE.length, W = LEAF_W, top = 0.25;
+  const leaf = (name: string, x: number, turned: boolean): THREE.Mesh => {
+    // built along +x from the origin with its top 0.25 over it, and then let down by that much, so that the origin,
+    // its hinge, is the outer edge of its top; the east leaf is the same one turned about
+    const g = new GeoBuilder();
+    g.box(0, 0, -W / 2, L, top, W / 2, 0x5d636b, { faces: 'NESWTB', top: 0x3a3c41 });
+    for (const s of [-1, 1]) {
+      // (its girders are 0.48 deep: 0.01 over the abutment's top, where the leaf's hinge end lies on it)
+      g.box(0.1, -0.48, s * W / 2 - (s > 0 ? 0.3 : 0), L - 0.1, 0, s * W / 2 + (s < 0 ? 0.3 : 0), 0x4f555d, { faces: 'NESWB' });
+      g.box(0, top, s > 0 ? W / 2 - 0.18 : -W / 2, L, top + 0.22, s > 0 ? W / 2 : -W / 2 + 0.18, 0xc9a548, { faces: 'NESWT' });
+    }
+    for (let i = 0; i < 6; i++) g.quad([L - 0.9, top + 0.01, -W / 2 + 0.2 + (i * (W - 0.4)) / 6], [L - 0.15, top + 0.01, -W / 2 + 0.2 + (i * (W - 0.4)) / 6], [L - 0.15, top + 0.01, -W / 2 + 0.2 + ((i + 0.5) * (W - 0.4)) / 6], [L - 0.9, top + 0.01, -W / 2 + 0.2 + ((i + 0.5) * (W - 0.4)) / 6], [0, 1, 0], 0xd9b23a);
+    const geo = g.build();
+    geo.translate(0, -top, 0);
+    const mesh = new THREE.Mesh(geo, k.mat.city());
+    mesh.name = name;
+    mesh.castShadow = false;
+    mesh.receiveShadow = true;
+    mesh.position.set(x, 0, APRON.z);
+    if (turned) mesh.rotation.y = PI;
+    // what it is made of, as boxes in its own frame, for the machines' check: a mesh that moves is not in `Solid`
+    mesh.userData.boxes = [
+      [0, -top, -W / 2, L, 0, W / 2],
+      [0.1, -top - 0.48, W / 2 - 0.3, L - 0.1, -top, W / 2], [0.1, -top - 0.48, -W / 2, L - 0.1, -top, -W / 2 + 0.3],
+      [0, 0, W / 2 - 0.18, L, 0.22, W / 2], [0, 0, -W / 2, L, 0.22, -W / 2 + 0.18],
+    ];
+    k.group.add(mesh);
+    return mesh;
+  };
+  const west = leaf('docks-drawbridge', DRAWBRIDGE.hinge, false), east = leaf('docks-drawbridge-east', DRAWBRIDGE.east, true);
+  const turn = (f: number): number => Math.min(1, Math.max(0, f)) * LIFT;
+  return { lift(w: number, e = 0): void { west.rotation.z = turn(w); east.rotation.z = turn(e); } };
 }
 
 /**
