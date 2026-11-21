@@ -59,6 +59,9 @@ const WAYS: Record<CastId, Way> = {
   superman: 'fly', wonderWoman: 'fly', flash: 'dash', greenLantern: 'fly', aquaman: 'foot', martianManhunter: 'fly',
 };
 
+/** Stories that are left out for now, by id. */
+const PAUSED: string[] = ['batcave', 'batwing', 'batwingDamian', 'batwingNightwing', 'batwingBatman'];
+
 export function buildStories(k: Build, W: World): Stories {
   const roster: Member[] = (Object.keys(WAYS) as CastId[]).map((id) => ({ id, look: LOOKS[id], way: WAYS[id], post: null }));
   const book: Book = {
@@ -77,5 +80,8 @@ export function buildStories(k: Build, W: World): Stories {
       console.error(`Gotham: the stories of ${name} failed.`, e);
     }
   }
-  return { roster, stories: book.stories, opening: book.opening, always: (dt, clock) => { for (const f of book.always) f(dt, clock); } };
+  // While Wayne Manor is rebuilt and the Batcave hidden, the stories that were written for the open cave are left out:
+  // they are laid again on the new house, and this list is emptied then.
+  const stories = book.stories.filter((s) => !PAUSED.includes(s.id));
+  return { roster, stories, opening: book.opening.filter((id) => !PAUSED.includes(id)), always: (dt, clock) => { for (const f of book.always) f(dt, clock); } };
 }

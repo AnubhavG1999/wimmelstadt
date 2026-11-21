@@ -233,10 +233,13 @@ export function buildShow(k: Build): Show {
   });
 
   if (import.meta.env.DEV) {
-    const report = tried('the check of the show', () => checkShow(defs, W, actors)) ?? [];
+    // `?gotham=unchecked` leaves the check out at load: it plays every story through, which takes a while, and
+    // `gothamShow.check(id)` then asks it of one story at a time
+    const unchecked = new URLSearchParams(location.search).get('gotham') === 'unchecked';
+    const report = unchecked ? [] : tried('the check of the show', () => checkShow(defs, W, actors)) ?? [];
     console.info(`Gotham: ${defs.length} stories: ${defs.map((d) => `${d.id} ${d.body} s`).join(', ')}. ${actors.size} of the cast.`);
     if (report.length) console.warn(`Gotham: the show's check:\n  ${report.join('\n  ')}`);
-    else console.info("Gotham: the show's check: no figure stands in anything built, in the air or under the ground, none passes through another, and every way to a stage and home clears what is built.");
+    else if (!unchecked) console.info("Gotham: the show's check: no figure stands in anything built, in the air or under the ground, none passes through another, and every way to a stage and home clears what is built.");
     (window as unknown as { gothamShow: object }).gothamShow = {
       air, cast, machines, beasts, solid,
       play: (id: string) => { const d = defs.find((x) => x.id === id); if (d && free(d)) start(d); return d ? d.name : 'no such story'; },
@@ -252,7 +255,8 @@ export function buildShow(k: Build): Show {
       /** Where one of the cast is now. */
       where: (id: string) => { const a = actors.get(id); return a ? { x: +a.now.x.toFixed(2), y: +a.now.y.toFixed(2), z: +a.now.z.toFixed(2), shown: a.now.shown, busy: a.busy } : null; },
       who: () => [...actors.keys()],
-      check: () => checkShow(defs, W, actors),
+      /** The show's check, of every story or of one. */
+      check: (id?: string) => checkShow(id ? defs.filter((d) => d.id === id) : defs, W, actors),
     };
   }
   return { air, cast, machines, beasts };
