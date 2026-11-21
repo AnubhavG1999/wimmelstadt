@@ -12,6 +12,7 @@ import type { V3 } from '../../engine/geo';
 import type { Build, TileParts } from '../../engine/tile';
 import { aim, close, fourViews, frames, look, sheet } from './debug';
 import { buildLand, landAt } from './land';
+import { buildLife } from './life';
 import { BOARDS, STONE, STONE_DARK, STONE_LIGHT, boardOf, nameBoard } from './look';
 import type { Model } from './models';
 import { HERO_SPOTS, LOTS, groundAt, lotOf, type Lot } from './plan';
@@ -136,6 +137,9 @@ export function buildGotham(k: Build): TileParts {
     k.sign('screen', cx, t.top + 5.3, cz, 0.669, 0.743, 6, 10.6);
   }
 
+  // the life of the open paving, last of all, once everything else stands: it finds its ground from what is built
+  const parked = counted('the life of its paving', () => buildLife(k));
+
   if (import.meta.env.DEV) {
     const all = [...cost.values()].reduce((s, n) => s + n, 0);
     console.info(`Gotham: ${all} triangles stand still. ${[...cost].sort((a, b) => b[1] - a[1]).map(([what, n]) => `${what} ${n}`).join(', ')}.`);
@@ -152,7 +156,7 @@ export function buildGotham(k: Build): TileParts {
 
   return {
     routes,
-    parked: [],
+    parked,
     heroSpots: HERO_SPOTS.map((s) => ({ id: s.id, x: s.x, y: s.y, z: s.z, heading: s.heading, ...(s.turn ? { turn: s.turn } : {}) })),
     kinds: KINDS,
   };
