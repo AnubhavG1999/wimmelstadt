@@ -374,7 +374,10 @@ export function east(k: Build, W: World, book: Book): void {
     // brakes in the last second before the leaf, chutes out and air brakes up; it stands, its lid lifts and Batman
     // looks after the Joker; and it backs away into the tunnel behind a screen of smoke.
     const B0 = 2.6, B1 = 6.4, BRAKE = 1.0, BACK0 = 17.5, BACK1 = 23.5, INX = TUNNEL.x - 6;
-    const BM_HALF = (bm?.length ?? 5.4) / 2, STOPX = HINGE - BM_HALF - 0.6;
+    // It stops with its nose 0.3 short of the hinge, as far east as it can: the road's viaduct hides the apron west of
+    // x 84 from the opening view, so only its front two thirds are seen there, with Batman standing up in it. Its
+    // chutes and air brakes are behind it under the viaduct, and are found by turning the view.
+    const BM_HALF = (bm?.length ?? 5.4) / 2, STOPX = HINGE - BM_HALF - 0.3;
     const BV = (STOPX - INX) / (B1 - B0 - BRAKE / 2);
     const batCar = (tb: number): { x: number; v: number; shown: boolean } => {
       let x = INX, v = 0;

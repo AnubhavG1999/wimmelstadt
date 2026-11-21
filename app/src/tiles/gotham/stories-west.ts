@@ -492,13 +492,10 @@ export function west(k: Build, W: World, book: Book): void {
   // east under the cliff into the old tunnel's mouth. The fall closes, and Alfred raises his arm and lowers it.
   //
   // The car comes through the fall at a creep with its lamps on, its tail through the rolled-up door at the grotto's
-  // back, sweeps round onto the service lane and stands still for a beat; then it launches east with both jets
-  // burning, from standing to fast at a constant push, and is gone into the old tunnel at speed. The grotto is only 6
-  // deep and its mouth 6.6 wide between the rock, so the car (8.0 long, 3.4 across) turns while its tail is still in
-  // the mouth; the way was found by a search of smooth sweeps against the mouth's rock, the walls and the door, and its
-  // body stays north of z -80.0, the lane's outer edge: a search of every pose of such a body with 0.1 to spare says
-  // that -80.0 is about the best there is. It runs into the old tunnel on a line that clears the house's cliff piers and the
-  // portal's jambs, and is gone when its nose would come out of the spur's far side.
+  // back, sweeps round onto the service lane and stands still for a beat while it shows its party trick; then it
+  // launches east with both jets burning, from standing to fast at a constant push, straight into the old tunnel, and
+  // is gone when its nose would come out of the spur's far side. Batman and Robin are not seen in it: its canopy is
+  // dark glass.
   {
     const car = machine('batmobile');
     const terraceY = ALFRED.y;
@@ -533,44 +530,49 @@ export function west(k: Build, W: World, book: Book): void {
     const RM = spot(BATMOBILE.x - 14, -86.2, E, terraceY + 1), robRun = walkLeg(RM, BL, RUN);
     const T_BAT = 1.0, T_ROB = 0.2 + robRun.dur + 0.1, XB = BATMOBILE.x - 0.6, XR = BATMOBILE.x + 0.6;
 
-    // ---- the car's way. The car's size, from the machine (8.0 by 3.4 as the collector's new car is drawn); the way
-    // itself was searched for a body of 8.0 by 3.4 with 0.1 to spare all round, and the console says so if the machine
-    // is bigger than that.
-    const FIT = { length: 8.0, width: 3.4 };
+    // ---- the car's way, fitted to the car as built: 5.4 long and 3.84 across, its widest part the wing at its tail
+    // (OUTLINE, x forward from its middle and the half-width there), with 0.1 to spare all round. Its length and width
+    // come from the machine; the console says so if the machine is bigger than the car the way was fitted for.
+    const OUTLINE: [number, number][] = [[2.45, 0.2], [2.05, 0.66], [1.6, 1.06], [1.12, 1.66], [0.78, 1.66], [-0.05, 0.78], [-1.25, 0.78], [-1.62, 1.92], [-2.685, 1.92]];
+    /** Its half-width at x along it: the outline, or its front tyres' outer faces where they stand out further. */
+    const halfAt = (x: number): number => {
+      let w = x >= 1.565 && x <= 2.565 ? 1.755 : 0;
+      for (let i = 0; i + 1 < OUTLINE.length; i++) { const [a, wa] = OUTLINE[i], [b, wb] = OUTLINE[i + 1]; if (x <= a && x >= b) w = Math.max(w, wb + ((wa - wb) * (x - b)) / (a - b)); }
+      return w;
+    };
+    const FIT = { length: 5.4, width: 3.84 };
     const LEN = car?.length ?? FIT.length, WID = car?.width ?? FIT.width, NOSE = LEN / 2;
     if (import.meta.env.DEV && (LEN > FIT.length + 0.05 || WID > FIT.width + 0.05)) console.warn(`Gotham: the Batmobile is ${LEN} by ${WID}, and its way out of the grotto was fitted for ${FIT.length} by ${FIT.width}.`);
-    // A point REF ahead of its middle follows the way, as a car's front would: south down the ford, then one smooth
-    // left sweep whose curvature eases up from 0.13 to 0.38 (a radius of about 2.6 at its tightest, once the tail is
-    // clear of the mouth), until it heads east on the lane; then east on the line it came round on, and from the east
-    // end of the east pavilion's second cliff pier (x 56.9), 0.38 south of the portal's middle, onto it at the portal.
-    const REF = 1.061, X0 = BATMOBILE.x + 0.285, Z_SWEEP = -88.192, STEP = 0.1, SEG = 1.6;
-    const CURVE = [0.127, 0.076, 0.129, 0.365, 0.382, 0.382];
-    const line = (x: number): number => OLD_TUNNEL.z + 0.38 * clamp((OLD_TUNNEL.x - x) / (OLD_TUNNEL.x - 56.9), 0, 2);
+    // A point REF ahead of its middle follows the way: south down the ford 0.2 west of its middle, then one smooth left
+    // sweep, its curvature easing up over 3 to 0.225 (a radius of 4.4), until it heads east on the lane with its middle
+    // on the old tunnel's middle (z -82.4); and so straight east into the tunnel. (Found by a search of such sweeps
+    // against the mouth's rock, the walls, the door and the cliff's piers: its wing then stands 0.18 off the piers and
+    // its south side at -80.48, and no part goes further south than that while it turns.)
+    const REF = 1.25, X0 = BATMOBILE.x - 0.2, K = 0.225, RAMP = 3, STEP = 0.1;
     const way: [number, number, number][] = [];
-    /** How far along its way the sweep ends and the car heads east on the lane, where it stands for a beat. */
-    let S_STOP = 0;
+    /** Where along its way the sweep ends and the car heads east on the lane, where it stands for a beat. */
+    let STOP_I = 0;
     {
+      // the sweep from where it begins, as places and headings, to learn how far south it carries the car
+      const sweep: [number, number, number][] = [];
+      {
+        let x = 0, z = 0, h = S, d = 0;
+        while (h > 0) { sweep.push([x, z, h]); x += Math.cos(h) * STEP; z += Math.sin(h) * STEP; h = Math.max(0, h - K * Math.min(1, d / RAMP) * STEP); d += STEP; }
+        sweep.push([x, z, E]);
+      }
+      const z0 = OLD_TUNNEL.z - sweep[sweep.length - 1][1];
       // it is shown when its nose is at the curtain, and comes down the ford to where the sweep begins
       const zIn = curtainZ - 0.1 - NOSE + REF;
-      let x = X0, z = zIn, h = S, s = 0;
-      const step = (): void => { way.push([x, z, h]); x += Math.cos(h) * STEP; z += Math.sin(h) * STEP; s += STEP; };
-      while (z < Z_SWEEP) step();
-      // the sweep: curvature from point to point of CURVE, each SEG along, and its last kept until it heads east
-      for (let i = 0; i < CURVE.length && h > 0; i++) {
-        for (let d = 0; d < SEG - 1e-9 && h > 0; d += STEP) { step(); h = Math.max(0, h - (CURVE[i] + (CURVE[Math.min(CURVE.length - 1, i + 1)] - CURVE[i]) * (d / SEG)) * STEP); }
-      }
-      while (h > 0) { step(); h = Math.max(0, h - CURVE[CURVE.length - 1] * STEP); }
-      S_STOP = s;
-      const xe = x, ze = z;
-      for (let xx = xe; xx <= OLD_TUNNEL.x + 12; xx += STEP) {
-        // (it keeps the line it came round on until the line into the tunnel begins, and eases onto that)
-        const zz = (q: number): number => (q < 56.9 ? lerp(ze, line(56.9), ease(span(q, Math.max(xe, 50), 56.9))) : line(q));
-        way.push([xx, zz(xx), Math.atan2(zz(xx + 0.05) - zz(xx - 0.05), 0.1)]);
-      }
+      for (let z = zIn; z < z0 - 1e-6; z += STEP) way.push([X0, z, S]);
+      for (const [x, z, h] of sweep) way.push([X0 + x, z0 + z, h]);
+      STOP_I = way.length - 1;
+      const xe = X0 + sweep[sweep.length - 1][0];
+      for (let xx = xe + STEP; xx <= OLD_TUNNEL.x + 12; xx += STEP) way.push([xx, OLD_TUNNEL.z, E]);
     }
     // measured along the way, and turned into where the car's middle is
     const wayLen: number[] = [0];
     for (let i = 1; i < way.length; i++) wayLen.push(wayLen[i - 1] + Math.hypot(way[i][0] - way[i - 1][0], way[i][1] - way[i - 1][1]));
+    const S_STOP = wayLen[STOP_I];
     const B: Path = {
       len: wayLen[wayLen.length - 1],
       at(s) {
@@ -582,8 +584,9 @@ export function west(k: Build, W: World, book: Book): void {
       },
     };
     // ---- how it goes: out at a creep (up to CREEP over a second, and down to standing over the last 1.4 of the
-    // sweep), still for a beat, and then a launch at a constant push of PUSH: its way goes with the square of the time
-    const T_PART = 7, T_OUT = 8.5, CREEP = 2.2, PUSH = 24, BEAT = 1.3;
+    // sweep), still for a beat while it shows its party trick (PARTY), and then a launch at a constant push of PUSH:
+    // its way goes with the square of the time
+    const T_PART = 7, T_OUT = 8.5, CREEP = 2.2, PUSH = 24, PARTY = 1.2, BEAT = 1.6;
     const S_GONE = (() => { let s = S_STOP; while (s < B.len && B.at(s)[0] + NOSE < OLD_TUNNEL.x + 6.0) s += 0.05; return s; })();
     const UP = 1.0, DOWN = 1.4, sUp = (CREEP * UP) / 2, sDown = (CREEP * DOWN) / 2, cruise = Math.max(0, S_STOP - sUp - sDown) / CREEP;
     const T_STOP = T_OUT + UP + cruise + DOWN, T_LAUNCH = T_STOP + BEAT, T_GONE = T_LAUNCH + Math.sqrt((2 * (S_GONE - S_STOP)) / PUSH);
@@ -607,10 +610,10 @@ export function west(k: Build, W: World, book: Book): void {
       // each axle rides on the higher of its two wheels' ground, so that no wheel sinks into the ford's sill
       // (and a little ahead and behind it, so that the car's belly rides over the sill's edge rather than through it)
       // (and across its whole width, so that its sides ride over it too)
-      const AX = LEN * 0.31, TR = WID / 2;
+      const AX = LEN * 0.384, TR = WID / 2;
       const wheel = (d: number): number => Math.max(...[-1, -0.5, 0, 0.5, 1].map((f) => yAt(p[0] + c * d - sn * TR * f, p[1] + sn * d + c * TR * f)));
-      // (out to its nose and its tail, so that its overhangs ride over the step from the ford down to the lane)
-      const axle = (d: number): number => Math.max(...[-1, -0.5, 0, 0.5, 1].map((f) => wheel(d + f * (NOSE - AX))));
+      // (out to its nose, its splitter and its tail, so that they ride over the step from the ford down to the lane)
+      const axle = (d: number): number => Math.max(...[-1, -0.5, 0, 0.5, 1].map((f) => wheel(d + f * 0.85)));
       const yF = axle(AX), yR = axle(-AX);
       return { x: p[0], y: (yF + yR) / 2, z: p[1], h: p[2], pitch: Math.atan2(yF - yR, 2 * AX), v, shown: tb >= T_OUT && s < S_GONE };
     };
@@ -634,23 +637,32 @@ export function west(k: Build, W: World, book: Book): void {
     };
     let lastTb = 0;
     if (import.meta.env.DEV) {
-      // as the machine is, and as the body the way was fitted for (while the machine is still being drawn anew)
-      devChecks.batcave = () => `${carCheck(LEN, WID)}\n  fitted body: ${carCheck(FIT.length, FIT.width)}`;
-      const carCheck = (LEN: number, WID: number): string => {
-        const NOSE = LEN / 2;
+      devChecks.batcave = () => {
         const poses: Pose3[] = [];
         for (let t = T_OUT; t < T_GONE; t += 0.1) { const q = carAt(t); if (q.shown) poses.push(q); }
-        let far = -Infinity, farT = 0;
+        // its outline (and its front tyres) every 0.1 along it, as it is and with 0.1 to spare
+        const rim = (spare: number): [number, number][] => {
+          const pts: [number, number][] = [];
+          for (let x = -2.685 - spare; x <= 2.565 + spare + 1e-9; x += 0.1) { const w = halfAt(clamp(x, -2.685, 2.565)) + spare; for (let f = -1; f <= 1.0001; f += 0.25) pts.push([x, w * f]); }
+          return pts;
+        };
+        let south = -Infinity, north = Infinity, southT = 0, mx0 = Infinity, mx1 = -Infinity;
         for (let t = T_OUT; t < T_GONE; t += 0.05) {
-          const q = carAt(t);
-          if (q.shown) for (const [lx, lz] of [[NOSE, WID / 2], [NOSE, -WID / 2], [-NOSE, WID / 2], [-NOSE, -WID / 2]]) { const z = q.z + Math.sin(q.h) * lx + Math.cos(q.h) * lz; if (z > far) { far = z; farT = t; } }
+          const q = carAt(t), c = Math.cos(q.h), sn = Math.sin(q.h);
+          if (!q.shown) continue;
+          for (const [lx, lz] of rim(0)) {
+            const x = q.x + c * lx - sn * lz, z = q.z + sn * lx + c * lz;
+            if (z > south) { south = z; southT = t; }
+            north = Math.min(north, z);
+            if (z > -85.35 && z < -84.55) { mx0 = Math.min(mx0, x); mx1 = Math.max(mx1, x); }
+          }
         }
-        // its bounding body with 0.1 to spare all round, from its wheels to its top
-        const box: Shape = [shapeOf([[-NOSE - 0.1, NOSE + 0.1, WID / 2 + 0.1]], [0.3, 0.9, 1.5, 2.1])];
+        // from its splitter to its top
+        const body: Shape = [{ pts: rim(0.1), ys: [0.1, 0.6, 1.1, 1.45] }];
         // what is through the door at the grotto's back, in the hill's passage, and inside the old tunnel's portal, is
         // inside the hill and not seen (the car is shown from the moment its nose reaches the curtain, as the plan has it)
-        const hill = (x: number, z: number): boolean => (z < -91 && Math.abs(x - BATMOBILE.x) < 2.8) || (x > OLD_TUNNEL.x + 0.4 && Math.abs(z - OLD_TUNNEL.z) < 2.1);
-        return `${touching(poses, box, hill)} (${LEN} by ${WID}); its southmost corner at z ${far.toFixed(2)} at ${farT.toFixed(2)} s; out at ${T_OUT} s, still at ${T_STOP.toFixed(1)} s, launched at ${T_LAUNCH.toFixed(1)} s, the door down from ${(T_DOOR + 0.3).toFixed(1)} s, the fall shut at ${(T_CLEAR + 2).toFixed(1)} s, gone at ${T_GONE.toFixed(1)} s at ${(PUSH * (T_GONE - T_LAUNCH)).toFixed(0)} a second`;
+        const hill = (x: number, z: number): boolean => (z < -91 && Math.abs(x - BATMOBILE.x) < 2.8) || (x > OLD_TUNNEL.x + 0.4 && Math.abs(z - OLD_TUNNEL.z) < 2.15);
+        return `${touching(poses, body, hill)} (${LEN} by ${WID}); its southmost at z ${south.toFixed(2)} at ${southT.toFixed(2)} s, its northmost at z ${north.toFixed(2)}; at the mouth's plate from x ${mx0.toFixed(2)} to ${mx1.toFixed(2)}; out at ${T_OUT} s, still at ${T_STOP.toFixed(1)} s, launched at ${T_LAUNCH.toFixed(1)} s, the door down from ${(T_DOOR + 0.3).toFixed(1)} s, the fall shut at ${(T_CLEAR + 2).toFixed(1)} s, gone at ${T_GONE.toFixed(1)} s at ${(PUSH * (T_GONE - T_LAUNCH)).toFixed(0)} a second`;
       };
     }
     book.stories.push({
@@ -658,19 +670,13 @@ export function west(k: Build, W: World, book: Book): void {
       // Robin comes from the Elliot Tower in the west, Batman from Wayne Tower: each to the side his line reaches soonest
       marks: { batman: RL, robin: RM, alfred: 'post' }, body: BODY,
       play(tb, P) {
-        const c = carAt(tb);
-        const s0 = seatOn(car, c.x, c.y, c.z, c.h, c.pitch, 0, [-1.0, 0.5, 0]), s1 = seatOn(car, c.x, c.y, c.z, c.h, c.pitch, 1, [-1.95, 0.56, 0]);
-        // the two over the balustrade and in through the fall; then in the car as it comes out, and gone with it
-        const ride = (id: string, m: Spot, xe: number, t0: number, seat: V3): void => {
-          if (tb < T_OUT - 0.5) P.put(id, dive(m, xe, t0, tb));
-          // (hidden while the seat is still behind the grotto's back door, in the hill)
-          else if (!c.shown || seat[2] < -90.8) P.put(id, hidden(at(seat[0], seat[1], seat[2], c.h)));
-          else P.put(id, still(at(seat[0], seat[1], seat[2], c.h), drive((tb * 0.3) % 1), glowB({ aloft: true, close: true })));
-        };
-        ride('batman', P.from('batman'), XR, T_BAT, s0);
+        // the two over the balustrade and in through the fall, and hidden from then on: the car's canopy is dark glass,
+        // and nobody is seen in it
+        const ride = (id: string, m: Spot, xe: number, t0: number): void => P.put(id, dive(m, xe, t0, tb));
+        ride('batman', P.from('batman'), XR, T_BAT);
         if (tb < 0.2) P.put('robin', still(P.from('robin'), {}, glowB()));
         else if (tb < 0.2 + robRun.dur) P.put('robin', { ...robRun.at(tb - 0.2), ...glowB() });
-        else ride('robin', BL, XB, T_ROB, s1);
+        else ride('robin', BL, XB, T_ROB);
         // Alfred looks over the balustrade after each, watches the car away east, and raises his arm when the fall has closed
         const a = P.from('alfred');
         const over = Math.max(Math.sin(Math.PI * span(tb, T_BAT + 0.5, T_BAT + DIVE + 1.2)), Math.sin(Math.PI * span(tb, T_ROB + 0.5, T_ROB + DIVE + 1.2)));
@@ -688,7 +694,8 @@ export function west(k: Build, W: World, book: Book): void {
           car.shown(c.shown);
           car.lights(c.shown ? 1 : 0);
           car.trick('canopy', 0);
-          // both jets burn from the instant it launches
+          // its party trick while it stands on the lane, kept while it goes; and both jets from the instant it launches
+          car.trick('party', c.shown ? ease(span(tb, T_STOP, T_STOP + PARTY)) : 0);
           car.trick('jet', tb >= T_LAUNCH && c.shown ? 1 : 0);
           if (live && c.shown) car.run(c.v, dt);
         }
@@ -701,7 +708,7 @@ export function west(k: Build, W: World, book: Book): void {
           if (n > 0) bats.set({ x: CREVICE.x + 12 * u, y: CREVICE.y + 2 + 18 * u, z: CREVICE.z + 14 * u, spread: 2 + 9 * u, tall: 1.5 + 4 * u, n, swirl: 1.4, heading: Math.atan2(14, 12), stream: 0.6 });
         }
       },
-      end() { car?.shown(false); car?.lights(0); car?.trick('canopy', 0); car?.trick('jet', 0); W.air?.waterfall(0); W.hatch?.door?.(0); bats?.shown(false); lastTb = 0; },
+      end() { car?.shown(false); car?.lights(0); car?.trick('canopy', 0); car?.trick('party', 0); car?.trick('jet', 0); W.air?.waterfall(0); W.hatch?.door?.(0); bats?.shown(false); lastTb = 0; },
     });
   }
 
