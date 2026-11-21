@@ -168,6 +168,29 @@ export function neon(k: Build, a: V3, b: V3, color: string, t = 0.14): void {
   k.glows.push({ x: (a[0] + b[0]) / 2, y: (a[1] + b[1]) / 2, z: (a[2] + b[2]) / 2, sx: Math.max(t, dx), sy: Math.max(t, dy), sz: Math.max(t, dz), color });
 }
 
+/**
+ * A helipad's markings, flat on a deck or a lawn at height `y`: a ring just
+ * inside its edge and an H at its middle that reads from the view the tile
+ * opens with, in pale paint, and a lamp every eighth of the way round, red and
+ * white in turn. `r` is the pad's own radius.
+ */
+export function padMark(k: Build, x: number, y: number, z: number, r: number, paint = 0xd9dde4): void {
+  const b = k.b, n = 16, r0 = r - 0.8, r1 = r - 0.5;
+  for (let i = 0; i < n; i++) {
+    const a0 = (i / n) * Math.PI * 2, a1 = ((i + 1) / n) * Math.PI * 2;
+    b.quad([x + Math.cos(a0) * r0, y, z + Math.sin(a0) * r0], [x + Math.cos(a0) * r1, y, z + Math.sin(a0) * r1], [x + Math.cos(a1) * r1, y, z + Math.sin(a1) * r1], [x + Math.cos(a1) * r0, y, z + Math.sin(a1) * r0], [0, 1, 0], paint);
+  }
+  // the H: its uprights lie along the view
+  b.moved(x, y, z, Math.atan2(TO_VIEW[2], TO_VIEW[0]), () => {
+    for (const s of [-1, 1]) b.quad([-1.25, 0, s * 0.85 - 0.2], [1.25, 0, s * 0.85 - 0.2], [1.25, 0, s * 0.85 + 0.2], [-1.25, 0, s * 0.85 + 0.2], [0, 1, 0], paint);
+    b.quad([-0.2, 0, -0.65], [0.2, 0, -0.65], [0.2, 0, 0.65], [-0.2, 0, 0.65], [0, 1, 0], paint);
+  });
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2 + Math.PI / 8;
+    k.glows.push({ x: x + Math.cos(a) * (r - 0.22), y: y + 0.08, z: z + Math.sin(a) * (r - 0.22), sx: 0.2, sy: 0.14, sz: 0.2, color: i % 2 ? '#ff5a4a' : '#e6eeff' });
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Name boards
 // ---------------------------------------------------------------------------

@@ -50,7 +50,7 @@ export type Chapter = (k: Build, W: World, book: Book) => void;
 const WAYS: Record<CastId, Way> = {
   batman: 'line', robin: 'line', damian: 'line', nightwing: 'line', redHood: 'line', batgirl: 'line', batwoman: 'line', alfred: 'foot',
   huntress: 'line', azrael: 'line', spoiler: 'line', orphan: 'line', signal: 'line', batMite: 'fly',
-  gordon: 'foot', bullock: 'foot', montoya: 'foot', lucius: 'foot', leslie: 'foot', vicki: 'foot',
+  gordon: 'foot', bullock: 'foot', montoya: 'foot', lucius: 'foot', leslie: 'foot', vicki: 'foot', bruce: 'foot',
   joker: 'foot', harley: 'foot', penguin: 'umbrella', catwoman: 'line', riddler: 'foot', twoFace: 'foot', ivy: 'foot', freeze: 'foot',
   scarecrow: 'foot', bane: 'foot', croc: 'foot', manBat: 'wings', langstrom: 'foot', clayface: 'foot', ras: 'foot', talia: 'foot',
   killerMoth: 'wings', madHatter: 'foot', kiteMan: 'wings', hush: 'foot', deathstroke: 'line', blackMask: 'foot', talon: 'line',

@@ -632,6 +632,14 @@ export const HERO_SPOTS: { id: string; x: number; z: number; y: number; heading:
  */
 export const SIGNAL = { lamp: [-49.5, Y.upper + 24.6, 20.5] as P3, cloud: { c: [-49.5, 53, 20.5] as P3, rx: 10, rz: 6.5 } };
 
+/**
+ * Where Wayne Enterprises' helicopter sets down, which the collector asked for with Bruce Wayne's flight home: a deck
+ * that stands out from Wayne Tower's east face at its first setback (how high is the tower's own business, in
+ * towers.ts), and a ring on Wayne Manor's lawn south of its forecourt, beside the strip the forecourt's hero is seen
+ * through and not in it.
+ */
+export const HELIPADS = { tower: { x: -60.2, z: 27.5, r: 4.6 }, manor: { x: 56.5, z: -91.6, r: 4.0 } };
+
 /** Where steam rises from the street: grates and manholes on sidewalks and in lanes, each [x, z] on the ground as built. */
 export const VENTS: P2[] = [
   [-27, 2], [-12, 22], [2, 26], [-16, 44], [-10, 60], [-40, 72], [-70, 92],
@@ -716,6 +724,7 @@ export const STAGES: Record<string, { x0: number; z0: number; x1: number; z1: nu
   cave: { x0: 6, z0: -97, x1: 50, z1: -85, y: Y.cave, what: "the Batcave's floor: the Batmobile's turntable at (14, -90.5), the guest's at (30, -89.5), the Batplane's pad at (43.5, -90.5), the trophies and the computer along its back" },
   terrace: { x0: 8, z0: -97, x1: 48, z1: -94, y: Y.crest, what: "the Manor's terrace, over the cave's back: Alfred's post" },
   lawn: { x0: -8, z0: -107, x1: 6, z1: -96, y: Y.crest, what: "the lawn west of the Manor: Damian's post, with Titus, Alfred the cat and Bat-Cow" },
+  manorPad: { x0: HELIPADS.manor.x - HELIPADS.manor.r - 0.2, z0: HELIPADS.manor.z - HELIPADS.manor.r - 0.2, x1: HELIPADS.manor.x + HELIPADS.manor.r + 0.2, z1: HELIPADS.manor.z + HELIPADS.manor.r + 0.2, y: Y.crest, what: "the ring on the Manor's lawn south of its forecourt where Wayne Enterprises' helicopter sets down: Bruce Wayne's flight home" },
   gate: { x0: -72, z0: -85, x1: -62, z1: -78, y: Y.isle, what: "the ground before Arkham's gate, between it and the ring: the breakout. The gate's own leaf is the show's, and its frame stands empty" },
   // ---- the harbour
   casinoDeck: { x0: CASINO.c[0] - 5, z0: CASINO.c[1] - 5, x1: CASINO.c[0] + 5, z1: CASINO.c[1] + 5, y: 3, what: "the Iceberg Casino's deck: the prize turntable at its middle" },

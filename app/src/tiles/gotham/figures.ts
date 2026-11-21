@@ -43,7 +43,7 @@ export type CastId =
   | 'batman' | 'robin' | 'damian' | 'nightwing' | 'redHood' | 'batgirl' | 'batwoman' | 'alfred'
   | 'huntress' | 'azrael' | 'spoiler' | 'orphan' | 'signal' | 'batMite'
   // the city
-  | 'gordon' | 'bullock' | 'montoya' | 'lucius' | 'leslie' | 'vicki'
+  | 'gordon' | 'bullock' | 'montoya' | 'lucius' | 'leslie' | 'vicki' | 'bruce'
   // the rogues
   | 'joker' | 'harley' | 'penguin' | 'catwoman' | 'riddler' | 'twoFace' | 'ivy' | 'freeze' | 'scarecrow' | 'bane' | 'croc'
   | 'manBat' | 'langstrom' | 'clayface' | 'ras' | 'talia' | 'killerMoth' | 'madHatter' | 'kiteMan' | 'hush' | 'deathstroke'
@@ -303,6 +303,10 @@ export const LOOKS: Record<CastId, Look> = {
   montoya: { name: 'Renee Montoya', height: 2.5, build: 0.95, skin: TAN, chest: 0x3c3c42, jacket: 0x2a2c33, arms: 0x2a2c33, hands: TAN, legs: 0x2a2a30, boots: INK, belt: INK, hair: 0x18161a, hairStyle: 'short', bits: ['badge'] },
   // Lucius Fox: a grey suit and glasses (the task); the grey hair and moustache are mine.
   lucius: { name: 'Lucius Fox', height: 2.65, build: 1.0, skin: DEEP, chest: 0x6a6e76, jacket: 0x5e626a, bib: 0xf0eee8, arms: 0x5e626a, hands: DEEP, legs: 0x5e626a, boots: INK, hair: 0xa8a8a4, hairStyle: 'short', hairScale: 1.02, glasses: 0x2a2a2c, bits: ['moustache'], bitColor: { moustache: 0xa8a8a4 } },
+  // Bruce Wayne as the city sees him, whom the collector asked for with his helicopter: Batman's own height and nearly
+  // his shoulders, black hair, a white shirt. The navy suit is this file's. The show never has him and Batman in sight
+  // at once.
+  bruce: { name: 'Bruce Wayne', height: 2.95, build: 1.1, skin: SKIN, chest: 0x2e3c60, jacket: 0x232f4e, bib: 0xf4f2ec, arms: 0x232f4e, hands: SKIN, legs: 0x232f4e, boots: INK, hair: 0x1c1a1c, hairStyle: 'short' },
   // Dr. Leslie Thompkins: a white coat and grey hair in a bun (the task); her clothes under it are mine.
   leslie: { name: 'Leslie Thompkins', height: 2.4, build: 0.9, skin: FAIR, chest: 0xeeeeea, arms: 0xeeeeea, hands: FAIR, legs: 0x5a6070, boots: 0x3a3a40, skirt: 0xeeeeea, skirtLength: 0.44, hair: 0xc4c2be, hairStyle: 'bun' },
   // Vicki Vale: red hair, a green suit, a camera whose flash is her glow (the task).
@@ -2326,7 +2330,7 @@ export function buildCast(k: Build): Cast {
 const POSES: Record<string, (t: number) => Partial<Pose>> = { walk, run, waddle, leap, perch, swing, glide, fly, strike, parry, lunge, bow, salute, kneel, sit, point, shrug, laugh, toss, caught, carry, push, climb, swim, row, drive, hang, star, idle };
 const GROUPS: Record<string, string[]> = {
   family: ['batman', 'robin', 'damian', 'nightwing', 'redHood', 'batgirl', 'batwoman', 'alfred', 'huntress', 'azrael', 'spoiler', 'orphan', 'signal', 'batMite'],
-  city: ['gordon', 'bullock', 'montoya', 'lucius', 'leslie', 'vicki'],
+  city: ['gordon', 'bullock', 'montoya', 'lucius', 'leslie', 'vicki', 'bruce'],
   rogues: ['joker', 'harley', 'penguin', 'catwoman', 'riddler', 'twoFace', 'ivy', 'freeze', 'scarecrow', 'bane', 'croc', 'manBat', 'langstrom', 'clayface', 'ras', 'talia'],
   more: ['killerMoth', 'madHatter', 'kiteMan', 'hush', 'deathstroke', 'blackMask', 'talon', 'firefly', 'ventriloquist', 'grundy', 'calendarMan', 'hugoStrange', 'tweedledum', 'tweedledee', 'polkaDotMan'],
   league: ['superman', 'wonderWoman', 'flash', 'greenLantern', 'aquaman', 'martianManhunter'],

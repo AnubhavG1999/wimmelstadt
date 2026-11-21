@@ -27,10 +27,10 @@ import type { Build } from '../../engine/tile';
 import { landAt } from './land';
 import {
   AMBER, BOARDS, BRASS, COLD, DARK, GOTHIC_WIN, IRON, IRON_DARK, LEAD, LIMESTONE, LIMESTONE_DARK, ROCK, ROCK_DARK, ROCK_LIGHT, SLATE, SMALL_WIN, SODIUM,
-  STEEL, STONE, STONE_DARK, STONE_LIGHT, STONE_TRIM, TIMBER, TIMBER_DARK, TO_VIEW, balustrade, gasLamp, nameBoard, nameSign, parapet,
+  STEEL, STONE, STONE_DARK, STONE_LIGHT, STONE_TRIM, TIMBER, TIMBER_DARK, TO_VIEW, balustrade, gasLamp, nameBoard, nameSign, padMark, parapet,
 } from './look';
 import type { Model, Place } from './models';
-import { CREST, KANE, Y, lotOf, type Lot, type P2 } from './plan';
+import { CREST, HELIPADS, KANE, Y, lotOf, type Lot, type P2 } from './plan';
 import { MIDDLES } from './roads';
 import { ceilingAt, open, underBoards } from './space';
 
@@ -430,6 +430,10 @@ export const PLACES: Record<string, Place> = {
   alfredCat: { x: 3.6, y: Y.crest, z: -103.6, h: PI / 4 },
   batsCrevice: { x: -18, y: 6, z: CREST.cliff + 0.4, h: PI / 2 },
   gates: { x: GATES.x, y: Y.shelf, z: GATES.z, h: PI / 2 },
+  // the ring on the lawn where the helicopter's skids stand, the gravel before the house's east door, and the door itself
+  manorPad: { x: HELIPADS.manor.x, y: Y.crest + 0.09, z: HELIPADS.manor.z, h: Math.atan2(TO_VIEW[2], TO_VIEW[0]) },
+  eastPath: { x: 49.6, y: Y.crest + 0.04, z: -102.5, h: 0 },
+  eastDoor: { x: 46.75, y: Y.crest + 0.04, z: -102.5, h: 0 },
 };
 
 // ---------------------------------------------------------------------------
@@ -1197,6 +1201,17 @@ function cleft(b: GeoBuilder): void {
   for (const [a, c, h] of [[-1.6, -0.5, 3.4], [0.45, 1.4, 2.8]]) solid(b, x + a, y - 0.1, z - 0.03, x + c, y + h, z + 0.45, ROCK_LIGHT, 'NESWT');
 }
 
+/**
+ * The ring on the lawn south of the forecourt where Wayne Enterprises' helicopter sets down, which the collector
+ * asked for with Bruce Wayne's flight home: a round of gravel edged in pale stone, its markings and its lamps.
+ */
+function helipad(k: Build): void {
+  const b = k.b, { x, z, r } = HELIPADS.manor, y = Y.crest;
+  b.cyl(x, z, y - 0.15, y + 0.06, r, r, 16, TRIM, { cap: GRAVEL });
+  padMark(k, x, y + 0.085, z, r, 0xe4e1d6);
+  k.lights.push({ x, z, r: 7, color: COLD, k: 0.35 });
+}
+
 /** The woods on the hill's west end, its east end and its back: dark slender trees on the ground as built, kept under the ceiling. */
 function woods(k: Build): void {
   const R = rng(0x30d5);
@@ -1228,6 +1243,7 @@ export function extras(k: Build): void {
   gatesAndDrive(k);
   riverParapet(k);
   cleft(k.b);
+  helipad(k);
   woods(k);
   // a few people: a visitor at the lodge, two on the gravel by the gates
   for (const [x, z] of [[GATES.x - 7, GATES.z + 3.2], [GATES.x + 4.6, GATES.z + 3.6], [GATES.x + 5.6, GATES.z + 3.3]]) if (open(x, z, 0.6)) k.person(x, z, Y.shelf);

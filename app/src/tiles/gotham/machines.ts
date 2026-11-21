@@ -1,7 +1,8 @@
 // The machines of the show, which are neither heroes nor traffic: the
 // Batmobile, the Batboat, the Batplane and the Batgyro, the Batcycle and the
 // Red Hood's motorcycle, the Jokermobile, the Joker's rowing boat, Wonder
-// Woman's invisible plane, and the police helicopter. The show (show.ts)
+// Woman's invisible plane, the police helicopter and Wayne Enterprises' own.
+// The show (show.ts)
 // drives them; this file only builds them and says how each is moved.
 //
 // Each is this tile's own drawing. The comics give the Batmobile only "a large,
@@ -42,7 +43,7 @@ import { SHOW_LANES, Y } from './plan';
 
 export type MachineKind =
   | 'batmobile' | 'batboat' | 'batplane' | 'batgyro' | 'batcycle' | 'redCycle'
-  | 'jokermobile' | 'rowboat' | 'invisiblePlane' | 'policeCopter' | 'batwing';
+  | 'jokermobile' | 'rowboat' | 'invisiblePlane' | 'policeCopter' | 'batwing' | 'wayneCopter';
 
 /** One machine of the show. */
 export interface Machine {
@@ -70,6 +71,8 @@ export interface Machine {
    * let down under it). The rowing boat: `flag` (a jack-in-the-box flying a flag).
    * The Batwing: `rotors` (how fast its rotors turn, still at 0, a blur at 1),
    * `light` (its searchlight's cone) and `line` (a line with a bar to hold).
+   * Both helicopters: `rotors` (how fast their rotors turn, still at 0: the
+   * police's turn from the first, Wayne Enterprises' stand still until asked).
    * A name a machine does not know does nothing.
    */
   trick(name: string, f: number): void;
@@ -101,10 +104,10 @@ export const REACH = { glove: 5, gloveY: 1, plank: 10, line: 10 };
 /** Each one's length, width and height as built (the rowing boat's width is across its oars). */
 const SIZES: Record<MachineKind, [number, number, number]> = {
   batmobile: [9.6, 3.4, 2.2], batboat: [9.1, 3.0, 2.3], batplane: [9.9, 11, 2.55], batgyro: [6.0, 5.9, 2.75], batcycle: [4.1, 1.0, 2.05], redCycle: [4.0, 1.1, 1.8],
-  jokermobile: [8.45, 3.2, 2.36], rowboat: [4.0, 4.6, 0.75], invisiblePlane: [8.0, 9.0, 2.15], policeCopter: [7.0, 6.5, 2.75], batwing: [10.1, 9.3, 1.95],
+  jokermobile: [8.45, 3.2, 2.36], rowboat: [4.0, 4.6, 0.75], invisiblePlane: [8.0, 9.0, 2.15], policeCopter: [7.0, 6.5, 2.75], batwing: [10.1, 9.3, 1.95], wayneCopter: [7.0, 6.5, 2.75],
 };
 
-const KINDS: MachineKind[] = ['batmobile', 'batboat', 'batplane', 'batgyro', 'batcycle', 'redCycle', 'jokermobile', 'rowboat', 'invisiblePlane', 'policeCopter', 'batwing'];
+const KINDS: MachineKind[] = ['batmobile', 'batboat', 'batplane', 'batgyro', 'batcycle', 'redCycle', 'jokermobile', 'rowboat', 'invisiblePlane', 'policeCopter', 'batwing', 'wayneCopter'];
 
 type P2 = [number, number];
 
@@ -122,6 +125,8 @@ const WOOD = 0x9c7149, WOOD_DARK = 0x6f4d30, CHROME = 0xc8cdd5, STEEL = 0x9aa1ab
 const HOOD_RED = 0xa9231c, HOOD_RED_DARK = 0x6f1712;
 /** The police: dark blue and white, with a pale patch where POLICE would be lettered. */
 const COP_BLUE = 0x1f3c70, COP_WHITE = 0xe9edf1, COP_PATCH = 0xdfe7f0, COP_GLASS = 0x34506a;
+/** Wayne Enterprises' helicopter: black below and graphite above, a silver band along its side and its boom, silver tips to its blades, dark glass. The tile's own paint. */
+const WAYNE_BLACK = 0x1f2228, WAYNE_GRAPHITE = 0x30343d, WAYNE_SILVER = 0xcbd0d8, WAYNE_GLASS = 0x1e2b39;
 /** Lamps. */
 const AMBER = 0xffb544, RED_LAMP = 0xff2b1e, WHITE_LAMP = 0xfff1d6, GREEN_LAMP = 0x45ff74;
 
@@ -411,6 +416,9 @@ class Rig implements Machine {
   readonly height: number;
   readonly wheels: { m: THREE.Object3D; r: number }[] = [];
   readonly spinners: { m: THREE.Object3D; axis: 'y' | 'z'; rate: number }[] = [];
+  /** The faint discs its rotors sweep, and how fast its rotors and propellers turn, from 0 still to 1 full. */
+  readonly discs: THREE.Object3D[] = [];
+  spin = 1;
   readonly jets: THREE.Object3D[] = [];
   /** Its tricks, by name. */
   readonly fx: Record<string, (f: number) => void> = {};
@@ -535,6 +543,7 @@ class Rig implements Machine {
       if (axis === 'y') d.rotation.x = -Math.PI / 2;
       d.renderOrder = 2;
       p.add(d);
+      this.discs.push(d);
     }
     return m;
   }
@@ -612,7 +621,8 @@ class Rig implements Machine {
     if (this.lampMat) this.lampMat.color.setScalar(0.42 + lit * (0.8 + 2.0 * night));
     if (this.haloMat) this.haloMat.opacity = lit * (0.12 + 0.72 * night);
     if (this.beamMat) this.beamMat.opacity = lit * (0.04 + 0.42 * night);
-    for (const s of this.spinners) s.m.rotation[s.axis] += s.rate * dt;
+    for (const s of this.spinners) s.m.rotation[s.axis] += s.rate * this.spin * dt;
+    for (const d of this.discs) d.visible = this.spin > 0.4;
     const burn = Math.max(this.value.jet ?? 0, this.cruise * Math.min(1, Math.abs(this.speed) / 20));
     this.jets.forEach((j, i) => {
       j.visible = burn > 0.02;
@@ -1360,9 +1370,17 @@ function invisiblePlane(k: Build, mat: THREE.Material): Rig {
 // The police helicopter
 // ---------------------------------------------------------------------------
 
-/** Dark blue below and white above, a glazed nose, a pale patch where POLICE would be lettered, a searchlight under its nose, a three-bladed rotor, and skids. */
-function policeCopter(k: Build, mat: THREE.Material): Rig {
-  const r = new Rig('policeCopter', k, mat);
+/** A helicopter's paint: its belly and boom, its upper body, the patch on its side and its boom, and its glass. */
+interface CopterPaint { body: number; top: number; patch: number; glass: number }
+
+/**
+ * A light helicopter: a glazed nose, a patch on its side, a three-bladed rotor, and skids. The police's is dark blue
+ * below and white above, its patch pale where POLICE would be lettered, with a searchlight under its nose and a line
+ * to let down. Wayne Enterprises', which the collector asked for, is black below and graphite above with a silver band,
+ * has neither, and stands with its rotors still until it is flown.
+ */
+function copter(kind: 'policeCopter' | 'wayneCopter', k: Build, mat: THREE.Material, C: CopterPaint, police: boolean): Rig {
+  const r = new Rig(kind, k, mat);
   const g = new GeoBuilder(), lg = new GeoBuilder(), halos: Halo[] = [];
   const cab = [
     body8(2.35, 0.2, 0.85, 0.3, 0.95, 1.15, 0.2, 1.25),
@@ -1372,59 +1390,61 @@ function policeCopter(k: Build, mat: THREE.Material): Rig {
     body8(-1.45, 0.3, 0.95, 0.42, 1.1, 1.65, 0.3, 1.85),
   ];
   loft(g, cab, (j, s) => {
-    if (j === 0 || j === 6 || j === 7) return COP_BLUE;
-    if (s <= 1) return j === 3 && s === 1 ? COP_WHITE : COP_GLASS;
-    return j === 1 || j === 5 ? COP_BLUE : COP_WHITE;
-  }, { win: (j, s) => (s <= 1 && j >= 1 && j <= 5 && !(j === 3 && s === 1) ? interior(0.6) : undefined), capA: COP_GLASS, capB: COP_BLUE });
+    if (j === 0 || j === 6 || j === 7) return C.body;
+    if (s <= 1) return j === 3 && s === 1 ? C.top : C.glass;
+    return j === 1 || j === 5 ? C.body : C.top;
+  }, { win: (j, s) => (s <= 1 && j >= 1 && j <= 5 && !(j === 3 && s === 1) ? interior(0.6) : undefined), capA: C.glass, capB: C.body });
   for (const s of [-1, 1]) {
     // a window either side, and the pale patch under it
-    quadTo(g, [0.65, 1.22, s * 0.835], [-0.35, 1.22, s * 0.835], [-0.35, 1.6, s * 0.835], [0.65, 1.6, s * 0.835], COP_GLASS, [0, 0, s], { win: interior(0.6) });
-    quadTo(g, [0.6, 0.84, s * 0.835], [-0.4, 0.84, s * 0.835], [-0.4, 1.1, s * 0.835], [0.6, 1.1, s * 0.835], COP_PATCH, [0, 0, s]);
+    quadTo(g, [0.65, 1.22, s * 0.835], [-0.35, 1.22, s * 0.835], [-0.35, 1.6, s * 0.835], [0.65, 1.6, s * 0.835], C.glass, [0, 0, s], { win: interior(0.6) });
+    quadTo(g, [0.6, 0.84, s * 0.835], [-0.4, 0.84, s * 0.835], [-0.4, 1.1, s * 0.835], [0.6, 1.1, s * 0.835], C.patch, [0, 0, s]);
     // skids and struts
     frustum(g, [-1.1, 0.08, s * 0.75], [1.3, 0.08, s * 0.75], 0.06, 0.06, 6, STEEL);
     frustum(g, [1.3, 0.08, s * 0.75], [1.65, 0.32, s * 0.75], 0.06, 0.05, 6, STEEL);
     for (const x of [-0.6, 0.8]) g.beam([x, 0.08, s * 0.75], [x * 0.92, 0.6, s * 0.5], 0.04, 0.04, STEEL);
     // the boom's pale patch
-    block(g, [-3.2, 1.44, s * 0.215], [-2.0, 1.66, s * 0.235], COP_PATCH);
+    block(g, [-3.2, 1.44, s * 0.215], [-2.0, 1.66, s * 0.235], C.patch);
   }
   // the tail boom, its fin and its stabiliser
-  frustum(g, [-1.3, 1.45, 0], [-4.5, 1.62, 0], 0.3, 0.13, 8, COP_BLUE);
-  slab(g, [[-3.95, 1.45], [-4.6, 1.5], [-4.68, 2.65], [-4.38, 2.62]], [0, 0, 0], AX, AY, AZ, -0.05, 0.05, COP_BLUE, COP_WHITE);
-  slab(g, [[-3.4, -0.75], [-3.7, -0.75], [-3.7, 0.75], [-3.4, 0.75]], [0, 1.55, 0], AX, AZ, [0, -1, 0], -0.04, 0.04, COP_WHITE);
+  frustum(g, [-1.3, 1.45, 0], [-4.5, 1.62, 0], 0.3, 0.13, 8, C.body);
+  slab(g, [[-3.95, 1.45], [-4.6, 1.5], [-4.68, 2.65], [-4.38, 2.62]], [0, 0, 0], AX, AY, AZ, -0.05, 0.05, C.body, C.top);
+  slab(g, [[-3.4, -0.75], [-3.7, -0.75], [-3.7, 0.75], [-3.4, 0.75]], [0, 1.55, 0], AX, AZ, [0, -1, 0], -0.04, 0.04, C.top);
   // the engine on its roof, and the mast
-  block(g, [-1.0, 1.95, -0.42], [0.45, 2.32, 0.42], COP_WHITE, 0xcfd5dc);
+  block(g, [-1.0, 1.95, -0.42], [0.45, 2.32, 0.42], C.top, 0xcfd5dc);
   frustum(g, [-0.8, 2.05, 0.43], [-1.3, 2.05, 0.45], 0.1, 0.1, 6, GREY, { capB: BAT_DARK });
   frustum(g, [0.05, 2.3, 0], [0.05, 2.7, 0], 0.1, 0.09, 8, GREY);
-  // the searchlight under its nose
-  const aim = unit([0.574, -0.819, 0]), sc: V3 = [1.55, 0.36, 0];
-  frustum(g, [1.55, 0.62, 0], [1.55, 0.4, 0], 0.09, 0.09, 6, BAT_DARK);
-  frustum(g, sc, add(sc, mul(aim, 0.3)), 0.17, 0.2, 10, STEEL, { capB: false });
-  const sg = new GeoBuilder();
-  frustum(sg, add(sc, mul(aim, 0.28)), add(sc, mul(aim, 0.31)), 0.18, 0.18, 10, WHITE_LAMP);
-  const searchMat = new THREE.MeshBasicMaterial({ vertexColors: true, toneMapped: false });
-  r.body.add(new THREE.Mesh(sg.build(), searchMat));
-  r.tris += sg.triangles;
-  // its cone of light, fading as it goes
-  const cg = new GeoBuilder();
-  frustum(cg, [0, 0, 0], [0, -1, 0], 0.06, 1, 14, 0xffffff, { capA: false, capB: false });
-  const cgeo = cg.build();
-  const pos = cgeo.getAttribute('position') as THREE.BufferAttribute, col = cgeo.getAttribute('color') as THREE.BufferAttribute;
-  for (let i = 0; i < pos.count; i++) col.setXYZ(i, 1 + 0.85 * pos.getY(i), 1 + 0.85 * pos.getY(i), 1 + 0.85 * pos.getY(i));
-  const coneMat = additive({ vertexColors: true, color: 0xfff0c8 });
-  const cone = new THREE.Mesh(cgeo, coneMat);
-  const conePivot = r.pivot(add(sc, mul(aim, 0.32)));
-  conePivot.rotation.z = Math.atan2(aim[0], -aim[1]);
-  cone.scale.set(3.0, 15, 3.0);
-  cone.renderOrder = 4;
-  cone.visible = false;
-  conePivot.add(cone);
-  r.fx.light = () => {};
-  r.each = (_dt, _t, night) => {
-    const v = r.value.light ?? 0;
-    cone.visible = v > 0.01;
-    coneMat.opacity = v * (0.1 + 0.22 * night);
-    searchMat.color.setScalar(0.45 + Math.max(v, r.lit * 0.3) * (1.0 + 2.2 * night));
-  };
+  if (police) {
+    // the searchlight under its nose
+    const aim = unit([0.574, -0.819, 0]), sc: V3 = [1.55, 0.36, 0];
+    frustum(g, [1.55, 0.62, 0], [1.55, 0.4, 0], 0.09, 0.09, 6, BAT_DARK);
+    frustum(g, sc, add(sc, mul(aim, 0.3)), 0.17, 0.2, 10, STEEL, { capB: false });
+    const sg = new GeoBuilder();
+    frustum(sg, add(sc, mul(aim, 0.28)), add(sc, mul(aim, 0.31)), 0.18, 0.18, 10, WHITE_LAMP);
+    const searchMat = new THREE.MeshBasicMaterial({ vertexColors: true, toneMapped: false });
+    r.body.add(new THREE.Mesh(sg.build(), searchMat));
+    r.tris += sg.triangles;
+    // its cone of light, fading as it goes
+    const cg = new GeoBuilder();
+    frustum(cg, [0, 0, 0], [0, -1, 0], 0.06, 1, 14, 0xffffff, { capA: false, capB: false });
+    const cgeo = cg.build();
+    const pos = cgeo.getAttribute('position') as THREE.BufferAttribute, col = cgeo.getAttribute('color') as THREE.BufferAttribute;
+    for (let i = 0; i < pos.count; i++) col.setXYZ(i, 1 + 0.85 * pos.getY(i), 1 + 0.85 * pos.getY(i), 1 + 0.85 * pos.getY(i));
+    const coneMat = additive({ vertexColors: true, color: 0xfff0c8 });
+    const cone = new THREE.Mesh(cgeo, coneMat);
+    const conePivot = r.pivot(add(sc, mul(aim, 0.32)));
+    conePivot.rotation.z = Math.atan2(aim[0], -aim[1]);
+    cone.scale.set(3.0, 15, 3.0);
+    cone.renderOrder = 4;
+    cone.visible = false;
+    conePivot.add(cone);
+    r.fx.light = () => {};
+    r.each = (_dt, _t, night) => {
+      const v = r.value.light ?? 0;
+      cone.visible = v > 0.01;
+      coneMat.opacity = v * (0.1 + 0.22 * night);
+      searchMat.color.setScalar(0.45 + Math.max(v, r.lit * 0.3) * (1.0 + 2.2 * night));
+    };
+  }
   // lamps: a red beacon on the roof, red and green to the sides, white at the tail
   lamp(lg, halos, [-0.35, 2.32, -0.08], [-0.2, 2.42, 0.08], RED_LAMP, 0.4);
   lamp(lg, halos, [-3.7, 1.5, -0.82], [-3.55, 1.6, -0.75], RED_LAMP, 0.35);
@@ -1437,22 +1457,30 @@ function policeCopter(k: Build, mat: THREE.Material): Rig {
   for (let i = 0; i < 3; i++) {
     const a = (i / 3) * Math.PI * 2, ax: V3 = [Math.cos(a), 0, Math.sin(a)];
     rbox(rg, mul(ax, 1.7), [1.58, 0.025, 0.13], ax, AY, cross(ax, AY), 0x3a3d44);
-    rbox(rg, mul(ax, 3.12), [0.13, 0.027, 0.135], ax, AY, cross(ax, AY), COP_WHITE);
+    rbox(rg, mul(ax, 3.12), [0.13, 0.027, 0.135], ax, AY, cross(ax, AY), C.patch);
   }
   r.spinner(rg, [0.05, 2.74, 0], 'y', 17, 3.25);
   const tg = new GeoBuilder();
   rbox(tg, [0, 0, 0], [0.08, 0.55, 0.02], AX, AY, AZ, 0x3a3d44);
   r.spinner(tg, [-4.45, 2.15, 0.12], 'z', 40);
-  // the line it lets down, with a hook
-  const hk = new GeoBuilder();
-  hk.beam([0, 0, 0], [0, -0.35, 0], 0.05, 0.05, STEEL);
-  hk.beam([0, -0.35, 0], [0.18, -0.42, 0], 0.045, 0.045, STEEL);
-  hk.beam([0.18, -0.42, 0], [0.22, -0.25, 0], 0.04, 0.04, STEEL);
-  r.line([0.2, 0.5, 0], hk);
+  if (police) {
+    // the line it lets down, with a hook
+    const hk = new GeoBuilder();
+    hk.beam([0, 0, 0], [0, -0.35, 0], 0.05, 0.05, STEEL);
+    hk.beam([0, -0.35, 0], [0.18, -0.42, 0], 0.045, 0.045, STEEL);
+    hk.beam([0.18, -0.42, 0], [0.22, -0.25, 0], 0.04, 0.04, STEEL);
+    r.line([0.2, 0.5, 0], hk);
+  }
   r.solid(g);
   r.seats = [[1.15, 0.6, -0.36], [1.15, 0.6, 0.36]];
+  // its rotors: the police's turn from the first frame it is shown, Wayne Enterprises' stand still until they are asked
+  r.fx.rotors = (f) => { r.spin = f; };
+  if (!police) r.trick('rotors', 0);
   return r;
 }
+
+const policeCopter = (k: Build, mat: THREE.Material): Rig => copter('policeCopter', k, mat, { body: COP_BLUE, top: COP_WHITE, patch: COP_PATCH, glass: COP_GLASS }, true);
+const wayneCopter = (k: Build, mat: THREE.Material): Rig => copter('wayneCopter', k, mat, { body: WAYNE_BLACK, top: WAYNE_GRAPHITE, patch: WAYNE_SILVER, glass: WAYNE_GLASS }, false);
 
 // ---------------------------------------------------------------------------
 // The Batwing
@@ -1689,7 +1717,7 @@ function batwing(k: Build, mat: THREE.Material): Rig {
 // All of them
 // ---------------------------------------------------------------------------
 
-const MAKERS: Record<MachineKind, (k: Build, mat: THREE.Material) => Rig> = { batmobile, batboat, batplane, batgyro, batcycle, redCycle, jokermobile, rowboat, invisiblePlane, policeCopter, batwing };
+const MAKERS: Record<MachineKind, (k: Build, mat: THREE.Material) => Rig> = { batmobile, batboat, batplane, batgyro, batcycle, redCycle, jokermobile, rowboat, invisiblePlane, policeCopter, batwing, wayneCopter };
 
 /** Builds every machine, hidden until the show shows it. */
 export function buildMachines(k: Build): Machines {

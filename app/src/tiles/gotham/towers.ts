@@ -26,10 +26,10 @@ import type { SignDef } from '../../engine/signs';
 import type { Build } from '../../engine/tile';
 import {
   AMBER, BRASS, COPPER, COPPER_DARK, DARK, GLASS, GLASS_WIN, GOTHIC_WIN, IRON, LEAD, OFFICE_WIN, SLATE, SODIUM,
-  STEEL, STONE, STONE_DARK, STONE_LIGHT, STONE_TRIM, TO_VIEW, balustrade, gargoyle, gasLamp, nameSign, parapet, waterTank,
+  STEEL, STONE, STONE_DARK, STONE_LIGHT, STONE_TRIM, TO_VIEW, balustrade, gargoyle, gasLamp, nameSign, padMark, parapet, waterTank,
 } from './look';
 import type { Model, Place } from './models';
-import { CROWN, HERO_SPOTS, Y, lotOf, type Lot } from './plan';
+import { CROWN, HELIPADS, HERO_SPOTS, Y, lotOf, type Lot } from './plan';
 import { open } from './space';
 
 // ---------------------------------------------------------------------------
@@ -206,9 +206,9 @@ const WAYNE_LETTERS: [number, number, number, number][][] = [
 /**
  * Wayne Enterprises' sign, which the collector asked for after a picture he
  * sent: the name in spaced capitals over a broad W with a row of bars like
- * wings either side of it, in silver on a dark panel. The panel is a shield:
- * its foot tapers to a point as the W's does, which he asked for too. It is on
- * one face of the upper shaft, its middle at height `y`. The lettering and the
+ * wings either side of it, in silver on a dark panel. The panel ends in a
+ * chevron: its foot comes to a point as the W's does, which he asked for too.
+ * It is on one face of the upper shaft, its middle at height `y`. The lettering and the
  * W are the tile's own, drawn in plain strokes: silver by day, lit from within
  * at night.
  */
@@ -241,13 +241,13 @@ function wayneSign(k: Build, face: 'S' | 'E', x: number, z: number, y: number): 
       b.quad(P(u0, v0, w0), P(u1, v1, w0), P(u1, v1, w1), P(u0, v0, w1), face === 'S' ? [nu, nv, 0] : [0, nv, -nu], color, o);
     });
   };
-  // the panel: dark, proud of the shaft's ribs, a shield whose sides come in under the wings and meet in a point under
-  // the W's own; a rule of pale stone over it, and a thin one along its taper
-  const taper: [number, number][] = [[4.4, -0.7], [4.1, -2.2], [2.9, -3.6], [0, -5.5]];
-  const mirrored = taper.slice(0, -1).reverse().map(([u, v]): [number, number] => [-u, v]);
-  shape([[-4.4, 5.25], [4.4, 5.25], ...taper, ...mirrored], 0.3, W0, SIGN_PANEL);
+  // the panel: dark, proud of the shaft's ribs, with a rule of pale stone over it
   plate(-4.5, 4.5, 5.25, 5.47, 0.3, W0 + 0.1, STONE_TRIM);
-  for (const s of [-1, 1]) for (let i = 0; i + 1 < taper.length; i++) b.beam(P(s * taper[i][0], taper[i][1], W0), P(s * taper[i + 1][0], taper[i + 1][1], W0), 0.1, 0.1, STONE_TRIM);
+  // its foot is a plain chevron, cut at the W's own slant, with a thin pale rule along the cut. The collector chose
+  // it over a rounder shield and a stepped foot.
+  const cut: [number, number][] = [[4.4, -1.3], [0, -4.5], [-4.4, -1.3]];
+  shape([[-4.4, 5.25], [4.4, 5.25], ...cut], 0.3, W0, SIGN_PANEL);
+  for (let i = 0; i + 1 < cut.length; i++) b.beam(P(cut[i][0], cut[i][1], W0), P(cut[i + 1][0], cut[i + 1][1], W0), 0.1, 0.1, STONE_TRIM);
   // the name
   const cell = 1.3, tall = 2.0, gap = 0.42, left = -(5 * cell + 4 * gap) / 2, foot = 2.75;
   WAYNE_LETTERS.forEach((letter, i) => {
@@ -268,6 +268,45 @@ function wayneSign(k: Build, face: 'S' | 'E', x: number, z: number, y: number): 
       plate(s > 0 ? 2.1 : -end, s > 0 ? end : -2.1, v - 0.13, v + 0.13, W0, W0 + 0.3, SIGN_SILVER, true);
     });
   }
+}
+
+/** The steel plate of the helipad's deck. */
+const PAD_DECK = 0x4b4f58;
+
+/**
+ * Wayne Enterprises' helipad, which the collector asked for with Bruce Wayne's
+ * flight home: a round deck of steel plate that stands out from the east face
+ * at the first setback, level with its ledge, on two raking brackets; a short
+ * gangway through the parapet; a windsock; and a door in the upper shaft
+ * behind it. The helicopter that stands on it is the show's (machines.ts).
+ */
+function wayneHelipad(k: Build, W: WayneParts, y: number): void {
+  const b = k.b, { x: px, z: pz, r } = HELIPADS.tower, face = W.A.x1;
+  // the deck, its rim and its underside, and its markings and lamps
+  b.cyl(px, pz, y - 0.5, y, r, r, 16, IRON, { cap: PAD_DECK });
+  under(b, px, pz, y - 0.5, r, 16, STONE_DARK);
+  padMark(k, px, y + 0.03, pz, r);
+  // the gangway from the ledge, as wide as the deck's flat side
+  const half = r * Math.sin(Math.PI / 16), edge = px - r * Math.cos(Math.PI / 16);
+  b.box(face + 0.52, y - 0.4, pz - half, edge, y, pz + half, IRON, { faces: 'NSTB', top: PAD_DECK });
+  // two raking brackets from the shaft on stone corbels, a beam over each under the deck, and a tie between them
+  for (const s of [-1, 1]) {
+    const z = pz + s * 2.3;
+    b.beam([face - 0.1, y - 8.6, z], [px + 1.4, y - 0.8, z], 0.34, 0.26, IRON);
+    b.box(face, y - 1.0, z - 0.22, px + 2.6, y - 0.52, z + 0.22, IRON, { faces: 'NSEB' });
+    b.box(face - 0.05, y - 9.5, z - 0.42, face + 0.55, y - 8.1, z + 0.42, STONE_TRIM, { faces: 'NESTB' });
+  }
+  b.box(px + 0.8, y - 0.98, pz - 2.3, px + 1.2, y - 0.52, pz + 2.3, IRON, { faces: 'EWB' });
+  // a windsock on a mast at its north side, clear of the rotor
+  const wx = px - 1.2, wz = pz - r + 0.35;
+  b.beam([wx, y, wz], [wx, y + 2.6, wz], 0.07, 0.05, STEEL);
+  b.beam([wx, y + 2.5, wz], [wx + 1.3, y + 2.3, wz - 0.25], 0.2, 0.07, 0xe8862a);
+  // the door to the deck, in the upper shaft between two of its ribs, under a canopy with a lamp
+  const bx = W.cx + W.hB;
+  panel(b, 'E', bx + 0.33, pz - 0.74, pz + 0.74, y, y + 3.0, STONE_TRIM);
+  panel(b, 'E', bx + 0.35, pz - 0.55, pz + 0.55, y + 0.02, y + 2.75, WARM, { win: LIT });
+  onFace(b, 'E', bx, pz - 0.95, pz + 0.95, y + 3.0, y + 3.18, 1.0, IRON, { faces: 'ENSTB' });
+  k.glows.push({ x: bx + 0.6, y: y + 2.88, z: pz, sx: 0.16, sy: 0.16, sz: 0.5, color: '#e6eeff' });
 }
 
 const wayneTower: Model = (k, l) => {
@@ -308,10 +347,13 @@ const wayneTower: Model = (k, l) => {
   const ledge = yA + 0.3, e = 0.38;
   parapet(b, [[A.x0 + 0.8, A.z1 + e], [A.x1 - 0.8, A.z1 + e]], ledge, 0.5, 0.24, STONE_TRIM);
   parapet(b, [[A.x0 + 0.8, A.z0 - e], [A.x1 - 0.8, A.z0 - e]], ledge, 0.5, 0.24, STONE_TRIM);
-  parapet(b, [[A.x1 + e, A.z0 + 0.8], [A.x1 + e, A.z1 - 0.8]], ledge, 0.5, 0.24, STONE_TRIM);
+  // the east parapet opens at its middle for the gangway to the helipad
+  for (const [z0, z1] of [[A.z0 + 0.8, HELIPADS.tower.z - 1.1], [HELIPADS.tower.z + 1.1, A.z1 - 0.8]]) parapet(b, [[A.x1 + e, z0], [A.x1 + e, z1]], ledge, 0.5, 0.24, STONE_TRIM);
   parapet(b, [[A.x0 - e, A.z0 + 0.8], [A.x0 - e, A.z1 - 0.8]], ledge, 0.5, 0.24, STONE_TRIM);
   // a gargoyle in the middle of each face's parapet, Pinkney's on every cornice
-  for (const [x, z, a] of [[cx, A.z1 + e, Math.PI / 2], [cx, A.z0 - e, -Math.PI / 2], [A.x1 + e, cz, 0], [A.x0 - e, cz, Math.PI]]) gargoyle(b, x, ledge + 0.52, z, a, 1.2);
+  for (const [x, z, a] of [[cx, A.z1 + e, Math.PI / 2], [cx, A.z0 - e, -Math.PI / 2], [A.x0 - e, cz, Math.PI]]) gargoyle(b, x, ledge + 0.52, z, a, 1.2);
+  // on the east two smaller ones, either side of the gangway
+  for (const s of [-1, 1]) gargoyle(b, A.x1 + e, ledge + 0.52, HELIPADS.tower.z + s * 1.75, 0, 0.8);
   // Batman's perch: the great gargoyle on the south-east buttress, looking out over the forecourt towards the view
   const P = W.perch;
   gargoyle(b, P.x, P.y, P.z, P.yaw, P.s);
@@ -332,6 +374,8 @@ const wayneTower: Model = (k, l) => {
   // Wayne Enterprises' sign, on the two faces the view the tile opens with sees
   wayneSign(k, 'S', cx, B.z1, ledge + (yB - ledge) * 0.5);
   wayneSign(k, 'E', B.x1, cz, ledge + (yB - ledge) * 0.5);
+
+  wayneHelipad(k, W, ledge);
 
   // ---- the octagon, to the gallery: tall lancets on each face, ribs at its corners
   const oct = chamfered(cx, cz, W.hC, 1.3);
@@ -888,6 +932,9 @@ function places(): Record<string, Place> {
     perch: { x: P.x + Math.cos(P.yaw) * along * P.s, y: P.y + 0.85 * P.s, z: P.z + Math.sin(P.yaw) * along * P.s, h: P.yaw },
     thirteenth: { x: T.x + along * T.s, y: T.y + 0.85 * T.s, z: T.z, h: 0 },
     towerDoor: { x: w.cx, y: Y.crown + 0.04, z: lotOf('wayne-forecourt').z0 + 0.35, h: Math.PI / 2 },
+    // the helipad's middle, where the helicopter's skids stand, and the ledge before the door to it
+    helipad: { x: HELIPADS.tower.x, y: w.yA + 0.3, z: HELIPADS.tower.z, h: TO_VIEW_H },
+    heliDoor: { x: w.cx + w.hB + 0.8, y: w.yA + 0.3, z: HELIPADS.tower.z, h: 0 },
     watchKane: { x: K.S.x1 - 0.7, y: K.yPod + 0.1, z: (K.S.z1 + kl.z1) / 2 - 0.2, h: TO_VIEW_H },
     watchElliot: { x: E.cx + (E.halves[0] + E.halves[1]) / 2, y: E.tops[0] + 0.3, z: E.cz + (E.halves[0] + E.halves[1]) / 2, h: TO_VIEW_H },
     foundationRoof: { x: F.cx + 0.5, y: F.yRoof, z: F.cz + F.at + (F.Z1 - F.cz - F.at) / 2, h: TO_VIEW_H },
