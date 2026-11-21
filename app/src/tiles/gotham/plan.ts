@@ -384,8 +384,9 @@ export function riverY(x: number, z: number): number {
   const T = TRIGATE;
   if (inside(BLUFF, x, z) || (z > -50.5 && x > -12)) return Y.bluff;
   if (Math.abs(x - KANE.x) < 12 && z > KANE.z0 && z < KANE.z1) return KANE.north + ((KANE.south - KANE.north) * (z - KANE.z0)) / (KANE.z1 - KANE.z0);
-  // the Uptown arm: it leaves the ring towards the south-east
-  const d = Math.hypot(x - T.c[0], z - T.c[1]);
+  // the Uptown arm: it leaves the ring towards the south-east, and climbs by how far along it a place is, so that
+  // the lane on either side of its middle lies at the middle's own height
+  const al = Math.hypot(T.uptown[0] - T.c[0], T.uptown[1] - T.c[1]), d = ((x - T.c[0]) * (T.uptown[0] - T.c[0]) + (z - T.c[1]) * (T.uptown[1] - T.c[1])) / al;
   if (x > T.c[0] && z > T.c[1] - 2 && d > T.r + 1 && d < ASHORE + 2) return Y.shelf + (Y.bluff - Y.shelf) * Math.min(1, Math.max(0, (d - T.r - 1) / (ASHORE - T.r - 1)));
   return Y.shelf;
 }
@@ -583,7 +584,7 @@ lot('bristol', 'forecourt', '', 52, -106, 64, -96, Y.crest, 0.2, true);
 lot('bristol', 'kane-bridge', 'Kane Memorial Bridge', 72, -70, 88, -48, Y.shelf, 24, true);
 // ============================ Mercey Island: Arkham ============================
 lot('arkham', 'arkham', 'Arkham Asylum', -96, -104, -66, -88, Y.crag, 21);
-lot('arkham', 'arkham-gate', '', -72, -85, -64, -80, Y.isle, 9, true);
+lot('arkham', 'arkham-gate', '', -77, -85, -64, -80, Y.isle, 9, true);
 lot('arkham', 'trigate', 'Trigate Bridge', -48, -76, -24, -52, Y.shelf, 8, true);
 // ============================ the harbour ============================
 lot('bay', 'blackgate', 'Blackgate', 84, 89, 99, 101, 2, 14);
