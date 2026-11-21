@@ -79,7 +79,7 @@ export function buildShow(k: Build, hatch: Hatch | null = null): Show {
   const beasts = tried('the animals', () => buildBeasts(k));
   tried('the boats', () => buildBoats(k));
   const solid = new Solid(k.b);
-  const lines = new Lines(k, 64), glints = new Lines(k, 96, true), rings = new Rings(k);
+  const lines = new Lines(k, 64), glints = new Lines(k, 96, true), rings = new Rings(k), ringsEast = new Rings(k);
 
   let night = 0;
   const W: World = {
@@ -89,7 +89,7 @@ export function buildShow(k: Build, hatch: Hatch | null = null): Show {
       const p: Place | undefined = REGIONS[file]?.PLACES?.[name];
       return p ? at(p.x, p.y, p.z, p.h) : or;
     },
-    air, machines, beasts, lines, glints, rings,
+    air, machines, beasts, lines, glints, rings, ringsEast,
     night: () => night,
     hatch,
   };

@@ -313,6 +313,8 @@ export interface World {
   lines: Lines;
   glints: Lines;
   rings: Rings;
+  /** The east chapter's own rings: its stories are handed these as `rings`, so that the two chapters never share one. */
+  ringsEast: Rings;
   /** How dark it is now, from 0 at noon to 1 at night. */
   night(): number;
   /** The lid over the Batcave's lift, in the Manor's pool garden, and the lift under it: null if it could not be built. */

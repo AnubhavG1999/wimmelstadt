@@ -75,7 +75,8 @@ export function buildStories(k: Build, W: World): Stories {
   };
   for (const [name, chapter] of [['the west', west], ['the east', east]] as const) {
     try {
-      chapter(k, W, book);
+      // the east chapter draws its rings with a set of its own
+      chapter(k, name === 'the east' ? { ...W, rings: W.ringsEast } : W, book);
     } catch (e) {
       console.error(`Gotham: the stories of ${name} failed.`, e);
     }
