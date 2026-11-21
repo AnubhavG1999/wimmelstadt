@@ -42,7 +42,7 @@ import { SHOW_LANES, Y } from './plan';
 
 export type MachineKind =
   | 'batmobile' | 'batboat' | 'batplane' | 'batgyro' | 'batcycle' | 'redCycle'
-  | 'jokermobile' | 'rowboat' | 'invisiblePlane' | 'policeCopter';
+  | 'jokermobile' | 'rowboat' | 'invisiblePlane' | 'policeCopter' | 'batwing';
 
 /** One machine of the show. */
 export interface Machine {
@@ -68,6 +68,8 @@ export interface Machine {
    * from its boot), `plank` (the plank pushed out ahead of it), `cards` (cards
    * streaming from its tail). The Batgyro and the helicopter: `line` (a line
    * let down under it). The rowing boat: `flag` (a jack-in-the-box flying a flag).
+   * The Batwing: `rotors` (how fast its rotors turn, still at 0, a blur at 1),
+   * `light` (its searchlight's cone) and `line` (a line with a bar to hold).
    * A name a machine does not know does nothing.
    */
   trick(name: string, f: number): void;
@@ -99,10 +101,10 @@ export const REACH = { glove: 5, gloveY: 1, plank: 10, line: 10 };
 /** Each one's length, width and height as built (the rowing boat's width is across its oars). */
 const SIZES: Record<MachineKind, [number, number, number]> = {
   batmobile: [9.6, 3.4, 2.2], batboat: [9.1, 3.0, 2.3], batplane: [9.9, 11, 2.55], batgyro: [6.0, 5.9, 2.75], batcycle: [4.1, 1.0, 2.05], redCycle: [4.0, 1.1, 1.8],
-  jokermobile: [8.45, 3.2, 2.36], rowboat: [4.0, 4.6, 0.75], invisiblePlane: [8.0, 9.0, 2.15], policeCopter: [7.0, 6.5, 2.75],
+  jokermobile: [8.45, 3.2, 2.36], rowboat: [4.0, 4.6, 0.75], invisiblePlane: [8.0, 9.0, 2.15], policeCopter: [7.0, 6.5, 2.75], batwing: [10.1, 9.3, 3.0],
 };
 
-const KINDS: MachineKind[] = ['batmobile', 'batboat', 'batplane', 'batgyro', 'batcycle', 'redCycle', 'jokermobile', 'rowboat', 'invisiblePlane', 'policeCopter'];
+const KINDS: MachineKind[] = ['batmobile', 'batboat', 'batplane', 'batgyro', 'batcycle', 'redCycle', 'jokermobile', 'rowboat', 'invisiblePlane', 'policeCopter', 'batwing'];
 
 type P2 = [number, number];
 
@@ -1453,10 +1455,214 @@ function policeCopter(k: Build, mat: THREE.Material): Rig {
 }
 
 // ---------------------------------------------------------------------------
+// The Batwing
+// ---------------------------------------------------------------------------
+
+/**
+ * A flat shape seen from above, outline (x, z), with a thickness and a
+ * bevelled top: straight sides from `y0` to `y1`, then a sloping facet in to
+ * the same outline drawn `inset` smaller, at `y2`.
+ */
+function bevelSlab(g: GeoBuilder, P: P2[], inset: number, y0: number, y1: number, y2: number, top: number, bevel: number, side: number, under: number): void {
+  const turn = area2(P) >= 0 ? 1 : -1, n = P.length;
+  // the outline drawn smaller: each corner moved in along the bisector of its two edges
+  const Q: P2[] = P.map((p, i) => {
+    const a = P[(i + n - 1) % n], b = P[(i + 1) % n];
+    const e1 = [p[0] - a[0], p[1] - a[1]], e2 = [b[0] - p[0], b[1] - p[1]];
+    const l1 = Math.hypot(e1[0], e1[1]) || 1, l2 = Math.hypot(e2[0], e2[1]) || 1;
+    // inward normals of the two edges
+    const n1 = [(-e1[1] / l1) * turn, (e1[0] / l1) * turn], n2 = [(-e2[1] / l2) * turn, (e2[0] / l2) * turn];
+    let bx = n1[0] + n2[0], bz = n1[1] + n2[1];
+    const bl = Math.hypot(bx, bz) || 1;
+    bx /= bl;
+    bz /= bl;
+    const m = inset / Math.max(0.35, bx * n1[0] + bz * n1[1]);
+    return [p[0] + bx * m, p[1] + bz * m];
+  });
+  const V = (p: P2, y: number): V3 => [p[0], y, p[1]];
+  const tri = (pts: P2[]): number[][] => THREE.ShapeUtils.triangulateShape(pts.map((p) => new THREE.Vector2(p[0], p[1])), []);
+  for (const t of tri(P)) face3(g, V(P[t[0]], y0), V(P[t[1]], y0), V(P[t[2]], y0), [0, -1, 0], under);
+  for (const t of tri(Q)) face3(g, V(Q[t[0]], y2), V(Q[t[1]], y2), V(Q[t[2]], y2), [0, 1, 0], top);
+  for (let i = 0; i < n; i++) {
+    const j = (i + 1) % n, ex = P[j][0] - P[i][0], ez = P[j][1] - P[i][1];
+    const out: V3 = [ez * turn, 0, -ex * turn];
+    quadTo(g, V(P[i], y0), V(P[j], y0), V(P[j], y1), V(P[i], y1), side, out);
+    quadTo(g, V(P[i], y1), V(P[j], y1), V(Q[j], y2), V(Q[i], y2), bevel, [out[0], Math.hypot(ex, ez) * 0.8, out[2]]);
+  }
+}
+
+/**
+ * The Batwing, as the tile draws it: a heavy armoured craft that hovers on
+ * rotors. A broad, low, faceted black body with a blunt armoured nose and a
+ * low two-seat canopy in it, split down its middle behind the cockpit into
+ * two halves with the family's scalloped fins at their tails; outriggers at
+ * its sides with red and green lamps; two large rotors under the body, each in
+ * an open cage, seen from above through the grilles over them and from the
+ * side where the cages stand out; three short legs. From above it is wide and
+ * notched at the back, nothing like the Batplane.
+ */
+function batwing(k: Build, mat: THREE.Material): Rig {
+  const r = new Rig('batwing', k, mat);
+  const g = new GeoBuilder(), lg = new GeoBuilder(), halos: Halo[] = [];
+  // --- the body, seen from above: a blunt nose, wide shoulders, pointed outriggers, and a slot down the back ---
+  // a bat seen from above: a blunt head, its wings' leading edges running out almost square to the wrists, and the trailing edges scalloped between the fingers back in to the tail
+  const half: P2[] = [[5.1, 0.85], [4.1, 1.0], [3.6, 1.6], [3.25, 3.0], [3.3, 4.3], [2.9, 4.65], ...scallops([2.9, 4.65], [0, 4.3], 1, 0.75, [0.12, -1], 3), ...scallops([0, 4.3], [-2.6, 3.2], 1, 0.7, [0.39, -0.92], 3), ...scallops([-2.6, 3.2], [-4.5, 1.45], 1, 0.55, [0.68, -0.74], 3), [-4.2, 0.6], [-1.8, 0.6]];
+  const outline: P2[] = [...half, ...half.slice().reverse().map(([x, z]): P2 => [x, -z])];
+  bevelSlab(g, outline, 0.32, 1.45, 1.72, 1.98, BAT_TOP, BAT, BAT_DARK, BAT_UNDER);
+  // --- the middle: an armoured nose and the cockpit, running back to where the body splits ---
+  const MID = [
+    body8(5.25, 0.5, 1.3, 0.7, 1.4, 1.85, 0.45, 2.05),
+    body8(4.2, 0.8, 0.95, 1.1, 1.1, 2.1, 0.72, 2.32),
+    body8(2.0, 0.85, 0.95, 1.2, 1.1, 2.25, 0.74, 2.4),
+    body8(-0.2, 0.75, 1.3, 1.0, 1.4, 2.2, 0.6, 2.45),
+    body8(-1.8, 0.45, 1.5, 0.6, 1.6, 2.0, 0.35, 2.15),
+  ];
+  // the cockpit is open under its canopy, for a caped figure to sit in
+  loft(g, MID, (j) => [BAT_DARK, BAT, BAT, BAT_TOP, BAT, BAT, BAT_DARK, BAT_UNDER][j], { skip: (j, s) => j === 3 && s === 1, capA: BAT_EDGE, capB: BAT_EDGE });
+  for (const s of [-1, 1]) quadTo(g, [4.2, 2.32, s * 0.72], [2.0, 2.4, s * 0.74], [2.0, 1.99, s * 0.74], [4.2, 1.99, s * 0.72], BAT_DARK, [0, 0, -s]);
+  quadTo(g, [4.2, 2.32, -0.72], [4.2, 2.32, 0.72], [4.2, 1.99, 0.72], [4.2, 1.99, -0.72], BAT_DARK, [-1, 0, 0]);
+  quadTo(g, [2.0, 2.4, -0.74], [2.0, 2.4, 0.74], [2.0, 1.99, 0.74], [2.0, 1.99, -0.74], BAT_DARK, [1, 0, 0]);
+  g.beam([2.0, 2.41, 0], [-1.6, 2.15, 0], 0.08, 0.06, BAT_EDGE);
+  // a dash, and two seat backs
+  block(g, [3.75, 1.99, -0.6], [4.15, 2.3, 0.6], BAT_EDGE, BAT_DARK, 'NESWT');
+  block(g, [2.75, 1.99, -0.42], [2.88, 2.45, 0.42], BAT_EDGE, BAT_EDGE, 'NESWT');
+  block(g, [2.05, 1.99, -0.42], [2.18, 2.45, 0.42], BAT_EDGE, BAT_EDGE, 'NESWT');
+  // the canopy: smoked glass that the crew are seen through, on a frame of rails
+  const CAN: P2[] = [[0.7, 2.25], [0.72, 2.6], [0.42, 3.0], [-0.42, 3.0], [-0.72, 2.6], [-0.7, 2.25]];
+  const cg = new GeoBuilder();
+  const crings = [ring(4.65, scaled(CAN, 0.6, 0.12, 0, 2.25)), ring(4.05, scaled(CAN, 0.94, 0.75, 0, 2.25)), ring(3.2, CAN), ring(2.3, scaled(CAN, 0.97, 0.94, 0, 2.25)), ring(1.55, scaled(CAN, 0.62, 0.25, 0, 2.25))];
+  loft(cg, crings, () => 0xffffff, { capA: false, capB: false });
+  const glassMat = new THREE.MeshBasicMaterial({ color: 0x31475e, transparent: true, opacity: 0.42, depthWrite: false, side: THREE.DoubleSide });
+  const glass = new THREE.Mesh(cg.build(), glassMat);
+  glass.renderOrder = 4;
+  r.body.add(glass);
+  r.tris += cg.triangles;
+  // its frame: two hoops low enough to clear the crew's heads
+  for (const x of [4.05, 2.3]) {
+    const p = crings.find((c) => c.x === x)!.p;
+    g.beam(at3(x, p[1]), at3(x, p[2]), 0.05, 0.05, BAT_EDGE);
+    g.beam(at3(x, p[4]), at3(x, p[3]), 0.05, 0.05, BAT_EDGE);
+  }
+  // two small ears either side of the canopy, as a bat's head has
+  for (const s of [-1, 1]) {
+    const v: V3 = [0, Math.cos(0.3), s * Math.sin(0.3)];
+    slab(g, [[5.0, -0.2], [3.85, -0.2], [4.6, 0.98]], [0, 2.02, s * 0.9], AX, v, unit(cross(AX, v)), -0.07, 0.07, BAT, BAT_EDGE);
+  }
+  // armour plates on the nose's cheeks
+  for (const s of [-1, 1]) quadTo(g, [4.9, 1.5, s * 0.78], [3.9, 1.45, s * 1.16], [3.9, 1.95, s * 1.16], [4.9, 1.8, s * 0.78], BAT_EDGE, [0.5, 0, s]);
+
+  // --- the rotors' cages under the body, and the grilles over them ---
+  const RC: P2[] = [[0, 2.5], [0, -2.5]], RR = 1.5, RY = 1.12;
+  for (const [cx, cz] of RC) {
+    const N = 10;
+    for (let i = 0; i < N; i++) {
+      const a = ((i + 0.5) / N) * Math.PI * 2, t: V3 = [-Math.sin(a), 0, Math.cos(a)], rad: V3 = [Math.cos(a), 0, Math.sin(a)];
+      rbox(g, [cx + rad[0] * RR, RY, cz + rad[2] * RR], [RR * Math.sin(Math.PI / N) + 0.03, 0.2, 0.08], t, AY, rad, BAT_EDGE, 'NSTB');
+    }
+    for (const a of [1.2, 4.3]) g.beam([cx + Math.cos(a) * RR, RY + 0.15, cz + Math.sin(a) * RR], [cx + Math.cos(a) * RR * 0.75, 1.55, cz + Math.sin(a) * RR * 0.75], 0.06, 0.06, BAT_EDGE);
+    frustum(g, [cx, RY + 0.08, cz], [cx, 1.55, cz], 0.16, 0.2, 8, GREY);
+    // a grille in the top over each rotor, its slats lighter
+    const yt = 1.985, z0 = Math.abs(cz) - 0.75, z1 = Math.abs(cz) + 0.65, s = Math.sign(cz);
+    quadTo(g, [cx - 0.8, yt, s * z0], [cx + 0.9, yt, s * z0], [cx + 0.9, yt, s * z1], [cx - 0.8, yt, s * z1], BAT_DARK, [0, 1, 0]);
+    for (let i = 0; i < 5; i++) {
+      const x = cx - 0.68 + i * 0.36;
+      quadTo(g, [x, yt + 0.01, s * z0], [x + 0.1, yt + 0.01, s * z0], [x + 0.1, yt + 0.01, s * z1], [x, yt + 0.01, s * z1], BAT_EDGE, [0, 1, 0]);
+    }
+  }
+  // the rotors: three blades each, turning opposite ways, and the blur of their discs
+  const rotors: THREE.Object3D[] = [], discs: THREE.MeshBasicMaterial[] = [];
+  for (const [cx, cz] of RC) {
+    const rg = new GeoBuilder();
+    frustum(rg, [0, -0.08, 0], [0, 0.08, 0], 0.26, 0.22, 8, GREY);
+    for (let i = 0; i < 3; i++) {
+      const a = (i / 3) * Math.PI * 2, ax: V3 = [Math.cos(a), 0, Math.sin(a)];
+      rbox(rg, mul(ax, 0.95), [0.72, 0.03, 0.17], ax, AY, cross(ax, AY), 0x34373e);
+    }
+    const p = r.pivot([cx, RY, cz]);
+    rotors.push(r.solid(rg, p));
+    const dm = new THREE.MeshBasicMaterial({ color: 0x2a2c33, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide });
+    const d = new THREE.Mesh(new THREE.CircleGeometry(RR - 0.08, 24), dm);
+    d.rotation.x = -Math.PI / 2;
+    d.renderOrder = 2;
+    p.add(d);
+    discs.push(dm);
+  }
+  r.fx.rotors = () => {};
+
+  // --- the fins at the tails of the two halves, the family's ---
+  const lead: P2[] = [[-1.9, -0.2], [-2.7, 0.28], [-3.4, 0.6], [-4.05, 0.82], [-4.55, 0.92]];
+  batFin(g, [...lead, ...scallops([-4.55, 0.92], [-4.0, -0.2], 2, 0.14, [1, 0.12])], 1.95, 1.55, 0.42);
+
+  // --- three short legs ---
+  const leg = (top: V3, foot: V3): void => {
+    g.beam(top, foot, 0.1, 0.08, BAT_EDGE);
+    block(g, [foot[0] - 0.25, 0, foot[2] - 0.22], [foot[0] + 0.25, 0.12, foot[2] + 0.22], BAT_DARK, BAT_EDGE);
+  };
+  leg([3.8, 1.35, 0], [3.8, 0.1, 0]);
+  for (const s of [-1, 1]) leg([-2.6, 1.5, s * 1.6], [-2.8, 0.1, s * 1.9]);
+
+  // --- lamps: amber slits across the nose, red and green at the outriggers' tips, red at the tails ---
+  lamp(lg, halos, [5.22, 1.66, -0.5], [5.28, 1.72, 0.5], AMBER);
+  for (const s of [-1, 1]) {
+    halos.push({ at: [5.32, 1.69, s * 0.3], r: 0.42, color: AMBER });
+    lamp(lg, halos, [3.48, 1.6, s * 1.75], [3.6, 1.68, s * 2.15], AMBER, 0.3);
+    lamp(lg, halos, [2.8, 1.55, s * 4.52], [3.0, 1.68, s * 4.68], s < 0 ? RED_LAMP : GREEN_LAMP, 0.5);
+    lamp(lg, halos, [-4.74, 1.58, s * 1.55], [-4.6, 1.66, s * 1.8], RED_LAMP, 0.32);
+  }
+  r.lamps(lg, halos);
+
+  // --- the searchlight under the nose, and its cone ---
+  const aim = unit([0.574, -0.819, 0]), sc: V3 = [4.7, 1.0, 0];
+  frustum(g, [4.7, 1.3, 0], [4.7, 1.05, 0], 0.1, 0.1, 6, BAT_DARK);
+  frustum(g, sc, add(sc, mul(aim, 0.3)), 0.19, 0.22, 10, BAT_EDGE, { capB: false });
+  const sg = new GeoBuilder();
+  frustum(sg, add(sc, mul(aim, 0.28)), add(sc, mul(aim, 0.31)), 0.2, 0.2, 10, WHITE_LAMP);
+  const searchMat = new THREE.MeshBasicMaterial({ vertexColors: true, toneMapped: false });
+  r.body.add(new THREE.Mesh(sg.build(), searchMat));
+  r.tris += sg.triangles;
+  const coneG = new GeoBuilder();
+  frustum(coneG, [0, 0, 0], [0, -1, 0], 0.06, 1, 14, 0xffffff, { capA: false, capB: false });
+  const cgeo = coneG.build();
+  const pos = cgeo.getAttribute('position') as THREE.BufferAttribute, col = cgeo.getAttribute('color') as THREE.BufferAttribute;
+  for (let i = 0; i < pos.count; i++) col.setXYZ(i, 1 + 0.85 * pos.getY(i), 1 + 0.85 * pos.getY(i), 1 + 0.85 * pos.getY(i));
+  const coneMat = additive({ vertexColors: true, color: 0xfff0c8 });
+  const cone = new THREE.Mesh(cgeo, coneMat);
+  const conePivot = r.pivot(add(sc, mul(aim, 0.32)));
+  conePivot.rotation.z = Math.atan2(aim[0], -aim[1]);
+  cone.scale.set(3.4, 16, 3.4);
+  cone.renderOrder = 4;
+  cone.visible = false;
+  conePivot.add(cone);
+  r.fx.light = () => {};
+
+  // --- the line from its belly, with a bar to hold ---
+  const bar = new GeoBuilder();
+  frustum(bar, [0, -0.04, -0.45], [0, -0.04, 0.45], 0.05, 0.05, 6, BAT_EDGE);
+  r.line([0.4, 1.28, 0], bar);
+
+  let spin = 0;
+  r.each = (dt, _t, night) => {
+    const v = r.value.light ?? 0;
+    cone.visible = v > 0.01;
+    coneMat.opacity = v * (0.1 + 0.22 * night);
+    searchMat.color.setScalar(0.45 + Math.max(v, r.lit * 0.3) * (1.0 + 2.2 * night));
+    // the rotors: still at 0, a blur at 1; and turning whenever it is flown
+    const target = Math.max(r.value.rotors ?? 0, Math.abs(r.speed) > 0.1 ? 1 : 0);
+    spin += (target - spin) * Math.min(1, dt * 2.5);
+    rotors.forEach((m, i) => { m.rotation.y += (i === 0 ? 1 : -1) * spin * 28 * dt; });
+    for (const d of discs) d.opacity = 0.24 * smooth(0.3, 1, spin);
+  };
+  r.solid(g);
+  // the pilot in front, the second seat behind: a seated figure's feet at y 1.05, its cushion SEAT_RISE above, and the glass 3.0 high over its head
+  r.seats = [[3.3, 1.05, 0], [2.4, 1.05, 0]];
+  return r;
+}
+
+// ---------------------------------------------------------------------------
 // All of them
 // ---------------------------------------------------------------------------
 
-const MAKERS: Record<MachineKind, (k: Build, mat: THREE.Material) => Rig> = { batmobile, batboat, batplane, batgyro, batcycle, redCycle, jokermobile, rowboat, invisiblePlane, policeCopter };
+const MAKERS: Record<MachineKind, (k: Build, mat: THREE.Material) => Rig> = { batmobile, batboat, batplane, batgyro, batcycle, redCycle, jokermobile, rowboat, invisiblePlane, policeCopter, batwing };
 
 /** Builds every machine, hidden until the show shows it. */
 export function buildMachines(k: Build): Machines {
@@ -1487,10 +1693,12 @@ export function buildMachines(k: Build): Machines {
     const total = KINDS.reduce((s, kind) => s + rigs.get(kind)!.tris, 0);
     console.info(`Gotham: the machines: ${Math.round(total)} triangles (${tris.join(', ')}).`);
     const A = SHOW_LANES.apron;
-    const ROWS: { kinds: MachineKind[]; y: number; z: number }[] = [
+    const ROWS: { kinds: MachineKind[]; y: number; z: number; from?: number }[] = [
       { kinds: ['batmobile', 'jokermobile', 'batcycle', 'redCycle'], y: A.y, z: A.z },
       { kinds: ['batboat', 'rowboat'], y: Y.water, z: 42 },
       { kinds: ['batplane', 'policeCopter', 'batgyro', 'invisiblePlane'], y: A.y + 6, z: A.z },
+      // the Batwing hovers 6 over the water beside the boats, clear of the viaduct over the apron
+      { kinds: ['batwing'], y: Y.water + 6, z: 44, from: 2 },
     ];
     (window as unknown as { gothamMachines: object }).gothamMachines = {
       kinds: KINDS,
@@ -1499,10 +1707,10 @@ export function buildMachines(k: Build): Machines {
       line(): string {
         for (const row of ROWS) row.kinds.forEach((kind, i) => {
           const m = rigs.get(kind)!;
-          m.at(A.x0 + 2 + i * 13, row.y, row.z, Math.PI / 2);
+          m.at(A.x0 + 2 + (i + (row.from ?? 0)) * 13, row.y, row.z, Math.PI / 2);
           m.shown(true);
         });
-        return ROWS.map((row) => row.kinds.map((kind, i) => `${kind} at x ${A.x0 + 2 + i * 13}`).join(', ')).join('; ');
+        return ROWS.map((row) => row.kinds.map((kind, i) => `${kind} at x ${A.x0 + 2 + (i + (row.from ?? 0)) * 13}`).join(', ')).join('; ');
       },
       at: (kind: MachineKind, x: number, y: number, z: number, h: number, p = 0, ro = 0) => { const m = rigs.get(kind)!; m.at(x, y, z, h, p, ro); m.shown(true); },
       trick: (kind: MachineKind, name: string, f: number) => rigs.get(kind)?.trick(name, f),
