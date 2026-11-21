@@ -101,7 +101,7 @@ export const REACH = { glove: 5, gloveY: 1, plank: 10, line: 10 };
 /** Each one's length, width and height as built (the rowing boat's width is across its oars). */
 const SIZES: Record<MachineKind, [number, number, number]> = {
   batmobile: [9.6, 3.4, 2.2], batboat: [9.1, 3.0, 2.3], batplane: [9.9, 11, 2.55], batgyro: [6.0, 5.9, 2.75], batcycle: [4.1, 1.0, 2.05], redCycle: [4.0, 1.1, 1.8],
-  jokermobile: [8.45, 3.2, 2.36], rowboat: [4.0, 4.6, 0.75], invisiblePlane: [8.0, 9.0, 2.15], policeCopter: [7.0, 6.5, 2.75], batwing: [10.1, 9.3, 3.0],
+  jokermobile: [8.45, 3.2, 2.36], rowboat: [4.0, 4.6, 0.75], invisiblePlane: [8.0, 9.0, 2.15], policeCopter: [7.0, 6.5, 2.75], batwing: [10.1, 9.3, 1.95],
 };
 
 const KINDS: MachineKind[] = ['batmobile', 'batboat', 'batplane', 'batgyro', 'batcycle', 'redCycle', 'jokermobile', 'rowboat', 'invisiblePlane', 'policeCopter', 'batwing'];
@@ -1463,7 +1463,7 @@ function policeCopter(k: Build, mat: THREE.Material): Rig {
  * bevelled top: straight sides from `y0` to `y1`, then a sloping facet in to
  * the same outline drawn `inset` smaller, at `y2`.
  */
-function bevelSlab(g: GeoBuilder, P: P2[], inset: number, y0: number, y1: number, y2: number, top: number, bevel: number, side: number, under: number): void {
+function bevelSlab(g: GeoBuilder, P: P2[], inset: number, y0: number, y1: number, y2: number, top: number, bevel: number, side: number, under: number, holes: P2[][] = []): void {
   const turn = area2(P) >= 0 ? 1 : -1, n = P.length;
   // the outline drawn smaller: each corner moved in along the bisector of its two edges
   const Q: P2[] = P.map((p, i) => {
@@ -1480,9 +1480,14 @@ function bevelSlab(g: GeoBuilder, P: P2[], inset: number, y0: number, y1: number
     return [p[0] + bx * m, p[1] + bz * m];
   });
   const V = (p: P2, y: number): V3 => [p[0], y, p[1]];
-  const tri = (pts: P2[]): number[][] => THREE.ShapeUtils.triangulateShape(pts.map((p) => new THREE.Vector2(p[0], p[1])), []);
-  for (const t of tri(P)) face3(g, V(P[t[0]], y0), V(P[t[1]], y0), V(P[t[2]], y0), [0, -1, 0], under);
-  for (const t of tri(Q)) face3(g, V(Q[t[0]], y2), V(Q[t[1]], y2), V(Q[t[2]], y2), [0, 1, 0], top);
+  // the top and the bottom, with any holes cut through both
+  const v2 = (p: P2): THREE.Vector2 => new THREE.Vector2(p[0], p[1]);
+  const flat = (pts: P2[], y: number, up: number, color: number): void => {
+    const all = [...pts, ...holes.flat()];
+    for (const t of THREE.ShapeUtils.triangulateShape(pts.map(v2), holes.map((h) => h.map(v2)))) face3(g, V(all[t[0]], y), V(all[t[1]], y), V(all[t[2]], y), [0, up, 0], color);
+  };
+  flat(P, y0, -1, under);
+  flat(Q, y2, 1, top);
   for (let i = 0; i < n; i++) {
     const j = (i + 1) % n, ex = P[j][0] - P[i][0], ez = P[j][1] - P[i][1];
     const out: V3 = [ez * turn, 0, -ex * turn];
@@ -1493,28 +1498,34 @@ function bevelSlab(g: GeoBuilder, P: P2[], inset: number, y0: number, y1: number
 
 /**
  * The Batwing, as the tile draws it: a heavy armoured craft that hovers on
- * rotors. A broad, low, faceted black body with a blunt armoured nose and a
- * low two-seat canopy in it, split down its middle behind the cockpit into
- * two halves with the family's scalloped fins at their tails; outriggers at
- * its sides with red and green lamps; two large rotors under the body, each in
- * an open cage, seen from above through the grilles over them and from the
- * side where the cages stand out; three short legs. From above it is wide and
- * notched at the back, nothing like the Batplane.
+ * two lift fans. Black all over, and from above a bat: a blunt head with two
+ * small ears either side of a two-seat canopy, wings whose leading edges run
+ * out almost square to the wrists, trailing edges scalloped between the
+ * fingers back in to the tail, and a slot down the back between the family's
+ * scalloped fins. The fans are set flush into the wings, each a round
+ * opening with its blades turning inside, a thin ring round its rim and a
+ * grille over it. Nothing hangs below: the belly is one clean surface with
+ * lighter panel lines, the two openings, a flush lens for the searchlight and
+ * two amber strips that glow while the fans turn, and it lands on it.
  */
 function batwing(k: Build, mat: THREE.Material): Rig {
   const r = new Rig('batwing', k, mat);
   const g = new GeoBuilder(), lg = new GeoBuilder(), halos: Halo[] = [];
-  // --- the body, seen from above: a blunt nose, wide shoulders, pointed outriggers, and a slot down the back ---
-  // a bat seen from above: a blunt head, its wings' leading edges running out almost square to the wrists, and the trailing edges scalloped between the fingers back in to the tail
+  /** The belly, in the shape's own heights: everything is lowered by this, so that `at` puts the belly at its `y`. */
+  const BELLY = 1.45, DECK = 1.98;
+  r.body.position.y = -BELLY;
+  // --- the body, seen from above: a bat, with the two fans' openings cut through it ---
   const half: P2[] = [[5.1, 0.85], [4.1, 1.0], [3.6, 1.6], [3.25, 3.0], [3.3, 4.3], [2.9, 4.65], ...scallops([2.9, 4.65], [0, 4.3], 1, 0.75, [0.12, -1], 3), ...scallops([0, 4.3], [-2.6, 3.2], 1, 0.7, [0.39, -0.92], 3), ...scallops([-2.6, 3.2], [-4.5, 1.45], 1, 0.55, [0.68, -0.74], 3), [-4.2, 0.6], [-1.8, 0.6]];
   const outline: P2[] = [...half, ...half.slice().reverse().map(([x, z]): P2 => [x, -z])];
-  bevelSlab(g, outline, 0.32, 1.45, 1.72, 1.98, BAT_TOP, BAT, BAT_DARK, BAT_UNDER);
-  // --- the middle: an armoured nose and the cockpit, running back to where the body splits ---
+  const FANS: P2[] = [[0.6, 2.35], [0.6, -2.35]], FR = 1.05, FN = 14;
+  const holes = FANS.map(([cx, cz]) => circle(FR, FN, 0, cx, cz));
+  bevelSlab(g, outline, 0.32, BELLY, 1.72, DECK, BAT_TOP, BAT, BAT_DARK, BAT_UNDER, holes);
+  // --- the middle: an armoured nose and the cockpit, its underside hidden just inside the belly ---
   const MID = [
-    body8(5.25, 0.5, 1.3, 0.7, 1.4, 1.85, 0.45, 2.05),
-    body8(4.2, 0.8, 0.95, 1.1, 1.1, 2.1, 0.72, 2.32),
-    body8(2.0, 0.85, 0.95, 1.2, 1.1, 2.25, 0.74, 2.4),
-    body8(-0.2, 0.75, 1.3, 1.0, 1.4, 2.2, 0.6, 2.45),
+    body8(5.25, 0.5, 1.5, 0.7, 1.55, 1.85, 0.45, 2.05),
+    body8(4.2, 0.8, 1.47, 1.1, 1.52, 2.1, 0.72, 2.32),
+    body8(2.0, 0.85, 1.47, 1.2, 1.52, 2.25, 0.74, 2.4),
+    body8(-0.2, 0.75, 1.47, 1.0, 1.52, 2.2, 0.6, 2.45),
     body8(-1.8, 0.45, 1.5, 0.6, 1.6, 2.0, 0.35, 2.15),
   ];
   // the cockpit is open under its canopy, for a caped figure to sit in
@@ -1525,10 +1536,10 @@ function batwing(k: Build, mat: THREE.Material): Rig {
   g.beam([2.0, 2.41, 0], [-1.6, 2.15, 0], 0.08, 0.06, BAT_EDGE);
   // a dash, and two seat backs
   block(g, [3.75, 1.99, -0.6], [4.15, 2.3, 0.6], BAT_EDGE, BAT_DARK, 'NESWT');
-  block(g, [2.75, 1.99, -0.42], [2.88, 2.45, 0.42], BAT_EDGE, BAT_EDGE, 'NESWT');
-  block(g, [2.05, 1.99, -0.42], [2.18, 2.45, 0.42], BAT_EDGE, BAT_EDGE, 'NESWT');
-  // the canopy: smoked glass that the crew are seen through, on a frame of rails
-  const CAN: P2[] = [[0.7, 2.25], [0.72, 2.6], [0.42, 3.0], [-0.42, 3.0], [-0.72, 2.6], [-0.7, 2.25]];
+  block(g, [2.75, 1.99, -0.42], [2.88, 2.5, 0.42], BAT_EDGE, BAT_EDGE, 'NESWT');
+  block(g, [2.05, 1.99, -0.42], [2.18, 2.5, 0.42], BAT_EDGE, BAT_EDGE, 'NESWT');
+  // the canopy: smoked glass that the crew are seen through, tall enough for a caped figure's head
+  const CAN: P2[] = [[0.7, 2.25], [0.74, 2.7], [0.44, 3.4], [-0.44, 3.4], [-0.74, 2.7], [-0.7, 2.25]];
   const cg = new GeoBuilder();
   const crings = [ring(4.65, scaled(CAN, 0.6, 0.12, 0, 2.25)), ring(4.05, scaled(CAN, 0.94, 0.75, 0, 2.25)), ring(3.2, CAN), ring(2.3, scaled(CAN, 0.97, 0.94, 0, 2.25)), ring(1.55, scaled(CAN, 0.62, 0.25, 0, 2.25))];
   loft(cg, crings, () => 0xffffff, { capA: false, capB: false });
@@ -1537,7 +1548,7 @@ function batwing(k: Build, mat: THREE.Material): Rig {
   glass.renderOrder = 4;
   r.body.add(glass);
   r.tris += cg.triangles;
-  // its frame: two hoops low enough to clear the crew's heads
+  // its frame: two hoops at the sides, none across the crew's heads
   for (const x of [4.05, 2.3]) {
     const p = crings.find((c) => c.x === x)!.p;
     g.beam(at3(x, p[1]), at3(x, p[2]), 0.05, 0.05, BAT_EDGE);
@@ -1549,39 +1560,44 @@ function batwing(k: Build, mat: THREE.Material): Rig {
     slab(g, [[5.0, -0.2], [3.85, -0.2], [4.6, 0.98]], [0, 2.02, s * 0.9], AX, v, unit(cross(AX, v)), -0.07, 0.07, BAT, BAT_EDGE);
   }
   // armour plates on the nose's cheeks
-  for (const s of [-1, 1]) quadTo(g, [4.9, 1.5, s * 0.78], [3.9, 1.45, s * 1.16], [3.9, 1.95, s * 1.16], [4.9, 1.8, s * 0.78], BAT_EDGE, [0.5, 0, s]);
+  for (const s of [-1, 1]) quadTo(g, [4.9, 1.6, s * 0.78], [3.9, 1.55, s * 1.16], [3.9, 1.95, s * 1.16], [4.9, 1.8, s * 0.78], BAT_EDGE, [0.5, 0, s]);
 
-  // --- the rotors' cages under the body, and the grilles over them ---
-  const RC: P2[] = [[0, 2.5], [0, -2.5]], RR = 1.5, RY = 1.12;
-  for (const [cx, cz] of RC) {
-    const N = 10;
-    for (let i = 0; i < N; i++) {
-      const a = ((i + 0.5) / N) * Math.PI * 2, t: V3 = [-Math.sin(a), 0, Math.cos(a)], rad: V3 = [Math.cos(a), 0, Math.sin(a)];
-      rbox(g, [cx + rad[0] * RR, RY, cz + rad[2] * RR], [RR * Math.sin(Math.PI / N) + 0.03, 0.2, 0.08], t, AY, rad, BAT_EDGE, 'NSTB');
+  // --- the fans, set into the wings: each opening's wall, a thin ring round its rim above and below, a hub on two struts, and a grille over it ---
+  const annulus = (cx: number, cz: number, y: number, r0: number, r1: number, up: number): void => {
+    for (let i = 0; i < FN; i++) {
+      const a0 = (i / FN) * Math.PI * 2, a1 = ((i + 1) / FN) * Math.PI * 2;
+      const P = (a: number, rr: number): V3 => [cx + Math.cos(a) * rr, y, cz + Math.sin(a) * rr];
+      quadTo(g, P(a0, r0), P(a1, r0), P(a1, r1), P(a0, r1), BAT_EDGE, [0, up, 0]);
     }
-    for (const a of [1.2, 4.3]) g.beam([cx + Math.cos(a) * RR, RY + 0.15, cz + Math.sin(a) * RR], [cx + Math.cos(a) * RR * 0.75, 1.55, cz + Math.sin(a) * RR * 0.75], 0.06, 0.06, BAT_EDGE);
-    frustum(g, [cx, RY + 0.08, cz], [cx, 1.55, cz], 0.16, 0.2, 8, GREY);
-    // a grille in the top over each rotor, its slats lighter
-    const yt = 1.985, z0 = Math.abs(cz) - 0.75, z1 = Math.abs(cz) + 0.65, s = Math.sign(cz);
-    quadTo(g, [cx - 0.8, yt, s * z0], [cx + 0.9, yt, s * z0], [cx + 0.9, yt, s * z1], [cx - 0.8, yt, s * z1], BAT_DARK, [0, 1, 0]);
-    for (let i = 0; i < 5; i++) {
-      const x = cx - 0.68 + i * 0.36;
-      quadTo(g, [x, yt + 0.01, s * z0], [x + 0.1, yt + 0.01, s * z0], [x + 0.1, yt + 0.01, s * z1], [x, yt + 0.01, s * z1], BAT_EDGE, [0, 1, 0]);
+  };
+  for (const [cx, cz] of FANS) {
+    for (let i = 0; i < FN; i++) {
+      const a0 = (i / FN) * Math.PI * 2, a1 = ((i + 1) / FN) * Math.PI * 2, am = (a0 + a1) / 2;
+      const P = (a: number, y: number): V3 => [cx + Math.cos(a) * FR, y, cz + Math.sin(a) * FR];
+      quadTo(g, P(a0, BELLY), P(a1, BELLY), P(a1, DECK), P(a0, DECK), BAT_DARK, [-Math.cos(am), 0, -Math.sin(am)]);
+    }
+    annulus(cx, cz, BELLY - 0.02, FR, FR + 0.13, -1);
+    annulus(cx, cz, DECK + 0.01, FR, FR + 0.13, 1);
+    frustum(g, [cx, BELLY + 0.08, cz], [cx, DECK - 0.04, cz], 0.22, 0.2, 8, GREY);
+    for (const s of [-1, 1]) rbox(g, [cx, 1.88, cz + s * (FR + 0.22) / 2], [0.05, 0.05, (FR - 0.22) / 2 + 0.02], AX, AY, AZ, BAT_EDGE);
+    // the grille over the opening, its slats lighter, seen through to the blades
+    for (let i = -2; i <= 2; i++) {
+      const x = cx + i * 0.38, hw = Math.sqrt(Math.max(0, FR * FR - (i * 0.38) ** 2)) + 0.04;
+      block(g, [x - 0.05, DECK - 0.04, cz - hw], [x + 0.05, DECK + 0.02, cz + hw], BAT_EDGE);
     }
   }
-  // the rotors: three blades each, turning opposite ways, and the blur of their discs
+  // the blades: five to a fan, turning opposite ways inside the openings, and the blur of their discs
   const rotors: THREE.Object3D[] = [], discs: THREE.MeshBasicMaterial[] = [];
-  for (const [cx, cz] of RC) {
+  for (const [cx, cz] of FANS) {
     const rg = new GeoBuilder();
-    frustum(rg, [0, -0.08, 0], [0, 0.08, 0], 0.26, 0.22, 8, GREY);
-    for (let i = 0; i < 3; i++) {
-      const a = (i / 3) * Math.PI * 2, ax: V3 = [Math.cos(a), 0, Math.sin(a)];
-      rbox(rg, mul(ax, 0.95), [0.72, 0.03, 0.17], ax, AY, cross(ax, AY), 0x34373e);
+    for (let i = 0; i < 5; i++) {
+      const a = (i / 5) * Math.PI * 2, ax: V3 = [Math.cos(a), 0, Math.sin(a)];
+      rbox(rg, mul(ax, 0.6), [0.38, 0.025, 0.12], ax, AY, cross(ax, AY), 0x3a3d45);
     }
-    const p = r.pivot([cx, RY, cz]);
+    const p = r.pivot([cx, 1.7, cz]);
     rotors.push(r.solid(rg, p));
     const dm = new THREE.MeshBasicMaterial({ color: 0x2a2c33, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide });
-    const d = new THREE.Mesh(new THREE.CircleGeometry(RR - 0.08, 24), dm);
+    const d = new THREE.Mesh(new THREE.CircleGeometry(FR - 0.04, 20), dm);
     d.rotation.x = -Math.PI / 2;
     d.renderOrder = 2;
     p.add(d);
@@ -1589,19 +1605,30 @@ function batwing(k: Build, mat: THREE.Material): Rig {
   }
   r.fx.rotors = () => {};
 
+  // --- the belly's flush detail: panel lines a shade lighter, and two amber strips that glow while the fans turn ---
+  const PANEL = 0x2d313a, yb = BELLY - 0.01;
+  const line = (a: P2, b: P2, w = 0.035): void => {
+    const dx = b[0] - a[0], dz = b[1] - a[1], l = Math.hypot(dx, dz) || 1, px = (-dz / l) * w, pz = (dx / l) * w;
+    quadTo(g, [a[0] + px, yb, a[1] + pz], [b[0] + px, yb, b[1] + pz], [b[0] - px, yb, b[1] - pz], [a[0] - px, yb, a[1] - pz], PANEL, [0, -1, 0]);
+  };
+  for (const s of [-1, 1]) {
+    line([4.6, s * 0.55], [-1.7, s * 0.55]);
+    line([3.0, s * 0.6], [3.0, s * 3.4]);
+    line([-2.3, s * 0.65], [-2.3, s * 2.5]);
+    line([3.0, s * 3.4], [-0.6, s * 3.6]);
+  }
+  line([4.6, -0.55], [4.6, 0.55]);
+  const strips = new GeoBuilder();
+  for (const s of [-1, 1]) quadTo(strips, [2.4, BELLY - 0.03, s * 1.05], [-1.2, BELLY - 0.03, s * 1.05], [-1.2, BELLY - 0.03, s * 1.13], [2.4, BELLY - 0.03, s * 1.13], AMBER, [0, -1, 0]);
+  const stripMat = new THREE.MeshBasicMaterial({ vertexColors: true, toneMapped: false });
+  r.body.add(new THREE.Mesh(strips.build(), stripMat));
+  r.tris += strips.triangles;
+
   // --- the fins at the tails of the two halves, the family's ---
   const lead: P2[] = [[-1.9, -0.2], [-2.7, 0.28], [-3.4, 0.6], [-4.05, 0.82], [-4.55, 0.92]];
   batFin(g, [...lead, ...scallops([-4.55, 0.92], [-4.0, -0.2], 2, 0.14, [1, 0.12])], 1.95, 1.55, 0.42);
 
-  // --- three short legs ---
-  const leg = (top: V3, foot: V3): void => {
-    g.beam(top, foot, 0.1, 0.08, BAT_EDGE);
-    block(g, [foot[0] - 0.25, 0, foot[2] - 0.22], [foot[0] + 0.25, 0.12, foot[2] + 0.22], BAT_DARK, BAT_EDGE);
-  };
-  leg([3.8, 1.35, 0], [3.8, 0.1, 0]);
-  for (const s of [-1, 1]) leg([-2.6, 1.5, s * 1.6], [-2.8, 0.1, s * 1.9]);
-
-  // --- lamps: amber slits across the nose, red and green at the outriggers' tips, red at the tails ---
+  // --- lamps: amber slits across the nose and the leading edges, red and green at the wings' tips, red at the tails ---
   lamp(lg, halos, [5.22, 1.66, -0.5], [5.28, 1.72, 0.5], AMBER);
   for (const s of [-1, 1]) {
     halos.push({ at: [5.32, 1.69, s * 0.3], r: 0.42, color: AMBER });
@@ -1611,23 +1638,22 @@ function batwing(k: Build, mat: THREE.Material): Rig {
   }
   r.lamps(lg, halos);
 
-  // --- the searchlight under the nose, and its cone ---
-  const aim = unit([0.574, -0.819, 0]), sc: V3 = [4.7, 1.0, 0];
-  frustum(g, [4.7, 1.3, 0], [4.7, 1.05, 0], 0.1, 0.1, 6, BAT_DARK);
-  frustum(g, sc, add(sc, mul(aim, 0.3)), 0.19, 0.22, 10, BAT_EDGE, { capB: false });
+  // --- the searchlight: a lens flush in the nose's underside, and its cone ---
+  const aim = unit([0.574, -0.819, 0]), sc: V3 = [4.75, BELLY - 0.02, 0];
   const sg = new GeoBuilder();
-  frustum(sg, add(sc, mul(aim, 0.28)), add(sc, mul(aim, 0.31)), 0.2, 0.2, 10, WHITE_LAMP);
+  decal(sg, circle(0.24, 10), sc, AX, AZ, [0, -1, 0], 0, WHITE_LAMP);
+  decal(g, circle(0.32, 10), [4.75, BELLY - 0.01, 0], AX, AZ, [0, -1, 0], 0, BAT_EDGE);
   const searchMat = new THREE.MeshBasicMaterial({ vertexColors: true, toneMapped: false });
   r.body.add(new THREE.Mesh(sg.build(), searchMat));
   r.tris += sg.triangles;
   const coneG = new GeoBuilder();
-  frustum(coneG, [0, 0, 0], [0, -1, 0], 0.06, 1, 14, 0xffffff, { capA: false, capB: false });
+  frustum(coneG, [0, 0, 0], [0, -1, 0], 0.08, 1, 14, 0xffffff, { capA: false, capB: false });
   const cgeo = coneG.build();
   const pos = cgeo.getAttribute('position') as THREE.BufferAttribute, col = cgeo.getAttribute('color') as THREE.BufferAttribute;
   for (let i = 0; i < pos.count; i++) col.setXYZ(i, 1 + 0.85 * pos.getY(i), 1 + 0.85 * pos.getY(i), 1 + 0.85 * pos.getY(i));
   const coneMat = additive({ vertexColors: true, color: 0xfff0c8 });
   const cone = new THREE.Mesh(cgeo, coneMat);
-  const conePivot = r.pivot(add(sc, mul(aim, 0.32)));
+  const conePivot = r.pivot([sc[0], sc[1] - 0.01, 0]);
   conePivot.rotation.z = Math.atan2(aim[0], -aim[1]);
   cone.scale.set(3.4, 16, 3.4);
   cone.renderOrder = 4;
@@ -1635,10 +1661,10 @@ function batwing(k: Build, mat: THREE.Material): Rig {
   conePivot.add(cone);
   r.fx.light = () => {};
 
-  // --- the line from its belly, with a bar to hold ---
+  // --- the line from its belly, with a bar to hold: nothing of it shows until it is let down ---
   const bar = new GeoBuilder();
   frustum(bar, [0, -0.04, -0.45], [0, -0.04, 0.45], 0.05, 0.05, 6, BAT_EDGE);
-  r.line([0.4, 1.28, 0], bar);
+  r.line([0.4, BELLY, 0], bar);
 
   let spin = 0;
   r.each = (dt, _t, night) => {
@@ -1646,15 +1672,16 @@ function batwing(k: Build, mat: THREE.Material): Rig {
     cone.visible = v > 0.01;
     coneMat.opacity = v * (0.1 + 0.22 * night);
     searchMat.color.setScalar(0.45 + Math.max(v, r.lit * 0.3) * (1.0 + 2.2 * night));
-    // the rotors: still at 0, a blur at 1; and turning whenever it is flown
+    // the fans: still at 0, a blur at 1; and turning whenever it is flown
     const target = Math.max(r.value.rotors ?? 0, Math.abs(r.speed) > 0.1 ? 1 : 0);
     spin += (target - spin) * Math.min(1, dt * 2.5);
     rotors.forEach((m, i) => { m.rotation.y += (i === 0 ? 1 : -1) * spin * 28 * dt; });
-    for (const d of discs) d.opacity = 0.24 * smooth(0.3, 1, spin);
+    for (const d of discs) d.opacity = 0.3 * smooth(0.3, 1, spin);
+    stripMat.color.setScalar(0.25 + spin * (0.5 + 1.6 * night));
   };
   r.solid(g);
-  // the pilot in front, the second seat behind: a seated figure's feet at y 1.05, its cushion SEAT_RISE above, and the glass 3.0 high over its head
-  r.seats = [[3.3, 1.05, 0], [2.4, 1.05, 0]];
+  // the pilot in front, the second seat behind: a seated figure's feet just above the belly, its cushion SEAT_RISE above, and the glass 3.4 high over it
+  r.seats = [[3.3, 1.5, 0], [2.4, 1.5, 0]];
   return r;
 }
 
