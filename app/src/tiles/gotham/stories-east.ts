@@ -677,7 +677,8 @@ export function east(k: Build, W: World, book: Book): void {
     const B_DOWN = spot(M.x + 0.3, M.z - R, S, 2), N_LAND = spot(M.x - 0.2, M.z + R + 0.3, N, 2);
     const ring = (a: number, who: 0 | 1): Spot => { const ang = a + (who ? Math.PI : 0), x = M.x + Math.cos(ang) * R, z = M.z + Math.sin(ang) * R; return at(x, gy(x, z, 2), z, toward(x, z, M.x, M.z)); };
     const A0 = -Math.PI / 2;
-    const SPLASH: V3 = [93, Y.water, 42.6];
+    // (a hair over the water: rings that lie in its very plane flicker)
+    const SPLASH: V3 = [93, Y.water + 0.03, 42.6];
     const DOCKERS = CIT.map((id, i) => ({ id, at: spot(84.2 + i * 1.5, 44.9 - i * 0.3, E, 2) }));
     const NL = 5.2, C1 = 6, SW1 = 9.5, C2 = 10.8, SW2 = 13.6, HURL = 15.2, SIT = 19.5, BODY = 25;
     let bn: State = still(BANE);

@@ -393,12 +393,15 @@ function court(k: Build, l: Lot): void {
   const b = k.b;
   // the court's flags, and chalk on them: a hopscotch, a sun, a house and a few scribbles
   area(k, rect(l.x0 - 0.25, l.z0 + 0.05, l.x1 - 0.05, l.z1 - 0.05), 0x70737a, 0.04, { size: 1.0, bond: 0.5 });
-  const chalk = (x0: number, z0: number, x1: number, z1: number, c: number): void => area(k, rect(x0, z0, x1, z1), c, 0.06);
+  // the chalk lies at 0.055, a hair under 0.06, where a machine's lamp throws its pool of light: at 0.06 the two
+  // lay in one plane and flickered where the Red Hood's motorcycle stands
+  const CHALK = 0.055;
+  const chalk = (x0: number, z0: number, x1: number, z1: number, c: number): void => area(k, rect(x0, z0, x1, z1), c, CHALK);
   for (let i = 0; i < 6; i++) {
     const z = l.z0 + 2.2 + i * 0.62, x = l.x0 + 2.4 + (i % 3 === 1 ? 0 : 0);
     if (i === 2 || i === 4) { chalk(x - 0.62, z, x - 0.04, z + 0.56, 0xe8e8e0); chalk(x + 0.04, z, x + 0.62, z + 0.56, 0xe8e8e0); } else chalk(x - 0.29, z, x + 0.29, z + 0.56, i % 2 ? 0xe39ab8 : 0xe8e8e0);
   }
-  area(k, oval(l.x0 + 4.0, l.z0 + 6.2, 0.6, 0.6, 10), 0xe6d36a, 0.06);
+  area(k, oval(l.x0 + 4.0, l.z0 + 6.2, 0.6, 0.6, 10), 0xe6d36a, CHALK);
   for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2; chalk(l.x0 + 4.0 + Math.cos(a) * 0.95 - 0.08, l.z0 + 6.2 + Math.sin(a) * 0.95 - 0.08, l.x0 + 4.0 + Math.cos(a) * 0.95 + 0.08, l.z0 + 6.2 + Math.sin(a) * 0.95 + 0.08, 0xe6d36a); }
   chalk(l.x0 + 3.4, l.z0 + 3.0, l.x0 + 4.4, l.z0 + 3.8, 0x8fc3e6);
   chalk(l.x0 + 3.55, l.z0 + 3.9, l.x0 + 4.25, l.z0 + 4.15, 0xe39ab8);
