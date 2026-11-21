@@ -23,6 +23,7 @@ Every tile stands on a base of its own, with its name on a brass plate on each s
 | Westeros | 64 | *A Song of Ice and Fire*, after the books: the Wall, Winterfell, the riverlands, King's Landing and the south, with riders, carts and wains on its roads, three dragons, three ships and a kraken. | [NOTES.md](src/tiles/westeros/NOTES.md) |
 | Blackwater Bay | 63 | *Fire & Blood*, after the books: King's Landing with the Dragonpit whole, Dragonstone and the Dragonmont, Driftmark and High Tide, and ten great dragons, each with a home and moments of its own. | [NOTES.md](src/tiles/blackwater-bay/NOTES.md) |
 | The Iron Rain | 49 | *Golden Son*, after the books: a dome of Mars with Agea under its shield, eleven warships overhead, a Rain of starShells that never stops, and twenty-five figures of the saga in thirteen small stories. | [NOTES.md](src/tiles/red-rising/NOTES.md) |
+| Gotham City | 54 | Batman's city, after DC's comics: Old Gotham on its terraces under Wayne Tower, the East End and its docks across the Sprang, Wayne Manor on its cliff with the Batcave behind a waterfall, Arkham on its island, an elevated railway, fifty-eight named figures in thirty-four small stories, and a Batmobile of the collector's own design. | [NOTES.md](src/tiles/gotham/NOTES.md) |
 
 A tile's notes list what stands on it, the liberties taken with the real place, every real name on a sign and how it was checked, and what its builder learned.
 
@@ -144,7 +145,7 @@ From the browser's console, `wimmel.shot('name', { hour: 21.5, weather: 'rain', 
 The same handle, `wimmel`, has more:
 
 - `wimmel.fights()` lists every pair of flat surfaces that lie in one plane and overlap, which flicker as the view moves, and `wimmel.fights('<id>')` looks at one tile. On the development server only. See [the page for tile builders](../docs/building-a-tile.md).
-- `wimmel.postcard()` takes the picture for a tile's postcard: the whole tile by day, as large as it fits a picture of four by three. It is for a tile that stands alone on the board, `?tiles=<id>&heroes=none`, and saves `screenshots/check-postcard-<id>.jpg`, which is copied into the tile's folder as `postcard.jpg`. On the development server only.
+- `wimmel.postcard()` takes the picture for a tile's postcard: the whole tile by day, as large as it fits a picture of four by three. `wimmel.postcard(undefined, 21.5)` takes it at another hour, as Gotham City's is. It is for a tile that stands alone on the board, `?tiles=<id>&heroes=none`, and saves `screenshots/check-postcard-<id>.jpg`, which is copied into the tile's folder as `postcard.jpg`. On the development server only.
 - `wimmel.room` is the room, once it has arrived.
 - `wimmel.music` is the link to Spotify: how it stands, and what is playing.
 
@@ -154,7 +155,7 @@ The same handle, `wimmel`, has more:
 
 - No road joins two tiles, and a hero does not travel from one to the next.
 - The board is set by loading the page afresh. The tiles do not change places before the eyes.
-- Every tile's code arrives in one piece, whichever nine are dealt. That is right while nine are built, and each further tile will make the page heavier than it need be.
+- Every tile's code arrives in one piece, whichever nine are dealt. With ten built, the script is 3.6 MB, 1.3 MB compressed, and the share of whichever tile is left in the box is fetched for nothing.
 - Vehicles follow fixed loops. They do not choose a way or turn at a junction, and where two loops share a lane they merge. Real driving comes with the road network.
 - There is no roster, no card and no bench. The one hero was carried through by hand.
 - Nothing has a name on screen but the tile in view and the places on the map.

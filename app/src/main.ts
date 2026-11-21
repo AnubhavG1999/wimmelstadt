@@ -639,13 +639,14 @@ async function shot(name: string, o: ShotOptions = {}): Promise<string> {
 
 /**
  * Takes the picture for a tile's postcard, which stands for the tile in the
- * picker (ui/picker.ts): the whole tile by day, as large as it fits, with
- * whatever flies over it at that moment. It is saved as
- * screenshots/check-postcard-<id>.jpg, and a copy of that belongs in the
- * tile's folder as postcard.jpg. Meant for a tile that stands alone on the
+ * picker (ui/picker.ts): the whole tile, as large as it fits, with whatever
+ * flies over it at that moment. It is taken at one in the afternoon, unless
+ * the tile is one that is known by its night and another hour is given. It is
+ * saved as screenshots/check-postcard-<id>.jpg, and a copy of that belongs in
+ * the tile's folder as postcard.jpg. Meant for a tile that stands alone on the
  * board: ?tiles=<id>&heroes=none. Only works under `npm run dev`.
  */
-async function postcard(id?: string): Promise<string> {
+async function postcard(id?: string, hour = 13): Promise<string> {
   if (!import.meta.env.DEV) return 'only available on the development server';
   const t = board.tiles.find((b) => b.def.id === id) ?? board.tiles[0];
   // A picture is taken from 42 degrees round and 38 degrees down. What the tile covers
@@ -696,7 +697,7 @@ async function postcard(id?: string): Promise<string> {
   const lookY = 28 * THREE.MathUtils.smoothstep(zoom, 110, 260);
   const back = (lookY * Math.cos(el) - cy) / Math.sin(el);
   const x = cx * Math.cos(az) + back * Math.sin(az), z = -cx * Math.sin(az) + back * Math.cos(az);
-  const said = await shot(`check-postcard-${t.def.id}`, { w, h, shrink: 2, quality: 0.82, hour: 13, x, z, zoom });
+  const said = await shot(`check-postcard-${t.def.id}`, { w, h, shrink: 2, quality: 0.82, hour, x, z, zoom });
   return `${said}, the tile ${Math.round(x1 - x0)} across and ${Math.round(y1 - y0)} up, seen from ${zoom.toFixed(0)}`;
 }
 

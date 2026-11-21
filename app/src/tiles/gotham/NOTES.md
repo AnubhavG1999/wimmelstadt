@@ -4,6 +4,8 @@ This file records what a later reader cannot see in the code.
 
 **Where the tile stands.** Built on the branch `claude/gotham-tile`, as the tenth tile. The plan, the ground, the roads, the elevated railway, the ordinary buildings and what stands over the roads (`blocks.ts`), the life of the paving, the stage and the show's director are the tile session's. The districts, the figures, the machines, the animals, the air, the traffic's kinds and the stories are builders' files, each from the brief `tile-gotham-builders-brief.md` and a task sheet of its own in the shared notes folder, judged and mended by the tile session.
 
+**The merge.** Merged into `main` on 21 November 2026, at the collector's word, as it stood at `eeae366`. The main session gave it its place in `ORDER` in `app/src/tiles/index.ts`, the tenth; its postcard for the picker, which is taken at night with the Signal lit, since that is the picture of the tile; and its section and pictures in the README. With ten tiles built, every load leaves one in the box, and Gotham City is as likely to be that one as any other.
+
 ## The collector's decisions
 
 These were his, on 20 November 2026, and the tile is built on them. Where he is quoted, the words are his.
