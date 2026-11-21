@@ -497,6 +497,8 @@ const GARDEN_DOOR_Z = ZP - 3.5, DRIVE_IN = COURT.z1 - 9;
 const HATCH = { hw: (SHAFT.x1 - SHAFT.x0) / 2, hd: (SHAFT.z1 - SHAFT.z0) / 2, kerb: 1, sink: 0.4, slide: 7.3, seam: 0.015 };
 /** The lift's platform: half its size, and where its top is when down and up. */
 const LIFT = { hw: 6.5, hd: 5.5, down: Y.cave + 0.6, up: Y.crest };
+/** The old tunnel's mouth in the spur's west face: where its middle is, and half its width. It is 4.1 wide for the Batmobile, whose wing is 3.84. */
+const OLD_TUNNEL = { z: CLIFF + 2.6, half: 2.05 };
 /** The Batboat's arch in the shelf's river wall. */
 const BOATHOUSE = { x: 30, z: -67, half: 2.5 };
 /** The gates on the shelf. */
@@ -534,7 +536,7 @@ export const PLACES: Record<string, Place> = {
   // what was there before
   batsCrevice: { x: -18, y: 6, z: CLIFF + 0.4, h: PI / 2 },
   gates: { x: GATES.x, y: Y.shelf, z: GATES.z, h: PI / 2 },
-  oldTunnel: { x: SPUR.x0 - 0.45, y: Y.shelf, z: CLIFF + 2, h: 0 },
+  oldTunnel: { x: SPUR.x0 - 0.45, y: Y.shelf, z: OLD_TUNNEL.z, h: 0 },
   batboat: { x: BOATHOUSE.x, y: Y.water, z: BOATHOUSE.z + 1.2, h: PI / 2 },
 };
 
@@ -1294,14 +1296,14 @@ function kaneBridge(k: Build, _l: Lot): void {
 
 /** The old tunnel's mouth in the spur's west face, where the service lane ends: a stone portal, dark inside. */
 function oldTunnel(b: GeoBuilder): void {
-  const x = SPUR.x0, zc = CLIFF + 2, y = Y.shelf, half = 1.8, spring = 2.4, top = 5.2;
+  const x = SPUR.x0, zc = OLD_TUNNEL.z, y = Y.shelf, half = OLD_TUNNEL.half, spring = 2.4, top = 5.2;
   b.moved(x, y, zc, PI / 2, () => {
     // in this frame +z is west, out of the rock: lz 0 is the rock's face, and the portal stands out to lz 0.8
     b.quad([-half, 0, 0.05], [half, 0, 0.05], [half, spring + half, 0.05], [-half, spring + half, 0.05], [0, 0, 1], DARK, { win: interior(0.3) });
     pointedArch(b, 0, 0.3, 0.8, half, half, spring, top, STONE, STONE_DARK, 5);
-    solid(b, -2.0, 0, 0.1, -half, top, 0.8, STONE, 'NESWT');
-    solid(b, half, 0, 0.1, 2.15, top, 0.8, STONE, 'NESWT');
-    solid(b, -2.15, top, 0.0, 2.3, top + 0.4, 0.95, STONE_TRIM, 'NESWTB');
+    solid(b, -half - 0.3, 0, 0.1, -half, top, 0.8, STONE, 'NESWT');
+    solid(b, half, 0, 0.1, half + 0.3, top, 0.8, STONE, 'NESWT');
+    solid(b, -half - 0.4, top, 0.0, half + 0.4, top + 0.4, 0.95, STONE_TRIM, 'NESWTB');
     // the keystone, and the old date-stone's blank panel over it
     solid(b, -0.25, spring + half - 0.15, 0.8, 0.25, spring + half + 0.45, 0.9, STONE_TRIM, 'NESWTB');
   });

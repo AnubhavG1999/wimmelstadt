@@ -222,8 +222,11 @@ export const CREST = {
   east: [86, 101] as P2,
   /** North of this the top falls towards the board's edge, so that it hides nothing of whichever tile stands behind. */
   north: [-108, -113] as P2,
-  /** A spur of rock that the service lane ends at, with the old tunnel's mouth in its west face. */
-  spur: { x0: 64, x1: 70, z1: -81 },
+  /**
+   * A spur of rock that the service lane ends at, with the old tunnel's mouth in its west face. It stands out as far
+   * as the river road's edge, five from the cliff: the Batmobile leaves by that mouth, and it is 3.84 wide.
+   */
+  spur: { x0: 64, x1: 70, z1: -80 },
   /**
    * The Batcave is hidden in the hill, which the collector asked for. All that is cut into the hilltop is the shaft
    * of its lift, a pit with rock all round it: the mirror pool of the Manor's pool garden lies over it as a lid, and

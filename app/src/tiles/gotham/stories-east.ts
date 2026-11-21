@@ -369,12 +369,31 @@ export function east(k: Build, W: World, book: Book): void {
       }
       return { x: LANDX, y: 0, z: LZ, h: E, pitch: 0, v: 0, shown: tb < GONE };
     };
-    // the Batmobile: up out of the tunnel, after it, short of the leaf, and back in
-    const B0 = 1.4, B1 = 6.4, STOPX = HINGE - 5.4, BACK0 = 17.5, BACK1 = 23.5, INX = TUNNEL.x - 6;
+    // The Batmobile, as the collector wants it driven ("two plumes of flame behind and accelerating behavior too,
+    // think BATMAN energy"): out of the tunnel under flame and after the Joker at a steady pace, then hard on its
+    // brakes in the last second before the leaf, chutes out and air brakes up; it stands, its lid lifts and Batman
+    // looks after the Joker; and it backs away into the tunnel behind a screen of smoke.
+    const B0 = 2.6, B1 = 6.4, BRAKE = 1.0, BACK0 = 17.5, BACK1 = 23.5, INX = TUNNEL.x - 6;
+    const BM_HALF = (bm?.length ?? 5.4) / 2, STOPX = HINGE - BM_HALF - 0.6;
+    const BV = (STOPX - INX) / (B1 - B0 - BRAKE / 2);
     const batCar = (tb: number): { x: number; v: number; shown: boolean } => {
-      const x = tb < B1 ? lerp(INX, STOPX, 1 - (1 - span(tb, B0, B1)) ** 2) : lerp(STOPX, INX, ease(span(tb, BACK0, BACK1)));
-      return { x, v: tb < B1 ? 9 : tb > BACK0 ? -4 : 0, shown: x + 4.8 > TUNNEL.x };
+      let x = INX, v = 0;
+      if (tb >= B1) {
+        const u = span(tb, BACK0, BACK1);
+        x = lerp(STOPX, INX, ease(u));
+        v = u > 0 && u < 1 ? (-(STOPX - INX) * 6 * u * (1 - u)) / (BACK1 - BACK0) : 0;
+      } else if (tb >= B1 - BRAKE) {
+        const u = (tb - (B1 - BRAKE)) / BRAKE;
+        x = STOPX - (BV * BRAKE * (1 - u) ** 2) / 2;
+        v = BV * (1 - u);
+      } else if (tb >= B0) {
+        x = INX + BV * (tb - B0);
+        v = BV;
+      }
+      return { x, v, shown: x + BM_HALF > TUNNEL.x };
     };
+    /** When Batman stands up in the open car, and when he sits again. */
+    const UP0 = B1 + 1.0, UP1 = BACK0 - 2.2;
     const BAT_IN = at(TUNNEL.x + 1.6, 0, LZ, WEST);
     let lastTb = 0;
     book.stories.push({
@@ -386,9 +405,10 @@ export function east(k: Build, W: World, book: Book): void {
         const seatShown = (s: V3): boolean => c.shown && s[2] > GARAGE.z - 1.6;
         P.put('joker', tb >= GONE + 1 ? still(CATWALK, laugh(((tb - GONE - 1) / 3) % 1)) : seatShown(s0) ? still(at(s0[0], s0[1], s0[2], c.h), tb > 10 && tb < 12 ? laugh(span(tb, 10, 12)) : drive((tb * 0.4) % 1), { aloft: true, close: true }) : hidden(GARAGE));
         P.put('harley', seatShown(s1) && tb < GONE ? still(at(s1[0], s1[1], s1[2], c.h), tb > 5.5 && tb < 7 ? { armL: 2.8, armR: 2.8, spreadL: 0.4, spreadR: 0.4, crouch: 1 } : drive((tb * 0.4 + 0.3) % 1), { aloft: true, close: true }) : hidden(GARAGE));
-        const bs = seatOn(bm, b.x, 0, LZ, E, 0, 0, [-1.0, 0.5, 0]);
-        // he is in the tunnel already when the body begins
-        P.put('batman', b.shown && bs[0] > TUNNEL.x + 0.3 ? still(at(bs[0], bs[1], bs[2], E), drive((tb * 0.3) % 1), glowB({ aloft: true, close: true })) : hidden(TUNNEL));
+        // He is in the tunnel already when the body begins, and the car's glass is dark, so he is not seen while it
+        // drives. When it has stopped at the leaf its lid lifts, and he stands up in it and points after the Joker.
+        const bs = seatOn(bm, b.x, 0, LZ, E, 0, 0, [1.0, 0.45, 0]);
+        P.put('batman', tb > UP0 && tb < UP1 ? still(at(bs[0], bs[1], bs[2], E), tb < UP0 + 3 ? point(span(tb, UP0 + 0.4, UP0 + 3)) : { armL: 0.25, armR: 0.25 }, glowB({ aloft: true, close: true, cape: 0.4 })) : hidden(TUNNEL));
         // Bane on his crates watches it go by
         const bn = P.from('bane'), look = toward(bn.x, bn.z, c.shown ? c.x : b.x, c.shown ? c.z : LZ);
         P.put('bane', still(at(bn.x, bn.y, bn.z, turnTo(bn.h, look, 0.8)), { ...hang(0), nod: 0.2 }, { glow: 0.2 }));
@@ -410,6 +430,12 @@ export function east(k: Build, W: World, book: Book): void {
         if (bm) {
           bm.shown(b.shown);
           bm.lights(1);
+          bm.trick('jet', span(tb, B0, B0 + 0.3) * (1 - span(tb, B1 - BRAKE - 0.3, B1 - BRAKE)));
+          bm.trick('brake', ease(span(tb, B1 - BRAKE, B1 - BRAKE + 0.2)) * (1 - ease(span(tb, B1 + 0.5, B1 + 1.3))));
+          // the chutes hang behind it while it stands, and are drawn in before its lid lifts
+          bm.trick('chutes', ease(span(tb, B1 - BRAKE + 0.1, B1 - BRAKE + 0.4)) * (1 - ease(span(tb, B1 + 0.4, B1 + 1.0))));
+          bm.trick('canopy', ease(span(tb, UP0 - 0.5, UP0)) * (1 - ease(span(tb, UP1, UP1 + 0.6))));
+          bm.trick('smoke', span(tb, BACK0 - 0.8, BACK0) * (1 - span(tb, BACK1 - 2, BACK1 - 0.5)));
           if (live && b.shown) bm.run(b.v, dt);
         }
         leaf?.lift(leafF(tb));
@@ -417,7 +443,7 @@ export function east(k: Build, W: World, book: Book): void {
         shutter?.open(ease(span(tb, 0, J0)) * (1 - ease(span(tb, 2.2, 3.2))));
         W.air?.burst(LANDX, 0.5, LZ, ease(span(tb, 11.6, 12.4)) * (1 - ease(span(tb, 14.5, 16.5))));
       },
-      end() { jm?.shown(false); jm?.trick('cards', 0); jm?.trick('plank', 0); jm?.trick('glove', 0); jm?.lights(0); bm?.shown(false); bm?.lights(0); leaf?.lift(0); shutter?.open(0); lastTb = 0; },
+      end() { jm?.shown(false); jm?.trick('cards', 0); jm?.trick('plank', 0); jm?.trick('glove', 0); jm?.lights(0); bm?.shown(false); bm?.lights(0); for (const t of ['jet', 'brake', 'chutes', 'canopy', 'smoke']) bm?.trick(t, 0); leaf?.lift(0); shutter?.open(0); lastTb = 0; },
     });
   }
 
