@@ -24,6 +24,7 @@ import { buildBeasts, type Beasts } from './beasts';
 import { buildCast, type Cast, type Figure, type Look } from './figures';
 import { buildMachines, type Machines } from './machines';
 import type { Place } from './models';
+import { groundAt } from './plan';
 import { REGIONS } from './regions';
 import { Solid } from './solid';
 import { Lines, Rings, at, atEase, hidden, legBetween, still, S, type Id, type Leg, type Rest, type Spot, type State, type Hatch, type StoryDef, type Way, type World } from './stage';
@@ -258,6 +259,72 @@ export function buildShow(k: Build, hatch: Hatch | null = null): Show {
       who: () => [...actors.keys()],
       /** The show's check, of every story or of one. */
       check: (id?: string) => checkShow(id ? defs.filter((d) => d.id === id) : defs, W, actors),
+      /**
+       * The machines' check, at the level of what is drawn, of every story or of the ones named. It plays each story
+       * through the director itself, a tenth of a second at a time, and asks of every machine that is shown whether a
+       * vertex of its body lies under a face that looks up, which is so inside something built but also under a deck
+       * or in a doorway, or beyond the board's edge; and of every figure of the story whether it is beyond the edge.
+       * For each machine it gives the moment when most of it was so, from when to when, and how far above it the
+       * nearest such face was: a deck is several units up, a thing driven into is not. What floats is not asked about
+       * under the waterline. It takes the show's clock with it and leaves the show held: load the page afresh
+       * afterwards.
+       */
+      checkMachines: (ids: string[] = defs.map((d) => d.id), step = 0.1): string[] => {
+        const advance = (dt: number): void => (window as unknown as { wimmel: { advance(dt: number): void } }).wimmel.advance(dt);
+        const roots = k.group.children.filter((o) => o.name.startsWith('machine-'));
+        const gap = (x: number, y: number, z: number): number => { for (const d of [0.3, 0.6, 1, 1.5, 2.5, 4, 6, 10, 20, 40, 150]) if (solid.under(x, z, y + d) > y + 0.02) return d; return Infinity; };
+        const through = (e: ArrayLike<number>, x: number, y: number, z: number): [number, number, number] => [e[0] * x + e[4] * y + e[8] * z + e[12], e[1] * x + e[5] * y + e[9] * z + e[13], e[2] * x + e[6] * y + e[10] * z + e[14]];
+        const out: string[] = [];
+        for (const id of ids) {
+          const def = defs.find((d) => d.id === id);
+          if (!def) continue;
+          for (const r of [...running]) finish(r);
+          start(def);
+          held = true;
+          const worst = new Map<string, { n: number; of: number; tb: number; from: number; to: number; gap: number }>(), said = new Set<string>();
+          for (let i = 0; i < 6000; i++) {
+            advance(step);
+            const r = running.find((x) => x.def === def);
+            if (!r) break;
+            const tb = r.t - r.tin;
+            k.group.updateWorldMatrix(true, false);
+            const inv = k.group.matrixWorld.clone().invert().elements;
+            for (const root of roots) {
+              if (!root.visible) continue;
+              root.updateWorldMatrix(false, true);
+              let n = 0, of = 0, off = 0, near = Infinity;
+              root.traverseVisible((o) => {
+                const m = o as unknown as { isMesh?: boolean; material?: { type: string }; geometry: { getAttribute(name: string): { count: number; getX(i: number): number; getY(i: number): number; getZ(i: number): number } }; matrixWorld: { elements: ArrayLike<number> } };
+                if (!m.isMesh || m.material?.type === 'MeshBasicMaterial') return;
+                const p = m.geometry.getAttribute('position'), stride = Math.max(1, Math.floor(p.count / 160));
+                for (let j = 0; j < p.count; j += stride) {
+                  const w = through(m.matrixWorld.elements, p.getX(j), p.getY(j), p.getZ(j)), [x, y, z] = through(inv, w[0], w[1], w[2]);
+                  of++;
+                  if (Math.abs(x) > 104 || Math.abs(z) > 113) { off++; continue; }
+                  // a hull under its waterline is in the water, not in anything built
+                  const ground = groundAt(x, z);
+                  if (ground < -0.5 && y < ground + 0.2) continue;
+                  if (solid.inside(x, y + 0.12, z)) { n++; near = Math.min(near, gap(x, y + 0.12, z)); }
+                }
+              });
+              const kind = root.name.slice(8);
+              if (off && !said.has(kind)) { said.add(kind); out.push(`${id} at ${tb.toFixed(1)} s: the ${kind} is beyond the board's edge with ${off} of ${of} points, at (${root.position.x.toFixed(1)}, ${root.position.y.toFixed(1)}, ${root.position.z.toFixed(1)})`); }
+              if (n) {
+                const w = worst.get(kind);
+                if (!w) worst.set(kind, { n, of, tb, from: tb, to: tb, gap: near });
+                else { w.to = tb; w.gap = Math.min(w.gap, near); if (n > w.n) { w.n = n; w.of = of; w.tb = tb; } }
+              }
+            }
+            for (const cid of def.cast) {
+              const a = actors.get(cid);
+              if (a && a.now.shown && (Math.abs(a.now.x) > 104 || Math.abs(a.now.z) > 113) && !said.has(cid)) { said.add(cid); out.push(`${id} at ${tb.toFixed(1)} s: ${cid} is beyond the board's edge at (${a.now.x.toFixed(1)}, ${a.now.y.toFixed(1)}, ${a.now.z.toFixed(1)})`); }
+            }
+          }
+          for (const [kind, w] of worst) out.push(`${id}: the ${kind} has ${w.n} of ${w.of} points under a face that looks up at ${w.tb.toFixed(1)} s (so from ${w.from.toFixed(1)} to ${w.to.toFixed(1)} s); the nearest such face is ${w.gap} above`);
+        }
+        for (const r of [...running]) finish(r);
+        return out;
+      },
     };
   }
   return { air, cast, machines, beasts };
