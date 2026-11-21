@@ -537,5 +537,8 @@ function routesOf(): Route[] {
   const paint = [0x1f2126, 0x2c3340, 0x3d2a2a, 0x4a4d55, 0x70757f, 0x8c8473, 0x26352f, 0xd9b23a];
   // a route with kinds of its own is not repainted: a route's paint would repaint its cabs and cruisers too
   const route = (id: string, speed: number, count: number): Route => ({ id, segs: segsOf(LANES[id], true), speed, count, ...(MIX[id]?.length ? { types: MIX[id] } : { paint }) });
-  return [route('long', 11, 46), route('canal', 11, 6), route('pool', 10, 5)];
+  // The long route is 1,457 round and its tightest corners are driven at 7.7, which pass 0.57 vehicles a second: three
+  // quarters of that is 0.43. Forty-two of the tile's own are 0.32 a second, and with nine heroes among them 0.39,
+  // which leaves room for more heroes than drive today.
+  return [route('long', 11, 42), route('canal', 11, 6), route('pool', 10, 5)];
 }
