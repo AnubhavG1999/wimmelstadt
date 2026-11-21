@@ -179,13 +179,82 @@ function wayneOf(l: Lot): WayneParts {
   const cx = (l.x0 + l.x1) / 2;
   const A = { x0: cx - 7, x1: cx + 7, z1: l.z1 - 1, z0: l.z1 - 15 };
   const cz = (A.z0 + A.z1) / 2;
-  const yA = l.base + 31, yB = l.base + 55, yC = l.base + 71, hC = 4;
+  // its three stages by shares of its whole height, each ending on a whole storey: the first setback at about three
+  // eighths of the way up, the second at two thirds, the gallery at six sevenths
+  const H = l.top - l.base, up = (f: number): number => Math.round((l.base + H * f) / 4) * 4;
+  const yA = up(0.378), yB = up(0.674), yC = up(0.852), hC = 4;
   return {
     cx, cz, A, hB: 5, hC,
     yP: l.base + 3, yA, yB, yC, yDome: l.top - 4.6,
     perch: { x: A.x1, y: yA + 1.02, z: A.z1, yaw: TO_VIEW_H, s: 2.2 },
     thirteenth: { x: cx + hC + 1.0, y: yC - 5.58, z: cz, s: 1.4 },
   };
+}
+
+/** The silver of Wayne Enterprises' sign, the dark panel it is set on, and how it is lit from within at night, in its own colour. */
+const SIGN_SILVER = 0xd6dbe3, SIGN_PANEL = 0x23252b, SIGN_LIT = interior(1.5);
+
+/** The strokes of the five letters of WAYNE, each [u0, v0, u1, v1] in a cell 1 wide and 1 high. */
+const WAYNE_LETTERS: [number, number, number, number][][] = [
+  [[0, 1, 0.26, 0], [0.26, 0, 0.5, 0.62], [0.5, 0.62, 0.74, 0], [0.74, 0, 1, 1]],
+  [[0, 0, 0.5, 1], [0.5, 1, 1, 0], [0.24, 0.36, 0.76, 0.36]],
+  [[0, 1, 0.5, 0.5], [1, 1, 0.5, 0.5], [0.5, 0.5, 0.5, 0]],
+  [[0, 0, 0, 1], [0, 1, 1, 0], [1, 0, 1, 1]],
+  [[0, 0, 0, 1], [0, 1, 1, 1], [0, 0.5, 0.8, 0.5], [0, 0, 1, 0]],
+];
+
+/**
+ * Wayne Enterprises' sign, which the collector asked for after a picture he
+ * sent: the name in spaced capitals over a broad W with a row of bars like
+ * wings either side of it, in silver on a dark panel. It is on one face of the
+ * upper shaft, its middle at height `y`. The lettering and the W are the
+ * tile's own, drawn in plain strokes: silver by day, lit from within at night.
+ */
+function wayneSign(k: Build, face: 'S' | 'E', x: number, z: number, y: number): void {
+  const b = k.b, W0 = 0.5;
+  /** A place on the face: `u` along it as it is read, `v` up it, `w` out from it. */
+  const P = (u: number, v: number, w: number): V3 => (face === 'S' ? [x + u, y + v, z + w] : [x + w, y + v, z - u]);
+  const plate = (u0: number, u1: number, v0: number, v1: number, w0: number, w1: number, color: number, lit = false): void => {
+    const a = P(u0, v0, w0), c = P(u1, v1, w1);
+    b.box(Math.min(a[0], c[0]), v0 + y, Math.min(a[2], c[2]), Math.max(a[0], c[0]), v1 + y, Math.max(a[2], c[2]), color, { faces: 'NESWTB', ...(lit ? { win: SIGN_LIT } : {}) });
+  };
+  /** One stroke, `r` either side of its line: an upright or a level one is a flat bar with square ends, a slanted one a beam. */
+  const stroke = (u0: number, v0: number, u1: number, v1: number, r: number): void => {
+    if (Math.abs(u0 - u1) < 1e-6 || Math.abs(v0 - v1) < 1e-6) plate(Math.min(u0, u1) - r, Math.max(u0, u1) + r, Math.min(v0, v1) - r, Math.max(v0, v1) + r, W0, W0 + r * 1.6, SIGN_SILVER, true);
+    else b.beam(P(u0, v0, W0 + r * 0.8), P(u1, v1, W0 + r * 0.8), r, r, SIGN_SILVER, { win: SIGN_LIT });
+  };
+  // the panel: dark, proud of the shaft's ribs, with a rule of pale stone over and under it
+  plate(-4.4, 4.4, -3.75, 5.25, 0.3, W0, SIGN_PANEL);
+  for (const v of [5.25, -3.97]) plate(-4.5, 4.5, v, v + 0.22, 0.3, W0 + 0.1, STONE_TRIM);
+  // the name
+  const cell = 1.3, tall = 2.0, gap = 0.42, left = -(5 * cell + 4 * gap) / 2, foot = 2.75;
+  WAYNE_LETTERS.forEach((letter, i) => {
+    const u = left + i * (cell + gap);
+    for (const [a, c, d, e] of letter) stroke(u + a * cell, foot + c * tall, u + d * cell, foot + e * tall, 0.17);
+  });
+  // the W, in the shape of his picture: a block letter like a shield, three broad uprights that stand on one foot, and
+  // the foot comes down to a point
+  const out = W0 + 0.42, top = 1.5, slot = -1.25, shoulder = -1.8, point = -3.1;
+  for (const [u0, u1] of [[-1.8, -0.9], [-0.45, 0.45], [0.9, 1.8]]) plate(u0, u1, slot, top, W0, out, SIGN_SILVER, true);
+  const base: [number, number][] = [[-1.8, slot], [1.8, slot], [1.8, shoulder], [0, point], [-1.8, shoulder]];
+  const n: V3 = face === 'S' ? [0, 0, 1] : [1, 0, 0];
+  for (let i = 1; i + 1 < base.length; i++) tri(b, P(base[0][0], base[0][1], out), P(base[i][0], base[i][1], out), P(base[i + 1][0], base[i + 1][1], out), n, SIGN_SILVER, { win: SIGN_LIT });
+  base.forEach(([u0, v0], i) => {
+    const [u1, v1] = base[(i + 1) % base.length], l = Math.hypot(u1 - u0, v1 - v0) || 1;
+    // the edge's own way out, in the face's plane: the base's corners go round against the clock as it is read
+    const nu = (v1 - v0) / l, nv = -(u1 - u0) / l;
+    if (i === 0) return; // its top edge is under the uprights
+    b.quad(P(u0, v0, W0), P(u1, v1, W0), P(u1, v1, out), P(u0, v0, out), face === 'S' ? [nu, nv, 0] : [0, nv, -nu], SIGN_SILVER, { win: SIGN_LIT });
+  });
+  // the top edge of the base shows in the two slots between the uprights
+  for (const [u0, u1] of [[-0.9, -0.45], [0.45, 0.9]]) b.quad(P(u0, slot, out), P(u1, slot, out), P(u1, slot, W0), P(u0, slot, W0), [0, 1, 0], SIGN_SILVER, { win: SIGN_LIT });
+  // its wings: four level bars either side of its head, each shorter than the one over it
+  for (const s of [-1, 1]) {
+    [4.1, 3.6, 3.1, 2.6].forEach((end, j) => {
+      const v = 1.35 - j * 0.56;
+      plate(s > 0 ? 2.1 : -end, s > 0 ? end : -2.1, v - 0.13, v + 0.13, W0, W0 + 0.3, SIGN_SILVER, true);
+    });
+  }
 }
 
 const wayneTower: Model = (k, l) => {
@@ -213,7 +282,7 @@ const wayneTower: Model = (k, l) => {
   b.box(A.x0 - 0.35, l.base, A.z0 - 0.35, A.x1 + 0.35, yP, A.z1 + 0.35, STONE_DARK, { top: STONE_TRIM });
   b.box(A.x0, yP, A.z0, A.x1, yA, A.z1, STONE, { win: GOTHIC_WIN, seed });
   ribs(b, A.x0, A.z0, A.x1, A.z1, yP, yA - 0.5, 2, STONE_LIGHT);
-  for (const y of [l.base + 15, l.base + 23]) band(b, A.x0, A.z0, A.x1, A.z1, y - 0.2, y + 0.2, 0.15);
+  for (const y of [l.base + 15, l.base + 23, l.base + 35]) band(b, A.x0, A.z0, A.x1, A.z1, y - 0.2, y + 0.2, 0.15);
   // a buttress at each corner, rising past the setback, and a pinnacle on each but the south-east, which is the perch's
   const corners: [number, number][] = [[A.x0, A.z0], [A.x1, A.z0], [A.x0, A.z1], [A.x1, A.z1]];
   for (const [x, z] of corners) {
@@ -238,7 +307,7 @@ const wayneTower: Model = (k, l) => {
   const B = { x0: cx - W.hB, x1: cx + W.hB, z0: cz - W.hB, z1: cz + W.hB };
   b.box(B.x0, ledge, B.z0, B.x1, yB, B.z1, STONE, { win: GOTHIC_WIN, seed: seed + 0.2 });
   ribs(b, B.x0, B.z0, B.x1, B.z1, ledge, yB - 0.5, 2, STONE_LIGHT);
-  band(b, B.x0, B.z0, B.x1, B.z1, l.base + 43 - 0.2, l.base + 43 + 0.2, 0.15);
+  for (const y of [ledge + (yB - ledge) * 0.72, ledge + (yB - ledge) * 0.2]) band(b, B.x0, B.z0, B.x1, B.z1, y - 0.2, y + 0.2, 0.15);
   for (const [x, z] of [[B.x0, B.z0], [B.x1, B.z0], [B.x0, B.z1], [B.x1, B.z1]]) b.box(x - 0.55, ledge, z - 0.55, x + 0.55, yB, z + 0.55, STONE_LIGHT);
   band(b, B.x0, B.z0, B.x1, B.z1, yB - 0.5, yB + 0.3, 0.45, STONE_TRIM, LEAD);
   for (const [x, z] of [[B.x0, B.z0], [B.x1, B.z0], [B.x0, B.z1], [B.x1, B.z1]]) {
@@ -246,6 +315,10 @@ const wayneTower: Model = (k, l) => {
     b.cyl(x, z, yB + 4, yB + 4.4, 0.95, 0.95, 8, STONE_TRIM);
     b.cyl(x, z, yB + 4.4, yB + 7.4, 0.9, 0.04, 8, LEAD, { cap: false });
   }
+
+  // Wayne Enterprises' sign, on the two faces the view the tile opens with sees
+  wayneSign(k, 'S', cx, B.z1, ledge + (yB - ledge) * 0.5);
+  wayneSign(k, 'E', B.x1, cz, ledge + (yB - ledge) * 0.5);
 
   // ---- the octagon, to the gallery: tall lancets on each face, ribs at its corners
   const oct = chamfered(cx, cz, W.hC, 1.3);

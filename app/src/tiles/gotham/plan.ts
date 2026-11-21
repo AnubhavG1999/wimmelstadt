@@ -494,7 +494,8 @@ const lot = (file: string, id: string, name: string, x0: number, z0: number, x1:
 // ============================ the upper city: Old Gotham's towers ============================
 // What is tall stands along the west edge, where what it hides falls off the board, and Wayne Tower stands
 // before it with nothing south of it but the rim road and the drop.
-lot('towers', 'wayne-tower', 'Wayne Tower', -82, 18, -64, 36, Y.crown, 87);
+// Wayne Tower is as tall as the America tile's great towers, at the collector's wish: nothing on the tile comes near it.
+lot('towers', 'wayne-tower', 'Wayne Tower', -82, 18, -64, 36, Y.crown, 135);
 lot('towers', 'wayne-forecourt', '', -82, 36, -64, 41.5, Y.crown, 0.2, true);
 lot('towers', 'kane-building', 'Kane Building', -102, 8, -88, 22, Y.crown, 67);
 lot('towers', 'elliot-tower', 'Elliot Tower', -102, 26, -88, 40, Y.crown, 55);
