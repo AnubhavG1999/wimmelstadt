@@ -206,9 +206,11 @@ const WAYNE_LETTERS: [number, number, number, number][][] = [
 /**
  * Wayne Enterprises' sign, which the collector asked for after a picture he
  * sent: the name in spaced capitals over a broad W with a row of bars like
- * wings either side of it, in silver on a dark panel. It is on one face of the
- * upper shaft, its middle at height `y`. The lettering and the W are the
- * tile's own, drawn in plain strokes: silver by day, lit from within at night.
+ * wings either side of it, in silver on a dark panel. The panel is a shield:
+ * its foot tapers to a point as the W's does, which he asked for too. It is on
+ * one face of the upper shaft, its middle at height `y`. The lettering and the
+ * W are the tile's own, drawn in plain strokes: silver by day, lit from within
+ * at night.
  */
 function wayneSign(k: Build, face: 'S' | 'E', x: number, z: number, y: number): void {
   const b = k.b, W0 = 0.5;
@@ -223,9 +225,29 @@ function wayneSign(k: Build, face: 'S' | 'E', x: number, z: number, y: number): 
     if (Math.abs(u0 - u1) < 1e-6 || Math.abs(v0 - v1) < 1e-6) plate(Math.min(u0, u1) - r, Math.max(u0, u1) + r, Math.min(v0, v1) - r, Math.max(v0, v1) + r, W0, W0 + r * 1.6, SIGN_SILVER, true);
     else b.beam(P(u0, v0, W0 + r * 0.8), P(u1, v1, W0 + r * 0.8), r, r, SIGN_SILVER, { win: SIGN_LIT });
   };
-  // the panel: dark, proud of the shaft's ribs, with a rule of pale stone over and under it
-  plate(-4.4, 4.4, -3.75, 5.25, 0.3, W0, SIGN_PANEL);
-  for (const v of [5.25, -3.97]) plate(-4.5, 4.5, v, v + 0.22, 0.3, W0 + 0.1, STONE_TRIM);
+  const n: V3 = face === 'S' ? [0, 0, 1] : [1, 0, 0];
+  /**
+   * A flat shape that stands out from the face from `w0` to `w1`. Its corners go round with the clock as it is read,
+   * and it bulges inward nowhere. `open` leaves out the side of its first edge, where something else stands on it.
+   */
+  const shape = (pts: [number, number][], w0: number, w1: number, color: number, lit = false, open = false): void => {
+    const o = lit ? { win: SIGN_LIT } : {};
+    for (let i = 1; i + 1 < pts.length; i++) tri(b, P(pts[0][0], pts[0][1], w1), P(pts[i][0], pts[i][1], w1), P(pts[i + 1][0], pts[i + 1][1], w1), n, color, o);
+    pts.forEach(([u0, v0], i) => {
+      if (open && i === 0) return;
+      const [u1, v1] = pts[(i + 1) % pts.length], l = Math.hypot(u1 - u0, v1 - v0) || 1;
+      // the edge's own way out, in the face's plane
+      const nu = -(v1 - v0) / l, nv = (u1 - u0) / l;
+      b.quad(P(u0, v0, w0), P(u1, v1, w0), P(u1, v1, w1), P(u0, v0, w1), face === 'S' ? [nu, nv, 0] : [0, nv, -nu], color, o);
+    });
+  };
+  // the panel: dark, proud of the shaft's ribs, a shield whose sides come in under the wings and meet in a point under
+  // the W's own; a rule of pale stone over it, and a thin one along its taper
+  const taper: [number, number][] = [[4.4, -0.7], [4.1, -2.2], [2.9, -3.6], [0, -5.5]];
+  const mirrored = taper.slice(0, -1).reverse().map(([u, v]): [number, number] => [-u, v]);
+  shape([[-4.4, 5.25], [4.4, 5.25], ...taper, ...mirrored], 0.3, W0, SIGN_PANEL);
+  plate(-4.5, 4.5, 5.25, 5.47, 0.3, W0 + 0.1, STONE_TRIM);
+  for (const s of [-1, 1]) for (let i = 0; i + 1 < taper.length; i++) b.beam(P(s * taper[i][0], taper[i][1], W0), P(s * taper[i + 1][0], taper[i + 1][1], W0), 0.1, 0.1, STONE_TRIM);
   // the name
   const cell = 1.3, tall = 2.0, gap = 0.42, left = -(5 * cell + 4 * gap) / 2, foot = 2.75;
   WAYNE_LETTERS.forEach((letter, i) => {
@@ -236,16 +258,7 @@ function wayneSign(k: Build, face: 'S' | 'E', x: number, z: number, y: number): 
   // the foot comes down to a point
   const out = W0 + 0.42, top = 1.5, slot = -1.25, shoulder = -1.8, point = -3.1;
   for (const [u0, u1] of [[-1.8, -0.9], [-0.45, 0.45], [0.9, 1.8]]) plate(u0, u1, slot, top, W0, out, SIGN_SILVER, true);
-  const base: [number, number][] = [[-1.8, slot], [1.8, slot], [1.8, shoulder], [0, point], [-1.8, shoulder]];
-  const n: V3 = face === 'S' ? [0, 0, 1] : [1, 0, 0];
-  for (let i = 1; i + 1 < base.length; i++) tri(b, P(base[0][0], base[0][1], out), P(base[i][0], base[i][1], out), P(base[i + 1][0], base[i + 1][1], out), n, SIGN_SILVER, { win: SIGN_LIT });
-  base.forEach(([u0, v0], i) => {
-    const [u1, v1] = base[(i + 1) % base.length], l = Math.hypot(u1 - u0, v1 - v0) || 1;
-    // the edge's own way out, in the face's plane: the base's corners go round against the clock as it is read
-    const nu = (v1 - v0) / l, nv = -(u1 - u0) / l;
-    if (i === 0) return; // its top edge is under the uprights
-    b.quad(P(u0, v0, W0), P(u1, v1, W0), P(u1, v1, out), P(u0, v0, out), face === 'S' ? [nu, nv, 0] : [0, nv, -nu], SIGN_SILVER, { win: SIGN_LIT });
-  });
+  shape([[-1.8, slot], [1.8, slot], [1.8, shoulder], [0, point], [-1.8, shoulder]], W0, out, SIGN_SILVER, true, true);
   // the top edge of the base shows in the two slots between the uprights
   for (const [u0, u1] of [[-0.9, -0.45], [0.45, 0.9]]) b.quad(P(u0, slot, out), P(u1, slot, out), P(u1, slot, W0), P(u0, slot, W0), [0, 1, 0], SIGN_SILVER, { win: SIGN_LIT });
   // its wings: four level bars either side of its head, each shorter than the one over it
