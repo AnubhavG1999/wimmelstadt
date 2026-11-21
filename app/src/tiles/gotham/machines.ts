@@ -5,15 +5,12 @@
 // The show (show.ts)
 // drives them; this file only builds them and says how each is moved.
 //
-// Each is this tile's own drawing. The comics give the Batmobile only "a large,
-// dark-colored body and bat-like accessories such as large tailfins scalloped
-// to resemble a bat's wings"; the collector asked for a modern one, so it is
-// drawn after no film's car and no game's: long, low and black, a long nose
-// with a ridge down it that ends in a blunt prow, the wheels half sunk in four
-// pods, a slim canopy for two set well back, two swept fins on the rear pods
-// with the scalloped trailing edge of a bat's wing, and a jet's nozzle between
-// them. The Batboat and the Batcycle carry the same fins, so that the family
-// reads as one. The Batplane is a jet whose wings' trailing edges are scalloped
+// The Batmobile is the collector's own design, built after the renders of the
+// model he made of it: a very short, very wide open-wheeled racing car in matte
+// black, one smooth shell over four bare slicks, a plank of a wing across its
+// back and two jets under it. The rest are this tile's own drawing. The Batboat
+// and the Batcycle carry swept fins with the scalloped trailing edge of a bat's
+// wing, so that the family reads as one. The Batplane is a jet whose wings' trailing edges are scalloped
 // in three, with twin tails and a long nose, so that from above it is a jet
 // and not the shape of a bat emblem. The Batgyro is the Whirly-Bat of 1958, a
 // one-man helicopter, here with a bat's head for its nose fairing. The
@@ -38,6 +35,7 @@
 import * as THREE from 'three';
 import { GeoBuilder, interior, type QuadOpts, type V3, type WinSpec } from '../../engine/geo';
 import { face3 } from '../../engine/shapes';
+import { Smoke } from '../../engine/effects';
 import type { Build } from '../../engine/tile';
 import { SHOW_LANES, Y } from './plan';
 
@@ -64,8 +62,14 @@ export interface Machine {
   /** Its lamps, from 0 off to 1 full. */
   lights(f: number): void;
   /**
-   * Its own tricks, each from 0 to 1, by name. The Batmobile: `canopy` (open),
-   * `jet` (its afterburner). The Jokermobile: `glove` (the boxing glove sprung
+   * Its own tricks, each from 0 to 1, by name. The Batmobile: `canopy` (its
+   * lid lifted and slid forward), `jet` (both plumes at full burn), `brake` (its
+   * air brakes up), `chutes` (two parachutes out behind it), `smoke` (a smoke
+   * screen from its outlets, thicker the higher), `hookL` and `hookR` (a
+   * grapnel fired out from its left or right side, REACH.hook long at 1); by
+   * itself it squats when it launches, dips when it brakes, burns its jets
+   * when pushed hard and throws a bat's shape ahead of it with its lamps on.
+   * The Jokermobile: `glove` (the boxing glove sprung
    * from its boot), `plank` (the plank pushed out ahead of it), `cards` (cards
    * streaming from its tail). The Batgyro and the helicopter: `line` (a line
    * let down under it). The rowing boat: `flag` (a jack-in-the-box flying a flag).
@@ -97,13 +101,13 @@ export const SEAT_RISE = 0.6;
 /**
  * How far the tricks reach at 1: the Jokermobile's glove 5 behind its tail at
  * height 1, its plank 10 ahead of its nose, and the line under the Batgyro or
- * the helicopter 10 under its belly.
+ * the helicopter 10 under its belly, and the Batmobile's grapnel 7 out from its side.
  */
-export const REACH = { glove: 5, gloveY: 1, plank: 10, line: 10 };
+export const REACH = { glove: 5, gloveY: 1, plank: 10, line: 10, hook: 7 };
 
 /** Each one's length, width and height as built (the rowing boat's width is across its oars). */
 const SIZES: Record<MachineKind, [number, number, number]> = {
-  batmobile: [9.6, 3.4, 2.2], batboat: [9.1, 3.0, 2.3], batplane: [9.9, 11, 2.55], batgyro: [6.0, 5.9, 2.75], batcycle: [4.1, 1.0, 2.05], redCycle: [4.0, 1.1, 1.8],
+  batmobile: [5.4, 3.84, 1.45], batboat: [9.1, 3.0, 2.3], batplane: [9.9, 11, 2.55], batgyro: [6.0, 5.9, 2.75], batcycle: [4.1, 1.0, 2.05], redCycle: [4.0, 1.1, 1.8],
   jokermobile: [8.45, 3.2, 2.36], rowboat: [4.0, 4.6, 0.75], invisiblePlane: [8.0, 9.0, 2.15], policeCopter: [7.0, 6.5, 2.75], batwing: [10.1, 9.3, 1.95], wayneCopter: [7.0, 6.5, 2.75],
 };
 
@@ -436,6 +440,12 @@ class Rig implements Machine {
   onRun?: (speed: number, dt: number) => void;
   speed = 0;
   lit = 0;
+  /** What rides on its springs, if it has any: its lamps and its jets go there, so that they squat and dip with it. Only the Batmobile has one. */
+  shell: THREE.Object3D | null = null;
+  /** How hard it is pushed, from 0 to 1, which burns its jets as `jet` does: the Batmobile sets it from its own speed. */
+  surge = 0;
+  /** How much longer than at full burn its flames are, as a share: the Batmobile's grow when it is pushed hard. */
+  stretch = 0;
   private ran = false;
   private lampMat: THREE.MeshBasicMaterial | null = null;
   private haloMat: THREE.MeshBasicMaterial | null = null;
@@ -477,12 +487,23 @@ class Rig implements Machine {
     return p;
   }
 
+  /** A mesh of the city's material made from a geometry already built, in the body or in `parent`. */
+  mesh(geo: THREE.BufferGeometry, parent: THREE.Object3D = this.body): THREE.Mesh {
+    this.tris += geo.getAttribute('position').count / 3;
+    const m = new THREE.Mesh(geo, this.mat);
+    m.castShadow = false;
+    m.receiveShadow = true;
+    parent.add(m);
+    return m;
+  }
+
   /** Its lamps, bright at night, with a glow round those that have one. */
   lamps(lg: GeoBuilder, halos: Halo[]): void {
     this.tris += lg.triangles;
     this.lampMat = new THREE.MeshBasicMaterial({ vertexColors: true, toneMapped: false });
     const m = new THREE.Mesh(lg.build(), this.lampMat);
-    this.body.add(m);
+    const into = this.shell ?? this.body;
+    into.add(m);
     if (!halos.length) return;
     const hg = new GeoBuilder();
     for (const h of halos) {
@@ -494,7 +515,7 @@ class Rig implements Machine {
     this.haloMat = additive({ map: roundTex(), vertexColors: true });
     const hm = new THREE.Mesh(hg.build(), this.haloMat);
     hm.renderOrder = 3;
-    this.body.add(hm);
+    into.add(hm);
   }
 
   /** A patch lying flat at height `y`, from x0 to x1 and z0 to z1, with the round picture on it: a pool of lamplight, a shadow, a wake. */
@@ -510,10 +531,12 @@ class Rig implements Machine {
     return m;
   }
 
-  /** The light its lamps throw on the road ahead, from `x` forward. */
-  beam(x: number, l: number, w: number, color: number): void {
-    this.beamMat = additive({ map: roundTex(), color, side: THREE.FrontSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
-    this.patch(this.root, x - 1, x + l, -w / 2, w / 2, 0.06, this.beamMat);
+  /** The light its lamps throw on the road ahead, from `x` forward: a round pool, or the picture `map`. */
+  beam(x: number, l: number, w: number, color: number, map: THREE.Texture = roundTex()): void {
+    this.beamMat = additive({ map, color, side: THREE.FrontSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+    // each kind's pool lies at a height of its own, 0.004 apart, so that two that overlap, as the Batmobile's and
+    // the Jokermobile's do in the chase, are not in one plane
+    this.patch(this.root, x - 1, x + l, -w / 2, w / 2, 0.06 + KINDS.indexOf(this.kind) * 0.004, this.beamMat);
   }
 
   /** A soft shadow on the ground under it. */
@@ -548,15 +571,15 @@ class Rig implements Machine {
     return m;
   }
 
-  /** A jet's nozzle at `at`, firing back along -x: its flame `len` long at full burn and `r` wide. */
-  jet(at: V3, r: number, l: number): void {
+  /** A jet's nozzle at `at`, firing back along -x: its flame `len` long at full burn, `r` wide and `ry` high (as wide unless told). */
+  jet(at: V3, r: number, l: number, ry = r): void {
     if (!this.jetMat) this.jetMat = additive({ vertexColors: true });
     const m = new THREE.Mesh(flameGeo(), this.jetMat);
     m.position.set(at[0], at[1], at[2]);
     m.visible = false;
-    m.userData = { r, l };
+    m.userData = { r, l, ry };
     m.renderOrder = 3;
-    this.body.add(m);
+    (this.shell ?? this.body).add(m);
     this.jets.push(m);
     if (!this.fx.jet) this.fx.jet = () => {};
   }
@@ -623,14 +646,14 @@ class Rig implements Machine {
     if (this.beamMat) this.beamMat.opacity = lit * (0.04 + 0.42 * night);
     for (const s of this.spinners) s.m.rotation[s.axis] += s.rate * this.spin * dt;
     for (const d of this.discs) d.visible = this.spin > 0.4;
-    const burn = Math.max(this.value.jet ?? 0, this.cruise * Math.min(1, Math.abs(this.speed) / 20));
+    const burn = Math.max(this.value.jet ?? 0, this.cruise * Math.min(1, Math.abs(this.speed) / 20), this.surge);
     this.jets.forEach((j, i) => {
       j.visible = burn > 0.02;
       if (!j.visible) return;
-      const { r, l } = j.userData as { r: number; l: number };
+      const { r, l, ry } = j.userData as { r: number; l: number; ry: number };
       const fl = 0.86 + 0.1 * Math.sin(time * 51 + i * 2.1) + 0.06 * Math.sin(time * 23 + i);
-      const w = r * (0.7 + 0.3 * burn);
-      j.scale.set(Math.max(0.05, l * burn * fl), w, w);
+      const w = 0.7 + 0.3 * burn;
+      j.scale.set(Math.max(0.05, l * burn * fl * (1 + this.stretch)), ry * w, r * w);
     });
     if (this.jetMat) this.jetMat.opacity = Math.min(1, 0.35 + 0.65 * burn);
     if (this.boat) {
@@ -655,110 +678,540 @@ function batFin(g: GeoBuilder, outline: P2[], y0: number, z0: number, cant: numb
 // The Batmobile
 // ---------------------------------------------------------------------------
 
+/** The Batmobile's carbon, its slicks and wheel covers, the worn steel and rust of its machinery, and its few colours. */
+const CARBON = 0x141518, SLICK = 0x2a2b30, COVER = 0x1c1d21, COVER_LINE = 0x484c55, PIT = 0x0e0f12, BORE = 0x08080a;
+const WORN = 0x767b83, BRIGHT = 0xb9bfc8, RUST = 0x86553a, ORANGE = 0xd9761f, COPPER = 0xbf6a33, PLATE = 0x6c717a;
+const DAMPER = 0xff9b30, COOL_LAMP = 0xe2eeff;
+
+/** A smooth curve through points (x, y) given with x falling, held flat beyond its ends. */
+function curve(t: P2[]): (x: number) => number {
+  return (x) => {
+    const n = t.length;
+    if (x >= t[0][0]) return t[0][1];
+    if (x <= t[n - 1][0]) return t[n - 1][1];
+    let i = 0;
+    while (i < n - 2 && x < t[i + 1][0]) i++;
+    const p0 = t[Math.max(0, i - 1)], p1 = t[i], p2 = t[i + 1], p3 = t[Math.min(n - 1, i + 2)];
+    const h = p2[0] - p1[0], u = (x - p1[0]) / h;
+    const m1 = ((p2[1] - p0[1]) / (p2[0] - p0[0])) * h, m2 = ((p3[1] - p1[1]) / (p3[0] - p1[0])) * h;
+    const u2 = u * u, u3 = u2 * u;
+    return (2 * u3 - 3 * u2 + 1) * p1[1] + (u3 - 2 * u2 + u) * m1 + (-2 * u3 + 3 * u2) * p2[1] + (u3 - u2) * m2;
+  };
+}
+/** The larger of two numbers and the smaller, with a rounded fillet `k` wide where they meet. */
+const smax = (a: number, b: number, k: number): number => {
+  const h = Math.max(0, k - Math.abs(a - b)) / k;
+  return Math.max(a, b) + (h * h * k) / 4;
+};
+const smin = (a: number, b: number, k: number): number => -smax(-a, -b, k);
+
 /**
- * Long, low and black. A narrow body runs from a blunt prow, lit by a thin
- * amber bar, down a long nose with a ridge along it to a slim canopy for two
- * set well back; four pods over the wheels make it wide, the front pair with
- * amber slits in their noses, the rear pair taller, each carrying a swept fin
- * whose trailing edge is scalloped like a bat's wing; between the fins the
- * nozzle of its jet, and thin red lamps across its tail.
+ * Shades faces smoothly where they meet at less than `crease` (radians), across
+ * all of `geos` together, so that a body made of facets reads as one smooth
+ * surface; and paints each corner by how much it faces the sky, if `paint` is given.
+ */
+function smoothen(geos: THREE.BufferGeometry[], crease: number, paint?: (ny: number, c: THREE.Color) => void): void {
+  const cos = Math.cos(crease), groups = new Map<string, number[]>(), at: [number, number][] = [];
+  const pos = geos.map((g) => g.getAttribute('position') as THREE.BufferAttribute);
+  const nor = geos.map((g) => g.getAttribute('normal') as THREE.BufferAttribute);
+  geos.forEach((_, gi) => {
+    for (let i = 0; i < pos[gi].count; i++) {
+      const key = `${Math.round(pos[gi].getX(i) * 4000)},${Math.round(pos[gi].getY(i) * 4000)},${Math.round(pos[gi].getZ(i) * 4000)}`;
+      let l = groups.get(key);
+      if (!l) groups.set(key, (l = []));
+      l.push(at.length);
+      at.push([gi, i]);
+    }
+  });
+  const flat = at.map(([gi, i]) => new THREE.Vector3(nor[gi].getX(i), nor[gi].getY(i), nor[gi].getZ(i)));
+  const s = new THREE.Vector3(), c = new THREE.Color();
+  for (const l of groups.values()) {
+    for (const a of l) {
+      s.set(0, 0, 0);
+      for (const b of l) if (flat[a].dot(flat[b]) > cos) s.add(flat[b]);
+      s.normalize();
+      const [gi, i] = at[a];
+      nor[gi].setXYZ(i, s.x, s.y, s.z);
+      if (paint) {
+        paint(s.y, c);
+        (geos[gi].getAttribute('color') as THREE.BufferAttribute).setXYZ(i, c.r, c.g, c.b);
+      }
+    }
+  }
+}
+
+/**
+ * A fat slick, its axle along z and its middle at the origin, its outer face
+ * toward `s` (1 for +z): a cover over the whole wheel, a shallow dish with a
+ * small recessed hub and a nut in it and one fine line from the hub to the rim,
+ * so that it is seen to turn; its inner face a flat disc of `inner`.
+ */
+function slickGeo(R: number, w: number, s: number, inner: number): THREE.BufferGeometry {
+  const g = new GeoBuilder(), N = 16, h = w / 2;
+  const A = (i: number): number => ((i + 0.5) / N) * Math.PI * 2;
+  const P = (z: number, rr: number, i: number): V3 => [Math.cos(A(i)) * rr, Math.sin(A(i)) * rr, s * z];
+  const prof: P2[] = [[-h, R * 0.8], [-h + 0.1, R * 0.99], [h - 0.1, R * 0.99], [h, R * 0.8]];
+  for (let k = 0; k + 1 < prof.length; k++) {
+    for (let i = 0; i < N; i++) {
+      const m = A(i + 0.5);
+      quadTo(g, P(prof[k][0], prof[k][1], i), P(prof[k][0], prof[k][1], i + 1), P(prof[k + 1][0], prof[k + 1][1], i + 1), P(prof[k + 1][0], prof[k + 1][1], i), SLICK, [Math.cos(m), Math.sin(m), 0]);
+    }
+  }
+  const DISH = 0.045, HUB = 0.24 * R, DEEP = 0.085;
+  for (let i = 0; i < N; i++) {
+    const m = A(i + 0.5);
+    quadTo(g, P(h, R * 0.8, i), P(h, R * 0.8, i + 1), P(h - DISH, HUB, i + 1), P(h - DISH, HUB, i), COVER, [0, 0, s]);
+    quadTo(g, P(h - DISH, HUB, i), P(h - DISH, HUB, i + 1), P(h - DEEP, HUB, i + 1), P(h - DEEP, HUB, i), COVER, [-Math.cos(m), -Math.sin(m), 0]);
+    triTo(g, P(h - DEEP, HUB, i), P(h - DEEP, HUB, i + 1), [0, 0, s * (h - DEEP)], COVER, [0, 0, s]);
+  }
+  decal(g, circle(0.1 * R, 6), [0, 0, s * (h - DEEP)], AX, AY, [0, 0, s], 0.012, WORN);
+  const zd = (rr: number): number => h - DISH * ((R * 0.8 - rr) / (R * 0.8 - HUB)) + 0.006;
+  quadTo(g, [HUB + 0.01, -0.012, s * zd(HUB + 0.01)], [R * 0.79, -0.012, s * zd(R * 0.79)], [R * 0.79, 0.012, s * zd(R * 0.79)], [HUB + 0.01, 0.012, s * zd(HUB + 0.01)], COVER_LINE, [0, 0, s]);
+  decal(g, circle(R * 0.8, N, Math.PI / N), [0, 0, -s * h], AX, AY, [0, 0, -s], 0, inner);
+  const geo = g.build();
+  smoothen([geo], 0.75);
+  return geo;
+}
+
+let BAT_POOL: THREE.Texture | null = null;
+/** The pool the Batmobile's lamps throw ahead of it: a faint round glow, and in it a plain bat's outline with its wings spread, its head away from the car. */
+function batPoolTex(): THREE.Texture {
+  if (BAT_POOL) return BAT_POOL;
+  const S = 256, cv = document.createElement('canvas');
+  cv.width = cv.height = S;
+  const x = cv.getContext('2d')!;
+  const gr = x.createRadialGradient(S * 0.5, S / 2, 0, S * 0.5, S / 2, S / 2);
+  gr.addColorStop(0, 'rgba(255,255,255,0.3)');
+  gr.addColorStop(1, 'rgba(255,255,255,0)');
+  x.fillStyle = gr;
+  x.fillRect(0, 0, S, S);
+  // drawn upright, then turned so that its head points along the car
+  x.save();
+  x.translate(S * 0.57, S / 2);
+  x.rotate(Math.PI / 2);
+  x.scale(S * 0.42, S * 0.32);
+  const right: [number, number, number, number][] = [
+    [0.16, -0.1, 0.24, -0.14], [0.6, -0.34, 1.0, -0.42], [0.9, -0.2, 0.86, -0.02], [0.74, -0.12, 0.6, -0.02], [0.46, -0.08, 0.36, 0.08], [0.22, 0.04, 0.14, 0.2], [0.06, 0.28, 0, 0.42],
+  ];
+  x.beginPath();
+  x.moveTo(0, -0.18);
+  x.lineTo(0.06, -0.34);
+  x.lineTo(0.1, -0.16);
+  for (const [cx, cy, px, py] of right) x.quadraticCurveTo(cx, cy, px, py);
+  // and back up the left side, the same curves the other way round
+  const pts: [number, number][] = [[0.1, -0.16], ...right.map(([, , px, py]): [number, number] => [px, py])];
+  for (let i = right.length - 1; i >= 0; i--) x.quadraticCurveTo(-right[i][0], right[i][1], -pts[i][0], pts[i][1]);
+  x.lineTo(-0.06, -0.34);
+  x.closePath();
+  x.shadowColor = 'rgba(255,255,255,1)';
+  x.shadowBlur = 9;
+  x.fillStyle = 'rgba(255,255,255,0.95)';
+  x.fill();
+  x.restore();
+  BAT_POOL = new THREE.CanvasTexture(cv);
+  return BAT_POOL;
+}
+
+/**
+ * The collector's own design, built line for line after the renders of the
+ * model he made himself, with a canopy he asked for after them. A very short,
+ * very wide open-wheeled racing car in matte black on four fat bare slicks: one
+ * smooth shell, a pointed nose between the front tyres, low shoulders as wide
+ * as the car behind them, a narrow rounded waist and a plank of a wing right
+ * across the back; one long shallow arc from the lip to the trailing edge; a
+ * cockpit blister with dark glass set flush in it; two seams and two bars on
+ * top; a red strip under the trailing lip. Under the shell it is open and
+ * mechanical: a carbon splitter with two scoops, bare steel arms and orange
+ * dampers in front, side tunnels and grey plates, and under the wing two
+ * electric motors, a toothed bar, orange panels and two tall outlets, which are
+ * its jets.
  */
 function batmobile(k: Build, mat: THREE.Material): Rig {
   const r = new Rig('batmobile', k, mat);
-  const g = new GeoBuilder(), lg = new GeoBuilder(), halos: Halo[] = [];
-  const NW = 0.84; // half the narrow body's width, between the wheels
-  const rings = [
-    body8(4.75, 0.6, 0.36, 0.8, 0.42, 0.6, 0.54, 0.7),
-    body8(4.45, 0.7, 0.3, 0.88, 0.38, 0.66, 0.62, 0.8),
-    body8(3.75, 0.68, 0.28, NW, 0.38, 0.74, 0.6, 0.9),
-    body8(2.05, 0.68, 0.28, NW, 0.4, 0.86, 0.62, 1.02),
-    body8(1.7, 1.25, 0.3, 1.66, 0.46, 0.9, 1.04, 1.07),
-    body8(-0.3, 1.3, 0.3, 1.68, 0.46, 0.94, 1.02, 1.1),
-    body8(-1.85, 1.3, 0.3, 1.66, 0.46, 0.98, 1.0, 1.14),
-    body8(-2.15, 0.68, 0.3, NW, 0.46, 1.0, 0.7, 1.18),
-    body8(-3.8, 0.68, 0.32, NW, 0.46, 1.02, 0.7, 1.2),
-    body8(-4.2, 0.85, 0.36, 1.08, 0.48, 1.04, 0.86, 1.18),
-    body8(-4.75, 0.8, 0.42, 1.04, 0.5, 1.0, 0.82, 1.12),
-  ];
-  const BAND = [BAT_DARK, BAT, BAT, BAT_TOP, BAT, BAT, BAT_DARK, BAT_UNDER];
-  // the cockpit's floor, under the canopy, is dark
-  loft(g, rings, (j, s) => (j === 3 && s === 5 ? BAT_DARK : BAND[j]), { capA: BAT_EDGE, capB: BAT_DARK });
+  // everything but the wheels and their arms rides on its springs, and squats and dips
+  const sh = r.pivot([0, 0, 0]);
+  r.shell = sh;
+  const g = new GeoBuilder(), lg = new GeoBuilder(), un = new GeoBuilder(), halos: Halo[] = [];
 
-  // --- the pods over the wheels ---
-  const POD: P2[] = [[0.86, 0.74], [1.6, 0.72], [1.7, 0.82], [1.7, 1.4], [1.5, 1.62], [1.06, 1.62], [0.86, 1.44]];
-  const REAR: P2[] = [[0.86, 0.74], [1.6, 0.72], [1.7, 0.82], [1.7, 1.42], [1.5, 1.7], [1.04, 1.7], [0.86, 1.5]];
-  const PB = [BAT_UNDER, BAT, BAT, BAT, BAT_TOP, BAT, BAT_DARK];
-  for (const s of [-1, 1]) {
-    const m = (p: P2[]): P2[] => (s < 0 ? mirror(p) : p);
-    loft(g, [
-      ring(4.05, m(scaled(POD, 0.5, 0.42, 1.28, 1.0))),
-      ring(3.7, m(scaled(POD, 0.96, 0.9, 1.28, 1.17))),
-      ring(2.2, m(POD)),
-      ring(1.6, m(scaled(POD, 1, 0.6, 1.28, 0.72))),
-      ring(1.15, m(scaled(POD, 0.9, 0.3, 1.28, 0.74))),
-    ], (j) => PB[j], { capA: BAT_EDGE, capB: BAT });
-    loft(g, [
-      ring(-1.45, m(scaled(REAR, 0.9, 0.3, 1.3, 0.8))),
-      ring(-2.2, m(scaled(REAR, 1, 0.94, 1.3, 0.72))),
-      ring(-3.75, m(REAR)),
-      ring(-4.55, m(scaled(REAR, 0.86, 0.72, 1.3, 1.0))),
-    ], (j) => PB[j], { capA: BAT, capB: BAT_EDGE });
-    // an intake in each sill, ahead of the rear wheel
-    quadTo(g, [-0.5, 0.56, s * 1.7], [-1.6, 0.56, s * 1.7], [-1.6, 0.86, s * 1.7], [-0.5, 0.86, s * 1.7], BAT_DARK, [0, 0, s]);
-    for (const x of [-0.85, -1.25]) quadTo(g, [x, 0.56, s * 1.715], [x - 0.08, 0.56, s * 1.715], [x - 0.08, 0.86, s * 1.715], [x, 0.86, s * 1.715], BAT_EDGE, [0, 0, s]);
-    // vents in the bonnet either side of its ridge
-    for (const [z0, z1] of [[0.24, 0.34], [0.42, 0.52]]) {
-      const yh = (x: number): number => 0.9 + ((3.75 - x) / 1.7) * 0.12 + 0.016;
-      quadTo(g, [3.45, yh(3.45), s * z0], [2.5, yh(2.5), s * z0], [2.5, yh(2.5), s * z1], [3.45, yh(3.45), s * z1], BAT_DARK, [0, 1, 0]);
+  // ---- the shell, as numbers measured from his renders ----
+  const TAIL = -2.685, WING = -1.265, TIP = 1.92;
+  /** The top down the middle. */
+  const C = curve([[2.45, 0.72], [2.07, 0.98], [1.9, 1.05], [1.5, 1.16], [1.1, 1.29], [0.65, 1.37], [0.2, 1.42], [-0.25, 1.44], [-0.7, 1.44], [-1.1, 1.42], [-1.55, 1.38], [-2.0, 1.35], [-2.35, 1.34], [TAIL, 1.33]]);
+  /** The half-width of the rounded middle: the nose, the cockpit's blister, the waist's back, and its fillet into the wing. */
+  const BW = curve([[2.45, 0.2], [2.37, 0.31], [2.2, 0.46], [2.05, 0.56], [1.75, 0.6], [1.2, 0.625], [0.8, 0.625], [0.45, 0.64], [0.15, 0.7], [-0.05, 0.79], [-1.25, 0.79], [-1.4, 0.7], [-1.7, 0.58], [-2.1, 0.5], [TAIL, 0.46]]);
+  /** How high the rounded middle's foot is. */
+  const F = curve([[2.45, 0.66], [2.3, 0.67], [2.05, 0.7], [1.75, 0.82], [1.5, 0.92], [1.2, 0.95], [0.5, 0.95], [0.2, 0.97], [-0.05, 0.99], [-1.25, 1.0], [-1.45, 1.12], [-1.8, 1.2], [TAIL, 1.22]]);
+  /** How high the shelf's outer rim is, in front of the wing. */
+  const EG = curve([[2.45, 0.66], [2.05, 0.65], [1.6, 0.67], [1.12, 0.7], [0.78, 0.74], [0.4, 0.85], [-0.05, 0.99]]);
+  /** How low the shell's underside comes under its middle. */
+  const BB = curve([[2.45, 0.57], [2.2, 0.575], [1.9, 0.6], [1.6, 0.63], [1.3, 0.72], [1.0, 0.82], [0.6, 0.88], [-1.25, 0.93], [-1.35, 1.08], [-1.6, 1.22], [TAIL, 1.26]]);
+  const NOSE = curve([[2.45, 0.2], [2.37, 0.32], [2.2, 0.5], [2.05, 0.66], [1.82, 0.87], [1.6, 1.06]]);
+  /** The outline seen from above, each side of the middle. */
+  const halfW = (x: number): number => {
+    if (x >= 1.6) return NOSE(x);
+    if (x >= 1.58) return 1.06;
+    // round the back of the front tyre to the shoulder's corner
+    if (x >= 1.12) { const s = (x - 1.12) / 0.46; return 1.06 + 0.6 * Math.sqrt(Math.max(0, 1 - s * s)); }
+    if (x >= 0.78) return 1.66;
+    if (x >= -0.05) return lerp(0.8, 1.66, (x + 0.05) / 0.83);
+    if (x >= -1.25) return lerp(0.78, 0.8, (x + 1.25) / 1.2);
+    if (x >= -1.28) return lerp(0.8, 0.78, (x + 1.28) / 0.03);
+    // the wing's leading edge, swept back a little, into its tip's rounded corner
+    if (x >= -1.8) return smin(0.8 + 1.12 * ((x + 1.28) / -0.34), TIP, 0.12);
+    const rc = 0.14, x0 = TAIL + rc;
+    if (x >= x0) return TIP;
+    return TIP - rc + Math.sqrt(Math.max(0, rc * rc - (x - x0) ** 2));
+  };
+  const bwAt = (x: number, W: number): number => Math.min(BW(x), W);
+  const top = (x: number, u: number): number => {
+    const W = halfW(x), bw = bwAt(x, W), a = Math.abs(u), f = F(x), c = C(x);
+    const dome = a < bw ? f + (c - f) * Math.sqrt(1 - (a / bw) ** 2) : f - 3 * (a - bw);
+    let plank: number;
+    if (x > WING) plank = W - bw < 1e-4 ? f : EG(x) + (f - EG(x)) * clamp01((W - a) / (W - bw));
+    else plank = 1.33 - 0.08 * (a / TIP) ** 2 - 0.03 * smooth(W - 0.12, W, a);
+    return smax(dome, plank, 0.07);
+  };
+  const bot = (x: number, u: number): number => {
+    const W = halfW(x), bw = bwAt(x, W), a = Math.abs(u), t = top(x, u), th = 0.06 + 0.04 * smooth(-2.55, TAIL, x);
+    // the lip's lower edge is a shallow V from the front
+    const v = 0.12 * (a / W) ** 2 * smooth(1.9, 2.3, x);
+    return lerp(Math.min(t - th, BB(x) + v), t - th, smooth(bw - 0.02, bw + 0.12, a));
+  };
+
+  // the cross-sections: across the top from left to right, the rounded middle
+  // sampled closely and the shelf or wing more widely, and back under it
+  const X = [2.45, 2.35, 2.2, 1.98, 1.9, 1.75, 1.6, 1.52, 1.34, 1.23, 1.12, 0.95, 0.78, 0.55, 0.3, 0.08, -0.05, -0.4, -0.95, -1.25, -1.28,
+    -1.42, -1.52, -1.62, -1.9, -2.35, -2.545, -2.61, -2.66, TAIL];
+  const NI = 5, NO = 3;
+  const rings = X.map((x): Ring => {
+    const W = halfW(x), bw = bwAt(x, W), half: number[] = [];
+    for (let i = 1; i <= NI; i++) half.push(bw * Math.sin((Math.PI / 2) * (i / NI)));
+    for (let j = 1; j <= NO; j++) half.push(bw + (W - bw) * (j / NO));
+    const us = [...half.slice().reverse().map((u) => -u), 0, ...half];
+    const under = [W, (W + bw) / 2, bw, 0.55 * bw, 0, -0.55 * bw, -bw, -(W + bw) / 2, -W];
+    return ring(x, [...us.map((u): P2 => [u, top(x, u)]), ...under.map((u): P2 => [u, bot(x, u)])]);
+  });
+  // the lid: the blister from x 1.9 back to x 0.08, the canopy with a hand's breadth of shell round it
+  const iL0 = X.indexOf(1.9), iL1 = X.indexOf(0.08), J0 = NO, J1 = NO + 2 * NI;
+  const isLid = (j: number, s: number): boolean => s >= iL0 && s < iL1 && j >= J0 && j < J1;
+  const gs = new GeoBuilder(), gl = new GeoBuilder();
+  loft(gs, rings, () => BAT, { skip: isLid, capA: false, capB: false });
+  loft(gl, rings, () => BAT, { skip: (j, s) => !isLid(j, s), capA: false, capB: false });
+  // its two ends closed flat: the blunt lip and the trailing lip
+  const dedup = (q: Ring): Ring => ring(q.x, q.p.filter((p, i) => { const n = q.p[(i + 1) % q.p.length]; return Math.abs(p[0] - n[0]) + Math.abs(p[1] - n[1]) > 1e-5; }));
+  capRing(gs, dedup(rings[0]), 1, BAT);
+  capRing(gs, dedup(rings[rings.length - 1]), -1, BAT);
+  const shellGeo = gs.build(), lidGeo = gl.build();
+  const cTop = new THREE.Color(BAT_TOP), cMid = new THREE.Color(BAT), cUnder = new THREE.Color(BAT_UNDER);
+  smoothen([shellGeo, lidGeo], 0.87, (ny, c) => {
+    if (ny >= 0) c.copy(cMid).lerp(cTop, smooth(0.3, 0.95, ny));
+    else c.copy(cMid).lerp(cUnder, smooth(0, -0.5, ny));
+  });
+  r.mesh(shellGeo, sh);
+
+  /** A sheet lying on the shell's top, `lift` over it, from x0 to x1 and z0 to z1 (each with its sign), in nx by nz pieces; facing down if `down`, moved by `o`. */
+  const onTop = (b: GeoBuilder, x0: number, x1: number, z0: number, z1: number, lift: number, color: number, nx: number, nz: number, down = false, o: V3 = [0, 0, 0], q: QuadOpts = {}): void => {
+    const P = (i: number, j: number): V3 => {
+      const x = lerp(x0, x1, i / nx), z = lerp(z0, z1, j / nz);
+      return [x - o[0], top(x, z) + lift - o[1], z - o[2]];
+    };
+    for (let i = 0; i < nx; i++) for (let j = 0; j < nz; j++) quadTo(b, P(i, j), P(i + 1, j), P(i + 1, j + 1), P(i, j + 1), color, [0, down ? -1 : 1, 0], q);
+  };
+  const R = (s: number, j: number): V3 => at3(rings[s].x, rings[s].p[j]);
+
+  // ---- the lid, which lifts at its back edge and slides forward ----
+  const LX = X[iL0], LY = top(LX, 0);
+  const lidP = r.pivot([LX, LY, 0], sh);
+  const lid = r.mesh(lidGeo, lidP);
+  lid.position.set(-LX, -LY, 0);
+  const li = new GeoBuilder(), DN: V3 = [0, -0.035, 0];
+  // (its underside is coarser than its top: it is seen only when the lid is up)
+  for (let s = iL0; s < iL1; s += 2) {
+    const s2 = Math.min(s + 2, iL1);
+    for (let j = J0; j < J1; j += 2) quadTo(li, add(R(s, j), DN), add(R(s2, j), DN), add(R(s2, j + 2), DN), add(R(s, j + 2), DN), BAT_DARK, [0, -1, 0]);
+  }
+  for (let s = iL0; s < iL1; s++) {
+    for (const [j, sz] of [[J0, -1], [J1, 1]] as const) quadTo(li, R(s, j), R(s + 1, j), add(R(s + 1, j), DN), add(R(s, j), DN), BAT, [0, 0, sz]);
+  }
+  for (const [s, sx] of [[iL0, 1], [iL1, -1]] as const) for (let j = J0; j < J1; j++) quadTo(li, R(s, j), R(s, j + 1), add(R(s, j + 1), DN), add(R(s, j), DN), BAT, [sx, 0, 0]);
+  // the canopy: dark glass flush in the blister, pointed toward the nose and rounded at its back, in a fine dark outline
+  const glassHW = (x: number): number => (x > 1.15 ? 0.45 * Math.pow(Math.max(0, (1.75 - x) / 0.6), 0.7) : x > 0.6 ? 0.45 : 0.45 * Math.sqrt(Math.max(0, 1 - ((0.6 - x) / 0.25) ** 2)));
+  const pane = (x0: number, x1: number, grow: number, lift: number, color: number, q: QuadOpts): void => {
+    const NXg = 7, NZg = 5;
+    const P = (i: number, j: number): V3 => {
+      const x = lerp(x0, x1, i / NXg), hw = glassHW(Math.min(1.75, Math.max(0.35, x))) + grow, z = lerp(-hw, hw, j / NZg);
+      return [x, top(x, z) + lift, z];
+    };
+    for (let i = 0; i < NXg; i++) for (let j = 0; j < NZg; j++) quadTo(li, P(i, j), P(i + 1, j), P(i + 1, j + 1), P(i, j + 1), color, [0, 1, 0], q);
+  };
+  pane(1.785, 0.315, 0.03, 0.005, BAT_DARK, {});
+  pane(1.75, 0.35, 0, 0.009, BAT_GLASS, { win: interior(0.5) });
+  // its underside, edges and glass are built where the body has them, and moved to the lid's pivot as the lid is
+  r.solid(li, lidP).position.set(-LX, -LY, 0);
+  r.fx.canopy = (f) => {
+    lidP.position.set(LX + 0.8 * smooth(0.3, 1, f), LY + 0.14 * smooth(0, 0.4, f), 0);
+    lidP.rotation.z = -0.32 * smooth(0, 0.45, f);
+  };
+
+  // ---- the cockpit under it: a dark pit, and two seats in tandem ----
+  const FLOOR = 0.66;
+  const fz = (z: number): number => Math.sign(z) * Math.min(Math.abs(z), 0.5);
+  for (let s = iL0; s < iL1; s++) {
+    for (const [j, sd] of [[J0, -1], [J1, 1]] as const) {
+      const a = R(s, j), b = R(s + 1, j);
+      quadTo(g, a, b, [b[0], FLOOR, fz(b[2])], [a[0], FLOOR, fz(a[2])], PIT, [0, 0.2, -sd]);
     }
+    const a = R(s, J0), b = R(s + 1, J0);
+    quadTo(g, [a[0], FLOOR, fz(a[2])], [b[0], FLOOR, fz(b[2])], [b[0], FLOOR, -fz(b[2])], [a[0], FLOOR, -fz(a[2])], PIT, [0, 1, 0]);
   }
-  // the ridge down the nose, and a chin under the prow
-  g.beam([4.62, 0.76, 0], [2.05, 1.05, 0], 0.06, 0.09, BAT_EDGE);
-  g.beam([2.05, 1.05, 0], [-0.1, 1.13, 0], 0.09, 0.1, BAT_EDGE);
-  block(g, [4.3, 0.24, -0.86], [4.79, 0.31, 0.86], BAT_EDGE);
-  // two seat backs in the cockpit, seen when the canopy is open
-  block(g, [-1.42, 1.0, -0.32], [-1.26, 1.5, 0.32], BAT_EDGE);
-  block(g, [-2.38, 1.06, -0.3], [-2.22, 1.48, 0.3], BAT_EDGE);
+  for (const [s, sx] of [[iL0, -1], [iL1, 1]] as const) {
+    for (let j = J0; j < J1; j++) { const a = R(s, j), b = R(s, j + 1); quadTo(g, a, b, [b[0], FLOOR, fz(b[2])], [a[0], FLOOR, fz(a[2])], PIT, [sx, 0, 0]); }
+  }
+  for (const [x0, x1] of [[0.85, 1.2], [0.12, 0.42]]) {
+    block(g, [x0, FLOOR, -0.25], [x1, FLOOR + 0.22, 0.25], BAT_EDGE, BAT_EDGE, 'NESWT');
+    block(g, [x0 - 0.06, FLOOR, -0.25], [x0, FLOOR + 0.5, 0.25], BAT_EDGE, BAT_EDGE, 'NESWT');
+  }
+  r.seats = [[1.0, FLOOR, 0], [0.2, FLOOR, 0]];
 
-  // --- the fins: swept back from the rear pods, scalloped behind like a bat's wing ---
-  const lead: P2[] = [[-2.2, -0.25], [-2.9, 0.14], [-3.6, 0.36], [-4.25, 0.53], [-4.72, 0.62]];
-  batFin(g, [...lead, ...scallops([-4.72, 0.62], [-4.3, -0.25], 2, 0.13, [1, 0.12])], 1.62, 1.27, 0.38);
-
-  // --- the jet's nozzle between them ---
-  frustum(g, [-4.35, 0.78, 0], [-4.82, 0.78, 0], 0.36, 0.33, 12, BAT_EDGE, { capA: false, capB: BAT_DARK });
-  frustum(g, [-4.81, 0.78, 0], [-4.84, 0.78, 0], 0.26, 0.26, 12, 0x5a3a2a, { capA: false, capB: 0x3a2418 });
-  r.jet([-4.85, 0.78, 0], 0.31, 2.6);
-
-  // --- the canopy, which slides back ---
-  const CAN: P2[] = [[0.52, 1.06], [0.54, 1.38], [0.3, 1.74], [-0.3, 1.74], [-0.54, 1.38], [-0.52, 1.06]];
-  const cg = new GeoBuilder();
-  loft(cg, [
-    ring(-0.12, scaled(CAN, 0.55, 0.1, 0, 1.06)),
-    ring(-0.6, scaled(CAN, 0.88, 0.62, 0, 1.06)),
-    ring(-1.4, CAN),
-    ring(-2.1, scaled(CAN, 0.94, 0.86, 0, 1.06)),
-    ring(-2.75, scaled(CAN, 0.62, 0.3, 0, 1.06)),
-  ], (j) => (j === 0 || j === 4 ? BAT : j === 5 ? BAT_DARK : BAT_GLASS), { win: (j) => (j >= 1 && j <= 3 ? interior(0.5) : undefined), capA: BAT, capB: BAT });
-  cg.beam([-0.6, 1.49, 0], [-1.4, 1.75, 0], 0.035, 0.035, BAT_EDGE);
-  cg.beam([-1.4, 1.75, 0], [-2.1, 1.65, 0], 0.035, 0.035, BAT_EDGE);
-  const canopy = r.solid(cg);
-  r.fx.canopy = (f) => canopy.position.set(-1.5 * smooth(0.15, 1, f), 0.32 * smooth(0, 0.3, f), 0);
-
-  // --- lamps: thin amber in front, red behind ---
-  lamp(lg, halos, [4.74, 0.5, -0.58], [4.795, 0.56, 0.58], AMBER);
+  // ---- on top: two seams, a bar on each, and the air brakes' outlines ----
   for (const s of [-1, 1]) {
-    halos.push({ at: [4.82, 0.53, s * 0.36], r: 0.42, color: AMBER });
-    lamp(lg, halos, [4.02, 0.98, s * 1.1], [4.1, 1.04, s * 1.46], AMBER, 0.38);
-    lamp(lg, halos, [-4.79, 0.92, s * 0.42], [-4.74, 0.98, s * 0.95], RED_LAMP, 0.36);
-    lamp(lg, halos, [-4.6, 1.12, s * 1.06], [-4.53, 1.19, s * 1.5], RED_LAMP, 0.32);
+    const z = s * 0.27;
+    for (let x = 0.08; x > TAIL + 0.03; x -= 0.2) {
+      const x2 = Math.max(TAIL + 0.03, x - 0.2);
+      quadTo(g, [x, top(x, z - 0.01) + 0.008, z - 0.01], [x2, top(x2, z - 0.01) + 0.008, z - 0.01], [x2, top(x2, z + 0.01) + 0.008, z + 0.01], [x, top(x, z + 0.01) + 0.008, z + 0.01], BAT_DARK, [0, 1, 0]);
+    }
+    const bar = (x: number, hw: number, hh: number): Ring => { const y = top(x, z); return ring(x, [[z - hw, y - 0.01], [z + hw, y - 0.01], [z + hw, y + hh], [z - hw, y + hh]]); };
+    loft(g, [bar(0.08, 0.015, 0.012), bar(0.06, 0.025, 0.035), bar(-0.32, 0.025, 0.035), bar(-0.7, 0.025, 0.035), bar(-0.72, 0.015, 0.012)], () => 0x30343c, { capA: 0x30343c, capB: 0x30343c });
   }
+  const FX0 = -2.2, FX1 = -2.65, FZ0 = 0.45, FZ1 = 1.65;
+  const flaps: THREE.Object3D[] = [];
+  for (const s of [-1, 1]) {
+    const z0 = s < 0 ? -FZ1 : FZ0, z1 = s < 0 ? -FZ0 : FZ1;
+    onTop(g, FX0 + 0.025, FX1 - 0.025, z0 - 0.025, z1 + 0.025, 0.005, BAT_DARK, 2, 3);
+    const hy = top(FX0, s * 1.05) + 0.012, o: V3 = [FX0, hy, 0];
+    const fg = new GeoBuilder();
+    onTop(fg, FX0, FX1, z0, z1, 0.03, BAT_TOP, 2, 3, false, o);
+    onTop(fg, FX0, FX1, z0, z1, 0.012, BAT_DARK, 2, 3, true, o);
+    const E = (x: number, z: number, l: number): V3 => [x - o[0], top(x, z) + l - o[1], z];
+    for (const [x, sx] of [[FX0, 1], [FX1, -1]] as const) for (let j = 0; j < 3; j++) {
+      const za = lerp(z0, z1, j / 3), zb = lerp(z0, z1, (j + 1) / 3);
+      quadTo(fg, E(x, za, 0.012), E(x, zb, 0.012), E(x, zb, 0.03), E(x, za, 0.03), BAT, [sx, 0, 0]);
+    }
+    for (const [z, sz] of [[z0, -1], [z1, 1]] as const) for (let i = 0; i < 2; i++) {
+      const xa = lerp(FX0, FX1, i / 2), xb = lerp(FX0, FX1, (i + 1) / 2);
+      quadTo(fg, E(xa, z, 0.012), E(xb, z, 0.012), E(xb, z, 0.03), E(xa, z, 0.03), BAT, [0, 0, sz]);
+    }
+    const p = r.pivot(o, sh);
+    r.solid(fg, p);
+    flaps.push(p);
+  }
+
+  // ---- the front: splitter, scoops, blade, and bare suspension ----
+  slab(g, [[2.8, 0], [2.685, 1.5], [2.36, 1.5], [2.36, 1.08], [1.77, 1.08], [1.77, -1.08], [2.36, -1.08], [2.36, -1.5], [2.685, -1.5]], [0, 0.02, 0], AX, AZ, AY, 0, 0.05, CARBON, CARBON);
+  for (const s of [-1, 1]) {
+    // a scoop before each tyre, hollow behind; its rear stands just clear of the tyre's front
+    const side: P2[] = [[2.585, 0.065], [2.685, 0.065], [2.63, 0.48], [2.6, 0.52], [2.585, 0.52]];
+    slab(g, side, [0, 0, 0], AX, AY, AZ, s * 0.97, s * 1.47, CARBON, CARBON);
+    quadTo(g, [2.582, 0.08, s * 1.0], [2.582, 0.08, s * 1.44], [2.582, 0.5, s * 1.44], [2.582, 0.5, s * 1.0], BORE, [-1, 0, 0]);
+    slab(g, [[2.36, 0.065], [2.585, 0.065], [2.585, 0.52], [2.45, 0.52], [2.36, 0.4]], [0, 0, 0], AX, AY, AZ, s * 0.97, s * 1.0, CARBON, CARBON);
+    // one thick jointed arm of worn steel from the middle out to the wheel, and its upright
+    un.beam([2.0, 0.46, s * 0.2], [2.04, 0.5, s * 0.72], 0.045, 0.04, WORN);
+    un.beam([2.04, 0.5, s * 0.72], [2.065, 0.5, s * 1.08], 0.04, 0.035, WORN);
+    block(un, [1.99, 0.455, s * 0.68], [2.09, 0.545, s * 0.76], RUST);
+    block(un, [1.99, 0.36, s * 1.06], [2.14, 0.64, s * 1.1], CARBON);
+    // an orange coil-sprung damper at an angle, lit as a small amber lamp
+    frustum(lg, [1.95, 0.18, s * 0.42], [2.1, 0.53, s * 0.56], 0.05, 0.05, 8, DAMPER);
+    halos.push({ at: [2.05, 0.42, s * 0.52], r: 0.22, color: AMBER });
+    for (const t of [0.3, 0.7]) {
+      const c: V3 = [lerp(1.95, 2.1, t), lerp(0.18, 0.53, t), s * lerp(0.42, 0.56, t)];
+      frustum(g, sub(c, [0.006, 0.014, s * 0.0056]), add(c, [0.006, 0.014, s * 0.0056]), 0.065, 0.065, 8, RUST, { capA: false, capB: false });
+    }
+    // a faint cool lamp under the lip
+    lamp(lg, halos, [2.3, 0.525, s * 0.1], [2.38, 0.555, s * 0.26], COOL_LAMP, 0.2);
+  }
+  slab(g, [[2.15, 0.065], [2.75, 0.065], [2.47, 0.6], [2.15, 0.62]], [0, 0, 0], AX, AY, AZ, -0.018, 0.018, CARBON, CARBON);
+  frustum(g, [2.49, 0.58, 0], [2.78, 0.1, 0], 0.02, 0.02, 6, COPPER);
+  frustum(g, [2.78, 0.1, 0], [2.88, 0.085, 0], 0.02, 0.018, 6, COPPER);
+  block(g, [1.85, 0.07, -0.22], [2.25, 0.3, 0.22], CARBON);
+  for (const s of [-1, 1]) frustum(g, [2.25, 0.2, s * 0.1], [2.28, 0.2, s * 0.1], 0.035, 0.035, 6, WORN);
+
+  // ---- the sides: floor, tub, the shoulders' walls, the plates before the rear tyres ----
+  block(g, [-1.5, 0.08, -1.66], [1.55, 0.13, 1.66], CARBON, CARBON, 'NESWTB');
+  const TUB: [number, number][] = [[1.65, 0.62], [1.2, 0.65], [0.8, 0.8], [0.5, 0.9], [0.08, 0.92], [-0.05, 0.92], [-0.6, 0.9], [-0.9, 0.7], [-1.25, 0.62], [-1.5, 0.62], [-1.8, 0.62]];
+  // its top is left open under the cockpit
+  loft(g, TUB.map(([x, fw]) => { const t = BB(x) + 0.03; return ring(x, [[fw, 0.12], [0.6, 0.62], [0.6, t], [-0.6, t], [-0.6, 0.62], [-fw, 0.12]]); }), () => CARBON, { skip: (j, s) => j === 2 && s < 4, capA: CARBON, capB: CARBON });
+  for (const s of [-1, 1]) {
+    const wall = (x: number): Ring => { const t = bot(x, 1.63) + 0.03; return ring(x, [[s * 1.6, 0.12], [s * 1.66, 0.12], [s * 1.66, t], [s * 1.6, t]]); };
+    loft(g, [wall(1.25), wall(1.0), wall(0.73)], () => CARBON, { capA: CARBON, capB: CARBON });
+    // the plate before the rear tyre, a smooth grey that catches the light, and a ribbed steel bar on its top
+    block(g, [-1.43, 0.12, s < 0 ? -1.64 : 1.6], [-0.8, 0.79, s < 0 ? -1.6 : 1.64], PLATE, PLATE);
+    block(g, [-1.15, 0.79, s < 0 ? -1.63 : 1.1], [-1.08, 0.84, s < 0 ? -1.1 : 1.63], BRIGHT, BRIGHT);
+    for (const z of [1.2, 1.32, 1.44, 1.56]) block(g, [-1.16, 0.785, s * z - 0.012], [-1.07, 0.85, s * z + 0.012], WORN, WORN);
+    // the grapnel's launcher, on the side of the tub in the tunnel
+    block(g, [-0.08, 0.36, s < 0 ? -0.82 : 0.7], [0.08, 0.48, s < 0 ? -0.7 : 0.82], BAT_EDGE, BAT_EDGE);
+  }
+
+  // ---- the tail, under the wing ----
+  block(g, [-2.33, 0.3, -0.75], [-1.75, 1.08, 0.75], CARBON);
+  block(g, [-2.55, 1.1, -0.5], [-2.0, bot(-2.3, 0) + 0.03, 0.5], CARBON);
+  // a toothed bar of rusty steel across
+  {
+    const TW = 0.63, n = 16, w = (2 * TW) / n, out: P2[] = [[-TW, 0.99], [TW, 0.99], [TW, 1.03]];
+    for (let i = 0; i < n; i++) { const z = TW - i * w; out.push([z - w * 0.5, 1.065], [z - w, 1.03]); }
+    out.pop();
+    out.push([-TW, 1.03]);
+    slab(g, out, [-2.55, 0, 0], AZ, AY, AX, -0.02, 0.02, RUST, RUST);
+  }
+  for (const [z0, z1] of [[-0.33, -0.01], [0.03, 0.35], [0.39, 0.72]]) block(g, [-2.53, 0.83, z0], [-2.4, 0.92, z1], ORANGE);
+  // two electric motors side by side across the car, ribbed, with rusty end caps
+  for (const [z0, z1] of [[-0.52, -0.03], [0.03, 0.52]]) {
+    frustum(g, [-2.45, 0.68, z0], [-2.45, 0.68, z1], 0.12, 0.12, 10, WORN, { capA: RUST, capB: RUST });
+    for (let i = 1; i <= 3; i++) { const z = lerp(z0, z1, i / 4); frustum(g, [-2.45, 0.68, z - 0.014], [-2.45, 0.68, z + 0.014], 0.132, 0.132, 10, 0x5c6168, { capA: false, capB: false }); }
+  }
+  block(g, [-2.55, 0.17, -0.25], [-2.2, 0.35, 0.25], CARBON);
+  decal(g, circle(0.06, 10), [-2.55, 0.26, 0], AZ, AY, [-1, 0, 0], 0.004, BORE);
+  for (const s of [-1, 1]) {
+    // the struts that hold the wing
+    g.beam([-2.35, bot(-2.35, s * 1.6) + 0.03, s * 1.6], [-2.35, 0.95, s * 0.75], 0.03, 0.03, CARBON);
+    // a tall outlet either side of the motors, with two upright slots: its jets
+    const za = s < 0 ? -1.13 : 0.52, zb = s < 0 ? -0.52 : 1.13;
+    block(g, [-2.6, 0.12, za], [-2.47, 0.78, zb], CARBON, CARBON, 'NESWTB');
+    for (const [z0, z1] of [[0.6, 0.79], [0.86, 1.05]]) decal(g, [[s * z0, 0.2], [s * z1, 0.2], [s * z1, 0.7], [s * z0, 0.7]].map(([z, y]): P2 => [z, y]), [-2.6, 0, 0], AZ, AY, [-1, 0, 0], 0.004, BORE);
+    r.jet([-2.61, 0.45, s * 0.825], 0.3, 3.0, 0.33);
+  }
+  // the red strip under the trailing lip, from tip to tip
+  for (let i = 0; i < 6; i++) {
+    const za = -1.74 + (3.48 * i) / 6, zb = -1.74 + (3.48 * (i + 1)) / 6, y = bot(-2.65, (za + zb) / 2);
+    lamp(lg, halos, [-2.68, y - 0.075, za], [-2.61, y - 0.005, zb], RED_LAMP);
+    halos.push({ at: [-2.71, y - 0.07, (za + zb) / 2], r: 0.12, color: RED_LAMP });
+  }
+
+  // ---- its tricks ----
+  // two brake parachutes, on lines from the tail
+  const cgb = new GeoBuilder(), NS = 7, CR: P2[] = [[0, 0.6], [-0.24, 0.44], [-0.38, 0]];
+  const cc: V3 = [0.3, 0, 0];
+  for (let kk = 0; kk + 1 < CR.length; kk++) for (let i = 0; i < NS; i++) {
+    const Q = (q: P2, j: number, dx: number): V3 => { const a = (j / NS) * Math.PI * 2; return [q[0] + dx, Math.cos(a) * q[1], Math.sin(a) * q[1]]; };
+    const a = Q(CR[kk], i, 0), b = Q(CR[kk], i + 1, 0), c = Q(CR[kk + 1], i + 1, 0), d = Q(CR[kk + 1], i, 0);
+    const mid = mul(add(add(a, b), add(c, d)), 0.25);
+    quadTo(cgb, a, b, c, d, BAT_DARK, sub(mid, cc));
+    const a2 = Q(CR[kk], i, 0.012), b2 = Q(CR[kk], i + 1, 0.012), c2 = Q(CR[kk + 1], i + 1, 0.012), d2 = Q(CR[kk + 1], i, 0.012);
+    quadTo(cgb, a2, b2, c2, d2, BAT_UNDER, sub(cc, mid));
+  }
+  for (let i = 0; i < 3; i++) { const a = ((i + 0.5) / 3) * Math.PI * 2; cgb.beam([0.01, Math.cos(a) * 0.59, Math.sin(a) * 0.59], [0.8, 0, 0], 0.008, 0.008, GREY); }
+  const cgeo = cgb.build(), rgb = new GeoBuilder();
+  block(rgb, [-1, -0.01, -0.01], [0, 0.01, 0.01], GREY);
+  const rgeo = rgb.build();
+  const chutes = [-1, 1].map((s) => ({ s, p: r.pivot([0, 0, 0], sh), rope: r.pivot([-2.62, 1.0, s * 0.12], sh) }));
+  for (const c of chutes) { r.mesh(cgeo, c.p); r.mesh(rgeo, c.rope); c.p.visible = c.rope.visible = false; }
+  const tv = new THREE.Vector3(), nx = new THREE.Vector3(-1, 0, 0);
+  const placeChutes = (f: number, time: number): void => {
+    for (const [i, c] of chutes.entries()) {
+      const on = f > 0.005;
+      c.p.visible = c.rope.visible = on;
+      if (!on) continue;
+      const sc = Math.max(0.01, smooth(0.05, 0.4, f) + 0.12 * Math.sin(Math.PI * smooth(0.2, 0.55, f))), d = 2.6 * smooth(0.02, 0.5, f), sw = smooth(0.4, 1, f);
+      c.p.position.set(TAIL - d, 0.85 + 0.05 * sw * Math.sin(time * 2.1 + i), c.s * (0.2 + 0.48 * smooth(0.05, 0.5, f)) + 0.06 * sw * Math.sin(time * 1.6 + 2 * i));
+      c.p.rotation.set(0.1 * sw * Math.sin(time * 1.9 + i), 0.08 * sw * Math.sin(time * 1.3 + 3 * i), 0.06 * sw * Math.sin(time * 1.7 + i));
+      c.p.scale.setScalar(sc);
+      tv.set(c.p.position.x + 0.8 * sc, c.p.position.y, c.p.position.z).sub(c.rope.position);
+      const L = tv.length();
+      c.rope.quaternion.setFromUnitVectors(nx, tv.normalize());
+      c.rope.scale.set(Math.max(0.01, L), 1, 1);
+    }
+  };
+  r.fx.chutes = (f) => placeChutes(f, 0);
+  // a grapnel from either side tunnel
+  for (const [name, s] of [['hookL', -1], ['hookR', 1]] as const) {
+    const base = r.pivot([0, 0.42, s * 0.82], sh);
+    if (s < 0) base.rotation.y = Math.PI;
+    const rg = new GeoBuilder(), hg = new GeoBuilder();
+    block(rg, [-0.014, -0.014, 0], [0.014, 0.014, 1], GREY);
+    frustum(hg, [0, 0, -0.14], [0, 0, 0.06], 0.03, 0.025, 6, BRIGHT);
+    for (let i = 0; i < 3; i++) {
+      const a = (i / 3) * Math.PI * 2, c = Math.cos(a), sn = Math.sin(a);
+      hg.sweep([[0, 0, 0.04], [c * 0.12, sn * 0.12, -0.02], [c * 0.1, sn * 0.1, -0.1]], [0.016, 0.016, 0.012], BRIGHT);
+    }
+    const rope = r.solid(rg, base), hook = r.solid(hg, base);
+    rope.visible = hook.visible = false;
+    r.fx[name] = (f) => {
+      const L = REACH.hook * f;
+      rope.visible = hook.visible = f > 0.004;
+      rope.scale.set(1, 1, Math.max(0.01, L));
+      hook.position.z = L + 0.06;
+    };
+  }
+  r.fx.brake = () => {};
+  r.fx.smoke = () => {};
+  const smoke = new Smoke(k.mat.prop({ vertexColors: false, color: 0x45474d }), 160);
+  k.group.add(smoke.mesh);
+  k.each((dt) => { if (dt > 0) smoke.update(dt); });
+  // the orange pool its flames throw on the road behind it
+  const poolMat = additive({ map: roundTex(), color: 0xff8a3a, side: THREE.FrontSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+  const pool = r.patch(r.root, TAIL - 4.4, TAIL - 0.2, -1.7, 1.7, 0.05, poolMat);
+  pool.visible = false;
+
   r.lamps(lg, halos);
-  r.solid(g);
-  r.wheel(wheelGeo(0.72, 0.68), 0.72, [[2.9, 0.72, 1.22], [2.9, 0.72, -1.22], [-3.0, 0.72, 1.22], [-3.0, 0.72, -1.22]]);
-  r.beam(4.8, 9, 5.4, 0xffd9a0);
-  r.blob(10.2, 4.0);
-  // tandem seats under the canopy: the driver's, and the one behind
-  r.seats = [[-1.0, 0.5, 0], [-1.95, 0.56, 0]];
+  r.solid(g, sh);
+  r.solid(un);
+  r.wheel(slickGeo(0.5, 0.64, 1, CARBON), 0.5, [[2.065, 0.5, 1.435]]);
+  r.wheel(slickGeo(0.5, 0.64, -1, CARBON), 0.5, [[2.065, 0.5, -1.435]]);
+  r.wheel(slickGeo(0.5, 0.66, 1, COVER), 0.5, [[-1.955, 0.5, 1.35]]);
+  r.wheel(slickGeo(0.5, 0.66, -1, COVER), 0.5, [[-1.955, 0.5, -1.35]]);
+  // a bat's shape in the pool its lamps throw ahead of it
+  r.beam(2.8, 7, 6.0, 0xffd9a0, batPoolTex());
+  r.blob(5.9, 4.1);
+
+  // ---- by itself: it reads its own speed from where it is, squats when it launches, dips when it brakes ----
+  const nose = new THREE.Vector3(), last = new THREE.Vector3(), step = new THREE.Vector3(), at = new THREE.Vector3(), drift = new THREE.Vector3();
+  let lastT = -1, fresh = true, v = 0, acc = 0, pitch = 0, air = 0, due = 0;
+  r.each = (dt, time, night) => {
+    r.root.updateMatrix();
+    nose.setFromMatrixColumn(r.root.matrix, 0);
+    step.copy(r.root.position).sub(last);
+    // a jump of more than a few units in a frame, or a long gap, is the car set down somewhere new
+    if (lastT < 0 || time - lastT > 0.3 || step.length() > 3 || dt <= 0) fresh = true;
+    else if (fresh) { v = step.dot(nose) / dt; acc = 0; fresh = false; }
+    else {
+      const v0 = v;
+      v += (step.dot(nose) / dt - v) * Math.min(1, dt * 10);
+      acc += ((v - v0) / dt - acc) * Math.min(1, dt * 6);
+    }
+    last.copy(r.root.position);
+    lastT = time;
+    // nose up about a point ahead of the rear axle as it launches, down about the splitter's tip as it brakes
+    const want = acc > 0 ? 0.05 * clamp01(acc / 18) : -0.06 * clamp01(-acc / 14);
+    pitch += (want - pitch) * Math.min(1, dt * 7);
+    const [px, py] = pitch >= 0 ? [-1.0, 0.5] : [2.8, 0.02];
+    const c = Math.cos(pitch), sn = Math.sin(pitch);
+    sh.rotation.z = pitch;
+    sh.position.set(px - (px * c - py * sn), py - (px * sn + py * c), 0);
+    // the harder it is pushed, the more its jets burn and the longer their flames
+    r.surge += (clamp01(acc / 24) - r.surge) * Math.min(1, dt * 8);
+    r.stretch = 0.35 * r.surge;
+    const burn = Math.max(r.value.jet ?? 0, r.surge);
+    pool.visible = burn > 0.01;
+    poolMat.opacity = burn * (0.18 + 0.55 * night);
+    // the air brakes come up by themselves when it brakes hard
+    air += (clamp01((-acc - 6) / 12) - air) * Math.min(1, dt * 8);
+    const flap = Math.max(r.value.brake ?? 0, air);
+    for (const p of flaps) p.rotation.z = -1.0 * flap;
+    placeChutes(r.value.chutes ?? 0, time);
+    // the smoke screen, from both outlets
+    const sm = r.value.smoke ?? 0;
+    if (sm > 0) {
+      sh.updateMatrix();
+      r.body.updateMatrix();
+      due -= dt;
+      while (due <= 0) {
+        due += 1 / (8 + 14 * sm);
+        for (const s of [-1, 1]) {
+          at.set(-2.7, 0.45, s * 0.825).applyMatrix4(sh.matrix).applyMatrix4(r.body.matrix).applyMatrix4(r.root.matrix);
+          smoke.puff(at, drift.copy(nose).multiplyScalar(-2.2), 0.45 + 0.35 * sm, 1);
+        }
+      }
+    } else due = 0;
+  };
   return r;
 }
 
