@@ -87,8 +87,24 @@ The piece of ground a district is built on: the size of the look prototype's boa
 _Avoid_: Board, chunk, cell, island
 
 **Board**:
-Every tile of the world standing edge to edge on one table, each on its own base. A single tile is never called a board.
+The table and the tiles that stand on it edge to edge, each on its own base. It has nine places, so it holds nine of the world's tiles at a time. A single tile is never called a board.
 _Avoid_: Map, grid, overworld
+
+**Deal**:
+The tiles that are put on the board when the page loads, and the place each is given: nine of them by chance, and new at every load. A device that keeps a board opens with that board in place of a deal.
+_Avoid_: Rotation, playlist, random mode
+
+**Box**:
+Where the tiles are that are built and are not on the board at the moment. A tile in the box is as much a part of the world as one on the board.
+_Avoid_: Shelf, reserve, archive
+
+**Picker**:
+Where whoever is looking sets the board for themselves: which tiles stand on it, and the place of each. It changes the board on that device alone.
+_Avoid_: Menu, editor, lobby
+
+**Postcard**:
+The small picture of a tile, with its name, that stands for the tile in the picker.
+_Avoid_: Card, thumbnail, icon
 
 **Room**:
 The collector's room, which is the background of the city: a desk, and round it a floor, walls, shelves of boxed cars, windows and lamps. The table of the board stands in it, and the view never leaves it.
@@ -103,7 +119,7 @@ The old map of the world on the desk, on which every tile's place is pinned. The
 _Avoid_: Atlas, chart, globe
 
 **Place**:
-Where in the world a tile's district is, marked on the map by a pin and joined to the tile by a thread. An imagined place is given a coast of its own on the map. A place for a hero on show, on a tile, is something else.
+Where in the world a tile's district is, marked on the map by a pin and joined to the tile by a thread. An imagined place is given a coast of its own on the map. A place for a hero on show, on a tile, is something else, and so is a tile's place on the board, of which the board has nine.
 _Avoid_: Location, position, coordinates
 
 **Plan**:

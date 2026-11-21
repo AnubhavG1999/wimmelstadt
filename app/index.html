@@ -37,14 +37,16 @@
 
       /* The controls: things of brass lying beside the tiles. They are built by
          src/ui/controls.ts, and are out of sight until the screen is touched. */
+      #ui, #picker {
+        --brass: radial-gradient(circle at 35% 28%, #f3dc9a, #c9a352 58%, #8c6a2a);
+        --ink: #3a2a10;
+        --edge: #6e531f;
+      }
       #ui {
         position: fixed;
         inset: 0;
         pointer-events: none;
         transition: opacity 0.6s ease;
-        --brass: radial-gradient(circle at 35% 28%, #f3dc9a, #c9a352 58%, #8c6a2a);
-        --ink: #3a2a10;
-        --edge: #6e531f;
       }
       body.idle #ui { opacity: 0; }
       #ui button, #ui .dial, #ui .options, #ui .pin { pointer-events: auto; }
@@ -172,7 +174,7 @@
       .keys { position: absolute; right: calc(100% + 30px); bottom: 0; display: flex; gap: 8px; }
       .key { position: static; width: 28px; height: 28px; }
       .key svg { width: 17px; height: 17px; }
-      .key[data-k="lapse"] svg, .key[data-k="more"] svg { fill: currentColor; stroke: none; }
+      .key[data-k="lapse"] svg, .key[data-k="tiles"] svg, .key[data-k="more"] svg { fill: currentColor; stroke: none; }
       .key[hidden] { display: none; }
       /* the options: a card with a brass edge, a row for each setting */
       .options {
@@ -278,6 +280,275 @@
       .pin-keys .pin-main { background: var(--brass); box-shadow: inset 0 1px 0 rgba(255, 244, 205, 0.55); }
       .pin-keys button:disabled { opacity: 0.55; cursor: default; }
 
+      /* The picker: where the board is set, tile by tile. It is built by
+         src/ui/picker.ts, and lies over everything else while it is open. It shows the
+         table from above, with a postcard of a tile on each of its places, and beside
+         the table the box with the tiles that are not on it. */
+      #picker {
+        position: fixed;
+        inset: 0;
+        box-sizing: border-box;
+        display: grid;
+        place-items: center;
+        padding: calc(12px + env(safe-area-inset-top, 0px)) calc(12px + env(safe-area-inset-right, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) calc(12px + env(safe-area-inset-left, 0px));
+        pointer-events: none;
+        /* The room there is for the picker, and from it the width of the table in
+           it: as wide as leaves the box its room, and no taller than the screen. */
+        --aw: calc(100vw - 24px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+        --ah: calc(100dvh - 24px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+        --side: 204px;
+        --tw: max(240px, min(620px, calc(var(--aw) - var(--side) - 46px), calc((var(--ah) - 176px) * 1.333)));
+      }
+      .picker[hidden], .picker-shade[hidden], .picker-setting[hidden], .picker-none[hidden] { display: none; }
+      .picker-shade {
+        position: absolute;
+        inset: 0;
+        background: rgba(8, 8, 14, 0.58);
+        pointer-events: auto;
+        animation: picker-fade 0.2s ease-out;
+      }
+      .picker {
+        position: relative;
+        box-sizing: border-box;
+        display: grid;
+        grid-template-columns: var(--tw) var(--side);
+        grid-template-areas: "head head" "table side" "foot foot";
+        gap: 10px 14px;
+        max-width: 100%;
+        max-height: 100%;
+        overflow: auto;
+        padding: 9px 14px 13px;
+        border-radius: 10px;
+        background: linear-gradient(#fbf4de, #f1e5c2);
+        border: 1px solid var(--edge);
+        box-shadow: 0 0 0 2px #c9a352, 0 0 0 3px var(--edge), 0 14px 38px rgba(0, 0, 0, 0.6);
+        color: var(--ink);
+        pointer-events: auto;
+        outline: none;
+        animation: picker-in 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+      @keyframes picker-fade { from { opacity: 0; } }
+      @keyframes picker-in { from { opacity: 0; transform: translateY(10px) scale(0.985); } }
+      .picker .options-title { padding: 0; white-space: nowrap; }
+      .picker-head { grid-area: head; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; min-width: 0; }
+      .picker-head .options-title { font-size: 12px; }
+      .picker-hint, .picker-note, .picker-none {
+        margin: 0;
+        font: 12.5px/1.35 system-ui, -apple-system, "Segoe UI", sans-serif;
+        color: #6a5226;
+      }
+      .picker-hint { flex: 1 1 260px; min-width: 0; min-height: 1.35em; }
+
+      /* the table: felt in a wooden tray, as the one the tiles stand on */
+      .picker-table {
+        grid-area: table;
+        box-sizing: border-box;
+        display: grid;
+        grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+        align-content: start;
+        gap: 7px;
+        padding: 9px;
+        border: 8px solid #6a4830;
+        border-color: #80593c #6a4830 #593c27 #6a4830;
+        border-radius: 9px;
+        background: radial-gradient(ellipse at 50% 38%, #2d5848, #234539 72%, #1d3a30);
+        box-shadow: inset 0 0 0 1px #3a2616, inset 0 3px 8px rgba(0, 0, 0, 0.5), 0 1px 0 rgba(255, 244, 205, 0.55), 0 2px 5px rgba(0, 0, 0, 0.3);
+      }
+      .slot {
+        position: relative;
+        border-radius: 6px;
+        background: rgba(0, 0, 0, 0.2);
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+        transition: box-shadow 0.12s;
+      }
+      .slot:empty { aspect-ratio: 4 / 3.45; }
+      .slot.over { box-shadow: 0 0 0 2px #fbf4de, 0 0 0 4px #e0b54a; }
+
+      /* a tile's postcard: its picture, four by three, and under it its name on a strip of brass */
+      .postcard {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        box-sizing: border-box;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        border: 1px solid #1c1408;
+        border-radius: 6px;
+        background: linear-gradient(#3b6a58, #2a4f41);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
+        color: var(--ink);
+        cursor: grab;
+        touch-action: none;
+        container-type: inline-size;
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+        transition: box-shadow 0.12s, scale 0.12s, opacity 0.12s, filter 0.12s;
+      }
+      .postcard img, .postcard.plain::before {
+        display: block;
+        flex: none;
+        width: 100%;
+        aspect-ratio: 4 / 3;
+      }
+      .postcard img { object-fit: cover; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+      .postcard img.ready { opacity: 1; }
+      /* a tile that has no picture yet: bare felt where its picture will be */
+      .postcard.plain::before { content: ''; }
+      .postcard span {
+        display: block;
+        flex: none;
+        padding: 0.34em 0.5em 0.26em;
+        background: linear-gradient(#ecd48f, #c9a352 55%, #ab873f);
+        border-top: 1px solid rgba(60, 42, 14, 0.7);
+        font: 700 10.5px/1.2 Georgia, "Times New Roman", serif;
+        /* as large as lets the whole name fit: --len is how many letters it has */
+        font-size: clamp(7px, calc(106cqw / var(--len, 14)), 11.5px);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        text-align: center;
+        text-shadow: 0 1px 0 rgba(255, 236, 176, 0.65);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        pointer-events: none;
+      }
+      /* on a small postcard the name is set in small letters, so that the longest still fits */
+      @container (max-width: 150px) {
+        .postcard span { padding-left: 0.3em; padding-right: 0.3em; font-size: clamp(7px, calc(136cqw / var(--len, 14)), 9.5px); letter-spacing: 0.01em; text-transform: none; }
+      }
+      @media (hover: hover) {
+        .postcard:hover { box-shadow: 0 0 0 2px #f3dc9a, 0 3px 9px rgba(0, 0, 0, 0.6); }
+        .picker-btn:hover { background: rgba(255, 255, 255, 0.85); }
+      }
+      .postcard:focus-visible, .picker-btn:focus-visible { outline: 2px solid #b3261e; outline-offset: 2px; }
+      .postcard.picked { z-index: 1; scale: 1.035; box-shadow: 0 0 0 2px #fbf4de, 0 0 0 4.5px #b3261e, 0 6px 14px rgba(0, 0, 0, 0.6); }
+      .postcard.lifted { opacity: 0.28; cursor: grabbing; }
+      .postcard.away { visibility: hidden; }
+      .slot.over > .postcard, .postcard.over { scale: 0.95; filter: brightness(1.14); }
+      .picker-box .postcard.over { box-shadow: 0 0 0 2px #fbf4de, 0 0 0 4px #e0b54a; }
+      /* a postcard in the air: a copy that lies over the whole page while it flies to its place, or follows the hand */
+      .picker-air { position: fixed; inset: 0; pointer-events: none; }
+      .postcard.ghost { position: fixed; pointer-events: none; transform-origin: 0 0; transition: scale 0.14s, rotate 0.14s, box-shadow 0.14s; }
+      .postcard.ghost.carried { scale: 1.07; rotate: -1.6deg; box-shadow: 0 0 0 2px #fbf4de, 0 14px 28px rgba(0, 0, 0, 0.6); }
+
+      /* the box: the tiles that are not on the board */
+      .picker-side {
+        grid-area: side;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+        min-width: 0;
+        min-height: 0;
+        /* as tall as the table beside it, however many tiles are in it */
+        contain: size;
+        padding: 8px 9px 9px;
+        border-radius: 8px;
+        background: rgba(110, 83, 31, 0.1);
+        box-shadow: inset 0 0 0 1px rgba(110, 83, 31, 0.28);
+      }
+      .picker-box {
+        flex: 1;
+        min-height: 0;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        align-content: start;
+        gap: 7px;
+        /* room for the ring round a postcard that is picked */
+        margin: -5px;
+        padding: 5px;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+      }
+      .picker-box:empty { display: none; }
+      /* a postcard in the box lets the box be scrolled along its length, and is dragged out of it across */
+      .picker-box .postcard { touch-action: pan-y; }
+      .picker-none { margin: auto 0; padding: 6px 4px; text-align: center; font-style: italic; }
+
+      .picker-foot { grid-area: foot; display: flex; align-items: center; gap: 8px; min-width: 0; }
+      .picker-shuffle { order: 0; }
+      .picker-keep { order: 1; }
+      .picker-note { order: 2; flex: 1; min-width: 0; padding: 0 4px; }
+      .picker-cancel { order: 3; }
+      .picker-done { order: 4; min-width: 78px; }
+      .picker-btn {
+        box-sizing: border-box;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        min-height: 32px;
+        padding: 6px 14px;
+        border-radius: 999px;
+        border: 1px solid var(--edge);
+        background: rgba(255, 255, 255, 0.55);
+        color: var(--ink);
+        font: 600 12.5px/1.2 system-ui, -apple-system, "Segoe UI", sans-serif;
+        white-space: nowrap;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .picker-btn svg { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+      .picker-btn svg .pip { fill: currentColor; stroke: none; }
+      .picker-done, .picker-done:hover, .picker-keep[aria-pressed="true"], .picker-keep[aria-pressed="true"]:hover { background: var(--brass); box-shadow: inset 0 1px 0 rgba(255, 244, 205, 0.55); }
+      .picker-keep[aria-pressed="true"] svg { fill: currentColor; }
+      .picker-keep .short { display: none; }
+      /* a touch beside a picker in which something was changed: it stays, and its two ways out show themselves */
+      .picker-foot.nudge .picker-cancel, .picker-foot.nudge .picker-done { animation: picker-nudge 0.42s; }
+      @keyframes picker-nudge { 25% { transform: translateY(-4px); } 60% { transform: translateY(1px); } }
+      /* said over the city while it is set out again */
+      .picker-setting {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        background: rgba(8, 8, 14, 0.74);
+        pointer-events: auto;
+        animation: picker-fade 0.15s ease-out;
+      }
+
+      /* a narrow screen, a phone held upright: the box lies under the table, its tiles in a row */
+      @media (max-width: 640px) {
+        #picker { --tw: max(240px, min(520px, calc(var(--aw) - 30px), calc((var(--ah) - 400px) * 1.333))); }
+        .picker { grid-template-columns: var(--tw); grid-template-areas: "head" "table" "side" "foot"; padding: 9px 14px 13px; }
+        .picker-hint { flex-basis: 100%; min-height: 2.7em; }
+        .picker-side { contain: none; }
+        .picker-box { display: flex; overflow-x: auto; overflow-y: hidden; }
+        .picker-box .postcard { flex: 0 0 calc((100% - 14px) / 3); width: auto; touch-action: pan-x; }
+        .picker-none { margin: 0; }
+        .picker-foot { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .picker-note { grid-column: 1 / -1; order: -1; padding: 0; }
+      }
+      /* a low screen, a phone on its side: the table takes the whole height, and all else stands beside it */
+      @media (max-height: 520px) and (min-width: 560px) {
+        #picker {
+          --side: 232px;
+          --tw: max(240px, min(620px, calc(var(--aw) - var(--side) - 46px), calc((var(--ah) - 96px) * 1.333)));
+        }
+        .picker {
+          grid-template-columns: var(--tw) var(--side);
+          grid-template-rows: auto minmax(0, 1fr) auto;
+          grid-template-areas: "table head" "table side" "table foot";
+          gap: 8px 14px;
+          padding: 11px 12px 11px 11px;
+        }
+        .picker-hint { flex-basis: 100%; min-height: 4.05em; }
+        .picker-side { contain: size; padding: 6px 8px 7px; }
+        .picker-box { display: grid; overflow-x: hidden; overflow-y: auto; }
+        .picker-box .postcard { width: 100%; touch-action: pan-y; }
+        .picker-none { margin: auto 0; }
+        .picker-foot { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+        .picker-note { grid-column: 1 / -1; order: -1; padding: 0; }
+        .picker-btn { padding: 6px 8px; }
+        .picker-keep .long { display: none; }
+        .picker-keep .short { display: inline; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .picker, .picker-shade, .picker-setting, .picker-foot.nudge .picker-btn { animation: none; }
+      }
+
       #hud {
         position: fixed;
         top: calc(64px + env(safe-area-inset-top));
@@ -309,6 +580,7 @@
     <canvas id="c"></canvas>
     <pre id="hud"></pre>
     <div id="ui"></div>
+    <div id="picker"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

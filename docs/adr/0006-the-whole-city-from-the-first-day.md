@@ -1,6 +1,6 @@
 # The whole city from the first day
 
-Qualified by [0009](0009-a-city-of-hand-built-tiles.md): the city is whole at every stage, with no empty ground waiting to be filled, but it grows by whole tiles and is not all there on the first day.
+Qualified by [0009](0009-a-city-of-hand-built-tiles.md): the city is whole at every stage, with no empty ground waiting to be filled, but it grows by whole tiles and is not all there on the first day. And by [0012](0012-the-board-holds-nine-tiles-at-a-time.md): every tile that is made is in the world, but the board holds nine of them at a time.
 
 The city does not wait for the collection. Every district that has been made is in the world from the start, dense and built up to its edges, and what grows with the collection is only the number of heroes driving in it. This replaces the rule in [0002](0002-the-world-only-grows.md) that the world gains a district for every ten heroes, picked from three teasers. On seeing the look prototype the collector wanted a big, dense, varied city to watch from the first day and no empty ground waiting to be earned: a district held back until the collection grows is a district nobody enjoys. We gave up growth as a reward and as a record of the collection's history. The heroes are that record.
 
