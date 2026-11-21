@@ -66,7 +66,10 @@ export interface Machine {
    * lid lifted and slid forward), `jet` (both plumes at full burn), `brake` (its
    * air brakes up), `chutes` (two parachutes out behind it), `smoke` (a smoke
    * screen from its outlets, thicker the higher), `hookL` and `hookR` (a
-   * grapnel fired out from its left or right side, REACH.hook long at 1); by
+   * grapnel fired out from its left or right side, REACH.hook long at 1),
+   * `party` (its wing's halves folded up into two tall fins by 0.45, its lamps,
+   * glass and the bat on the road brightened and grown from 0.3 to 0.7, and
+   * blue-white pilot flames lit from 0.6, which `jet` blows out); by
    * itself it squats when it launches, dips when it brakes, burns its jets
    * when pushed hard and throws a bat's shape ahead of it with its lamps on.
    * The Jokermobile: `glove` (the boxing glove sprung
@@ -446,6 +449,8 @@ class Rig implements Machine {
   surge = 0;
   /** How much longer than at full burn its flames are, as a share: the Batmobile's grow when it is pushed hard. */
   stretch = 0;
+  /** How much brighter than its lights alone its lamps burn, from 0: the Batmobile's party trick raises it. */
+  boost = 0;
   private ran = false;
   private lampMat: THREE.MeshBasicMaterial | null = null;
   private haloMat: THREE.MeshBasicMaterial | null = null;
@@ -532,11 +537,11 @@ class Rig implements Machine {
   }
 
   /** The light its lamps throw on the road ahead, from `x` forward: a round pool, or the picture `map`. */
-  beam(x: number, l: number, w: number, color: number, map: THREE.Texture = roundTex()): void {
+  beam(x: number, l: number, w: number, color: number, map: THREE.Texture = roundTex()): THREE.Mesh {
     this.beamMat = additive({ map, color, side: THREE.FrontSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
     // each kind's pool lies at a height of its own, 0.004 apart, so that two that overlap, as the Batmobile's and
     // the Jokermobile's do in the chase, are not in one plane
-    this.patch(this.root, x - 1, x + l, -w / 2, w / 2, 0.06 + KINDS.indexOf(this.kind) * 0.004, this.beamMat);
+    return this.patch(this.root, x - 1, x + l, -w / 2, w / 2, 0.06 + KINDS.indexOf(this.kind) * 0.004, this.beamMat);
   }
 
   /** A soft shadow on the ground under it. */
@@ -641,8 +646,8 @@ class Rig implements Machine {
     if (!this.ran) this.speed = 0;
     this.ran = false;
     const lit = this.lit;
-    if (this.lampMat) this.lampMat.color.setScalar(0.42 + lit * (0.8 + 2.0 * night));
-    if (this.haloMat) this.haloMat.opacity = lit * (0.12 + 0.72 * night);
+    if (this.lampMat) this.lampMat.color.setScalar(0.42 + lit * (0.8 + 2.0 * night) + this.boost * (0.7 + 1.4 * night));
+    if (this.haloMat) this.haloMat.opacity = Math.min(1, lit * (0.12 + 0.72 * night) + this.boost * (0.2 + 0.4 * night));
     if (this.beamMat) this.beamMat.opacity = lit * (0.04 + 0.42 * night);
     for (const s of this.spinners) s.m.rotation[s.axis] += s.rate * this.spin * dt;
     for (const d of this.discs) d.visible = this.spin > 0.4;
@@ -678,10 +683,12 @@ function batFin(g: GeoBuilder, outline: P2[], y0: number, z0: number, cant: numb
 // The Batmobile
 // ---------------------------------------------------------------------------
 
-/** The Batmobile's carbon, its slicks and wheel covers, the worn steel and rust of its machinery, and its few colours. */
-const CARBON = 0x141518, SLICK = 0x2a2b30, COVER = 0x1c1d21, COVER_LINE = 0x484c55, PIT = 0x0e0f12, BORE = 0x08080a;
-const WORN = 0x767b83, BRIGHT = 0xb9bfc8, RUST = 0x86553a, ORANGE = 0xd9761f, COPPER = 0xbf6a33, PLATE = 0x6c717a;
-const DAMPER = 0xff9b30, COOL_LAMP = 0xe2eeff;
+/** The Batmobile's own neutral charcoals (the rest of the Bat-family keeps its bluer black): its shell, where it faces the sky, underneath, its darks and its edges. */
+const CH = 0x242528, CH_TOP = 0x303134, CH_UNDER = 0x18181a, CH_DARK = 0x101012, CH_EDGE = 0x3a3b3f, CH_LINE = 0x1d1d20;
+/** Its carbon, its slicks and wheel covers, the worn steel and rust of its machinery, and its few colours. */
+const CARBON = 0x0f0f11, SLICK = 0x2b2b2e, COVER = 0x1d1d20, COVER_RIM = 0x55585e, COVER_SLOT = 0x0a0a0b, LETTER = 0x8d9096, PIT = 0x0d0d0f, BORE = 0x08080a;
+const WORN = 0x62666c, WORN_RIB = 0x4a4d52, BRIGHT = 0xc4c9d0, RUST = 0x7f4f35, ORANGE = 0xd9761f, COPPER = 0xbf6a33, PLATE = 0x5d6168;
+const DAMPER = 0xff9b30, CANOPY = 0xe6b422, TAIL_RED = 0xff2b1e;
 
 /** A smooth curve through points (x, y) given with x falling, held flat beyond its ends. */
 function curve(t: P2[]): (x: number) => number {
@@ -742,32 +749,64 @@ function smoothen(geos: THREE.BufferGeometry[], crease: number, paint?: (ny: num
 
 /**
  * A fat slick, its axle along z and its middle at the origin, its outer face
- * toward `s` (1 for +z): a cover over the whole wheel, a shallow dish with a
- * small recessed hub and a nut in it and one fine line from the hub to the rim,
- * so that it is seen to turn; its inner face a flat disc of `inner`.
+ * toward `s` (1 for +z). The tyre has a flat outer sidewall with two short pale
+ * arcs where a maker's name would be, rounded shoulders and a plain inner
+ * shoulder. Over the wheel a cover: a thin pale ring at the rim, a dished disc
+ * with one step in it and a fan of slim slots, and a recessed hub with a bright
+ * six-sided nut. A front wheel has its carbon brake disc inside.
  */
-function slickGeo(R: number, w: number, s: number, inner: number): THREE.BufferGeometry {
-  const g = new GeoBuilder(), N = 16, h = w / 2;
+function slickGeo(R: number, w: number, s: number, front: boolean): THREE.BufferGeometry {
+  const g = new GeoBuilder(), N = 14, h = w / 2;
   const A = (i: number): number => ((i + 0.5) / N) * Math.PI * 2;
   const P = (z: number, rr: number, i: number): V3 => [Math.cos(A(i)) * rr, Math.sin(A(i)) * rr, s * z];
-  const prof: P2[] = [[-h, R * 0.8], [-h + 0.1, R * 0.99], [h - 0.1, R * 0.99], [h, R * 0.8]];
-  for (let k = 0; k + 1 < prof.length; k++) {
+  /** A band all the way round between two (z, radius) circles, facing out from the axle, along it, or in toward it. */
+  const band = (a: P2, b: P2, color: number, face: 'out' | 'side' | 'in'): void => {
     for (let i = 0; i < N; i++) {
-      const m = A(i + 0.5);
-      quadTo(g, P(prof[k][0], prof[k][1], i), P(prof[k][0], prof[k][1], i + 1), P(prof[k + 1][0], prof[k + 1][1], i + 1), P(prof[k + 1][0], prof[k + 1][1], i), SLICK, [Math.cos(m), Math.sin(m), 0]);
+      const m = A(i + 0.5), dir: V3 = face === 'side' ? [0, 0, s] : face === 'out' ? [Math.cos(m), Math.sin(m), 0] : [-Math.cos(m), -Math.sin(m), 0];
+      quadTo(g, P(a[0], a[1], i), P(a[0], a[1], i + 1), P(b[0], b[1], i + 1), P(b[0], b[1], i), color, dir);
+    }
+  };
+  // the tyre
+  band([h, 0.66 * R], [h, 0.86 * R], SLICK, 'side');
+  const prof: P2[] = [[h, 0.86 * R], [h - 0.035, 0.955 * R], [h - 0.1, R], [-h + 0.08, R], [-h, 0.8 * R]];
+  for (let k = 0; k + 1 < prof.length; k++) band(prof[k], prof[k + 1], SLICK, 'out');
+  decal(g, circle(0.8 * R, N, Math.PI / N), [0, 0, -s * h], AX, AY, [0, 0, -s], 0, COVER);
+  // two pale arcs on the outer sidewall
+  for (const c0 of [Math.PI / 2, -Math.PI / 2]) {
+    for (let k = 0; k < 3; k++) {
+      const a0 = c0 - 0.42 + (0.84 * k) / 3, a1 = c0 - 0.42 + (0.84 * (k + 1)) / 3, r0 = 0.735 * R, r1 = 0.79 * R, zz = s * (h + 0.004);
+      quadTo(g, [Math.cos(a0) * r0, Math.sin(a0) * r0, zz], [Math.cos(a1) * r0, Math.sin(a1) * r0, zz], [Math.cos(a1) * r1, Math.sin(a1) * r1, zz], [Math.cos(a0) * r1, Math.sin(a0) * r1, zz], LETTER, [0, 0, s]);
     }
   }
-  const DISH = 0.045, HUB = 0.24 * R, DEEP = 0.085;
-  for (let i = 0; i < N; i++) {
-    const m = A(i + 0.5);
-    quadTo(g, P(h, R * 0.8, i), P(h, R * 0.8, i + 1), P(h - DISH, HUB, i + 1), P(h - DISH, HUB, i), COVER, [0, 0, s]);
-    quadTo(g, P(h - DISH, HUB, i), P(h - DISH, HUB, i + 1), P(h - DEEP, HUB, i + 1), P(h - DEEP, HUB, i), COVER, [-Math.cos(m), -Math.sin(m), 0]);
-    triTo(g, P(h - DEEP, HUB, i), P(h - DEEP, HUB, i + 1), [0, 0, s * (h - DEEP)], COVER, [0, 0, s]);
+  // the cover: its pale rim, a dish with a step, and the hub let into it
+  const D1: P2 = [h - 0.006, 0.66 * R], D2: P2 = [h - 0.03, 0.48 * R], D3: P2 = [h - 0.05, 0.48 * R], D4: P2 = [h - 0.07, 0.17 * R];
+  band([h - 0.003, 0.66 * R], [h - 0.003, 0.62 * R], COVER_RIM, 'side');
+  band([h - 0.003, 0.62 * R], D2, COVER, 'side');
+  band(D2, D3, COVER, 'in');
+  band(D3, D4, COVER, 'side');
+  for (let i = 0; i < N; i++) triTo(g, P(D4[0], D4[1], i), P(D4[0], D4[1], i + 1), [0, 0, s * D4[0]], CH_DARK, [0, 0, s]);
+  void D1;
+  // the nut
+  const hex = circle(0.085 * R, 6);
+  for (let i = 0; i < 6; i++) {
+    const a = hex[i], b = hex[(i + 1) % 6];
+    quadTo(g, [a[0], a[1], s * D4[0]], [b[0], b[1], s * D4[0]], [b[0], b[1], s * (D4[0] + 0.03)], [a[0], a[1], s * (D4[0] + 0.03)], BRIGHT, [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, 0]);
   }
-  decal(g, circle(0.1 * R, 6), [0, 0, s * (h - DEEP)], AX, AY, [0, 0, s], 0.012, WORN);
-  const zd = (rr: number): number => h - DISH * ((R * 0.8 - rr) / (R * 0.8 - HUB)) + 0.006;
-  quadTo(g, [HUB + 0.01, -0.012, s * zd(HUB + 0.01)], [R * 0.79, -0.012, s * zd(R * 0.79)], [R * 0.79, 0.012, s * zd(R * 0.79)], [HUB + 0.01, 0.012, s * zd(HUB + 0.01)], COVER_LINE, [0, 0, s]);
-  decal(g, circle(R * 0.8, N, Math.PI / N), [0, 0, -s * h], AX, AY, [0, 0, -s], 0, inner);
+  decal(g, hex, [0, 0, s * (D4[0] + 0.03)], AX, AY, [0, 0, s], 0, BRIGHT);
+  // a fan of slim slots from the hub to the rim
+  const zOn = (rr: number): number => (rr > 0.48 * R ? lerp(D2[0], h - 0.012, (rr - 0.48 * R) / (0.14 * R)) : lerp(D4[0], D3[0], (rr - 0.17 * R) / (0.31 * R))) + 0.006;
+  for (let k = 0; k < 6; k++) {
+    const a = (k / 6) * Math.PI * 2 + 0.2, c = Math.cos(a), sn = Math.sin(a), hw = 0.012;
+    for (const [r0, r1] of [[0.2 * R, 0.46 * R], [0.5 * R, 0.6 * R]]) {
+      quadTo(g, [c * r0 - sn * hw, sn * r0 + c * hw, s * zOn(r0)], [c * r1 - sn * hw, sn * r1 + c * hw, s * zOn(r1)], [c * r1 + sn * hw, sn * r1 - c * hw, s * zOn(r1)], [c * r0 + sn * hw, sn * r0 - c * hw, s * zOn(r0)], COVER_SLOT, [0, 0, s]);
+    }
+  }
+  // a front wheel's carbon disc, inside it
+  if (front) {
+    const zi = -h - 0.035;
+    band([-h, 0.6 * R], [-h - 0.035, 0.6 * R], CARBON, 'out');
+    decal(g, circle(0.6 * R, N, Math.PI / N), [0, 0, s * zi], AX, AY, [0, 0, -s], 0, CARBON);
+  }
   const geo = g.build();
   smoothen([geo], 0.75);
   return geo;
@@ -814,30 +853,39 @@ function batPoolTex(): THREE.Texture {
 
 /**
  * The collector's own design, built line for line after the renders of the
- * model he made himself, with a canopy he asked for after them. A very short,
- * very wide open-wheeled racing car in matte black on four fat bare slicks: one
- * smooth shell, a pointed nose between the front tyres, low shoulders as wide
- * as the car behind them, a narrow rounded waist and a plank of a wing right
- * across the back; one long shallow arc from the lip to the trailing edge; a
- * cockpit blister with dark glass set flush in it; two seams and two bars on
- * top; a red strip under the trailing lip. Under the shell it is open and
- * mechanical: a carbon splitter with two scoops, bare steel arms and orange
- * dampers in front, side tunnels and grey plates, and under the wing two
- * electric motors, a toothed bar, orange panels and two tall outlets, which are
- * its jets.
+ * model he made himself, with what he asked for after seeing it: a bigger
+ * canopy in yellow glass, larger rear wheels set further back, lights that
+ * work and a party trick of its own. A very short, very wide open-wheeled
+ * racing car in matte charcoal on four fat bare slicks: one smooth shell, a
+ * pointed nose between the front tyres, low shoulders as wide as the car behind
+ * them, a narrow rounded waist that runs out into a thin manta wing right
+ * across the back; one long shallow arc from the lip to the trailing edge,
+ * raked a little forward; a cockpit blister with amber glass set flush in it;
+ * two seams and two bars on top; a red strip under the trailing lip. Under the
+ * shell it is open: a carbon splitter with two scoops, bare steel arms and
+ * orange dampers in front, open side tunnels over a thin floor, a narrow tub,
+ * grey plates, and under the wing two electric motors, a toothed bar, orange
+ * panels and two tall outlets, which are its jets. Its party trick folds the
+ * wing's halves up into two tall fins and readies it to launch.
  */
 function batmobile(k: Build, mat: THREE.Material): Rig {
   const r = new Rig('batmobile', k, mat);
-  // everything but the wheels and their arms rides on its springs, and squats and dips
-  const sh = r.pivot([0, 0, 0]);
+  // a little rake: everything on its springs is tipped forward about the front axle, so that the tail sits 0.06 higher
+  const TAIL = -2.685, FRONT_AXLE = 2.065, REAR_AXLE = -2.075, REAR_R = 0.56;
+  const RAKE = 0.06 / (FRONT_AXLE - TAIL);
+  const rk = r.pivot([0, 0, 0]);
+  rk.rotation.z = -RAKE;
+  rk.position.set(FRONT_AXLE * (1 - Math.cos(RAKE)), FRONT_AXLE * Math.sin(RAKE), 0);
+  // and on that, everything but the wheels and their arms rides on its springs, and squats and dips
+  const sh = r.pivot([0, 0, 0], rk);
   r.shell = sh;
   const g = new GeoBuilder(), lg = new GeoBuilder(), un = new GeoBuilder(), halos: Halo[] = [];
 
   // ---- the shell, as numbers measured from his renders ----
-  const TAIL = -2.685, WING = -1.265, TIP = 1.92;
+  const WING = -1.265, TIP = 1.92, HINGE = 0.8;
   /** The top down the middle. */
   const C = curve([[2.45, 0.72], [2.07, 0.98], [1.9, 1.05], [1.5, 1.16], [1.1, 1.29], [0.65, 1.37], [0.2, 1.42], [-0.25, 1.44], [-0.7, 1.44], [-1.1, 1.42], [-1.55, 1.38], [-2.0, 1.35], [-2.35, 1.34], [TAIL, 1.33]]);
-  /** The half-width of the rounded middle: the nose, the cockpit's blister, the waist's back, and its fillet into the wing. */
+  /** The half-width of the rounded middle: the nose, the cockpit's blister, the waist's back. */
   const BW = curve([[2.45, 0.2], [2.37, 0.31], [2.2, 0.46], [2.05, 0.56], [1.75, 0.6], [1.2, 0.625], [0.8, 0.625], [0.45, 0.64], [0.15, 0.7], [-0.05, 0.79], [-1.25, 0.79], [-1.4, 0.7], [-1.7, 0.58], [-2.1, 0.5], [TAIL, 0.46]]);
   /** How high the rounded middle's foot is. */
   const F = curve([[2.45, 0.66], [2.3, 0.67], [2.05, 0.7], [1.75, 0.82], [1.5, 0.92], [1.2, 0.95], [0.5, 0.95], [0.2, 0.97], [-0.05, 0.99], [-1.25, 1.0], [-1.45, 1.12], [-1.8, 1.2], [TAIL, 1.22]]);
@@ -863,13 +911,16 @@ function batmobile(k: Build, mat: THREE.Material): Rig {
     return TIP - rc + Math.sqrt(Math.max(0, rc * rc - (x - x0) ** 2));
   };
   const bwAt = (x: number, W: number): number => Math.min(BW(x), W);
+  /** The wing's top: the waist's back in the middle, running out through a wide soft fillet into a thin plank that falls a little to its tips and droops at their ends. */
+  const wingTop = (x: number, a: number, W: number): number => lerp(C(x), 1.33 - 0.08 * (a / TIP) ** 2, smooth(0.12, 1.0, a)) - 0.05 * smooth(W - 0.2, W, a);
   const top = (x: number, u: number): number => {
     const W = halfW(x), bw = bwAt(x, W), a = Math.abs(u), f = F(x), c = C(x);
     const dome = a < bw ? f + (c - f) * Math.sqrt(1 - (a / bw) ** 2) : f - 3 * (a - bw);
-    let plank: number;
-    if (x > WING) plank = W - bw < 1e-4 ? f : EG(x) + (f - EG(x)) * clamp01((W - a) / (W - bw));
-    else plank = 1.33 - 0.08 * (a / TIP) ** 2 - 0.03 * smooth(W - 0.12, W, a);
-    return smax(dome, plank, 0.07);
+    const front = W - bw < 1e-4 ? f : EG(x) + (f - EG(x)) * clamp01((W - a) / (W - bw));
+    // the wing comes in over the waist's last length, so that the waist swells into it rather than meeting it at a step
+    const wgt = smooth(-0.7, -1.4, x);
+    const plank = wgt > 0 ? lerp(front, wingTop(x, a, W), wgt) : front;
+    return smax(dome, plank, lerp(0.07, 0.04, wgt));
   };
   const bot = (x: number, u: number): number => {
     const W = halfW(x), bw = bwAt(x, W), a = Math.abs(u), t = top(x, u), th = 0.06 + 0.04 * smooth(-2.55, TAIL, x);
@@ -879,35 +930,68 @@ function batmobile(k: Build, mat: THREE.Material): Rig {
   };
 
   // the cross-sections: across the top from left to right, the rounded middle
-  // sampled closely and the shelf or wing more widely, and back under it
-  const X = [2.45, 2.35, 2.2, 1.98, 1.9, 1.75, 1.6, 1.52, 1.34, 1.23, 1.12, 0.95, 0.78, 0.55, 0.3, 0.08, -0.05, -0.4, -0.95, -1.25, -1.28,
-    -1.42, -1.52, -1.62, -1.9, -2.35, -2.545, -2.61, -2.66, TAIL];
+  // sampled closely and the shelf or wing more widely, and back under it; on
+  // the wing each has a point on the fold line at HINGE, where its halves turn up
+  const X = [2.45, 2.35, 2.2, 1.98, 1.75, 1.6, 1.52, 1.34, 1.23, 1.12, 0.95, 0.78, 0.55, 0.3, 0.08, -0.05, -0.4, -0.75, -1.05, -1.25, -1.28,
+    -1.42, -1.52, -1.62, -1.9, -2.2, -2.45, -2.545, -2.61, -2.66, TAIL];
   const NI = 5, NO = 3;
+  const isWing = (x: number): boolean => x <= -1.275;
   const rings = X.map((x): Ring => {
     const W = halfW(x), bw = bwAt(x, W), half: number[] = [];
     for (let i = 1; i <= NI; i++) half.push(bw * Math.sin((Math.PI / 2) * (i / NI)));
-    for (let j = 1; j <= NO; j++) half.push(bw + (W - bw) * (j / NO));
+    if (isWing(x)) half.push(Math.min(HINGE, W), (Math.min(HINGE, W) + W) / 2, W);
+    else for (let j = 1; j <= NO; j++) half.push(bw + (W - bw) * (j / NO));
     const us = [...half.slice().reverse().map((u) => -u), 0, ...half];
-    const under = [W, (W + bw) / 2, bw, 0.55 * bw, 0, -0.55 * bw, -bw, -(W + bw) / 2, -W];
-    return ring(x, [...us.map((u): P2 => [u, top(x, u)]), ...under.map((u): P2 => [u, bot(x, u)])]);
+    const mid = isWing(x) ? Math.min(HINGE, W) : (W + bw) / 2;
+    const under = [W, mid, bw, 0.55 * bw, 0, -0.55 * bw, -bw, -mid, -W];
+    // the trailing lip is rounded: its last section is drawn in a little from above and below
+    const lip = x === TAIL ? 0.025 : 0;
+    return ring(x, [...us.map((u): P2 => [u, top(x, u) - lip]), ...under.map((u): P2 => [u, bot(x, u) + lip])]);
   });
-  // the lid: the blister from x 1.9 back to x 0.08, the canopy with a hand's breadth of shell round it
-  const iL0 = X.indexOf(1.9), iL1 = X.indexOf(0.08), J0 = NO, J1 = NO + 2 * NI;
+  const NT = 2 * (NI + NO) + 1, iW = X.findIndex(isWing);
+  /** Which band of which segment belongs to the wing's left (-1) or right (1) half, or to neither (0). */
+  const halfOf = (j: number, s: number): number => {
+    if (s < iW) return 0;
+    if (j === 0 || j === 1 || j === NT + 7 || j === NT + 8) return -1;
+    if (j === NT - 3 || j === NT - 2 || j === NT - 1 || j === NT) return 1;
+    return 0;
+  };
+  // the lid: the blister from x 1.98 back to x -0.05, the canopy with a hand's breadth of shell round it
+  const iL0 = X.indexOf(1.98), iL1 = X.indexOf(-0.05), J0 = NO, J1 = NO + 2 * NI;
   const isLid = (j: number, s: number): boolean => s >= iL0 && s < iL1 && j >= J0 && j < J1;
-  const gs = new GeoBuilder(), gl = new GeoBuilder();
-  loft(gs, rings, () => BAT, { skip: isLid, capA: false, capB: false });
-  loft(gl, rings, () => BAT, { skip: (j, s) => !isLid(j, s), capA: false, capB: false });
-  // its two ends closed flat: the blunt lip and the trailing lip
-  const dedup = (q: Ring): Ring => ring(q.x, q.p.filter((p, i) => { const n = q.p[(i + 1) % q.p.length]; return Math.abs(p[0] - n[0]) + Math.abs(p[1] - n[1]) > 1e-5; }));
-  capRing(gs, dedup(rings[0]), 1, BAT);
-  capRing(gs, dedup(rings[rings.length - 1]), -1, BAT);
-  const shellGeo = gs.build(), lidGeo = gl.build();
-  const cTop = new THREE.Color(BAT_TOP), cMid = new THREE.Color(BAT), cUnder = new THREE.Color(BAT_UNDER);
-  smoothen([shellGeo, lidGeo], 0.87, (ny, c) => {
+  const gs = new GeoBuilder(), gl = new GeoBuilder(), gh = [new GeoBuilder(), new GeoBuilder()];
+  loft(gs, rings, () => CH, { skip: (j, s) => isLid(j, s) || halfOf(j, s) !== 0, capA: false, capB: false });
+  loft(gl, rings, () => CH, { skip: (j, s) => !isLid(j, s), capA: false, capB: false });
+  for (const [i, sd] of [[0, -1], [1, 1]] as const) loft(gh[i], rings, () => CH, { skip: (j, s) => halfOf(j, s) !== sd, capA: false, capB: false });
+  const R = (s: number, j: number): V3 => at3(rings[s].x, rings[s].p[j]);
+  // the ends closed flat: the blunt lip, and the trailing lip in three, one for the body and one for each half
+  const dedup = (p: P2[]): P2[] => p.filter((q, i) => { const n = p[(i + 1) % p.length]; return Math.abs(q[0] - n[0]) + Math.abs(q[1] - n[1]) > 1e-5; });
+  const last = rings[rings.length - 1];
+  capRing(gs, ring(rings[0].x, dedup(rings[0].p)), 1, CH);
+  capRing(gs, ring(TAIL, dedup(last.p.filter((p) => Math.abs(p[0]) <= HINGE + 1e-6))), -1, CH);
+  capRing(gh[0], ring(TAIL, dedup(last.p.filter((p) => p[0] <= -HINGE + 1e-6))), -1, CH);
+  capRing(gh[1], ring(TAIL, dedup(last.p.filter((p) => p[0] >= HINGE - 1e-6))), -1, CH);
+  // the faces along the fold line, the body's turned out and each half's turned in, which meet when the wing is flat
+  for (let s = iW; s + 1 < rings.length; s++) {
+    for (const [i, sd, jt, jb] of [[0, -1, 2, NT + 7], [1, 1, NT - 3, NT + 1]] as const) {
+      quadTo(gs, R(s, jt), R(s + 1, jt), R(s + 1, jb), R(s, jb), CH_UNDER, [0, 0, sd]);
+      quadTo(gh[i], R(s, jt), R(s + 1, jt), R(s + 1, jb), R(s, jb), CH_UNDER, [0, 0, -sd]);
+    }
+  }
+  const shellGeo = gs.build(), lidGeo = gl.build(), halfGeo = gh.map((b) => b.build());
+  const cTop = new THREE.Color(CH_TOP), cMid = new THREE.Color(CH), cUnder = new THREE.Color(CH_UNDER);
+  smoothen([shellGeo, lidGeo, ...halfGeo], 0.87, (ny, c) => {
     if (ny >= 0) c.copy(cMid).lerp(cTop, smooth(0.3, 0.95, ny));
     else c.copy(cMid).lerp(cUnder, smooth(0, -0.5, ny));
   });
   r.mesh(shellGeo, sh);
+  // each half of the wing turns about the fold line at its root
+  const HY = (top(-2.0, HINGE) + bot(-2.0, HINGE)) / 2;
+  const halves = [-1, 1].map((sd, i) => {
+    const p = r.pivot([0, HY, sd * HINGE], sh);
+    r.mesh(halfGeo[i], p).position.set(0, -HY, -sd * HINGE);
+    return { sd, p, g: new GeoBuilder() };
+  });
 
   /** A sheet lying on the shell's top, `lift` over it, from x0 to x1 and z0 to z1 (each with its sign), in nx by nz pieces; facing down if `down`, moved by `o`. */
   const onTop = (b: GeoBuilder, x0: number, x1: number, z0: number, z1: number, lift: number, color: number, nx: number, nz: number, down = false, o: V3 = [0, 0, 0], q: QuadOpts = {}): void => {
@@ -917,37 +1001,55 @@ function batmobile(k: Build, mat: THREE.Material): Rig {
     };
     for (let i = 0; i < nx; i++) for (let j = 0; j < nz; j++) quadTo(b, P(i, j), P(i + 1, j), P(i + 1, j + 1), P(i, j + 1), color, [0, down ? -1 : 1, 0], q);
   };
-  const R = (s: number, j: number): V3 => at3(rings[s].x, rings[s].p[j]);
 
   // ---- the lid, which lifts at its back edge and slides forward ----
   const LX = X[iL0], LY = top(LX, 0);
   const lidP = r.pivot([LX, LY, 0], sh);
-  const lid = r.mesh(lidGeo, lidP);
-  lid.position.set(-LX, -LY, 0);
+  r.mesh(lidGeo, lidP).position.set(-LX, -LY, 0);
   const li = new GeoBuilder(), DN: V3 = [0, -0.035, 0];
   // (its underside is coarser than its top: it is seen only when the lid is up)
   for (let s = iL0; s < iL1; s += 2) {
     const s2 = Math.min(s + 2, iL1);
-    for (let j = J0; j < J1; j += 2) quadTo(li, add(R(s, j), DN), add(R(s2, j), DN), add(R(s2, j + 2), DN), add(R(s, j + 2), DN), BAT_DARK, [0, -1, 0]);
+    for (let j = J0; j < J1; j += 2) quadTo(li, add(R(s, j), DN), add(R(s2, j), DN), add(R(s2, j + 2), DN), add(R(s, j + 2), DN), CH_DARK, [0, -1, 0]);
   }
   for (let s = iL0; s < iL1; s++) {
-    for (const [j, sz] of [[J0, -1], [J1, 1]] as const) quadTo(li, R(s, j), R(s + 1, j), add(R(s + 1, j), DN), add(R(s, j), DN), BAT, [0, 0, sz]);
+    for (const [j, sz] of [[J0, -1], [J1, 1]] as const) quadTo(li, R(s, j), R(s + 1, j), add(R(s + 1, j), DN), add(R(s, j), DN), CH, [0, 0, sz]);
   }
-  for (const [s, sx] of [[iL0, 1], [iL1, -1]] as const) for (let j = J0; j < J1; j++) quadTo(li, R(s, j), R(s, j + 1), add(R(s, j + 1), DN), add(R(s, j), DN), BAT, [sx, 0, 0]);
-  // the canopy: dark glass flush in the blister, pointed toward the nose and rounded at its back, in a fine dark outline
-  const glassHW = (x: number): number => (x > 1.15 ? 0.45 * Math.pow(Math.max(0, (1.75 - x) / 0.6), 0.7) : x > 0.6 ? 0.45 : 0.45 * Math.sqrt(Math.max(0, 1 - ((0.6 - x) / 0.25) ** 2)));
-  const pane = (x0: number, x1: number, grow: number, lift: number, color: number, q: QuadOpts): void => {
-    const NXg = 7, NZg = 5;
+  for (const [s, sx] of [[iL0, 1], [iL1, -1]] as const) for (let j = J0; j < J1; j++) quadTo(li, R(s, j), R(s, j + 1), add(R(s, j + 1), DN), add(R(s, j), DN), CH, [sx, 0, 0]);
+  // the canopy: amber glass flush in the blister over most of its top, pointed toward the nose and rounded at its back, in a fine dark outline
+  const G0 = 1.95, G1 = -0.05;
+  const glassHW = (x: number): number => {
+    const full = Math.min(0.575, 0.9 * bwAt(x, halfW(x)));
+    if (x > 1.3) return full * Math.pow(clamp01((G0 - x) / (G0 - 1.3)), 0.7);
+    if (x < 0.35) return full * Math.sqrt(clamp01(1 - ((0.35 - x) / (0.35 - G1)) ** 2));
+    return full;
+  };
+  const NXg = 10, NZg = 6;
+  const pane = (b: GeoBuilder, lift: number, color: number): void => {
     const P = (i: number, j: number): V3 => {
-      const x = lerp(x0, x1, i / NXg), hw = glassHW(Math.min(1.75, Math.max(0.35, x))) + grow, z = lerp(-hw, hw, j / NZg);
+      const x = lerp(G0, G1, i / NXg), hw = glassHW(x), z = lerp(-hw, hw, j / NZg);
       return [x, top(x, z) + lift, z];
     };
-    for (let i = 0; i < NXg; i++) for (let j = 0; j < NZg; j++) quadTo(li, P(i, j), P(i + 1, j), P(i + 1, j + 1), P(i, j + 1), color, [0, 1, 0], q);
+    for (let i = 0; i < NXg; i++) for (let j = 0; j < NZg; j++) quadTo(b, P(i, j), P(i + 1, j), P(i + 1, j + 1), P(i, j + 1), color, [0, 1, 0]);
   };
-  pane(1.785, 0.315, 0.03, 0.005, BAT_DARK, {});
-  pane(1.75, 0.35, 0, 0.009, BAT_GLASS, { win: interior(0.5) });
-  // its underside, edges and glass are built where the body has them, and moved to the lid's pivot as the lid is
+  // its outline: a fine dark band round the glass's edge, a little under it
+  {
+    const OUT = 0.018, E = (x: number, z: number): V3 => [x, top(x, z) + 0.012, z];
+    for (let i = 0; i < NXg; i++) {
+      const xa = lerp(G0, G1, i / NXg), xb = lerp(G0, G1, (i + 1) / NXg), ha = glassHW(xa), hb = glassHW(xb);
+      for (const sd of [-1, 1]) quadTo(li, E(xa, sd * (ha - 0.004)), E(xb, sd * (hb - 0.004)), E(xb, sd * (hb + OUT)), E(xa, sd * (ha + OUT)), CH_DARK, [0, 1, 0]);
+    }
+    for (const [x, dx] of [[G0, 1], [G1, -1]] as const) quadTo(li, E(x - dx * 0.01, -OUT), E(x + dx * OUT, -OUT), E(x + dx * OUT, OUT), E(x - dx * 0.01, OUT), CH_DARK, [0, 1, 0]);
+  }
   r.solid(li, lidP).position.set(-LX, -LY, 0);
+  // the glass is lit from inside by its own light, which answers the lamps, the hour and the party trick
+  const gg = new GeoBuilder();
+  pane(gg, 0.022, CANOPY);
+  const glassMat = new THREE.MeshBasicMaterial({ vertexColors: true, toneMapped: false });
+  const glass = new THREE.Mesh(gg.build(), glassMat);
+  glass.position.set(-LX, -LY, 0);
+  lidP.add(glass);
+  r.tris += gg.triangles;
   r.fx.canopy = (f) => {
     lidP.position.set(LX + 0.8 * smooth(0.3, 1, f), LY + 0.14 * smooth(0, 0.4, f), 0);
     lidP.rotation.z = -0.32 * smooth(0, 0.45, f);
@@ -967,46 +1069,76 @@ function batmobile(k: Build, mat: THREE.Material): Rig {
   for (const [s, sx] of [[iL0, -1], [iL1, 1]] as const) {
     for (let j = J0; j < J1; j++) { const a = R(s, j), b = R(s, j + 1); quadTo(g, a, b, [b[0], FLOOR, fz(b[2])], [a[0], FLOOR, fz(a[2])], PIT, [sx, 0, 0]); }
   }
-  for (const [x0, x1] of [[0.85, 1.2], [0.12, 0.42]]) {
-    block(g, [x0, FLOOR, -0.25], [x1, FLOOR + 0.22, 0.25], BAT_EDGE, BAT_EDGE, 'NESWT');
-    block(g, [x0 - 0.06, FLOOR, -0.25], [x0, FLOOR + 0.5, 0.25], BAT_EDGE, BAT_EDGE, 'NESWT');
+  for (const [x0, x1] of [[0.85, 1.2], [0.08, 0.38]]) {
+    block(g, [x0, FLOOR, -0.25], [x1, FLOOR + 0.22, 0.25], CH_EDGE, CH_EDGE, 'NESWT');
+    block(g, [x0 - 0.06, FLOOR, -0.25], [x0, FLOOR + 0.5, 0.25], CH_EDGE, CH_EDGE, 'NESWT');
   }
   r.seats = [[1.0, FLOOR, 0], [0.2, FLOOR, 0]];
 
-  // ---- on top: two seams, a bar on each, and the air brakes' outlines ----
+  // ---- on top: two seams and a bar on each, from the lid's back edge to the trailing edge ----
   for (const s of [-1, 1]) {
     const z = s * 0.27;
-    for (let x = 0.08; x > TAIL + 0.03; x -= 0.2) {
+    for (let x = G1 - 0.01; x > TAIL + 0.03; x -= 0.2) {
       const x2 = Math.max(TAIL + 0.03, x - 0.2);
-      quadTo(g, [x, top(x, z - 0.01) + 0.008, z - 0.01], [x2, top(x2, z - 0.01) + 0.008, z - 0.01], [x2, top(x2, z + 0.01) + 0.008, z + 0.01], [x, top(x, z + 0.01) + 0.008, z + 0.01], BAT_DARK, [0, 1, 0]);
+      quadTo(g, [x, top(x, z - 0.01) + 0.008, z - 0.01], [x2, top(x2, z - 0.01) + 0.008, z - 0.01], [x2, top(x2, z + 0.01) + 0.008, z + 0.01], [x, top(x, z + 0.01) + 0.008, z + 0.01], CH_LINE, [0, 1, 0]);
     }
     const bar = (x: number, hw: number, hh: number): Ring => { const y = top(x, z); return ring(x, [[z - hw, y - 0.01], [z + hw, y - 0.01], [z + hw, y + hh], [z - hw, y + hh]]); };
-    loft(g, [bar(0.08, 0.015, 0.012), bar(0.06, 0.025, 0.035), bar(-0.32, 0.025, 0.035), bar(-0.7, 0.025, 0.035), bar(-0.72, 0.015, 0.012)], () => 0x30343c, { capA: 0x30343c, capB: 0x30343c });
+    loft(g, [bar(-0.06, 0.015, 0.012), bar(-0.08, 0.025, 0.035), bar(-0.42, 0.025, 0.035), bar(-0.76, 0.025, 0.035), bar(-0.78, 0.015, 0.012)], () => CH_EDGE, { capA: CH_EDGE, capB: CH_EDGE });
   }
-  const FX0 = -2.2, FX1 = -2.65, FZ0 = 0.45, FZ1 = 1.65;
+
+  // ---- the wing's halves: the air brakes, the red strip's ends and the struts ride on them ----
+  const FX0 = -2.2, FX1 = -2.65, FZ0 = 0.86, FZ1 = 1.76;
   const flaps: THREE.Object3D[] = [];
-  for (const s of [-1, 1]) {
-    const z0 = s < 0 ? -FZ1 : FZ0, z1 = s < 0 ? -FZ0 : FZ1;
-    onTop(g, FX0 + 0.025, FX1 - 0.025, z0 - 0.025, z1 + 0.025, 0.005, BAT_DARK, 2, 3);
-    const hy = top(FX0, s * 1.05) + 0.012, o: V3 = [FX0, hy, 0];
+  const redMat = new THREE.MeshBasicMaterial({ vertexColors: true, toneMapped: false });
+  /** A run of the red strip under the trailing lip, from z0 to z1, built `o` back from where it hangs. */
+  const strip = (b: GeoBuilder, z0: number, z1: number, n: number, o: V3): void => {
+    for (let i = 0; i < n; i++) {
+      const za = lerp(z0, z1, i / n), zb = lerp(z0, z1, (i + 1) / n), y = bot(-2.65, (za + zb) / 2);
+      block(b, sub([-2.68, y - 0.075, za], o), sub([-2.61, y - 0.008, zb], o), TAIL_RED);
+    }
+  };
+  const red = (b: GeoBuilder, parent: THREE.Object3D, o: V3): void => {
+    const m = new THREE.Mesh(b.build(), redMat);
+    parent.add(m);
+    r.tris += b.triangles;
+    void o;
+  };
+  for (const H of halves) {
+    const sd = H.sd, o: V3 = [0, HY, sd * HINGE];
+    const z0 = sd < 0 ? -FZ1 : FZ0, z1 = sd < 0 ? -FZ0 : FZ1;
+    // the flaps' outlines, barely darker than the wing
+    onTop(H.g, FX0 + 0.012, FX1 - 0.012, z0 - 0.012, z1 + 0.012, 0.005, 0x28292c, 2, 3, false, o);
+    const hy = top(FX0, sd * 1.3) + 0.012, fo: V3 = [FX0, hy, 0];
     const fg = new GeoBuilder();
-    onTop(fg, FX0, FX1, z0, z1, 0.03, BAT_TOP, 2, 3, false, o);
-    onTop(fg, FX0, FX1, z0, z1, 0.012, BAT_DARK, 2, 3, true, o);
-    const E = (x: number, z: number, l: number): V3 => [x - o[0], top(x, z) + l - o[1], z];
+    onTop(fg, FX0, FX1, z0, z1, 0.03, CH_TOP, 2, 3, false, fo);
+    onTop(fg, FX0, FX1, z0, z1, 0.012, CH_DARK, 2, 3, true, fo);
+    const E = (x: number, z: number, l: number): V3 => [x - fo[0], top(x, z) + l - fo[1], z];
     for (const [x, sx] of [[FX0, 1], [FX1, -1]] as const) for (let j = 0; j < 3; j++) {
       const za = lerp(z0, z1, j / 3), zb = lerp(z0, z1, (j + 1) / 3);
-      quadTo(fg, E(x, za, 0.012), E(x, zb, 0.012), E(x, zb, 0.03), E(x, za, 0.03), BAT, [sx, 0, 0]);
+      quadTo(fg, E(x, za, 0.012), E(x, zb, 0.012), E(x, zb, 0.03), E(x, za, 0.03), CH, [sx, 0, 0]);
     }
     for (const [z, sz] of [[z0, -1], [z1, 1]] as const) for (let i = 0; i < 2; i++) {
       const xa = lerp(FX0, FX1, i / 2), xb = lerp(FX0, FX1, (i + 1) / 2);
-      quadTo(fg, E(xa, z, 0.012), E(xb, z, 0.012), E(xb, z, 0.03), E(xa, z, 0.03), BAT, [0, 0, sz]);
+      quadTo(fg, E(xa, z, 0.012), E(xb, z, 0.012), E(xb, z, 0.03), E(xa, z, 0.03), CH, [0, 0, sz]);
     }
-    const p = r.pivot(o, sh);
-    r.solid(fg, p);
-    flaps.push(p);
+    const fp = r.pivot(sub(fo, o), H.p);
+    r.solid(fg, fp);
+    flaps.push(fp);
+    // the strut that holds it, from its underside down and in to the chassis, behind the rear tyre
+    H.g.beam(sub([-2.6, bot(-2.6, sd * 1.5) + 0.03, sd * 1.5], o), sub([-2.6, 0.95, sd * 0.75], o), 0.028, 0.028, CARBON);
+    // its end of the red strip
+    const rb = new GeoBuilder();
+    strip(rb, sd < 0 ? -1.76 : HINGE + 0.005, sd < 0 ? -HINGE - 0.005 : 1.76, 3, o);
+    red(rb, H.p, o);
+    r.solid(H.g, H.p);
   }
+  // the middle of the red strip, and its glow
+  const rmid = new GeoBuilder();
+  strip(rmid, -HINGE + 0.005, HINGE - 0.005, 2, [0, 0, 0]);
+  red(rmid, sh, [0, 0, 0]);
+  for (const z of [-0.4, 0.4]) halos.push({ at: [-2.71, bot(-2.65, z) - 0.075, z], r: 0.14, color: RED_LAMP });
 
-  // ---- the front: splitter, scoops, blade, and bare suspension ----
+  // ---- the front: splitter, scoops, blade, bare suspension, and its lamps ----
   slab(g, [[2.8, 0], [2.685, 1.5], [2.36, 1.5], [2.36, 1.08], [1.77, 1.08], [1.77, -1.08], [2.36, -1.08], [2.36, -1.5], [2.685, -1.5]], [0, 0.02, 0], AX, AZ, AY, 0, 0.05, CARBON, CARBON);
   for (const s of [-1, 1]) {
     // a scoop before each tyre, hollow behind; its rear stands just clear of the tyre's front
@@ -1014,20 +1146,23 @@ function batmobile(k: Build, mat: THREE.Material): Rig {
     slab(g, side, [0, 0, 0], AX, AY, AZ, s * 0.97, s * 1.47, CARBON, CARBON);
     quadTo(g, [2.582, 0.08, s * 1.0], [2.582, 0.08, s * 1.44], [2.582, 0.5, s * 1.44], [2.582, 0.5, s * 1.0], BORE, [-1, 0, 0]);
     slab(g, [[2.36, 0.065], [2.585, 0.065], [2.585, 0.52], [2.45, 0.52], [2.36, 0.4]], [0, 0, 0], AX, AY, AZ, s * 0.97, s * 1.0, CARBON, CARBON);
-    // one thick jointed arm of worn steel from the middle out to the wheel, and its upright
+    // one thick jointed arm of worn steel from the middle out to the wheel, its upright and the brake's caliper
     un.beam([2.0, 0.46, s * 0.2], [2.04, 0.5, s * 0.72], 0.045, 0.04, WORN);
-    un.beam([2.04, 0.5, s * 0.72], [2.065, 0.5, s * 1.08], 0.04, 0.035, WORN);
+    un.beam([2.04, 0.5, s * 0.72], [2.065, 0.5, s * 1.04], 0.04, 0.035, WORN);
     block(un, [1.99, 0.455, s * 0.68], [2.09, 0.545, s * 0.76], RUST);
-    block(un, [1.99, 0.36, s * 1.06], [2.14, 0.64, s * 1.1], CARBON);
-    // an orange coil-sprung damper at an angle, lit as a small amber lamp
+    block(un, [1.99, 0.36, s * 1.0], [2.14, 0.64, s * 1.04], CARBON);
+    block(un, [1.8, 0.64, s * 1.02], [1.93, 0.75, s * 1.07], ORANGE);
+    // an orange coil-sprung damper at an angle, lit as a small amber running lamp
     frustum(lg, [1.95, 0.18, s * 0.42], [2.1, 0.53, s * 0.56], 0.05, 0.05, 8, DAMPER);
-    halos.push({ at: [2.05, 0.42, s * 0.52], r: 0.22, color: AMBER });
+    halos.push({ at: [2.05, 0.42, s * 0.52], r: 0.2, color: AMBER });
     for (const t of [0.3, 0.7]) {
       const c: V3 = [lerp(1.95, 2.1, t), lerp(0.18, 0.53, t), s * lerp(0.42, 0.56, t)];
       frustum(g, sub(c, [0.006, 0.014, s * 0.0056]), add(c, [0.006, 0.014, s * 0.0056]), 0.065, 0.065, 8, RUST, { capA: false, capB: false });
     }
-    // a faint cool lamp under the lip
-    lamp(lg, halos, [2.3, 0.525, s * 0.1], [2.38, 0.555, s * 0.26], COOL_LAMP, 0.2);
+    // a slim white headlamp strip under the lip
+    const hz0 = s * 0.05, hz1 = s * 0.22;
+    lamp(lg, halos, [2.3, bot(2.3, 0.15) - 0.03, Math.min(hz0, hz1)], [2.42, bot(2.42, 0.15) - 0.008, Math.max(hz0, hz1)], WHITE_LAMP);
+    halos.push({ at: [2.44, bot(2.4, 0.14) - 0.02, s * 0.14], r: 0.2, color: WHITE_LAMP });
   }
   slab(g, [[2.15, 0.065], [2.75, 0.065], [2.47, 0.6], [2.15, 0.62]], [0, 0, 0], AX, AY, AZ, -0.018, 0.018, CARBON, CARBON);
   frustum(g, [2.49, 0.58, 0], [2.78, 0.1, 0], 0.02, 0.02, 6, COPPER);
@@ -1035,20 +1170,23 @@ function batmobile(k: Build, mat: THREE.Material): Rig {
   block(g, [1.85, 0.07, -0.22], [2.25, 0.3, 0.22], CARBON);
   for (const s of [-1, 1]) frustum(g, [2.25, 0.2, s * 0.1], [2.28, 0.2, s * 0.1], 0.035, 0.035, 6, WORN);
 
-  // ---- the sides: floor, tub, the shoulders' walls, the plates before the rear tyres ----
+  // ---- the sides: a thin floor, a narrow tub, the shoulders' walls, open tunnels, the plates before the rear tyres ----
   block(g, [-1.5, 0.08, -1.66], [1.55, 0.13, 1.66], CARBON, CARBON, 'NESWTB');
-  const TUB: [number, number][] = [[1.65, 0.62], [1.2, 0.65], [0.8, 0.8], [0.5, 0.9], [0.08, 0.92], [-0.05, 0.92], [-0.6, 0.9], [-0.9, 0.7], [-1.25, 0.62], [-1.5, 0.62], [-1.8, 0.62]];
+  const TUB = [1.65, 1.2, 0.8, 0.5, 0.08, -0.05, -0.6, -1.0, -1.25, -1.5, -1.8];
   // its top is left open under the cockpit
-  loft(g, TUB.map(([x, fw]) => { const t = BB(x) + 0.03; return ring(x, [[fw, 0.12], [0.6, 0.62], [0.6, t], [-0.6, t], [-0.6, 0.62], [-fw, 0.12]]); }), () => CARBON, { skip: (j, s) => j === 2 && s < 4, capA: CARBON, capB: CARBON });
+  loft(g, TUB.map((x) => { const t = BB(x) + 0.03; return ring(x, [[0.55, 0.12], [0.55, t], [-0.55, t], [-0.55, 0.12]]); }), () => CARBON, { skip: (j, s) => j === 1 && s < 5, capA: CARBON, capB: CARBON });
   for (const s of [-1, 1]) {
+    // an outer wall behind the front tyre only
     const wall = (x: number): Ring => { const t = bot(x, 1.63) + 0.03; return ring(x, [[s * 1.6, 0.12], [s * 1.66, 0.12], [s * 1.66, t], [s * 1.6, t]]); };
     loft(g, [wall(1.25), wall(1.0), wall(0.73)], () => CARBON, { capA: CARBON, capB: CARBON });
-    // the plate before the rear tyre, a smooth grey that catches the light, and a ribbed steel bar on its top
-    block(g, [-1.43, 0.12, s < 0 ? -1.64 : 1.6], [-0.8, 0.79, s < 0 ? -1.6 : 1.64], PLATE, PLATE);
+    // the plate before the rear tyre, a smooth mid grey, and a ribbed steel bar on its top
+    block(g, [-1.47, 0.12, s < 0 ? -1.64 : 1.6], [-0.8, 0.79, s < 0 ? -1.6 : 1.64], PLATE, PLATE);
     block(g, [-1.15, 0.79, s < 0 ? -1.63 : 1.1], [-1.08, 0.84, s < 0 ? -1.1 : 1.63], BRIGHT, BRIGHT);
     for (const z of [1.2, 1.32, 1.44, 1.56]) block(g, [-1.16, 0.785, s * z - 0.012], [-1.07, 0.85, s * z + 0.012], WORN, WORN);
+    // and from the plate's bar a thin brace in to the tub
+    g.beam([-1.11, 0.81, s * 1.1], [-1.11, 0.6, s * 0.55], 0.018, 0.018, CARBON);
     // the grapnel's launcher, on the side of the tub in the tunnel
-    block(g, [-0.08, 0.36, s < 0 ? -0.82 : 0.7], [0.08, 0.48, s < 0 ? -0.7 : 0.82], BAT_EDGE, BAT_EDGE);
+    block(g, [-0.08, 0.36, s < 0 ? -0.66 : 0.55], [0.08, 0.48, s < 0 ? -0.55 : 0.66], CH_EDGE, CH_EDGE);
   }
 
   // ---- the tail, under the wing ----
@@ -1063,28 +1201,34 @@ function batmobile(k: Build, mat: THREE.Material): Rig {
     slab(g, out, [-2.55, 0, 0], AZ, AY, AX, -0.02, 0.02, RUST, RUST);
   }
   for (const [z0, z1] of [[-0.33, -0.01], [0.03, 0.35], [0.39, 0.72]]) block(g, [-2.53, 0.83, z0], [-2.4, 0.92, z1], ORANGE);
-  // two electric motors side by side across the car, ribbed, with rusty end caps
-  for (const [z0, z1] of [[-0.52, -0.03], [0.03, 0.52]]) {
+  // two electric motors side by side across the car, worn steel with fine ribs and rusty end caps
+  for (const [z0, z1] of [[-0.44, -0.03], [0.03, 0.44]]) {
     frustum(g, [-2.45, 0.68, z0], [-2.45, 0.68, z1], 0.12, 0.12, 10, WORN, { capA: RUST, capB: RUST });
-    for (let i = 1; i <= 3; i++) { const z = lerp(z0, z1, i / 4); frustum(g, [-2.45, 0.68, z - 0.014], [-2.45, 0.68, z + 0.014], 0.132, 0.132, 10, 0x5c6168, { capA: false, capB: false }); }
+    for (let i = 1; i <= 4; i++) { const z = lerp(z0, z1, i / 5); frustum(g, [-2.45, 0.68, z - 0.008], [-2.45, 0.68, z + 0.008], 0.128, 0.128, 10, WORN_RIB, { capA: false, capB: false }); }
   }
   block(g, [-2.55, 0.17, -0.25], [-2.2, 0.35, 0.25], CARBON);
   decal(g, circle(0.06, 10), [-2.55, 0.26, 0], AZ, AY, [-1, 0, 0], 0.004, BORE);
   for (const s of [-1, 1]) {
-    // the struts that hold the wing
-    g.beam([-2.35, bot(-2.35, s * 1.6) + 0.03, s * 1.6], [-2.35, 0.95, s * 0.75], 0.03, 0.03, CARBON);
-    // a tall outlet either side of the motors, with two upright slots: its jets
-    const za = s < 0 ? -1.13 : 0.52, zb = s < 0 ? -0.52 : 1.13;
-    block(g, [-2.6, 0.12, za], [-2.47, 0.78, zb], CARBON, CARBON, 'NESWTB');
-    for (const [z0, z1] of [[0.6, 0.79], [0.86, 1.05]]) decal(g, [[s * z0, 0.2], [s * z1, 0.2], [s * z1, 0.7], [s * z0, 0.7]].map(([z, y]): P2 => [z, y]), [-2.6, 0, 0], AZ, AY, [-1, 0, 0], 0.004, BORE);
-    r.jet([-2.61, 0.45, s * 0.825], 0.3, 3.0, 0.33);
+    // a tall outlet either side of the motors, with two upright slots: its jets. They stand inside the rear tyres, which reach back nearly to the tail
+    const za = s < 0 ? -0.96 : 0.47, zb = s < 0 ? -0.47 : 0.96;
+    block(g, [-2.66, 0.12, za], [-2.5, 0.78, zb], CARBON, CARBON, 'NESWTB');
+    for (const [z0, z1] of [[0.53, 0.7], [0.74, 0.91]]) decal(g, [[s * z0, 0.2], [s * z1, 0.2], [s * z1, 0.7], [s * z0, 0.7]].map(([z, y]): P2 => [z, y]), [-2.66, 0, 0], AZ, AY, [-1, 0, 0], 0.004, BORE);
+    r.jet([-2.67, 0.45, s * 0.715], 0.25, 3.0, 0.33);
   }
-  // the red strip under the trailing lip, from tip to tip
-  for (let i = 0; i < 6; i++) {
-    const za = -1.74 + (3.48 * i) / 6, zb = -1.74 + (3.48 * (i + 1)) / 6, y = bot(-2.65, (za + zb) / 2);
-    lamp(lg, halos, [-2.68, y - 0.075, za], [-2.61, y - 0.005, zb], RED_LAMP);
-    halos.push({ at: [-2.71, y - 0.07, (za + zb) / 2], r: 0.12, color: RED_LAMP });
-  }
+  // the pilot flames, short and blue-white, which the jets blow out
+  const pg = new GeoBuilder();
+  frustum(pg, [0, 0, 0], [-1, 0, 0], 1, 0, 8, 0x7fb8ff, { capA: false });
+  frustum(pg, [0.01, 0, 0], [-0.6, 0, 0], 0.55, 0, 6, 0xeef6ff, { capA: false });
+  const pilotMat = additive({ vertexColors: true });
+  const pilots = [-1, 1].map((s) => {
+    const m = new THREE.Mesh(pg.build(), pilotMat);
+    m.position.set(-2.67, 0.45, s * 0.715);
+    m.visible = false;
+    m.renderOrder = 3;
+    sh.add(m);
+    return m;
+  });
+  r.tris += pg.triangles * 2;
 
   // ---- its tricks ----
   // two brake parachutes, on lines from the tail
@@ -1094,9 +1238,9 @@ function batmobile(k: Build, mat: THREE.Material): Rig {
     const Q = (q: P2, j: number, dx: number): V3 => { const a = (j / NS) * Math.PI * 2; return [q[0] + dx, Math.cos(a) * q[1], Math.sin(a) * q[1]]; };
     const a = Q(CR[kk], i, 0), b = Q(CR[kk], i + 1, 0), c = Q(CR[kk + 1], i + 1, 0), d = Q(CR[kk + 1], i, 0);
     const mid = mul(add(add(a, b), add(c, d)), 0.25);
-    quadTo(cgb, a, b, c, d, BAT_DARK, sub(mid, cc));
+    quadTo(cgb, a, b, c, d, CH_DARK, sub(mid, cc));
     const a2 = Q(CR[kk], i, 0.012), b2 = Q(CR[kk], i + 1, 0.012), c2 = Q(CR[kk + 1], i + 1, 0.012), d2 = Q(CR[kk + 1], i, 0.012);
-    quadTo(cgb, a2, b2, c2, d2, BAT_UNDER, sub(cc, mid));
+    quadTo(cgb, a2, b2, c2, d2, CH_UNDER, sub(cc, mid));
   }
   for (let i = 0; i < 3; i++) { const a = ((i + 0.5) / 3) * Math.PI * 2; cgb.beam([0.01, Math.cos(a) * 0.59, Math.sin(a) * 0.59], [0.8, 0, 0], 0.008, 0.008, GREY); }
   const cgeo = cgb.build(), rgb = new GeoBuilder();
@@ -1123,7 +1267,7 @@ function batmobile(k: Build, mat: THREE.Material): Rig {
   r.fx.chutes = (f) => placeChutes(f, 0);
   // a grapnel from either side tunnel
   for (const [name, s] of [['hookL', -1], ['hookR', 1]] as const) {
-    const base = r.pivot([0, 0.42, s * 0.82], sh);
+    const base = r.pivot([0, 0.42, s * 0.66], sh);
     if (s < 0) base.rotation.y = Math.PI;
     const rg = new GeoBuilder(), hg = new GeoBuilder();
     block(rg, [-0.014, -0.014, 0], [0.014, 0.014, 1], GREY);
@@ -1154,21 +1298,32 @@ function batmobile(k: Build, mat: THREE.Material): Rig {
   r.lamps(lg, halos);
   r.solid(g, sh);
   r.solid(un);
-  r.wheel(slickGeo(0.5, 0.64, 1, CARBON), 0.5, [[2.065, 0.5, 1.435]]);
-  r.wheel(slickGeo(0.5, 0.64, -1, CARBON), 0.5, [[2.065, 0.5, -1.435]]);
-  r.wheel(slickGeo(0.5, 0.66, 1, COVER), 0.5, [[-1.955, 0.5, 1.35]]);
-  r.wheel(slickGeo(0.5, 0.66, -1, COVER), 0.5, [[-1.955, 0.5, -1.35]]);
+  r.wheel(slickGeo(0.5, 0.64, 1, true), 0.5, [[FRONT_AXLE, 0.5, 1.435]]);
+  r.wheel(slickGeo(0.5, 0.64, -1, true), 0.5, [[FRONT_AXLE, 0.5, -1.435]]);
+  r.wheel(slickGeo(REAR_R, 0.7, 1, false), REAR_R, [[REAR_AXLE, REAR_R, 1.35]]);
+  r.wheel(slickGeo(REAR_R, 0.7, -1, false), REAR_R, [[REAR_AXLE, REAR_R, -1.35]]);
   // a bat's shape in the pool its lamps throw ahead of it
-  r.beam(2.8, 7, 6.0, 0xffd9a0, batPoolTex());
+  const BEAM_X = 2.8, beam = r.beam(BEAM_X, 7, 6.0, 0xffd9a0, batPoolTex());
   r.blob(5.9, 4.1);
 
+  // ---- its party trick: the wing folds up into two tall fins, and it readies itself to launch ----
+  r.fx.party = (f) => {
+    const fold = smooth(0, 0.45, f) * 1.4;
+    for (const H of halves) H.p.rotation.x = -H.sd * fold;
+    r.boost = smooth(0.3, 0.7, f);
+    // the bat on the road grows to twice its size, from its near end
+    const grow = 1 + smooth(0.3, 0.7, f);
+    beam.scale.set(grow, 1, grow);
+    beam.position.x = (BEAM_X - 1) * (1 - grow);
+  };
+
   // ---- by itself: it reads its own speed from where it is, squats when it launches, dips when it brakes ----
-  const nose = new THREE.Vector3(), last = new THREE.Vector3(), step = new THREE.Vector3(), at = new THREE.Vector3(), drift = new THREE.Vector3();
+  const nose = new THREE.Vector3(), lastAt = new THREE.Vector3(), step = new THREE.Vector3(), at = new THREE.Vector3(), drift = new THREE.Vector3();
   let lastT = -1, fresh = true, v = 0, acc = 0, pitch = 0, air = 0, due = 0;
   r.each = (dt, time, night) => {
     r.root.updateMatrix();
     nose.setFromMatrixColumn(r.root.matrix, 0);
-    step.copy(r.root.position).sub(last);
+    step.copy(r.root.position).sub(lastAt);
     // a jump of more than a few units in a frame, or a long gap, is the car set down somewhere new
     if (lastT < 0 || time - lastT > 0.3 || step.length() > 3 || dt <= 0) fresh = true;
     else if (fresh) { v = step.dot(nose) / dt; acc = 0; fresh = false; }
@@ -1177,7 +1332,7 @@ function batmobile(k: Build, mat: THREE.Material): Rig {
       v += (step.dot(nose) / dt - v) * Math.min(1, dt * 10);
       acc += ((v - v0) / dt - acc) * Math.min(1, dt * 6);
     }
-    last.copy(r.root.position);
+    lastAt.copy(r.root.position);
     lastT = time;
     // nose up about a point ahead of the rear axle as it launches, down about the splitter's tip as it brakes
     const want = acc > 0 ? 0.05 * clamp01(acc / 18) : -0.06 * clamp01(-acc / 14);
@@ -1192,26 +1347,44 @@ function batmobile(k: Build, mat: THREE.Material): Rig {
     const burn = Math.max(r.value.jet ?? 0, r.surge);
     pool.visible = burn > 0.01;
     poolMat.opacity = burn * (0.18 + 0.55 * night);
-    // the air brakes come up by themselves when it brakes hard
+    // the party trick, and its pilot flames, which the jets blow out
+    const party = r.value.party ?? 0;
+    r.fx.party(party);
+    const pilot = smooth(0.6, 1, party) * (1 - clamp01(burn * 3));
+    for (const [i, p] of pilots.entries()) {
+      p.visible = pilot > 0.02;
+      const fl = 0.85 + 0.12 * Math.sin(time * 47 + i * 2.3);
+      p.scale.set(0.6 * pilot * fl, 0.16, 0.13);
+    }
+    pilotMat.opacity = 0.4 + 0.6 * pilot;
+    // the air brakes come up by themselves when it brakes hard, and stay shut while the wing is folded
     air += (clamp01((-acc - 6) / 12) - air) * Math.min(1, dt * 8);
-    const flap = Math.max(r.value.brake ?? 0, air);
+    const flap = smooth(0, 0.02, party) > 0.5 ? 0 : Math.max(r.value.brake ?? 0, air);
     for (const p of flaps) p.rotation.z = -1.0 * flap;
+    // its glass and its tail light: the glass glows warmly at night and in the party trick; the strip is a dark red by day, bright at night, brighter still as it brakes
+    glassMat.color.setScalar(0.62 + r.lit * (0.08 + 0.9 * night) + r.boost * (0.3 + 0.8 * night));
+    const braking = Math.max(flap, clamp01(-acc / 10));
+    redMat.color.setScalar(0.3 + r.lit * night * 2.0 + braking * (0.7 + 1.6 * night) + r.boost * 0.6);
     placeChutes(r.value.chutes ?? 0, time);
     // the smoke screen, from both outlets
     const sm = r.value.smoke ?? 0;
     if (sm > 0) {
       sh.updateMatrix();
+      rk.updateMatrix();
       r.body.updateMatrix();
       due -= dt;
       while (due <= 0) {
         due += 1 / (8 + 14 * sm);
         for (const s of [-1, 1]) {
-          at.set(-2.7, 0.45, s * 0.825).applyMatrix4(sh.matrix).applyMatrix4(r.body.matrix).applyMatrix4(r.root.matrix);
+          at.set(-2.7, 0.45, s * 0.715).applyMatrix4(sh.matrix).applyMatrix4(rk.matrix).applyMatrix4(r.body.matrix).applyMatrix4(r.root.matrix);
           smoke.puff(at, drift.copy(nose).multiplyScalar(-2.2), 0.45 + 0.35 * sm, 1);
         }
       }
     } else due = 0;
   };
+  // as it stands before the first frame: the glass and strip at their daytime glow
+  glassMat.color.setScalar(0.62);
+  redMat.color.setScalar(0.3);
   return r;
 }
 
