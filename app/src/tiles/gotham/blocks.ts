@@ -14,7 +14,7 @@ import type { SignDef } from '../../engine/signs';
 import type { Build } from '../../engine/tile';
 import { BRICK, BRICK_DARK, BRICK_RED, COPPER, COPPER_DARK, DARK, GOTHIC_WIN, IRON, LEAD, OFFICE_WIN, RUST, SLATE, SMALL_WIN, SODIUM, STEEL, STONE, STONE_DARK, STONE_LIGHT, STONE_TRIM, TENEMENT_WIN, gargoyle, gasLamp, waterTank } from './look';
 import type { Model, Place } from './models';
-import { LOTS, RIVER_ROW, SPRANG_ALONG, Y, avenueY, lotOf, sprang, type Lot } from './plan';
+import { LOTS, RIVER_ROW, SPRANG_ALONG, Y, avenueY, kaneRamp, lotOf, sprang, type Lot } from './plan';
 
 /** A band of pale stone round a box, a little proud of it: a cornice, a string course. */
 function band(b: GeoBuilder, x0: number, z0: number, x1: number, z1: number, y: number, h: number, out = 0.25, color = STONE_TRIM): void {
@@ -232,6 +232,25 @@ const gateHouse: Model = (k, l) => {
 };
 
 /**
+ * The tower over Kane Street: one of Pinkney's towers on four piers, with the
+ * street's ramp running through under it. Its `base` is the street's ceiling.
+ */
+const gateTower: Model = (k, l) => {
+  const b = k.b;
+  // the piers stand on the ramp's sidewalks, at the tower's corners, and a slab spans them
+  for (const [x0, x1] of [[l.x0, l.x0 + 1.4], [l.x1 - 1.4, l.x1]]) {
+    for (const [z0, z1] of [[l.z0, l.z0 + 1.6], [l.z1 - 1.6, l.z1]]) {
+      b.box(x0, kaneRamp(z1) - 0.3, z0, x1, l.base - 0.7, z1, STONE_DARK, { faces: 'NESW' });
+      b.box(x0 - 0.3, l.base - 1.7, z0 - 0.3, x1 + 0.3, l.base - 0.7, z1 + 0.3, STONE, { faces: 'NESWB' });
+    }
+  }
+  b.box(l.x0 - 0.2, l.base - 0.7, l.z0 - 0.2, l.x1 + 0.2, l.base + 0.05, l.z1 + 0.2, STONE_TRIM, { faces: 'NESWB' });
+  for (const z of [l.z0 + 2.6, l.z1 - 2.6]) k.glows.push({ x: (l.x0 + l.x1) / 2, y: l.base - 1.1, z, sx: 0.6, sy: 0.25, sz: 0.6, color: SODIUM });
+  k.lights.push({ x: (l.x0 + l.x1) / 2, z: l.z1 + 3, r: 10, color: SODIUM, k: 0.5 });
+  tower(k, l);
+};
+
+/**
  * The river row: three buildings that stand over the west quay's road, each
  * turned the way the Sprang runs, on piers along the water's edge and along
  * the sidewalk behind, so that the road and its traffic pass underneath in
@@ -293,6 +312,7 @@ export const MODELS: Record<string, Model> = {
   'shed-2': shed,
   'arcade-1': arcade, 'arcade-2': arcade, 'arcade-3': arcade,
   'gate-house': gateHouse,
+  'kane-gate': gateTower,
 };
 
 /** Kept for the docks' builder, who may stand stacks of containers where there is room. */
@@ -347,6 +367,7 @@ export function extras(k: Build): void {
   skybridge(k, 'uptown-2', 'uptown-3', 32, -29.5);
   skybridge(k, 'uptown-2', 'uptown-3', 20, -27);
   skybridge(k, 'uptown-3', 'uptown-4', 24, -28.5);
+  skybridge(k, 'uptown-4', 'kane-gate', 32, -29);
   for (const id of ['uptown-1', 'uptown-2', 'uptown-3', 'uptown-4']) terraceDoor(k, id);
   riverRow(k);
   ordinaryBuildings(k, FABRIC.map((l, i): Plot => {

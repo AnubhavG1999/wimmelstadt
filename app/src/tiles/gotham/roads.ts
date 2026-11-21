@@ -295,11 +295,11 @@ export function buildRoads(k: Build): Route[] {
   // lamps, once every street is laid
   lampsAlong(k, river, LANE + 1.2, 24);
   lampsAlong(k, circuit, LANE + 1.2, 24);
-  lampsAlong(k, kane, LANE + 1.2, 20);
   lampsAlong(k, harbour, LANE + 1.2, 20);
   lampsAlong(k, south, LANE + 1.2, 20);
   // the ring and the avenue run under buildings in places: no lamp post stands under one
   lampsClear(k, ring, LANE + 1.2, 20);
+  lampsClear(k, kane, LANE + 1.2, 20);
   lampsClear(k, avenue, LANE + 1.2, 20);
 
   return routesOf();

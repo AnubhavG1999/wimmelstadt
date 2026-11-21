@@ -553,6 +553,8 @@ lot('blocks', 'arcade-1', '', -52, 58, -36, 74.6, 8, 16);
 lot('blocks', 'arcade-2', '', -68, 58, -52, 74.6, 12, 16);
 lot('blocks', 'arcade-3', '', -84, 58, -68, 74.6, 16, 16);
 lot('blocks', 'gate-house', '', -103, 41.6, -84, 74.6, 16, 24);
+// And over Kane Street, where its ramp leaves River Street's terrace: a tower that the street runs through.
+lot('blocks', 'kane-gate', '', 72, -34, 88, -24, 12, 36);
 // ============================ Bristol: Wayne Manor and the Batcave ============================
 lot('bristol', 'manor', 'Wayne Manor', 8, -108, 48, -97, Y.crest, 14);
 lot('bristol', 'batcave', 'The Batcave', 6, -97, 50, -85, Y.cave, 6, true);
