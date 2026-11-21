@@ -82,6 +82,8 @@ export function buildStories(k: Build, W: World): Stories {
   }
   // While Wayne Manor is rebuilt and the Batcave hidden, the stories that were written for the open cave are left out:
   // they are laid again on the new house, and this list is emptied then.
-  const stories = book.stories.filter((s) => !PAUSED.includes(s.id));
-  return { roster, stories, opening: book.opening.filter((id) => !PAUSED.includes(id)), always: (dt, clock) => { for (const f of book.always) f(dt, clock); } };
+  // (`?paused=none` on the development server plays them all the same, for whoever is laying them again.)
+  const paused = import.meta.env.DEV && new URLSearchParams(location.search).get('paused') === 'none' ? [] : PAUSED;
+  const stories = book.stories.filter((s) => !paused.includes(s.id));
+  return { roster, stories, opening: book.opening.filter((id) => !paused.includes(id)), always: (dt, clock) => { for (const f of book.always) f(dt, clock); } };
 }
