@@ -197,9 +197,12 @@ export function east(k: Build, W: World, book: Book): void {
     return still(post, { ...perch((t * 0.05) % 1), head: 0.6 * Math.sin(t * 0.25) }, { glow: night() });
   });
   // The Red Hood sitting on the tyres in the court, his motorcycle beside him.
-  const RED_SEAT = at(TYRES.x, TYRES.y - 0.55, TYRES.z, TO_VIEW);
-  book.post('redHood', RED_SEAT, (t, post) => still(post, { ...sit(1), head: 0.5 * Math.sin(t * 0.2), armR: 0.6, elbowR: 1.4 }, { aloft: true }));
-  const redCycle = machine('redCycle'), RED_CYCLE = at(TYRES.x + 1.7, gy(TYRES.x + 1.7, TYRES.z + 1.2, 2), TYRES.z + 1.2, N + 0.4);
+  // in the court by its lamp, where the opening view sees him (the tyres are behind the railway), arms folded, his
+  // motorcycle beside him
+  const RED_SEAT = spot(ALLEY_LAMP.x - 1.7, ALLEY_LAMP.z + 3.0, TO_VIEW, 2);
+  book.post('redHood', RED_SEAT, (t, post) => still(post, { ...hang(0), head: 0.5 * Math.sin(t * 0.2), tilt: 0.05 }));
+  void TYRES;
+  const redCycle = machine('redCycle'), RED_CYCLE = at(ALLEY_LAMP.x - 1.5, gy(ALLEY_LAMP.x - 1.5, ALLEY_LAMP.z + 5.1, 2), ALLEY_LAMP.z + 5.1, E);
   // Leslie Thompkins at her clinic's door; Vicki Vale at the Gazette's, her camera flashing now and then.
   book.post('leslie', spot(CLINIC_DOOR.x + 0.9, CLINIC_DOOR.z, E, CLINIC_DOOR.y + 1), (t, post) => still(post, { ...idle((t * 0.07) % 1), armL: 0.5, elbowL: 1.6, armR: 0.5, elbowR: 1.6, spreadL: -0.2, spreadR: -0.2 }));
   let vickiRest = { t: 0, at: -10 };
@@ -210,8 +213,10 @@ export function east(k: Build, W: World, book: Book): void {
     return still(post, blend(idle((t * 0.08) % 1), { armL: 1.4, armR: 1.4, elbowL: 1.6, elbowR: 1.6, nod: -0.1, head: 0.3 }, up), { hold: 1 });
   });
   // Batwoman on the bridge's west tower, Deathstroke on its east one; Huntress on a tenement's chimney.
-  book.post('batwoman', TOWER_W, (t, post) => still(at(post.x, post.y, post.z, TO_VIEW), { head: 0.5 * Math.sin(t * 0.17) }, { cape: 0.35 + 0.2 * Math.sin(t * 0.6), glow: night() }));
-  book.post('deathstroke', TOWER_E, (t, post) => still(at(post.x, post.y, post.z, TO_VIEW), { ...hang(0), head: 0.6 * Math.sin(t * 0.11) }, { glow: night() }));
+  // each on the landward corner of its tower's top that the opening view sees past the tower's own pinnacles
+  const BW_POST = spot(TOWER_W.x - 1.2, TOWER_W.z - 1.0, TO_VIEW, TOWER_W.y + 1), DS_POST = spot(TOWER_E.x - 1.2, TOWER_E.z - 1.0, TO_VIEW, TOWER_E.y + 1);
+  book.post('batwoman', BW_POST, (t, post) => still(at(post.x, post.y, post.z, TO_VIEW), { head: 0.5 * Math.sin(t * 0.17) }, { cape: 0.35 + 0.2 * Math.sin(t * 0.6), glow: night() }));
+  book.post('deathstroke', DS_POST, (t, post) => still(at(post.x, post.y, post.z, TO_VIEW), { ...hang(0), head: 0.6 * Math.sin(t * 0.11) }, { glow: night() }));
   book.post('huntress', at(CHIMNEY3.x, CHIMNEY3.y, CHIMNEY3.z, TO_VIEW), (t, post) => still(post, { ...perch((t * 0.04) % 1), head: 0.5 * Math.sin(t * 0.3) }, { glow: night() }));
   // Spoiler and Orphan on Otisburg's roofs: Spoiler restless, Orphan as still as a cat.
   book.post('spoiler', OTIS1, (t, post) => still(at(post.x, post.y, post.z, TO_VIEW), { ...idle((t * 0.15) % 1), crouch: 0.1 * Math.max(0, Math.sin(t * 1.3)) }, { glow: night() }));
@@ -270,7 +275,8 @@ export function east(k: Build, W: World, book: Book): void {
   // Black Mask at the Bowery's door with two of his men a pace behind him.
   book.post('blackMask', BOWERY_DOOR, (t, post) => still(at(post.x, post.y, post.z, TO_VIEW), { ...idle((t * 0.05) % 1), armR: 0.4, elbowR: 1.8 }));
   for (const [i, s] of [[0, 0.9], [1, -0.9]] as const) {
-    const b = beside(at(BOWERY_DOOR.x, BOWERY_DOOR.y, BOWERY_DOOR.z, TO_VIEW), -1.1, s);
+    // beside him rather than behind, out from under the tavern's awning, where they are seen
+    const b = { x: BOWERY_DOOR.x - 0.5 + (i ? 0.4 : 0), z: BOWERY_DOOR.z + (i ? -1.05 : 1.35) }; void s;
     extra(`thug${i}`, 'thug', spot(b.x, b.z, TO_VIEW, BOWERY_DOOR.y + 1), (t, post) => still(post, { ...hang(0), head: 0.5 * Math.sin(t * 0.2 + i * 2) }));
   }
   // The Ventriloquist outside Arkham's wall, his dummy doing the talking; Hugo Strange before his lodge; a guard by the sentry box.
@@ -279,8 +285,11 @@ export function east(k: Build, W: World, book: Book): void {
   book.post('hugoStrange', STRANGE, (t, post) => still(post, { ...idle((t * 0.05) % 1), armL: -0.3, armR: -0.3, elbowL: 0.9, elbowR: 0.9 }));
   const GUARD_ID = extra('arkhamGuard', 'guard', GUARD, (t, post) => still(post, { ...idle((t * 0.06) % 1) }));
   // Solomon Grundy by the yard crane; Polka-Dot Man by the wheel's foot, off the boardwalk.
-  book.post('grundy', YARD_CRANE, (t, post) => still(post, { lean: 0.15, armL: 0.2, armR: 0.2, head: 0.3 * Math.sin(t * 0.07), nod: 0.25, tilt: 0.1 * Math.sin(t * 0.3) }));
-  const POLKA = spot(WHEEL_FOOT.x - 2.6, WHEEL_FOOT.z + 2.6, TO_VIEW, WHEEL_FOOT.y + 1);
+  // Solomon Grundy by Robinson Park's lake, as he rose from Slaughter Swamp: at its north-west, the one stretch of its
+  // shore the opening view sees (the rest is behind the civic quarter)
+  void YARD_CRANE;
+  book.post('grundy', spot(-97.5, -31.2, TO_VIEW, 3), (t, post) => still(post, { lean: 0.15, armL: 0.2, armR: 0.2, head: 0.3 * Math.sin(t * 0.07), nod: 0.25, tilt: 0.1 * Math.sin(t * 0.3) }));
+  const POLKA = spot(WHEEL_FOOT.x - 4.4, WHEEL_FOOT.z + 1.2, TO_VIEW, WHEEL_FOOT.y + 1);
   book.post('polkaDotMan', POLKA, (t, post) => still(post, idle((t * 0.1) % 1)));
   // two fishermen on the fish jetty, rods out over the water
   // two fishermen on the quay's edge at the harbour's north-west corner, south of the Battery, rods out over the water
@@ -565,24 +574,43 @@ export function east(k: Build, W: World, book: Book): void {
   }
 
   // ================================================================== 4. Mr. Freeze's Cold Snap
-  // Batman 121 (1959): Mr. Zero's ice and the steam that melts it [wp Mr. Freeze; rogues note, story 9]. Freeze steps
-  // out of his cold store and turns his gun on the steam pipe's valve, not on anyone: the steam stops, a column of ice
-  // grows over the pipe and frost spreads over the paving. Batman lands, turns the valve's wheel, the steam bursts
-  // out and the ice goes; Freeze lowers his gun, inclines his helmet and goes back in.
+  // Batman 121 (1959): Mr. Zero's ice and the steam that melts it [wp Mr. Freeze; rogues note, story 9]. Played before
+  // the cold store's door, the part of the docks the opening view sees: the hydrant on the paving east of the door
+  // bursts, Freeze steps out and turns his gun on its jet, not on anyone, and the jet stands frozen in a column of ice
+  // while frost spreads over the paving. Batman lands and shuts the hydrant at its cap; the ice goes in a burst of
+  // steam; Freeze inclines his helmet and goes back in.
   {
-    const PIPE: V3 = [VALVE.x, 0, VALVE.z - 0.7];
-    const F1 = facing(spot(FREEZE_DOOR.x - 1.6, FREEZE_DOOR.z + 2.2, WEST, 2), PIPE[0], PIPE[2]);
+    // the hydrant: a small prop of this chapter's that stands there always
+    const HYD = { x: FREEZE_DOOR.x + 3.65, z: FREEZE_DOOR.z + 0.35 };
+    const HY = gy(HYD.x, HYD.z, 2);
+    const hydrant = new THREE.Group();
+    const red = new THREE.MeshLambertMaterial({ color: 0xb8302a });
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.2, 0.62, 8), red);
+    body.position.y = 0.31;
+    const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.17, 0.14, 8), red);
+    cap.position.y = 0.69;
+    const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.5, 6), red);
+    nozzle.rotation.z = Math.PI / 2;
+    nozzle.position.y = 0.42;
+    hydrant.add(body, cap, nozzle);
+    hydrant.position.set(HYD.x, HY, HYD.z);
+    k.group.add(hydrant);
+    const JET: V3 = [HYD.x, HY + 0.8, HYD.z];
+    const F1 = facing(spot(FREEZE_DOOR.x + 0.85, FREEZE_DOOR.z + 1.15, E, 2), HYD.x, HYD.z);
     const fOut = walkLeg(FREEZE_DOOR, F1, 1.3), fIn = walkLeg(facing(F1, FREEZE_DOOR.x, FREEZE_DOOR.z), at(FREEZE_DOOR.x, FREEZE_DOOR.y, FREEZE_DOOR.z, N), 1.3);
-    const LANDB = spot(VALVE.x + 1.8, VALVE.z + 2.6, N, 2), bTo = walkLeg(facing(LANDB, VALVE.x, VALVE.z), at(VALVE.x, VALVE.y, VALVE.z, N), 1.6);
-    const AIM = fOut.dur + 0.8, ICE0 = AIM + 0.6, BAT = 9.5, TURN = BAT + 0.4 + bTo.dur, STEAM = TURN + 1.6, IN = STEAM + 4.5;
-    const ice = (tb: number): number => ease(span(tb, ICE0, ICE0 + 3.5)) * (1 - ease(span(tb, STEAM, STEAM + 2.2)));
+    const LANDB = spot(HYD.x - 1.2, HYD.z + 1.1, N, 2), CAP = facing(spot(HYD.x + 0.7, HYD.z + 0.5, WEST, 2), HYD.x, HYD.z);
+    const bTo = walkLeg(facing(LANDB, CAP.x, CAP.z), CAP, 1.4);
+    const BURST = 1.0, OUT = 2.0, AIM = OUT + fOut.dur + 0.4, FROZEN = AIM + 1.6, BAT = FROZEN + 4.5, SHUT = BAT + 0.4 + bTo.dur, STEAM = SHUT + 1.4, IN = STEAM + 4;
+    const jet = (tb: number): number => ease(span(tb, BURST, BURST + 0.6)) * (1 - ease(span(tb, SHUT, SHUT + 0.6)));
+    const ice = (tb: number): number => ease(span(tb, AIM + 0.4, FROZEN)) * (1 - ease(span(tb, STEAM, STEAM + 2.2)));
     let fr: State = still(F1);
     book.stories.push({
-      id: 'ice', name: "Mr. Freeze's Cold Snap", cast: ['freeze', 'batman'], holds: ['apron'], weight: 1,
+      id: 'ice', name: "Mr. Freeze's Cold Snap", cast: ['freeze', 'batman'], holds: ['apron', 'coldStore'], weight: 1,
       marks: { freeze: 'post', batman: 'post' }, body: IN + fIn.dur + 2,
       play(tb, P) {
-        const aiming = tb > AIM && tb < STEAM + 0.6;
-        if (tb < fOut.dur) fr = fOut.at(tb);
+        const aiming = tb > AIM && tb < FROZEN + 1.5;
+        if (tb < OUT) fr = still(FREEZE_DOOR, { head: tb > BURST ? 0.8 : 0 }, { glow: 0.8 });
+        else if (tb < OUT + fOut.dur) fr = fOut.at(tb - OUT);
         else if (tb < IN) fr = still(F1, aiming ? { armR: 1.55, elbowR: 0.1, armL: 1.4, elbowL: 0.4, spreadL: -0.3 } : tb < IN - 1.5 ? { nod: 0.1 } : { nod: 0.4 * Math.sin(Math.PI * span(tb, IN - 1.5, IN)) }, { hold: aiming ? 1 : 0, glow: 0.8 });
         else if (tb < IN + fIn.dur) fr = fIn.at(tb - IN);
         else fr = still(FREEZE_DOOR, {}, { glow: 0.8 });
@@ -592,27 +620,35 @@ export function east(k: Build, W: World, book: Book): void {
         if (tb < t0) P.put('batman', still(home, perch((tb * 0.05) % 1), { cape: 0.1, ...g }));
         else if (tb < BAT) P.put('batman', { ...leg.at(tb - t0), ...g });
         else if (tb < BAT + 0.4) P.put('batman', still(LANDB, {}, g));
-        else if (tb < TURN) P.put('batman', { ...bTo.at(tb - BAT - 0.4), ...g });
-        else if (tb < STEAM + 1) P.put('batman', still(at(VALVE.x, VALVE.y, VALVE.z, N), push((tb - TURN) * 0.8 % 1), g));
-        else P.put('batman', still(at(VALVE.x, VALVE.y, VALVE.z, toward(VALVE.x, VALVE.z, F1.x, F1.z)), {}, { cape: 0.2, ...g }));
+        else if (tb < SHUT) P.put('batman', { ...bTo.at(tb - BAT - 0.4), ...g });
+        else if (tb < STEAM) P.put('batman', still(CAP, { lean: 0.6, crouch: 0.35, armL: 1.2, armR: 1.2, elbowL: 0.6, elbowR: 0.6, twist: 0.3 * Math.sin((tb - SHUT) * 6) }, g));
+        else P.put('batman', still(at(CAP.x, CAP.y, CAP.z, toward(CAP.x, CAP.z, F1.x, F1.z)), {}, { cape: 0.2, ...g }));
       },
       props(tb) {
-        const f = ice(tb);
-        // the cold beam, from the gun to the pipe
-        if (tb > AIM + 0.2 && tb < ICE0 + 2.5) { const h = handOf(fr, 1.8, 0.9, 0.2); W.glints.line(h, [PIPE[0], 1.0, PIPE[2]], 0.12, 0xbfe8ff); }
-        // the ice over the pipe: a cluster of pale columns and specks
+        const j = jet(tb), f = ice(tb);
+        // the jet: pale lines up out of the burst hydrant and specks falling round it, until it is frozen
+        if (j > 0.01 && f < 0.95) for (let i = 0; i < 5; i++) {
+          const a = (i / 5) * TAU + tb * 0.5, h = 2.6 * j * (1 - f), r = 0.35 + 0.25 * Math.sin(tb * 7 + i);
+          W.glints.line(JET, [JET[0] + Math.cos(a) * r, JET[1] + h, JET[2] + Math.sin(a) * r], 0.09, dim(0xc8e8ff, 1 - f));
+          const u = (tb * 1.3 + i * 0.2) % 1;
+          W.glints.speck([JET[0] + Math.cos(a) * (0.4 + u), JET[1] + h * (1 - u * u), JET[2] + Math.sin(a) * (0.4 + u)], 0.09, dim(0xe8f8ff, 1 - f));
+        }
+        // the cold beam, from the gun to the jet
+        if (tb > AIM + 0.2 && tb < FROZEN + 1.2) { const h = handOf(fr, 1.8, 0.9, 0.2); W.glints.line(h, [JET[0], JET[1] + 1.0, JET[2]], 0.12, 0xbfe8ff); }
+        // the jet stood in ice, and frost over the paving
         if (f > 0.01) {
           for (let i = 0; i < 6; i++) {
-            const a = (i / 6) * TAU, r = 0.25 + 0.15 * (i % 2), hgt = (2.2 + 0.9 * ((i * 37) % 5) / 5) * f;
-            W.glints.line([PIPE[0] + Math.cos(a) * r, 0.05, PIPE[2] + Math.sin(a) * r], [PIPE[0] + Math.cos(a) * r * 0.5, hgt, PIPE[2] + Math.sin(a) * r * 0.5], 0.18 * f, 0x9fd8f8);
+            const a = (i / 6) * TAU, r = 0.22 + 0.14 * (i % 2), hgt = JET[1] + (1.6 + 0.8 * ((i * 37) % 5) / 5) * f;
+            W.glints.line([JET[0] + Math.cos(a) * r, JET[1] - 0.2, JET[2] + Math.sin(a) * r], [JET[0] + Math.cos(a) * r * 0.4, hgt, JET[2] + Math.sin(a) * r * 0.4], 0.17 * f, 0x9fd8f8);
           }
-          W.glints.speck([PIPE[0], 2.6 * f, PIPE[2]], 0.3 * f, 0xe8f8ff);
-          for (let i = 0; i < 2; i++) { const u = (tb * 0.35 + i * 0.5) % 1; W.rings.set(1 + i, [PIPE[0], 0.07, PIPE[2] + 0.4], 0.6 + 4.5 * u * f, 0.55 * f * (1 - u), 0xcfeeff); }
+          W.glints.speck([JET[0], JET[1] + 2.4 * f, JET[2]], 0.28 * f, 0xe8f8ff);
+          for (let i = 0; i < 2; i++) { const u = (tb * 0.35 + i * 0.5) % 1; W.rings.set(1 + i, [HYD.x - 0.6, HY + 0.07, HYD.z + 0.4], 0.5 + 2.6 * u * f, 0.55 * f * (1 - u), 0xcfeeff); }
         } else { W.rings.set(1, [0, 0, 0], 1, 0); W.rings.set(2, [0, 0, 0], 1, 0); }
-        W.air?.burst(PIPE[0], 0.6, PIPE[2], ease(span(tb, STEAM, STEAM + 0.6)) * (1 - ease(span(tb, STEAM + 2.5, STEAM + 4.5))));
+        W.air?.burst(HYD.x, HY + 0.6, HYD.z, ease(span(tb, STEAM, STEAM + 0.6)) * (1 - ease(span(tb, STEAM + 2.5, STEAM + 4))));
       },
-      end() { W.rings.set(1, [0, 0, 0], 1, 0); W.rings.set(2, [0, 0, 0], 1, 0); W.air?.burst(PIPE[0], 0.6, PIPE[2], 0); },
+      end() { W.rings.set(1, [0, 0, 0], 1, 0); W.rings.set(2, [0, 0, 0], 1, 0); W.air?.burst(HYD.x, HY + 0.6, HYD.z, 0); },
     });
+    void VALVE;
   }
 
   // ================================================================== 5. Bane's Crate
@@ -977,7 +1013,7 @@ export function east(k: Build, W: World, book: Book): void {
   {
     const POLE = ALLEY_LAMP, NW = spot(POLE.x - 1.3, POLE.z + 0.9, N, 2), UPY = 2.3;
     const CL = { x: POLE.x - 0.45, z: POLE.z + 0.2 };
-    const LES_OUT = spot(CLINIC_DOOR.x + 1.4, CLINIC_DOOR.z, E, 2), LES_ROUND = spot(CLINIC_DOOR.x + 1.4, POLE.z + 2.8, S, 2), LES_COURT = facing(spot(POLE.x - 1.6, POLE.z + 2.6, N, 2), NW.x, NW.z);
+    const LES_OUT = spot(CLINIC_DOOR.x + 1.4, CLINIC_DOOR.z, E, 2), LES_ROUND = spot(CLINIC_DOOR.x + 1.4, POLE.z + 2.8, S, 2), LES_COURT = facing(spot(POLE.x + 0.3, POLE.z + 2.4, N, 2), NW.x, NW.z);
     const lTo = seq([walkLeg(at(CLINIC_DOOR.x, CLINIC_DOOR.y, CLINIC_DOOR.z, E), LES_OUT, 1.6), walkLeg(LES_OUT, at(LES_OUT.x, LES_OUT.y, POLE.z - 1.4, S), 1.6), walkLeg(at(LES_OUT.x, LES_OUT.y, POLE.z - 1.4, S), LES_ROUND, 1.6), walkLeg(LES_ROUND, LES_COURT, 1.6)]);
     const lBack = seq([walkLeg(facing(LES_COURT, LES_ROUND.x, LES_ROUND.z), LES_ROUND, 1.6), walkLeg(LES_ROUND, at(LES_OUT.x, LES_OUT.y, POLE.z - 1.4, N), 1.6), walkLeg(at(LES_OUT.x, LES_OUT.y, POLE.z - 1.4, N), at(LES_OUT.x, LES_OUT.y, LES_OUT.z, WEST), 1.6), walkLeg(at(LES_OUT.x, LES_OUT.y, LES_OUT.z, WEST), at(CLINIC_DOOR.x, CLINIC_DOOR.y, CLINIC_DOOR.z, WEST), 1.6)]);
     const NW_IN = 3, UP0 = 4.4, UP1 = 6.4, FIX = 9.4, DOWN = 10.6, LES0 = 9, CLAP = 15, LBACK = 19.5, BODY = LBACK + lBack.dur + 1;
@@ -1001,7 +1037,7 @@ export function east(k: Build, W: World, book: Book): void {
         else if (tb < LBACK + lBack.dur) P.put('leslie', lBack.at(tb - LBACK));
         else P.put('leslie', hidden(CLINIC_DOOR));
         const rh = P.from('redHood'), clap = tb > CLAP && tb < CLAP + 2.6 ? Math.abs(Math.sin(((tb - CLAP) / 2.6) * TAU)) : 0;
-        P.put('redHood', still(rh, { ...sit(1), armL: 1.2, armR: 1.2, spreadL: 0.6 - 0.6 * clap, spreadR: 0.6 - 0.6 * clap, elbowL: 0.4, elbowR: 0.4, head: 0.4 }, { aloft: true }));
+        P.put('redHood', still(facing(rh, POLE.x, POLE.z), clap > 0 || (tb > CLAP && tb < CLAP + 2.6) ? { armL: 1.2, armR: 1.2, spreadL: 0.6 - 0.6 * clap, spreadR: 0.6 - 0.6 * clap, elbowL: 0.4, elbowR: 0.4, head: 0.2 } : { ...hang(0), head: 0.3 }));
       },
       props(tb) {
         const head: V3 = [POLE.x, POLE.y + 4.4, POLE.z];
@@ -1174,13 +1210,13 @@ export function east(k: Build, W: World, book: Book): void {
   // ================================================================== 15. Kite Man
   // Kite Man of Batman 133 (1960) and his "Hell yeah" of later years [wider cast, section 4]. By day he runs off the
   // hammerhead crane's cab and is away on his kite: a long curve out over the harbour, low, round the Statue of
-  // Justice, a wobble in a gust, and down onto the hull on the slip, where he folds his kite and climbs back up the
-  // crane out of sight.
+  // Justice, a wobble in a gust, and back onto the crane's cab, where he folds his kite and throws up his arms (the
+  // hull on the slip, where the sheet had him land, is out of the opening view behind the crane and the gasholder).
   {
     const J = { x: 71, z: 85 };
     const PATH = curveOf([
       [CRANE_TOP.x, CRANE_TOP.y, CRANE_TOP.z], [CRANE_TOP.x + 4, CRANE_TOP.y + 6, CRANE_TOP.z - 4], [J.x + 2, 26, J.z + 10],
-      [J.x + 11, 28, J.z + 1], [J.x + 6, 27, J.z - 9], [J.x - 6, 24, J.z - 7], [HULL.x + 6, 15, HULL.z - 4], [HULL.x + 1.5, HULL.y + 2.5, HULL.z - 0.5], [HULL.x, HULL.y, HULL.z],
+      [J.x + 11, 28, J.z + 1], [J.x + 6, 27, J.z - 9], [J.x - 6, 25, J.z - 7], [CRANE_TOP.x + 2, CRANE_TOP.y + 6, CRANE_TOP.z - 8], [CRANE_TOP.x + 0.8, CRANE_TOP.y + 2.2, CRANE_TOP.z - 2], [CRANE_TOP.x, CRANE_TOP.y, CRANE_TOP.z],
     ]);
     const F0 = 1.5, F1 = F0 + PATH.len / 6, FOLD = F1 + 2.5, CLIMB = FOLD + 2, BODY = CLIMB + 3;
     if (import.meta.env.DEV) {
@@ -1201,9 +1237,9 @@ export function east(k: Build, W: World, book: Book): void {
         else if (tb < F1) {
           const u = span(tb, F0, F1), q = PATH.at(PATH.len * u), gust = Math.sin(Math.PI * span(u, 0.55, 0.65));
           s = still(at(q.p[0], q.p[1], q.p[2], q.h), glide((tb * 0.5) % 1), { aloft: true, cape: 1, spread: 1, pitch: 0.5 * (1 - span(u, 0.9, 1)), roll: 0.5 * gust * Math.sin(tb * 9) });
-        } else if (tb < FOLD) s = still(HULL, { armL: 0.8 * span(tb, F1, FOLD), armR: 0.8 * span(tb, F1, FOLD), elbowL: 1.5, elbowR: 1.5 }, { cape: 1 - span(tb, F1, FOLD), spread: 1 - span(tb, F1, FOLD) });
-        else if (tb < CLIMB) s = still(facing(HULL, CRANE_TOP.x, CRANE_TOP.z), walk((tb * 0.7) % 1));
-        else s = hidden(HULL);
+        } else if (tb < FOLD) s = still(CRANE_TOP, { armL: 0.8 * span(tb, F1, FOLD), armR: 0.8 * span(tb, F1, FOLD), elbowL: 1.5, elbowR: 1.5 }, { cape: 1 - span(tb, F1, FOLD), spread: 1 - span(tb, F1, FOLD) });
+        else s = still(CRANE_TOP, { ...idle((tb * 0.07) % 1), armL: 2.6, armR: 2.6, spreadL: 0.4, spreadR: 0.4 }, { cape: 0.1 });
+        void HULL; void CLIMB;
         P.put('kiteMan', s);
       },
     });
@@ -1247,7 +1283,9 @@ export function east(k: Build, W: World, book: Book): void {
         P.put('harley', hs);
         void wheel;
         // Polka-Dot Man comes over and claps
-        const pp = P.from('polkaDotMan'), pTo = walkLeg(pp, PD, 1.8), pBack = walkLeg(PD, at(pp.x, pp.y, pp.z, pp.h), 1.8);
+        // round the east side of the booth's stall to the striker, and back
+        const pp = P.from('polkaDotMan'), PW = spot(pp.x + 1.4, pp.z + 2.4, N, pp.y + 1);
+        const pTo = seq([walkLeg(pp, PW, 1.8), walkLeg(PW, PD, 1.8)]), pBack = seq([walkLeg(PD, PW, 1.8), walkLeg(PW, at(pp.x, pp.y, pp.z, pp.h), 1.8)]);
         const clap = tb > BELL && tb < BELL + 3 ? Math.abs(Math.sin(tb * 8)) : 0;
         if (tb < 2) P.put('polkaDotMan', still(pp, idle(0)));
         else if (tb < 2 + pTo.dur) P.put('polkaDotMan', pTo.at(tb - 2));
