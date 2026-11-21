@@ -204,7 +204,8 @@ export function buildLand(k: Build): void {
   flat(k.street, LANDS.west, 0, PAVING, { win: GROUND });
   flat(k.street, park, 0.02, LAWN_DARK, { win: GROUND });
   flat(k.street, LANDS.east, 0, PAVING, { win: GROUND });
-  for (const id of ['west', 'east'] as const) walls(k.b, LANDS[id], -1.5, 0, QUAY);
+  flat(k.street, LANDS.tricorner, 0, PAVING, { win: GROUND });
+  for (const id of ['west', 'east', 'tricorner'] as const) walls(k.b, LANDS[id], -1.5, 0, QUAY);
   for (const [id, y] of [['blackgate', 2], ['justice', 1.5]] as const) {
     flat(k.street, LANDS[id], y, id === 'blackgate' ? ROCK : STONE, { win: GROUND });
     walls(k.b, LANDS[id], -1.5, y, id === 'blackgate' ? ROCK_DARK : STONE_DARK);

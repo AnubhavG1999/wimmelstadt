@@ -143,11 +143,24 @@ export const BAY_INLAND: P2 = [-BAY_ALONG[1], BAY_ALONG[0]];
 /** A place by the bay's shore: `s` along it from the Battery, `d` inland. */
 export const bay = (s: number, d = 0): P2 => [BAY_SHORE.from[0] + BAY_ALONG[0] * s + BAY_INLAND[0] * d, BAY_SHORE.from[1] + BAY_ALONG[1] * s + BAY_INLAND[1] * d];
 
+/** Tricorner: how wide the channel between it and the bay's shore is, and how far out from the shore its seaward side lies. */
+export const TRICORNER = { channel: 11, reach: 34 };
+
+/**
+ * How high anything on Tricorner may stand at a place, so that the bay's shore and its road stay in sight behind
+ * it from the view the tile opens with: low along the channel, and rising towards the island's seaward side. A
+ * crane's jib, a mast or a lighthouse's lantern may rise 8 over it.
+ */
+export function tricornerCeiling(x: number, z: number): number {
+  const out = -((x - BAY_SHORE.from[0]) * BAY_INLAND[0] + (z - BAY_SHORE.from[1]) * BAY_INLAND[1]);
+  return Math.min(14, 4 + 0.7 * Math.max(0, out - TRICORNER.channel));
+}
+
 export const LANDS: Record<string, P2[]> = {
   /** Old Gotham, Midtown and Robinson Park, on the Sprang's west bank. */
   west: [[-104, -56], sprang(-6.26, -7), sprang(SL, -7), [27, 38], BAY_SHORE.from, BAY_SHORE.to, [-104, 113]],
   /** Uptown, the East End and the docks, on its east bank. The dock cut is let into the docks. */
-  east: [sprang(14.31, 7), [104, -50], [104, 38], [98, 38], [98, 28], [88, 28], [88, 38], [46, 38], sprang(SL, 7)],
+  east: [sprang(14.31, 7), [104, -50], [104, 50], [98, 50], [98, 40], [88, 40], [88, 50], [58, 50], [58, 38], [46, 38], sprang(SL, 7)],
   /** Bristol, on the mainland north of the Gotham River: Crest Hill, and the shelf the river road runs on. */
   bristol: [[-22, -113], [104, -113], [104, -67], [-18, -67], [-22, -71]],
   /** Mercey Island, in the reach north-west of the city. */
@@ -156,6 +169,11 @@ export const LANDS: Record<string, P2[]> = {
   blackgate: [[68, 78], [88, 75], [94, 84], [90, 94], [72, 95], [66, 87]],
   /** The islet of the Statue of Justice. */
   justice: circle(44, 97, 6.5, 8),
+  /**
+   * Tricorner, the city's southern point in the comics, an island joined to the rest by three bridges: here it lies
+   * off the bay's shore across a channel 11 wide, and runs to the board's south edge.
+   */
+  tricorner: [bay(14, -TRICORNER.channel), bay(22, -TRICORNER.reach), bay(64.6, -TRICORNER.reach), bay(86.9, -TRICORNER.channel)],
 };
 
 /** The upper city of Old Gotham: a terrace behind retaining walls, with a bastion at its south-west corner where Grand Avenue arrives. */
@@ -231,6 +249,7 @@ export function groundAt(x: number, z: number): number {
   if (inside(LANDS.east, x, z)) return Y.quay;
   if (inside(LANDS.bristol, x, z)) return crestAt(x, z);
   if (inside(LANDS.mercey, x, z)) return merceyAt(x, z);
+  if (inside(LANDS.tricorner, x, z)) return Y.quay;
   if (inside(LANDS.blackgate, x, z)) return 2;
   if (inside(LANDS.justice, x, z)) return 1.5;
   return Y.water;
@@ -312,7 +331,7 @@ export const avenueY = (x: number, z: number): number => (z > RAMP.z0 ? Y.upper 
  */
 export const SHOW_LANES = {
   service: { z: -82.5, x0: -2, x1: 63, y: Y.shelf },
-  apron: { z: 35, x0: 48, x1: 103, y: Y.quay },
+  apron: { z: 47, x0: 60, x1: 103, y: Y.quay },
 };
 
 // ---------------------------------------------------------------------------
@@ -373,16 +392,18 @@ lot('park', 'park', 'Robinson Park', -104, -56, -62, -16, Y.quay, 0.2, true);
 lot('park', 'finger-castle', 'Finger Castle', -93, -49, -83, -39, KNOLL.h, 12);
 lot('park', 'botanical', 'Botanical Garden', -78, -30, -64, -18, Y.quay, 8);
 // ============================ Uptown, on the bluff ============================
-lot('uptown', 'otisburg', 'Otisburg', 23, -34, 38, -18, Y.bluff, 9);
-lot('uptown', 'otisburg-2', '', 13, -33, 20, -25, Y.bluff, 8);
-lot('uptown', 'bowery', 'The Bowery', 42, -34, 56, -18, Y.bluff, 10);
-lot('uptown', 'museum', 'Gotham Museum', 60, -34, 74, -18, Y.bluff, 14);
+// Its named rows stand along the bluff's rim, and towers stand behind them on River Street: what they hide from
+// the view the tile opens with is River Street and the river, and nothing on the far bank.
+lot('uptown', 'otisburg', 'Otisburg', 23, -27, 38, -18, Y.bluff, 12);
+lot('uptown', 'otisburg-2', '', 13, -33, 20, -25, Y.bluff, 14);
+lot('uptown', 'bowery', 'The Bowery', 42, -27, 56, -18, Y.bluff, 12);
+lot('uptown', 'museum', 'Gotham Museum', 60, -28, 74, -18, Y.bluff, 14);
 lot('uptown', 'amusement', 'Amusement Mile', 88, -50, 104, -14, Y.bluff, 26, true);
 // ============================ the East End and the docks ============================
 // The tenements stand behind, their roofs in sight; the clinic and the old cinema front Harbour Road, with an alley between them.
-lot('eastend', 'tenement-1', '', 32, -12, 42, -2, Y.quay, 16);
-lot('eastend', 'tenement-2', '', 46, -12, 56, -2, Y.quay, 12);
-lot('eastend', 'tenement-3', '', 60, -12, 70, -2, Y.quay, 18);
+lot('eastend', 'tenement-1', '', 32, -12, 40, -2, Y.quay, 20);
+lot('eastend', 'tenement-2', '', 43, -12, 52, -2, Y.quay, 16);
+lot('eastend', 'tenement-3', '', 55, -12, 63, -2, Y.quay, 22);
 lot('eastend', 'clinic', 'Thomas Wayne Clinic', 42, 2, 50, 9, Y.quay, 10);
 lot('eastend', 'cinema', 'Park Row', 53, 1, 65, 9, Y.quay, 12);
 lot('eastend', 'alley', '', 66, 1, 72, 9, Y.quay, 0.2, true);
@@ -390,8 +411,27 @@ lot('eastend', 'alley', '', 66, 1, 72, 9, Y.quay, 0.2, true);
 lot('docks', 'ace', 'Ace Chemicals', 76, -12, 102, 9, Y.quay, 12);
 lot('docks', 'ace-stack', '', 78, -10, 84, -4, Y.quay, 30);
 // The docks' sheds stay low, so that Harbour Road behind them is seen over their roofs.
-lot('docks', 'cold-store', 'Cold Store', 60, 26, 72, 32, Y.quay, 6);
-lot('docks', 'card-company', 'Monarch Playing Card Co.', 76, 26, 86, 32, Y.quay, 6);
+lot('docks', 'cold-store', 'Cold Store', 60, 36, 72, 43, Y.quay, 9);
+lot('docks', 'card-company', 'Monarch Playing Card Co.', 76, 36, 86, 43, Y.quay, 9);
+// ============================ ordinary buildings, which stand between the things to find ============================
+// Two more towers on the Crown, beside Wayne Tower.
+lot('blocks', 'pinkney-1', '', -69, -12, -63, 0, Y.crown, 33);
+lot('blocks', 'pinkney-2', '', -69, 4, -63, 14, Y.crown, 27);
+// Rows of houses between Robinson Park and the Sprang, low, so that the park's lawn stays in sight over them.
+lot('blocks', 'row-0', '', -61, -53, -56, -44, Y.quay, 9);
+lot('blocks', 'row-1', '', -61, -42, -49, -32, Y.quay, 10);
+lot('blocks', 'row-2', '', -61, -30, -45, -20, Y.quay, 12);
+// Uptown's towers, behind its rows.
+lot('blocks', 'uptown-1', '', 23, -34, 38, -28.5, Y.bluff, 28);
+lot('blocks', 'uptown-2', '', 42, -34, 56, -28.5, Y.bluff, 32);
+lot('blocks', 'uptown-3', '', 60, -34, 74, -29.5, Y.bluff, 24);
+// A warehouse in the south-west, between the Clock Tower and the Gazette.
+lot('blocks', 'warehouse-1', '', -88, 95, -80, 108, Y.quay, 12);
+// The docks' first row of sheds, low, so that Harbour Road behind them is seen over their roofs, and its stacks.
+lot('blocks', 'shed-1', '', 46, 26.5, 56, 33, Y.quay, 6);
+lot('blocks', 'shed-2', '', 60, 26.5, 72, 33, Y.quay, 6);
+lot('blocks', 'shed-3', '', 76, 26.5, 86, 33, Y.quay, 6);
+lot('blocks', 'stacks-1', '', 90, 26.5, 102, 37, Y.quay, 5);
 // ============================ Bristol: Wayne Manor and the Batcave ============================
 lot('bristol', 'manor', 'Wayne Manor', 8, -108, 48, -97, Y.crest, 14);
 lot('bristol', 'batcave', 'The Batcave', 6, -97, 50, -85, Y.cave, 6, true);
@@ -405,7 +445,8 @@ lot('arkham', 'trigate', 'Trigate Bridge', -48, -76, -24, -52, Y.shelf, 8, true)
 // ============================ the bay ============================
 lot('bay', 'blackgate', 'Blackgate', 72, 79, 88, 92, 2, 14);
 lot('bay', 'justice', 'Statue of Justice', 40, 93, 48, 101, 1.5, 28);
-lot('bay', 'casino', 'Iceberg Casino', -4, 86, 16, 98, Y.water, 13, true);
+lot('bay', 'casino', 'Iceberg Casino', 42, 62, 62, 74, Y.water, 13, true);
+lot('tricorner', 'tricorner', 'Tricorner Yards', -29, 60, 34, 113, Y.quay, 14, true);
 lot('waterfront', 'pier', '', 26, 38, 44, 46, Y.water, 2.5, true);
 
 export const LOTS: Lot[] = LOT_LIST;
@@ -425,7 +466,7 @@ export const HERO_SPOTS: { id: string; x: number; z: number; y: number; heading:
   { id: 'manor', x: 58, z: -101, y: Y.crest + 0.04, heading: Math.PI / 2, where: "Wayne Manor's forecourt, at the head of the drive" },
   { id: 'wayne-tower', x: -73, z: 39, y: Y.crown + 0.24, heading: 0, where: "Wayne Tower's forecourt, on the rim of the upper city" },
   { id: 'battery', x: 16.5, z: 37, y: 0.04, heading: 0, where: 'the Battery, where the Sprang meets the bay, before the Iceberg Lounge' },
-  { id: 'casino', x: 6, z: 92, y: 3.3, heading: 0, turn: 0.25, where: "the prize turntable on the Iceberg Casino's deck" },
+  { id: 'casino', x: 52, z: 68, y: 3.3, heading: 0, turn: 0.25, where: "the prize turntable on the Iceberg Casino's deck" },
   { id: 'boardwalk', x: 93, z: -24, y: Y.bluff + 0.04, heading: Math.PI / 2, where: "Amusement Mile's boardwalk, under the wheel" },
 ];
 
@@ -473,7 +514,9 @@ export const SIGHT: { id: string; x: number; y: number; z: number }[] = [
   { id: 'the east quay', x: 11, y: 1.6, z: -13 },
   { id: 'Park Row', x: 59, y: 2, z: 9.5 },
   { id: "Ace Chemicals' gate", x: 86, y: 3, z: 9 },
-  { id: 'the docks', x: 66, y: 1.5, z: 35 },
+  { id: 'the docks', x: 74, y: 1.5, z: 47 },
+  { id: 'Harbour Road', x: 70, y: 1.6, z: 18 },
+  { id: "the channel before Tricorner", x: -8, y: 0.5, z: 78 },
   { id: 'the fairground', x: 94, y: Y.bluff + 2, z: -24 },
   { id: 'the fish market', x: -48, y: 2, z: 86 },
   { id: "the Underground Highway's mouth", x: -94, y: 3, z: 75 },
@@ -504,7 +547,7 @@ export const STAGES: Record<string, { x0: number; z0: number; x1: number; z1: nu
   pier: { x0: 26, z0: 38, x1: 44, z1: 46, y: 1.2, what: "the pier's deck: the Riddler's booth at its landward end, and room for his glass maze, 8 by 5, on its seaward half" },
   diamondRoofNorth: { x0: -42, z0: -8, x1: -34, z1: 8, y: 14, what: "the northern jeweller's roof in the Diamond District, flat, with a skylight and a chimney: Catwoman's story begins here" },
   diamondRoofSouth: { x0: -22, z0: 12, x1: -15, z1: 24, y: 12, what: "the southern jeweller's roof, flat, with a chimney: Catwoman's post, with her cat" },
-  fishJetty: { x0: -26, z0: 89, x1: -15, z1: 100, y: 0.8, what: 'a timber jetty from the harbour wall by the fish market out into the bay: the Laughing Fish' },
+  fishJetty: { x0: -25, z0: 90, x1: -17, z1: 98, y: 0.8, what: 'a timber jetty from the harbour wall by the fish market 6 out into the channel before Tricorner: the Laughing Fish' },
   marketYard: { x0: -56, z0: 86, x1: -40, z1: 92, y: 0, what: "the yard before the fish market, with a manhole in it, and a storm drain's mouth in the harbour wall across the road: Croc" },
   highway: { x0: -102, z0: 74.5, x1: -86, z1: 90, y: 0, what: "the court before the Underground Highway's boarded mouth, open and paved: Ra's al Ghul's post, and the duel" },
   belfry: { x0: -102, z0: 94, x1: -90, z1: 106, y: 44, what: "the Clock Tower's belfry: a ledge all round it at this height, eaves over it to hang from. Man-Bat's post" },
@@ -512,16 +555,16 @@ export const STAGES: Record<string, { x0: number; z0: number; x1: number; z1: nu
   parkLawn: { x0: -80, z0: -54, x1: -64, z1: -40, y: 0, what: "the lawn east of Finger Castle's knoll, open: Ivy's and Harley's stories. Finger Castle itself is what Ivy's vines climb" },
   // ---- the east bank
   museumSteps: { x0: 60, z0: -18, x1: 74, z1: -14.4, y: Y.bluff, what: "the museum's portico and the rim of the bluff before it, facing south: where the Penguin comes out" },
-  eastRoofs: { x0: 32, z0: -12, x1: 70, z1: -2, y: 14, what: "the three tenements' roofs, each flat over its southern half, with water tanks and chimneys on the northern: Nightwing's post, the Robins' race" },
+  eastRoofs: { x0: 32, z0: -12, x1: 63, z1: -2, y: 16, what: "the three tenements' roofs, each flat over its southern half, with water tanks and chimneys on the northern: Nightwing's post, the Robins' race" },
   cinemaSteps: { x0: 53, z0: 9, x1: 65, z1: 13, y: 0, what: "the sidewalk before the old cinema, with a plinth at its west end for a statue: Clayface" },
   alley: { x0: 66, z0: 1, x1: 72, z1: 9, y: 0, what: "the alley beside the cinema: one street lamp, a stack of tyres. The Red Hood's post" },
   catwalk: { x0: 78, z0: 5, x1: 100, z1: 9, y: 8, what: "a catwalk along Ace Chemicals' south front, over its open vats: the Joker's post" },
-  apron: { x0: 46, z0: 32.5, x1: 104, z1: 37.6, y: 0, what: "the docks' apron along the quay's edge, kept clear from end to end, and the dock cut's drawbridge: the Jokermobile's chase, Freeze, Bane" },
+  apron: { x0: 58, z0: 44.4, x1: 104, z1: 49.8, y: 0, what: "the docks' apron along the quay's edge, kept clear from end to end, and the dock cut's drawbridge: the Jokermobile's chase, Freeze, Bane" },
   boardwalk: { x0: 88, z0: -30, x1: 98, z1: -16, y: Y.bluff, what: "Amusement Mile's boardwalk under the wheel: the place for a hero, and Harley's booth beside it" },
   // ---- Bristol and the island
   cave: { x0: 6, z0: -97, x1: 50, z1: -85, y: Y.cave, what: "the Batcave's floor: the Batmobile's turntable at (14, -90.5), the guest's at (30, -89.5), the Batplane's pad at (43.5, -90.5), the trophies and the computer along its back" },
   terrace: { x0: 8, z0: -97, x1: 48, z1: -94, y: Y.crest, what: "the Manor's terrace, over the cave's back: Alfred's post" },
   lawn: { x0: -8, z0: -107, x1: 6, z1: -96, y: Y.crest, what: "the lawn west of the Manor: Damian's post, with Titus, Alfred the cat and Bat-Cow" },
   gate: { x0: -72, z0: -85, x1: -62, z1: -78, y: Y.isle, what: "the ground before Arkham's gate, between it and the ring: the breakout. The gate's own leaf is the show's, and its frame stands empty" },
-  casinoDeck: { x0: -4, z0: 86, x1: 16, z1: 98, y: 3, what: "the Iceberg Casino's deck: the prize turntable at its middle" },
+  casinoDeck: { x0: 42, z0: 62, x1: 62, z1: 74, y: 3, what: "the Iceberg Casino's deck: the prize turntable at its middle" },
 };
