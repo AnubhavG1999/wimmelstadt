@@ -624,7 +624,7 @@ export const lotOf = (id: string): Lot => {
 // ---------------------------------------------------------------------------
 
 export const HERO_SPOTS: { id: string; x: number; z: number; y: number; heading: number; turn?: number; where: string }[] = [
-  { id: 'garden', x: 5, z: -104.5, y: Y.crest + 0.34, heading: 0, turn: 0.2, where: "a stone stand on the lawn by Wayne Manor's pool garden, where the Batwing rises before it" },
+  { id: 'garden', x: 2.5, z: -104.5, y: Y.crest + 0.34, heading: 0, turn: 0.2, where: "a stone stand on the lawn by Wayne Manor's pool garden, where the Batwing rises before it" },
   { id: 'manor', x: 67, z: -94, y: Y.crest + 0.04, heading: Math.PI / 2, where: "Wayne Manor's entrance court, at the head of the drive" },
   { id: 'wayne-tower', x: -73, z: 39, y: Y.crown + 0.24, heading: 0, where: "Wayne Tower's forecourt, on the rim of the upper city" },
   { id: 'battery', x: 16.5, z: 37, y: 0.04, heading: 0, where: 'the Battery, where the Sprang meets the harbour, before the Iceberg Lounge' },
@@ -678,7 +678,7 @@ export const SIGHT: { id: string; x: number; y: number; z: number }[] = [
   { id: 'the park', x: -72, y: 1.5, z: -47 },
   { id: 'the Iceberg Lounge', x: -3, y: 4, z: 42 },
   { id: 'the Battery', x: 16, y: 1.5, z: 38 },
-  { id: 'the fish market', x: 20, y: 4, z: 61 },
+  { id: "the fish market's front", x: 26.5, y: 2.2, z: 60 },
   { id: 'the east quay', x: 11, y: 1.6, z: -13 },
   { id: 'Park Row', x: 61, y: 2, z: 11.5 },
   { id: "the museum's steps", x: 48.5, y: 2, z: 11.5 },
@@ -686,13 +686,15 @@ export const SIGHT: { id: string; x: number; y: number; z: number }[] = [
   { id: 'Kane Street', x: 80, y: 1.6, z: 6 },
   { id: "Kane Street's ramp", x: 80, y: 4.6, z: -22 },
   { id: "Ace Chemicals' vats", x: 96, y: 3, z: 39 },
-  { id: 'the docks', x: 70, y: 1.5, z: 47 },
+  // the apron's west half lies behind the Cobblepot Bridge, which crosses the view before it: its east half is what is seen
+  { id: 'the docks', x: 95, y: 1.5, z: 46 },
   { id: 'the Cobblepot Bridge', x: (BRIDGE.east[0] + BRIDGE.west[0]) / 2, y: BRIDGE.y + BRIDGE.crown + 1.6, z: (BRIDGE.east[1] + BRIDGE.west[1]) / 2 },
   { id: 'South Street', x: 0, y: 1.6, z: SOUTH_ST.z },
   { id: 'Bank Street', x: SOUTH_ST.bank, y: 1.6, z: 80 },
   { id: 'the fairground', x: 94, y: Y.bluff + 2, z: -24 },
   { id: "the Underground Highway's mouth", x: -94, y: 3, z: 75 },
-  { id: 'the fish jetty', x: 31, y: 2, z: 56.5 },
+  // the fish jetty itself lies behind the Iceberg Casino's iceberg and the bridge's west tower: the Laughing Fish plays here
+  { id: "the harbour's corner", x: 25, y: 2, z: 50 },
 ];
 
 // ---------------------------------------------------------------------------
@@ -721,7 +723,8 @@ export const STAGES: Record<string, { x0: number; z0: number; x1: number; z1: nu
   // ---- Lower Gotham and Tricorner
   highway: { x0: -102, z0: 74.5, x1: -86, z1: 90, y: 0, what: "the court before the Underground Highway's boarded mouth, open and paved: Ra's al Ghul's post, and the duel" },
   belfry: { x0: -102, z0: 94, x1: -90, z1: 106, y: 44, what: "the Clock Tower's belfry: a ledge all round it at this height, eaves over it to hang from. Man-Bat's post" },
-  fishJetty: { x0: 27.5, z0: 55, x1: 34, z1: 58, y: 0.8, what: "a timber jetty from Tricorner's quay by the fish market, 6 out into the harbour: the Laughing Fish" },
+  fishJetty: { x0: 27.5, z0: 55, x1: 34, z1: 58, y: 0.8, what: "a timber jetty from Tricorner's quay by the fish market, 6 out into the harbour. The view does not see it: the casino's iceberg and the bridge's west tower stand before it" },
+  fishCorner: { x0: 20.5, z0: 47.2, x1: 29, z1: 51.5, y: 0, what: "the harbour's north-west corner, south of the Battery: the quay's edge and the water off it, which the view sees. The Laughing Fish" },
   // ---- Robinson Park
   parkLawn: { x0: -80, z0: -54, x1: -64, z1: -40, y: 0, what: "the lawn east of Finger Castle's knoll, open: Ivy's and Harley's stories. Finger Castle itself is what Ivy's vines climb" },
   // ---- the east bank
