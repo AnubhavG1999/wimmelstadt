@@ -8,6 +8,7 @@
 
 import type { TileDef } from '../../engine/tile';
 import { buildGotham } from './city';
+import { buildShow } from './show';
 import { SIGNS } from './signs';
 
 export const gotham: TileDef = {
@@ -18,7 +19,14 @@ export const gotham: TileDef = {
   signs: SIGNS,
   // the comics put Gotham in New Jersey, and the Atlas of the DC Universe (1990) at about Atlantic City
   place: { lon: -74.42, lat: 39.36 },
-  build: (k) => buildGotham(k),
+  build: (k) => {
+    const parts = buildGotham(k);
+    // what moves on the tile besides its traffic, once everything that stands still is built. On the development
+    // server `?gotham=still` leaves it out, so that the traffic can be run for hours by itself and the still tile's
+    // cost measured.
+    if (!(import.meta.env.DEV && new URLSearchParams(location.search).get('gotham') === 'still')) buildShow(k);
+    return parts;
+  },
 };
 
 // the default export is what puts a tile on the board: see ../index.ts

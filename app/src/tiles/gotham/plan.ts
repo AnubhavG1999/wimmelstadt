@@ -351,26 +351,27 @@ lot('towers', 'foundation', 'Wayne Foundation', -84, 2, -70, 14, Y.crown, 19);
 // ============================ the upper city: the civic quarter ============================
 lot('civic', 'university', 'Gotham University', -84, -12, -70, -2, Y.crown, 13);
 lot('civic', 'quad', '', -60, -12, -46, 6, Y.upper, 0.2, true);
-lot('civic', 'library', 'Public Library', -60, 10, -46, 24, Y.upper, 16);
+// The library and the courthouse front the rim road, where their steps are in sight; police headquarters and
+// City Hall stand behind them, and the police roof, with the Bat-Signal's lamp, is higher than either.
+lot('civic', 'gcpd', 'G.C.P.D.', -60, 10, -46, 24, Y.upper, 24);
 lot('civic', 'city-hall', 'City Hall', -42, 10, -26, 24, Y.upper, 18);
-lot('civic', 'courthouse', 'Courthouse', -60, 26, -46, 41, Y.upper, 16);
-lot('civic', 'gcpd', 'G.C.P.D.', -42, 26, -26, 41, Y.upper, 24);
+lot('civic', 'library', 'Public Library', -60, 26, -46, 41, Y.upper, 14);
+lot('civic', 'courthouse', 'Courthouse', -42, 26, -26, 41, Y.upper, 16);
 // ============================ the waterfront: the quays, the Battery and the bay shore ============================
 lot('waterfront', 'diamond-1', 'Diamond District', -42, -8, -34, 8, Y.quay, 14);
 lot('waterfront', 'diamond-2', '', -22, 12, -15, 24, Y.quay, 12);
 lot('waterfront', 'bank', 'Gotham National Bank', -22, 28, -11, 40, Y.quay, 18);
 lot('waterfront', 'iceberg-lounge', 'Iceberg Lounge', -9, 31, 2, 42, Y.quay, 14);
-lot('waterfront', 'alibi', '', -22, 46, -14, 56, Y.quay, 9);
-lot('waterfront', 'fish-market', 'Fish Market', -56, 77, -40, 86, Y.quay, 6);
+lot('bayside', 'fish-market', 'Fish Market', -56, 77, -40, 86, Y.quay, 6);
 // The Underground Highway's boarded mouth is in the bastion's south face, and its forecourt is kept open before it.
-lot('waterfront', 'highway', 'Underground Highway', -102, 74.5, -86, 90, Y.quay, 0.2, true);
-lot('waterfront', 'clock-tower', 'Clock Tower', -102, 94, -90, 106, Y.quay, 56);
-lot('waterfront', 'gazette', 'Gotham Gazette', -78, 94, -64, 108, Y.quay, 20);
-lot('waterfront', 'boat-yard', '', -80, 79, -62, 89, Y.quay, 6);
+lot('bayside', 'highway', 'Underground Highway', -102, 74.5, -86, 90, Y.quay, 0.2, true);
+lot('bayside', 'clock-tower', 'Clock Tower', -102, 94, -90, 106, Y.quay, 56);
+lot('bayside', 'gazette', 'Gotham Gazette', -78, 94, -64, 108, Y.quay, 20);
+lot('bayside', 'boat-yard', '', -80, 79, -62, 89, Y.quay, 6);
 // ============================ Midtown: Robinson Park ============================
 lot('park', 'park', 'Robinson Park', -104, -56, -62, -16, Y.quay, 0.2, true);
 lot('park', 'finger-castle', 'Finger Castle', -93, -49, -83, -39, KNOLL.h, 12);
-lot('park', 'botanical', 'Botanical Garden', -102, -34, -88, -24, Y.quay, 8);
+lot('park', 'botanical', 'Botanical Garden', -78, -30, -64, -18, Y.quay, 8);
 // ============================ Uptown, on the bluff ============================
 lot('uptown', 'otisburg', 'Otisburg', 23, -34, 38, -18, Y.bluff, 9);
 lot('uptown', 'otisburg-2', '', 13, -33, 20, -25, Y.bluff, 8);
@@ -405,7 +406,7 @@ lot('arkham', 'trigate', 'Trigate Bridge', -48, -76, -24, -52, Y.shelf, 8, true)
 lot('bay', 'blackgate', 'Blackgate', 72, 79, 88, 92, 2, 14);
 lot('bay', 'justice', 'Statue of Justice', 40, 93, 48, 101, 1.5, 28);
 lot('bay', 'casino', 'Iceberg Casino', -4, 86, 16, 98, Y.water, 13, true);
-lot('bay', 'pier', '', 26, 38, 44, 46, Y.water, 2.5, true);
+lot('waterfront', 'pier', '', 26, 38, 44, 46, Y.water, 2.5, true);
 
 export const LOTS: Lot[] = LOT_LIST;
 
@@ -420,12 +421,30 @@ export const lotOf = (id: string): Lot => {
 // ---------------------------------------------------------------------------
 
 export const HERO_SPOTS: { id: string; x: number; z: number; y: number; heading: number; turn?: number; where: string }[] = [
-  { id: 'batcave', x: 41, z: -90, y: Y.cave + 0.35, heading: 0, turn: 0.2, where: 'a guest bay on a turntable in the Batcave, beside the Batmobile' },
+  { id: 'batcave', x: 30, z: -89.5, y: Y.cave + 0.35, heading: 0, turn: 0.2, where: 'a guest bay on a turntable in the Batcave, beside the Batmobile' },
   { id: 'manor', x: 58, z: -101, y: Y.crest + 0.04, heading: Math.PI / 2, where: "Wayne Manor's forecourt, at the head of the drive" },
   { id: 'wayne-tower', x: -73, z: 39, y: Y.crown + 0.24, heading: 0, where: "Wayne Tower's forecourt, on the rim of the upper city" },
   { id: 'battery', x: 16.5, z: 37, y: 0.04, heading: 0, where: 'the Battery, where the Sprang meets the bay, before the Iceberg Lounge' },
   { id: 'casino', x: 6, z: 92, y: 3.3, heading: 0, turn: 0.25, where: "the prize turntable on the Iceberg Casino's deck" },
   { id: 'boardwalk', x: 93, z: -24, y: Y.bluff + 0.04, heading: Math.PI / 2, where: "Amusement Mile's boardwalk, under the wheel" },
+];
+
+// ---------------------------------------------------------------------------
+// The sky, and what rises into it
+// ---------------------------------------------------------------------------
+
+/**
+ * The Bat-Signal: where its lamp stands on the police roof, and the cloud it
+ * shines on. The cloud hangs over Gotham's own ground, thin enough to see
+ * through, and the picture on it is drawn so that it shows from above.
+ */
+export const SIGNAL = { lamp: [-49.5, Y.upper + 24.6, 20.5] as P3, cloud: { c: [-49.5, 53, 20.5] as P3, rx: 10, rz: 6.5 } };
+
+/** Where steam rises from the street: grates and manholes on sidewalks and in alleys, each [x, z] on the ground as built. */
+export const VENTS: P2[] = [
+  [-27, 2], [-12, 22], [2, 26], [-16, 44], [-10, 60], [-40, 72], [-70, 92],
+  [-38, 48], [-56, 44], [-88, 46],
+  [26, -8], [42, 0], [58, 10.5], [70, 11], [50, 24.5], [30, -30], [58, -36.5], [84, -34],
 ];
 
 // ---------------------------------------------------------------------------
@@ -441,12 +460,13 @@ export const SIGHT: { id: string; x: number; y: number; z: number }[] = [
   { id: "the Manor's front", x: 28, y: Y.crest + 5, z: -97 },
   { id: 'the Kane Bridge', x: 80, y: Y.shelf + 2.6, z: -59 },
   { id: "Wayne Tower's door", x: -73, y: Y.crown + 3, z: 36 },
-  { id: 'the courthouse steps', x: -53, y: Y.upper + 2, z: 41 },
-  { id: "the police roof", x: -34, y: Y.upper + 25, z: 34 },
+  { id: 'the courthouse steps', x: -34, y: Y.upper + 2, z: 41 },
+  { id: 'the library steps', x: -53, y: Y.upper + 2, z: 41 },
+  { id: 'the police roof', x: -50, y: Y.upper + 25, z: 20 },
   { id: 'the rim road', x: -60, y: Y.upper + 1.6, z: 49.5 },
   { id: 'the ramp, halfway', x: -59, y: 5.6, z: 66.5 },
   { id: 'the quad', x: -53, y: Y.upper + 1.5, z: -3 },
-  { id: 'the park', x: -76, y: 1.5, z: -40 },
+  { id: 'the park', x: -72, y: 1.5, z: -47 },
   { id: 'the Iceberg Lounge', x: -3, y: 4, z: 42 },
   { id: 'the Battery', x: 16, y: 1.5, z: 38 },
   { id: 'the west quay', x: -10, y: 1.6, z: 5.5 },
@@ -470,4 +490,38 @@ export const SIGHT: { id: string; x: number; y: number; z: number }[] = [
 // with, but what the stage's own story needs and its builder is asked for.
 // `y` is the height of the stage's ground.
 
-export const STAGES: Record<string, { x0: number; z0: number; x1: number; z1: number; y: number; what: string }> = {};
+export const STAGES: Record<string, { x0: number; z0: number; x1: number; z1: number; y: number; what: string }> = {
+  // ---- the upper city
+  policeRoof: { x0: -60, z0: 10, x1: -46, z1: 24, y: Y.upper + 24, what: "the police roof, flat and open: the Bat-Signal's lamp at its south-east corner, a stair head at its north-west, a parapet no higher than 1. Gordon's post; the Signal's stories; the League's roll-call" },
+  courtSteps: { x0: -42, z0: 37, x1: -26, z1: 44.5, y: Y.upper, what: "the courthouse's steps and the sidewalk before them: Two-Face's post" },
+  librarySteps: { x0: -60, z0: 37, x1: -46, z1: 44.5, y: Y.upper, what: "the library's steps and the sidewalk before them: Batgirl's post" },
+  rimWalk: { x0: -100, z0: 54.5, x1: -42, z1: 57.4, y: Y.upper, what: 'the promenade along the rim, over the ramp: kept clear to walk and run along' },
+  quad: { x0: -60, z0: -12, x1: -46, z1: 6, y: Y.upper, what: "the university's quad: a lawn, with a scarecrow on a post in a patch of maize at its east end. The Scarecrow's post" },
+  crownSteps: { x0: -82, z0: 36, x1: -64, z1: 41.5, y: Y.crown, what: "Wayne Tower's forecourt on the Crown: the place for a hero at its middle, the tower's door behind" },
+  // ---- the quays and the bay shore
+  bankSquare: { x0: -22, z0: 40, x1: -10, z1: 54, y: 0, what: "the square before the bank's south door: the bank's stories, a charity collector's box" },
+  loungeRoof: { x0: -9, z0: 31, x1: 2, z1: 42, y: 12, what: "the Iceberg Lounge's roof terrace, its south-east half flat and open: the Penguin's post, where he lands" },
+  pier: { x0: 26, z0: 38, x1: 44, z1: 46, y: 1.2, what: "the pier's deck: the Riddler's booth at its landward end, and room for his glass maze, 8 by 5, on its seaward half" },
+  diamondRoofNorth: { x0: -42, z0: -8, x1: -34, z1: 8, y: 14, what: "the northern jeweller's roof in the Diamond District, flat, with a skylight and a chimney: Catwoman's story begins here" },
+  diamondRoofSouth: { x0: -22, z0: 12, x1: -15, z1: 24, y: 12, what: "the southern jeweller's roof, flat, with a chimney: Catwoman's post, with her cat" },
+  fishJetty: { x0: -26, z0: 89, x1: -15, z1: 100, y: 0.8, what: 'a timber jetty from the harbour wall by the fish market out into the bay: the Laughing Fish' },
+  marketYard: { x0: -56, z0: 86, x1: -40, z1: 92, y: 0, what: "the yard before the fish market, with a manhole in it, and a storm drain's mouth in the harbour wall across the road: Croc" },
+  highway: { x0: -102, z0: 74.5, x1: -86, z1: 90, y: 0, what: "the court before the Underground Highway's boarded mouth, open and paved: Ra's al Ghul's post, and the duel" },
+  belfry: { x0: -102, z0: 94, x1: -90, z1: 106, y: 44, what: "the Clock Tower's belfry: a ledge all round it at this height, eaves over it to hang from. Man-Bat's post" },
+  // ---- Robinson Park
+  parkLawn: { x0: -80, z0: -54, x1: -64, z1: -40, y: 0, what: "the lawn east of Finger Castle's knoll, open: Ivy's and Harley's stories. Finger Castle itself is what Ivy's vines climb" },
+  // ---- the east bank
+  museumSteps: { x0: 60, z0: -18, x1: 74, z1: -14.4, y: Y.bluff, what: "the museum's portico and the rim of the bluff before it, facing south: where the Penguin comes out" },
+  eastRoofs: { x0: 32, z0: -12, x1: 70, z1: -2, y: 14, what: "the three tenements' roofs, each flat over its southern half, with water tanks and chimneys on the northern: Nightwing's post, the Robins' race" },
+  cinemaSteps: { x0: 53, z0: 9, x1: 65, z1: 13, y: 0, what: "the sidewalk before the old cinema, with a plinth at its west end for a statue: Clayface" },
+  alley: { x0: 66, z0: 1, x1: 72, z1: 9, y: 0, what: "the alley beside the cinema: one street lamp, a stack of tyres. The Red Hood's post" },
+  catwalk: { x0: 78, z0: 5, x1: 100, z1: 9, y: 8, what: "a catwalk along Ace Chemicals' south front, over its open vats: the Joker's post" },
+  apron: { x0: 46, z0: 32.5, x1: 104, z1: 37.6, y: 0, what: "the docks' apron along the quay's edge, kept clear from end to end, and the dock cut's drawbridge: the Jokermobile's chase, Freeze, Bane" },
+  boardwalk: { x0: 88, z0: -30, x1: 98, z1: -16, y: Y.bluff, what: "Amusement Mile's boardwalk under the wheel: the place for a hero, and Harley's booth beside it" },
+  // ---- Bristol and the island
+  cave: { x0: 6, z0: -97, x1: 50, z1: -85, y: Y.cave, what: "the Batcave's floor: the Batmobile's turntable at (14, -90.5), the guest's at (30, -89.5), the Batplane's pad at (43.5, -90.5), the trophies and the computer along its back" },
+  terrace: { x0: 8, z0: -97, x1: 48, z1: -94, y: Y.crest, what: "the Manor's terrace, over the cave's back: Alfred's post" },
+  lawn: { x0: -8, z0: -107, x1: 6, z1: -96, y: Y.crest, what: "the lawn west of the Manor: Damian's post, with Titus, Alfred the cat and Bat-Cow" },
+  gate: { x0: -72, z0: -85, x1: -62, z1: -78, y: Y.isle, what: "the ground before Arkham's gate, between it and the ring: the breakout. The gate's own leaf is the show's, and its frame stands empty" },
+  casinoDeck: { x0: -4, z0: 86, x1: 16, z1: 98, y: 3, what: "the Iceberg Casino's deck: the prize turntable at its middle" },
+};
