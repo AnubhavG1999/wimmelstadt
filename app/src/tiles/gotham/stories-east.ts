@@ -19,7 +19,7 @@ import * as THREE from 'three';
 import type { V3 } from '../../engine/geo';
 import type { Build } from '../../engine/tile';
 import type { Beast, BeastKind, Flock, FlockKind } from './beasts';
-import { buildDrawbridge } from './docks';
+import { buildDrawbridge, rollerDoor } from './docks';
 import { EXTRAS, blend, bow, carry, climb, drive, fly, glide, hang, idle, kneel, laugh, leap, lunge, parry, perch, point, push, row, run, salute, shrug, sit, star, strike, swim, toss, walk, waddle, type ExtraKind, type Pose } from './figures';
 import type { Machine, MachineKind } from './machines';
 import { BOAT_LINES } from './traffic';
@@ -202,7 +202,9 @@ export function east(k: Build, W: World, book: Book): void {
   const RED_SEAT = spot(ALLEY_LAMP.x - 1.7, ALLEY_LAMP.z + 3.0, TO_VIEW, 2);
   book.post('redHood', RED_SEAT, (t, post) => still(post, { ...hang(0), head: 0.5 * Math.sin(t * 0.2), tilt: 0.05 }));
   void TYRES;
-  const redCycle = machine('redCycle'), RED_CYCLE = at(ALLEY_LAMP.x - 1.5, gy(ALLEY_LAMP.x - 1.5, ALLEY_LAMP.z + 5.1, 2), ALLEY_LAMP.z + 5.1, E);
+  // (along the court's south side: further north it stood on the children's chalk sun, its lamp's pool in one plane
+  // with the chalk, and against one of the children)
+  const redCycle = machine('redCycle'), RED_CYCLE = at(ALLEY_LAMP.x - 2.7, gy(ALLEY_LAMP.x - 2.7, ALLEY_LAMP.z + 7.3, 2), ALLEY_LAMP.z + 7.3, E);
   // Leslie Thompkins at her clinic's door; Vicki Vale at the Gazette's, her camera flashing now and then.
   book.post('leslie', spot(CLINIC_DOOR.x + 0.9, CLINIC_DOOR.z, E, CLINIC_DOOR.y + 1), (t, post) => still(post, { ...idle((t * 0.07) % 1), armL: 0.5, elbowL: 1.6, armR: 0.5, elbowR: 1.6, spreadL: -0.2, spreadR: -0.2 }));
   let vickiRest = { t: 0, at: -10 };
@@ -322,14 +324,17 @@ export function east(k: Build, W: World, book: Book): void {
   // takes the rising leaf like a ramp with its plank out and is over; the Batmobile stops at the leaf. Over the cut the
   // glove springs at nobody, a puff of smoke, car and Joker are gone: he is laughing on his catwalk again.
   const leaf = (() => { try { return buildDrawbridge(k); } catch { return null; } })();
+  const shutter = (() => { try { return rollerDoor(k); } catch { return null; } })();
   {
     const jm = machine('jokermobile'), bm = machine('batmobile');
     const lane = SHOW_LANES.apron, LZ = lane.z, HINGE = 88, LEAF = 10;
     const leafF = (tb: number): number => ease(span(tb, 3.0, 5.2)) * 0.22 + ease(span(tb, 6.6, 9)) * 0.63 - ease(span(tb, 15.5, 19.5)) * 0.85;
     const leafA = (tb: number): number => leafF(tb) * ((70 * Math.PI) / 180);
     // the Jokermobile: out of the door southward, round onto the lane, east, up the leaf and over
-    const JX = GARAGE.x, TURN = 2.6;
-    const PATH: [number, number][] = [[JX, GARAGE.z - 3.4]];
+    // it waits inside with its nose in the doorway, 0.6 out: the door's shutter rolls up before it shows itself
+    // (the building is 8 deep and the car 8.45 long, so that is as far in as it goes)
+    const JX = GARAGE.x, TURN = 2.6, IN_Z = GARAGE.z - 5.85;
+    const PATH: [number, number][] = [[JX, IN_Z]];
     for (let i = 0; i <= 8; i++) { const a = Math.PI - (Math.PI / 2) * (i / 8); PATH.push([JX + TURN + Math.cos(a) * TURN, LZ - TURN + Math.sin(a) * TURN]); }
     PATH.push([HINGE + 7.5, LZ]);
     const cum = [0];
@@ -346,17 +351,21 @@ export function east(k: Build, W: World, book: Book): void {
     // the glove and the smoke are east of it, where they are seen, and have the time
     const J0 = 0.3, J1 = 5.6, JUMP = 6.6, LANDX = 99.2, GONE = 12.6;
     /** Nothing of a machine beyond this: the board's edge, less a margin. */
-    const EDGE = 103.6, NOSE = 4.23;
+    const EDGE = 103.6, NOSE = 4.23, AXLE_F = 2.75, AXLE_R = 2.7;
     const jokerCar = (tb: number): { x: number; y: number; z: number; h: number; pitch: number; v: number; shown: boolean } => {
-      if (tb < J0) return { x: JX, y: 0, z: GARAGE.z - 3.4, h: S, pitch: 0, v: 0, shown: false };
+      if (tb < J0) return { x: JX, y: 0, z: IN_Z, h: S, pitch: 0, v: 0, shown: false };
       if (tb < J1) {
         const u = span(tb, J0, J1), s = L * Math.pow(u, 1.4), p = along(s);
-        const onLeaf = Math.max(0, p[0] - HINGE), a = leafA(tb);
-        return { x: p[0], y: onLeaf * Math.tan(a), z: p[1], h: p[2], pitch: onLeaf > 0 ? a : 0, v: (1.4 * Math.pow(u, 0.4) * L) / (J1 - J0), shown: true };
+        // each axle rides what is under it, the quay or the leaf beyond its hinge, so that its tail does not sink
+        // into the quay as its nose goes up (its axles are 2.75 ahead of its middle and 2.7 behind)
+        const a = leafA(tb), up = (x: number): number => Math.max(0, x - HINGE) * Math.tan(a);
+        const hf = up(p[0] + AXLE_F), hr = up(p[0] - AXLE_R);
+        return { x: p[0], y: hr + ((hf - hr) * AXLE_R) / (AXLE_F + AXLE_R), z: p[1], h: p[2], pitch: Math.atan2(hf - hr, AXLE_F + AXLE_R), v: (1.4 * Math.pow(u, 0.4) * L) / (J1 - J0), shown: true };
       }
       if (tb < JUMP) {
+        // nose up off the leaf, nose down over the cut, and level again as it comes down, so that it lands on its wheels
         const u = span(tb, J1, JUMP), x0 = HINGE + 7.5, y0 = 7.5 * Math.tan(leafA(J1));
-        return { x: lerp(x0, LANDX, u), y: lerp(y0, 0, u) + 1.6 * Math.sin(Math.PI * u), z: LZ, h: E, pitch: leafA(J1) * (1 - 2 * u), v: 12, shown: true };
+        return { x: lerp(x0, LANDX, u), y: lerp(y0, 0, u) + 1.6 * Math.sin(Math.PI * u), z: LZ, h: E, pitch: leafA(J1) * (1 - 2 * u) * (1 - ease(span(u, 0.7, 1))), v: 12, shown: true };
       }
       return { x: LANDX, y: 0, z: LZ, h: E, pitch: 0, v: 0, shown: tb < GONE };
     };
@@ -404,9 +413,11 @@ export function east(k: Build, W: World, book: Book): void {
           if (live && b.shown) bm.run(b.v, dt);
         }
         leaf?.lift(leafF(tb));
+        // the card company's shutter rolls up before the car shows itself, and comes down when it is round the corner
+        shutter?.open(ease(span(tb, 0, J0)) * (1 - ease(span(tb, 2.2, 3.2))));
         W.air?.burst(LANDX, 0.5, LZ, ease(span(tb, 11.6, 12.4)) * (1 - ease(span(tb, 14.5, 16.5))));
       },
-      end() { jm?.shown(false); jm?.trick('cards', 0); jm?.trick('plank', 0); jm?.trick('glove', 0); jm?.lights(0); bm?.shown(false); bm?.lights(0); leaf?.lift(0); lastTb = 0; },
+      end() { jm?.shown(false); jm?.trick('cards', 0); jm?.trick('plank', 0); jm?.trick('glove', 0); jm?.lights(0); bm?.shown(false); bm?.lights(0); leaf?.lift(0); shutter?.open(0); lastTb = 0; },
     });
   }
 

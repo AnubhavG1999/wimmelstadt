@@ -76,6 +76,7 @@ const TUNNEL = { x: APRON_STAGE.x0 + 1, z: APRON.z, half: 2.2, spring: 2.6, top:
 const FREEZE_DOOR = { x0: TUNNEL.x + 0.4, x1: COLD.x1 - 0.3, h: 3 };
 /** The card company's roller door. */
 const ROLLER = { x: (CARD.x0 + CARD.x1) / 2, half: 2.1, h: 3.6 };
+const ROLLER_NAME = 'docks-roller-door';
 /** Ace's vats along its south front, and the catwalk over them at the stage's height. */
 const CAT = STAGES.catwalk;
 const VATS = { z: 37.8, r: 1.55, h: 2.4, liquid: 2.0, xs: [0, 1, 2, 3].map((i) => ACE.x0 + 2.6 + i * 3.6) };
@@ -515,10 +516,21 @@ const cardCompany: Model = (k, l) => {
     face3(b, [xb, y, za], [xb, y + rise, za], [xb, y, zb], [1, 0, 0], BRICK_DARK);
   }
 
-  // the roller door in the south side, onto the apron, under its drum's housing
+  // the roller door in the south side, onto the apron, under its drum's housing: a dark doorway, and before it the
+  // shutter as a mesh of its own, hung from the doorway's top, which the show rolls up (see `rollerDoor`)
   const R = ROLLER;
-  b.box(R.x - R.half, 0, l.z1, R.x + R.half, R.h, l.z1 + 0.1, 0x767c84, { faces: 'SEWT' });
-  for (let i = 1; i < 5; i++) b.box(R.x - R.half + 0.05, (R.h * i) / 5 - 0.05, l.z1 + 0.1, R.x + R.half - 0.05, (R.h * i) / 5 + 0.05, l.z1 + 0.15, 0x60666e, { faces: 'STB' });
+  b.quad([R.x - R.half, 0, l.z1 + 0.03], [R.x + R.half, 0, l.z1 + 0.03], [R.x + R.half, R.h, l.z1 + 0.03], [R.x - R.half, R.h, l.z1 + 0.03], [0, 0, 1], 0x0d0e11);
+  {
+    const g = new GeoBuilder();
+    g.box(-R.half, -R.h, 0.05, R.half, 0, 0.1, 0x767c84, { faces: 'SEWB' });
+    for (let i = 1; i < 5; i++) g.box(-R.half + 0.05, -(R.h * i) / 5 - 0.05, 0.1, R.half - 0.05, -(R.h * i) / 5 + 0.05, 0.15, 0x60666e, { faces: 'STB' });
+    const shutter = new THREE.Mesh(g.build(), k.mat.city());
+    shutter.name = ROLLER_NAME;
+    shutter.castShadow = false;
+    shutter.receiveShadow = true;
+    shutter.position.set(R.x, R.h, l.z1);
+    k.group.add(shutter);
+  }
   for (const s of [-1, 1]) b.box(R.x + s * R.half - 0.15, 0, l.z1, R.x + s * R.half + 0.15, R.h + 0.1, l.z1 + 0.3, IRON, { faces: 'NESWT' });
   b.box(R.x - R.half - 0.2, R.h, l.z1, R.x + R.half + 0.2, R.h + 0.6, l.z1 + 0.5, IRON, { faces: 'NESWTB' });
   gasLamp(k, R.x + R.half + 0.9, R.h + 0.7, l.z1 + 0.3);
@@ -899,6 +911,16 @@ export function buildDrawbridge(k: Build): { lift(f: number): void } {
   mesh.position.set(CUT.x0, 0.05 - top, APRON.z);
   k.group.add(mesh);
   return { lift(f: number): void { mesh.rotation.z = Math.min(1, Math.max(0, f)) * LIFT; } };
+}
+
+/**
+ * The card company's roller door, for the show: `open(1)` rolls its shutter up
+ * under its drum's housing, `open(0)` lets it down again. The shutter is built
+ * with the building, shut; this only finds it.
+ */
+export function rollerDoor(k: Build): { open(f: number): void } | null {
+  const shutter = k.group.getObjectByName(ROLLER_NAME);
+  return shutter ? { open(f: number): void { shutter.scale.y = 1 - 0.94 * Math.min(1, Math.max(0, f)); } } : null;
 }
 
 // lots this file is given, for whoever reads it: the plan's own
