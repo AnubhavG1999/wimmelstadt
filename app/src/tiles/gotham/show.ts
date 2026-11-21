@@ -352,6 +352,9 @@ function checkShow(defs: StoryDef[], W: World, actors: Map<Id, Actor>): string[]
     // a body laid level is as long as it is tall: ask at its middle
     const mid = s.y + tall * 0.5 * Math.cos(s.pitch);
     if (solid.inside(s.x, mid, s.z)) say(`${id}-in`, 'is inside something built');
+    // and at its crown, a hand's breadth under it: a figure may be clear at its middle and have its head in what is
+    // over it, as Batman had when he stood up in his car under the parapet of Kane Street's viaduct
+    else if (solid.inside(s.x, s.y + Math.max(0.2, tall * Math.cos(s.pitch) - 0.15), s.z)) say(`${id}-head`, 'has its head in something built');
     const over = solid.over(s.x, s.y, s.z);
     if (!s.aloft && over > 0.45) say(`${id}-air`, `stands ${over.toFixed(1)} in the air`);
     if (over < -0.35) say(`${id}-sunk`, `is ${(-over).toFixed(1)} into what is under it`);
