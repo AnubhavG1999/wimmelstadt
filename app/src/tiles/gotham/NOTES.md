@@ -17,10 +17,12 @@ These were his, on 20 November 2026, and the tile is built on them. Where he is 
 - **Wayne Tower is tall**, as tall as the America tile's towers, and carries Wayne Enterprises' sign after a picture he sent: the name over a block W with wings, "not in gold but silver/gray", "the shape of the W too". Of three shapes for the foot of its dark panel he chose the plain chevron.
 - **A helicopter at Wayne Tower** "which bruce wayne will get into and he'll go to wayne manor".
 - **Wayne Manor is grand, and the Batcave is hidden under it**: "think of a cool way to keep the batcave hidden too, i want wayne manot to look nice and grand as well, arkham gives off admirable energy".
+- **Not everything has to be seen from the opening side**: "some things can be findable by tilting the view".
+- **The Batmobile is his own design.** He first sent two pictures of other people's cars, chose a dart over a wedge of two sketches ("think batmans f1 car with its own bag of tricks"), and then sent two renders of a car he had modelled himself: "LEt's do this design oh my god I'm in love just modeled it myself try to be as faithful as possible". How it drives is his too: "two plumes of flame behind and accelerating behavior too, think BATMAN energy".
 
 ## Sources and rights
 
-DC's comics, as three research notes read them: [the city](../../../../docs/districts/research/gotham-the-city.md), [Batman and his rogues](../../../../docs/districts/research/gotham-batman-and-rogues.md) and [the wider cast](../../../../docs/districts/research/gotham-the-wider-cast.md). A source given in a file's comment rests on those notes. Nothing is taken from a film, a game or a television series as its own design: where the collector asked for something he knew from one (the Batwing, the sign on Wayne Tower, the mood of the Arkham games), it is taken in kind and drawn as the tile's own. The sign is plain strokes: five letters and a block W. Every emblem on a figure is a plain patch of colour in a plain shape. No building is a copy of one in a film.
+DC's comics, as three research notes read them: [the city](../../../../docs/districts/research/gotham-the-city.md), [Batman and his rogues](../../../../docs/districts/research/gotham-batman-and-rogues.md) and [the wider cast](../../../../docs/districts/research/gotham-the-wider-cast.md). A source given in a file's comment rests on those notes. Nothing is taken from a film, a game or a television series as its own design: where the collector asked for something he knew from one (the Batwing, the sign on Wayne Tower, the mood of the Arkham games), it is taken in kind and drawn as the tile's own. The sign is plain strokes: five letters and a block W. The Batmobile is the collector's own design, built after his renders, and follows them line for line. Every emblem on a figure is a plain patch of colour in a plain shape. No building is a copy of one in a film.
 
 Nobody dies and nobody is hurt: a fight stops at the clash, a chase ends in an escape, nobody carries a gun, and no blade is drawn but in a duel between two who both have one.
 
@@ -67,6 +69,8 @@ Five levels and the water (`Y` in plan.ts): the quays at 0, Bristol's shelf at 4
 
 The Batcave is not on the ground at all. Two things are cut into Crest Hill: the shaft of its lift, under the pool garden's lid, and the grotto under the Manor's tower, which the Manor's terrace roofs.
 
+The waterfall and the grotto's mouth are about seven wide (`FALL_HALF` in plan.ts), wider than a fall under a tower eight wide would be for looks alone. A car that comes out of a cliff across a lane five deep and turns along it needs the room: at 4.4 to 6.1 wide the first Batmobile's nose swung 1.8 past the service lane's edge, into the river road, and a passing car drove through it. Nothing on the traffic's side could mend that: its cars fill their lanes, and a tile cannot hold them back.
+
 ## Roads
 
 One long route drives every street's outer lanes there and back without crossing itself, and two short rounds drive the Sprang's ring and the canal. A junction over water (the Trigate), a viaduct and a suspension bridge (the Cobblepot), a ramp along the upper city's wall with a building over it, and a street that climbs through a tower (Kane Street). Lanes that are the show's own, which no traffic enters: the service lane under Crest Hill's cliff and the docks' apron.
@@ -87,6 +91,7 @@ The first plan had a place inside the open Batcave. A hidden cave cannot show a 
 - **Machines** (`machines.ts`), each the tile's own drawing: the Batmobile, the Batwing, Wayne Enterprises' helicopter, the Jokermobile with its glove, plank and cards, the Joker's rowing boat, Wonder Woman's invisible plane, the Red Hood's motorcycle. Built and in no story yet: the Batboat, the Batplane, the Batgyro, the Batcycle and the police helicopter.
 - **Animals** (`beasts.ts`): Titus, Bat-Cow and Alfred the cat on the Manor's lawn, Catwoman's cat, Harley's hyenas, Aquaman's seahorse; and flocks: the cave's bats, the Scarecrow's crows, pigeons, gulls, fish.
 - **The Manor's pool and lift** (`buildHatch` in bristol.ts) and **the docks' drawbridge** (`buildDrawbridge` in docks.ts).
+- **Two doors that roll up**, each a shutter hung from its doorway's head as a mesh of its own, with a dark doorway behind it: the steel door at the grotto's back, for the Batmobile (`door` of `buildHatch`), and the card company's, for the Jokermobile (`rollerDoor` in docks.ts). Before they were made to open, each car showed itself halfway through a shut door.
 
 ## The cast and the stories
 
@@ -97,6 +102,8 @@ Fifty-eight named figures (`LOOKS` in figures.ts) and a few kinds of unnamed one
 **The east bank, Lower Gotham, the harbour and Arkham** (`stories-east.ts`), sixteen: the Jokermobile's chase on the docks, over the rising drawbridge; the Laughing Fish; the Penguin's umbrella at the museum; Mr. Freeze's cold snap; Bane's crate; Killer Croc in the Sprang; Arkham's night out; the Demon's heir (Damian's duel with Ra's al Ghul); Man-Bat over the Clock Tower; the race across the roofs; the lamp on Park Row; Clayface at the pictures; Firefly and the fire house; Killer Moth at the light; Kite Man; Harley rings the bell.
 
 Each story's source is in a comment over it, as the research notes give it. The show's check (`gothamShow.check(id)` on the development server, and at load) plays a story through offline every tenth of a second and says where a figure stands inside something built, in the air, sunk into what it stands on, or within 0.7 of another.
+
+The check knows figures only. For the machines there is `gothamShow.checkMachines(ids)`: it plays each story through the director itself and asks of every machine that is shown whether a vertex of its drawn body lies under a face that looks up, or beyond the board's edge, and of the story's figures whether they leave the board. A face that looks up over a car is something it has driven into, or a deck or a doorway it is passing under: the check says how far above the nearest one was, and the reader tells the two apart.
 
 ## How high things stand
 
@@ -152,6 +159,23 @@ On the development server, a second one with hot reload off, the pane not in fro
 
 Gotham has more standing still than any tile before it: the towers 10,800, the Manor and Bristol 11,000, Arkham 11,000, the ordinary buildings and what stands over the roads 14,600, the roads and the railway 14,300, and the other districts between 3,500 and 10,000 each. The life of the paving is 2,900. The still tile alone draws in about 3 ms with the pane in front. The first place to look if it must cost less: the towers' gargoyles and the railway's sleepers.
 
+## What was checked
+
+On the development server, the tile alone and without heroes unless it says so, on 20 November 2026.
+
+- **Flicker**: `wimmel.fights('gotham')` is empty.
+- **Roads and lanes**: the road check at load says nothing, and `gotham.lanes()` is empty: no lane crosses another or runs through anything built.
+- **Sight, from the opening view**: at load, by the plan's boxes, the one thing said is that the quad is behind City Hall, which is meant. Of what is built, `wimmel.seen` was asked about every point of `SIGHT`, every hero's place at its middle and at eight points round it, and the middle of every stage: 111 of 114 are seen. The three that are not are meant: the inside of the Clock Tower's belfry, the docks' apron under the viaduct, and the grotto.
+- **The cast at rest**: of the 60 that have a post, 59 are seen from the opening view, Harley at her booth between the wheel's cars as they come round. Ivy by the Botanical Garden's door is behind police headquarters and is found by turning the view, which the collector allows: "some things can be findable by tilting the view". Hush stood at the Elliot Tower's south door, in an alley two wide behind a building 24 high, where no turn of the view found him, and was moved to the Crown's terrace.
+- **Traffic**, after `main` was merged in: twenty minutes in steps of a twentieth of a second, the tile still (`gotham=still`). Without heroes: 53 drive, the nearest two come is 4.97, nothing stands, and each follows the one ahead at 12.8 or more. With fourteen heroes driving among them: nearest 4.97, an ordinary car stood for 1.3 s at most, behind a hero at its trick, a hero for 3.7 s, the least distance along the long route was 6.5, a car close behind a hero, and all 67 were moving at the end.
+- **The boats**: at load each boat's outline is taken round its way against the plan's shores, the casino, the freighter, the jetty and the pier, and against the other boats. Against what is built, with `Solid`: only the Blackgate launch's outline comes over anything, at her two berths, where she lies alongside, and at the corners of her outline where she rounds the Cobblepot Bridge's east abutment, where her hull is pointed and is clear.
+- **The stories' figures**: the show's check is clean for all 34, story by story with `gothamShow.check(id)` and all together at load.
+- **The whole show**: fifteen minutes of it with the director choosing, a tenth of a second at a time. Thirty-one of the 34 stories came up in that time, the console stayed free of errors, no step took longer than 15 ms, and `wimmel.fights('gotham')`, asked every two seconds, found three things in one plane that the still tile does not have: the court's chalk under the Red Hood's lamp, Bane's splash on the dock's water, and two cars' pools of lamplight in the chase. All three are mended.
+- **The stories' machines, at the level of what is drawn**: `gothamShow.checkMachines()` plays each story through the director and asks about the machines' own vertices (see "The cast and the stories"). What it says and why each is meant is under "What the machines' check says" below.
+- **Weather and sides**: rain by day and by night, snow by day and at dusk, and the four sides by day and by night were looked at.
+- **Cost**: under "What it costs".
+- `npm run typecheck` and `npm run build` pass.
+
 ## What the collector may still turn
 
 - **Which stories play, and how often**: each story's `weight` in the two chapters, and `AT_ONCE` in show.ts (four at once now). `PAUSED` in stories.ts leaves a story out.
@@ -160,6 +184,7 @@ Gotham has more standing still than any tile before it: the towers 10,800, the M
 - **How many drive**: one number per route at the end of roads.ts. The long route is reckoned for more heroes than drive today.
 - **How much stands on the paving**: `MOST` and `STEP` in life.ts, and the weights in `FIXTURES`.
 - **The pool's water**: `MIRROR` in bristol.ts.
+- **How wide the waterfall is**: `FALL_HALF` in plan.ts. The mouth, the ford and the curtain follow; the Batmobile's way out was fitted to what is there, so make it wider, not narrower.
 
 ## Views for the pictures
 
@@ -185,6 +210,12 @@ Gotham has more standing still than any tile before it: the towers 10,800, the M
 - **A place for a hero cannot be inside something hidden.** From the opening view a mouth six high shows three units of floor. Decide what "hidden" means for such a place before building it.
 - **Ask `wimmel.seen` of everything once all of it stands**, not of the plan: a jetty lay behind a neighbour's iceberg and a bridge's tower, a whole yard behind a terrace's wall, and a story's seat behind the railway. The plan's boxes knew none of it, and each builder had checked only its own.
 - **Ask every story builder for a ray check of every post**, and give it the stages only after the buildings stand.
+- **Reckon a car's way out of a wall before the wall is built.** A body L long and w wide turns from a mouth a wide into a lane b deep only if (a - w cos t) / sin t + (b - w sin t) / cos t is at least L at every angle t; at 45 degrees that is a + b of at least 0.71 L + 1.41 w. The first Batmobile, 9.6 by 3.4, could not turn out of a mouth 5.1 wide into a lane 5 deep by 1.7, whatever way it took, and the waterfall had to be built wider.
+- **Whatever a car comes out of must open.** Two builders drew a shut door and drove a car through it. A shutter hung from the doorway's head as a mesh of its own, scaled towards its top, with a dark patch on the wall behind it, is fifteen lines.
+- **The show's check knows figures, not machines.** Ask about the machines' own vertices (`checkMachines` in show.ts): it found the Jokermobile's tail sunk in the quay at the drawbridge's hinge, its nose in the far quay as it landed, and an oar in a landing stage.
+- **`Solid.inside` can be fooled.** It takes the first face over a place: under a string course built as one box with an underside right across a building, nothing in that building counts as inside.
+- **Ask for flicker while the show plays**, and not only of the still tile: what a story lays on the ground or the water for a few seconds lies in one plane with it unless somebody lifted it.
+- **A builder cannot see a picture the collector sends in the chat.** Ask him for the file the moment he sends one, and stop sketching when he sends a model of his own.
 - **A story can stall the page.** The show checks every story at load; when Bristol was planned afresh, one written for the old places never came back, and no tab loaded. A list of stories to leave out (`PAUSED`), a way to load without the check (`?gotham=unchecked`) and a check of one story at a time (`gothamShow.check(id)`) found it in a minute.
 - **Things that chapters share by number collide**: two chapters drew on the same eight rings. Give each its own.
 - **Keep one tab of your own open at all times.** When the pane's last tab closes, its tab numbers begin again, and a builder that closes "its" tab by an old number closes yours.
@@ -198,3 +229,5 @@ Gotham has more standing still than any tile before it: the towers 10,800, the M
 - **Furnishing ground that is dark, or not at height 0.** `furnish` reads only pale stone lying at height 0. Gotham's ground is dark and on five levels, so `life.ts` finds its own bare ground the same way, from the triangles that are built, and uses the engine's fixtures with `placed` to stand them at any height. A colour test and a level that a tile can set would let `furnish` do it.
 - **A parked car is not seen by a tile's own checks.** Gotham keeps its parked cars eight clear of every stage and place of a story, since a figure would otherwise walk through one unnoticed.
 - **A lamp that can be put out.** A story could not darken a street lamp that a builder had built; it draws its own instead.
+- **A tile cannot ask where its traffic is, or hold it back.** A story's car that has to cross a lane, or swing its nose into one, cannot be made safe from the tile: Gotham widened a waterfall instead. A way to ask where the vehicles on a stretch of lane are, or to close a stretch for a few seconds as a hero's trick does, would let a story wait for a gap.
+- **Things that move are at the tile's middle until the first frame.** The boats' meshes lie at (0, 0) until their first update, so `wimmel.fights` asked straight after a load in a hidden pane finds the barge on the launch. Let a frame pass first.
