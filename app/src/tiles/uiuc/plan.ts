@@ -158,7 +158,7 @@ const part = (id: string, x0: number, z0: number, x1: number, z1: number, h: num
 L('terminal', 'Illinois Terminal', -95, -113, -80, -105, 12, 'thing', [part('terminal-tower', -83.6, -108.6, -80, -105, 15.3)]);
 L('kams', 'KAMS', -83, -99, -72, -90, 7);
 L('burnham', 'Burnham 310', -70, -113, -60, -105, 25);
-L('shops-n1', 'shops', -70, -98, -59, -90, 7, 'shop');
+L('east-212', '212 East', -70, -98, -59, -90, 12.5);
 L('here', 'HERE Champaign', -56, -99, -46, -90, 28.5);
 L('shops-n2', 'shops', -44, -98, -28, -90, 7, 'shop');
 L('tower-n', 'a tower of flats', -40, -113, -31, -105, 19, 'tower');

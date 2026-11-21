@@ -12,11 +12,11 @@
 // embankment to its west, at the height of its upper floors, and a short
 // covered bridge reaches from its west door to where the platform is built.
 
-import { interior, rng, type V3, type WinSpec } from '../../engine/geo';
+import { interior, rng, type BoxOpts, type V3, type WinSpec } from '../../engine/geo';
 import { area, rect } from '../../engine/ground';
 import { D, Q, parasol, roundel } from '../../engine/parts';
 import { beacon, face3, hip, slab } from '../../engine/shapes';
-import type { SignDef } from '../../engine/signs';
+import { EN, type SignDef } from '../../engine/signs';
 import type { Build } from '../../engine/tile';
 import { BASE, BRICK, DARK, FELT, GLASS, GLAZED, HALL, HALL_NARROW, IRON, STOREY, awning, dormer } from './look';
 import { AREAS, RAIL, type LotDef, type Model } from './plan';
@@ -59,15 +59,32 @@ export const SIGNS: SignDef[] = [
   board('green-north-legends-grill', 'BAR & GRILL', '#1c1e23', '#f3f0e7', true),
   board('green-north-murphys', "MURPHY'S PUB", '#2f4f3a', '#f1e3bf', true),
   { id: 'green-north-murphys-hung', lines: ["MURPHY'S"], color: '#f1e3bf', ink: '#2f4f3a', aspect: 2.4, kind: 'board', real: true, size: [125, 52] },
-  board('green-north-tacos', 'TACOS', '#c4462b', '#fbeedd'),
-  board('green-north-chopstix', 'CHOPSTIX', '#a8282b', '#fbeedd', true),
-  board('green-north-coffee', 'COFFEE', '#2f5d46', '#f4efe0'),
+  {
+    // the board over the door of 212 East: its number in heavy black, and EAST beside it, lighter and grey, on white
+    id: 'green-north-212-east', lines: ['212EAST'], color: '#f5f5f2', aspect: 4.6, real: true, size: [276, 60],
+    paint: (ctx, _s, w, h) => {
+      ctx.fillStyle = '#f5f5f2';
+      ctx.fillRect(0, 0, w, h);
+      const heavy = `900 ${Math.round(h * 0.72)}px ${EN}`, light = `400 ${Math.round(h * 0.68)}px Arial, "Helvetica Neue", sans-serif`;
+      ctx.font = heavy;
+      const wn = ctx.measureText('212').width;
+      ctx.font = light;
+      const we = ctx.measureText('EAST').width;
+      const x = (w - wn - we - h * 0.05) / 2;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.font = heavy;
+      ctx.fillStyle = '#1d1f23';
+      ctx.fillText('212', x, h * 0.54);
+      ctx.font = light;
+      ctx.fillStyle = '#5b6067';
+      ctx.fillText('EAST', x + wn + h * 0.05, h * 0.54);
+    },
+  },
   board('green-north-bubble-tea', 'BUBBLE TEA', '#f3d6e1', '#7a2f55'),
   board('green-north-thai', 'THAI', '#5b3a6e', '#f4efe0'),
   board('green-north-pizza', 'PIZZA', '#b8392e', '#fbeedd'),
   board('green-north-barber', 'BARBER', '#27405f', '#f4efe0'),
-  { id: 'green-north-tacos-blade', lines: ['TACOS'], color: '#ffb02e', vertical: true, aspect: 0.4, size: [48, 120] },
-  { id: 'green-north-coffee-blade', lines: ['COFFEE'], color: '#7dffb0', vertical: true, aspect: 0.4, size: [48, 120] },
   { id: 'green-north-pizza-blade', lines: ['PIZZA'], color: '#ff5a4a', vertical: true, aspect: 0.4, size: [48, 120] },
   board('green-north-ramen','RAMEN', '#1c1e23', '#ffd9a0'),
   board('green-north-grocery', 'GROCERY', '#3c7a46', '#f4efe0'),
@@ -351,21 +368,167 @@ function barberPole(k: Build, x: number, y: number, z: number): void {
   k.glows.push({ x, y: y + 0.45, z: z + 0.25, sx: 0.12, sy: 0.7, sz: 0.06, color: '#ffeef0' });
 }
 
-function shopsN1(k: Build, l: LotDef): void {
-  shopRow(k, l, [
-    { w: 3.6, wall: 0xe8dcc0, trim: 0x7a2f22, top: 6.6, cloth: 0xc4462b, sign: 'green-north-tacos', door: 'R', blade: 'green-north-tacos-blade', flowers: true },
-    { w: 3.8, wall: 0xb26550, trim: 0x2c3037, top: 7.0, fascia: 0xa8282b, sign: 'green-north-chopstix', door: 'L', bay: true },
-    { w: 3.6, wall: BRICK.brown, trim: 0x2f3a33, top: 6.75, cloth: 0x2f5d46, sign: 'green-north-coffee', door: 'L', blade: 'green-north-coffee-blade', flowers: true },
-  ], 0.53);
-  // tables outside the taco shop and the coffee shop, with people at them
-  const { x0, x1, z1 } = l, r = rng(5307);
-  for (const x of [x0 + 1.2, x1 - 1.0]) {
-    table(k, x, z1 + 0.55);
-    k.person(x - 0.7, z1 + 0.5 + r() * 0.2);
-    k.person(x + 0.65, z1 + 0.65);
+type Side = 'N' | 'E' | 'S' | 'W';
+
+/**
+ * 212 East: six storeys of flats over a floor of shops, between KAMS and HERE
+ * Champaign. A base of dark brick with shopfronts in black frames. Over it the
+ * walls stand back, in pale grey boards and in charcoal, and from the second
+ * floor of flats up, bays stand out from them to the base's face again: each
+ * framed in white and clad in panels of three greens, no two alike. Its name
+ * is on a white board over the door of the flats, and a red canopy turns its
+ * south-east corner.
+ */
+function east212(k: Build, l: LotDef): void {
+  const b = k.b;
+  const { x0, z0, x1, z1 } = l;
+  /** The floor of shops, a storey of flats, the roof, the top of the low wall round it, and the top of the bays, which stand higher. */
+  const G = 3.0, S = 1.5, ROOF = G + 6 * S, RIM = ROOF + 0.3, CAP = ROOF + 0.5;
+  const DARK_BRICK = 0x3c3d43, BOARDS = 0xc5c8ca, CHARCOAL = 0x474a50, WHITE = 0xf3f4f1, MEMBRANE = 0xe4e4df;
+  const DEEP = 0x1e7a50, MID = 0x33a26d, MINT = 0xa9e2c9, RED = 0xd4432c, SHOP_GLASS = 0x5d767f;
+  /** How far the walls stand back from the base's face, how thick a bay's white frame is, how wide each of a bay's two windows' share of it is, and how much plain wall a side has at each corner. */
+  const BACK = 0.28, FR = 0.14, CELL = 1.2, BAY = 2 * CELL + 2 * FR, MARGIN = 0.3;
+  const ox0 = x0 + 0.1, ox1 = x1 - 0.1, oz0 = z0 + 0.1, oz1 = z1 - 0.1;
+  const bx0 = ox0 + BACK, bx1 = ox1 - BACK, bz0 = oz0 + BACK, bz1 = oz1 - BACK;
+  const flats = (cell: number): WinSpec => ({ cell, storey: S, lit: 0.45, kind: 0 });
+  const r = rng(2120);
+
+  /** A side of the block: which way is out, where its wall stands and where the base's face does, from where to where its wall runs, and which way its two ends look. */
+  const SIDES: Record<Side, { out: number; wall: number; face: number; a0: number; a1: number; back: Side; ends: [Side, Side] }> = {
+    S: { out: 1, wall: bz1, face: oz1, a0: bx0, a1: bx1, back: 'N', ends: ['W', 'E'] },
+    N: { out: -1, wall: bz0, face: oz0, a0: bx0, a1: bx1, back: 'S', ends: ['W', 'E'] },
+    E: { out: 1, wall: bx1, face: ox1, a0: bz0, a1: bz1, back: 'W', ends: ['N', 'S'] },
+    W: { out: -1, wall: bx0, face: ox0, a0: bz0, a1: bz1, back: 'E', ends: ['N', 'S'] },
+  };
+  /** A box on a side: from `a` to `c` along it, between two planes across it, and from `y0` to `y1`. */
+  const put = (side: Side, a: number, c: number, y0: number, y1: number, p: number, q: number, color: number, o: BoxOpts = {}): void => {
+    const lo = Math.min(p, q), hi = Math.max(p, q);
+    if (side === 'S' || side === 'N') b.box(a, y0, lo, c, y1, hi, color, o);
+    else b.box(lo, y0, a, hi, y1, c, color, o);
+  };
+  /** A flat panel on a side, which looks out from the plane it is given: the side's wall, the base's face, or a hair in front of one of them. */
+  const panel = (side: Side, a: number, c: number, y0: number, y1: number, plane: number, color: number, o: BoxOpts = {}): void =>
+    put(side, a, c, y0, y1, plane - SIDES[side].out * 0.05, plane, color, { ...o, faces: side });
+
+  // the base, in dark brick, to the edge of the lot, and the roof, in white
+  b.box(ox0, 0, oz0, ox1, G, oz1, DARK_BRICK, { faces: 'NESWT' });
+  b.box(bx0, ROOF - 0.05, bz0, bx1, ROOF, bz1, MEMBRANE, { faces: 'T' });
+
+  /** The low wall round the roof, over a stretch of wall: its outer and its inner face and its top, and an end where it has one that shows. */
+  const rim = (side: Side, a: number, c: number, color: number, end = ''): void => {
+    const s = SIDES[side];
+    put(side, a, c, ROOF, RIM, s.wall - s.out * 0.15, s.wall, color, { faces: side + s.back + 'T' + end });
+  };
+
+  /** A shopfront in the base: glass lit from within, in a black frame, with two uprights and a bar across them. */
+  const shopfront = (side: Side, a: number, c: number, lit = 1.5): void => {
+    const s = SIDES[side], at = (d: number): number => s.face + s.out * d;
+    panel(side, a, c, 0.16, 2.52, at(0.04), BLACK);
+    panel(side, a + 0.09, c - 0.09, 0.3, 2.43, at(0.08), SHOP_GLASS, { win: interior(lit) });
+    const posts = [a + 0.09, a + (c - a) / 3, a + (2 * (c - a)) / 3, c - 0.09];
+    for (const x of posts.slice(1, 3)) panel(side, x - 0.035, x + 0.035, 0.3, 2.43, at(0.12), BLACK);
+    for (let i = 0; i < 3; i++) panel(side, posts[i] + (i > 0 ? 0.035 : 0), posts[i + 1] - (i < 2 ? 0.035 : 0), 1.78, 1.86, at(0.12), BLACK);
+  };
+
+  /**
+   * A bay, from `a` along a side: the wall under it, with two windows; the
+   * white box that stands out from the wall, up past the roof; its field of
+   * green, with its windows; and panels of the two other greens on the wall
+   * round each window, never on a window.
+   */
+  const bay = (side: Side, a: number, seed: number, shop: boolean): void => {
+    const s = SIDES[side], c = a + BAY;
+    panel(side, a, c, G, G + S, s.wall, BOARDS, { win: flats(BAY / 2), seed });
+    put(side, a, c, G + S, ROOF, s.wall, s.face, WHITE, { faces: side + s.ends[0] + s.ends[1] + 'B' });
+    put(side, a, c, ROOF, CAP, s.wall - s.out * 0.15, s.face, WHITE, { faces: 'NESWT' });
+    const fa = a + FR, fy0 = G + S + 0.1, fy1 = ROOF + 0.3;
+    panel(side, fa, c - FR, fy0, fy1, s.face + s.out * 0.05, MID, { win: flats(CELL), seed });
+    const plane = s.face + s.out * 0.1;
+    const green = (): number => {
+      const v = r();
+      return v < 0.36 ? DEEP : v < 0.72 ? MID : MINT;
+    };
+    const under = [MID, MID];
+    for (let row = 3; row < 8; row++) for (let col = 0; col < 2; col++) {
+      const xa = fa + col * CELL, ya = Math.max(row * S, fy0), yb = row === 7 ? fy1 : (row + 1) * S;
+      // a window's surround is often of the green of the one under it, so that the greens stand in blocks and not in a chequer
+      const main = r() < 0.4 ? under[col] : green();
+      under[col] = main;
+      const left = r() < 0.3 ? green() : main, right = r() < 0.3 ? green() : main;
+      const lay = (u0: number, u1: number, v0: number, v1: number, color: number): void => {
+        if (color !== MID) panel(side, xa + u0 * CELL, xa + u1 * CELL, v0, v1, plane, color);
+      };
+      // its two sides, under its sill, and over its head (see the engine's plain windows: from 0.2 to 0.8 across, from 0.22 to 0.8 up)
+      lay(0, 0.2, ya, yb, left);
+      lay(0.8, 1, ya, yb, right);
+      lay(0.2, 0.8, ya, row * S + 0.22 * S, main);
+      lay(0.2, 0.8, row * S + 0.8 * S, yb, main);
+    }
+    if (shop) shopfront(side, a + 0.17, c - 0.17);
+  };
+
+  /** A side from end to end: plain boards at its corners, and bays with a stretch of wall between each two, set back, one window to a floor. */
+  const wall = (side: Side, colors: number[], shops: boolean[], seed: number): number[] => {
+    const s = SIDES[side], bays = shops.length, gap = (s.a1 - s.a0 - 2 * MARGIN - bays * BAY) / (bays - 1);
+    // the south and the north side's low walls reach into the corners, and the other two stop short of them
+    const turn = side === 'S' || side === 'N';
+    panel(side, s.a0, s.a0 + MARGIN, G, ROOF, s.wall, BOARDS);
+    rim(side, s.a0 + (turn ? 0 : 0.15), s.a0 + MARGIN, BOARDS, turn ? s.ends[0] : '');
+    panel(side, s.a1 - MARGIN, s.a1, G, ROOF, s.wall, BOARDS);
+    rim(side, s.a1 - MARGIN, s.a1 - (turn ? 0 : 0.15), BOARDS, turn ? s.ends[1] : '');
+    const starts: number[] = [];
+    for (let i = 0; i < bays; i++) {
+      const a = s.a0 + MARGIN + i * (BAY + gap);
+      starts.push(a);
+      bay(side, a, seed + i * 0.31, shops[i]);
+      if (i < bays - 1) {
+        const color = colors[i % colors.length];
+        panel(side, a + BAY, a + BAY + gap, G, ROOF, s.wall, color, { win: flats(gap), seed: seed + i * 0.17 + 0.5 });
+        rim(side, a + BAY, a + BAY + gap, color);
+      }
+    }
+    return starts;
+  };
+  const south = wall('S', [CHARCOAL, BOARDS], [true, true, true], 0.41);
+  wall('E', [CHARCOAL], [true, true], 0.47);
+  wall('N', [BOARDS, CHARCOAL], [false, false, false], 0.53);
+  wall('W', [BOARDS], [false, true], 0.59);
+
+  // its name on a white board over the door of the flats, which stands out from the brick like a small canopy
+  const door = south[1] + BAY / 2;
+  b.box(door - 1.25, 2.56, oz1, door + 1.25, 2.98, oz1 + 0.3, WHITE, { faces: 'ESWTB' });
+  k.sign('green-north-212-east', door, 2.77, oz1 + 0.33, 0, 1, 0.38, 2.3);
+  k.glows.push({ x: door, y: 2.5, z: oz1 + 0.2, sx: 2.2, sy: 0.05, sz: 0.2, color: '#fff1d6' });
+
+  // the red canopy that turns the south-east corner, over the corner shop's door
+  b.box(ox1 - 2.75, 2.52, oz1, ox1 + 0.6, 2.66, oz1 + 0.75, RED, { faces: 'ESWTB' });
+  b.box(ox1, 2.52, oz1 - 2.6, ox1 + 0.6, 2.66, oz1, RED, { faces: 'NETB' });
+  k.glows.push({ x: ox1 - 1.1, y: 2.47, z: oz1 + 0.4, sx: 2.6, sy: 0.05, sz: 0.4, color: '#ffe2ae' });
+  k.glows.push({ x: ox1 + 0.3, y: 2.47, z: oz1 - 1.3, sx: 0.4, sy: 0.05, sz: 2.2, color: '#ffe2ae' });
+
+  // the back: a roller door for deliveries and the flats' back door, each under a lamp; and a plain door on the west side
+  panel('N', bx0 + 1.6, bx0 + 3.8, 0.05, 2.4, oz0 - 0.04, 0x8d939a);
+  panel('N', bx1 - 2.6, bx1 - 1.7, 0.05, 2.2, oz0 - 0.04, 0x5a5f66);
+  for (const x of [bx0 + 2.7, bx1 - 2.15]) k.glows.push({ x, y: 2.62, z: oz0 - 0.12, sx: 0.3, sy: 0.12, sz: 0.1, color: '#ffe2ae' });
+  panel('W', bz0 + 1.4, bz0 + 2.3, 0.05, 2.2, ox0 - 0.04, 0x5a5f66);
+
+  // on the roof: the head of the stairs, and the flats' cooling in two rows
+  const cx = (bx0 + bx1) / 2, cz = (bz0 + bz1) / 2;
+  b.box(cx - 0.9, ROOF, cz - 2.3, cx + 0.9, ROOF + 1.4, cz - 1.0, CHARCOAL, { faces: 'NESWT', top: MEMBRANE });
+  for (let i = 0; i < 5; i++) for (const z of [cz + 0.5, cz + 2.0]) {
+    const x = bx0 + 1.5 + i * 1.8 + (r() - 0.5) * 0.3;
+    b.box(x - 0.42, ROOF, z - 0.3, x + 0.42, ROOF + 0.5, z + 0.3, PLANT, { faces: 'NESWT' });
   }
-  // bikes at a rack by the coffee shop
-  for (const d of [0, 0.45, 0.9]) k.b.box(x1 + 0.4, 0, l.z1 - 2.2 - d, x1 + 1.6, 0.9, l.z1 - 2.15 - d, 0x6f8fa8, { faces: 'NESWT' });
+
+  // bikes at a rack on its east side, and people: at the corner under the canopy, at the door of the flats, and along the shopfronts
+  for (const d of [0, 0.45, 0.9]) b.box(x1 + 0.4, 0, z0 + 2.6 - d, x1 + 1.6, 0.9, z0 + 2.65 - d, 0x6f8fa8, { faces: 'NESWT' });
+  crowd(k, r, ox1 - 1.0, oz1 + 0.95, 4, 2.2, 0.5);
+  k.person(door - 0.6, oz1 + 0.65);
+  k.person(door + 0.8, oz1 + 0.9);
+  k.person(south[0] + 1.2, oz1 + 0.55);
+  k.person(ox1 + 0.95, oz1 - 1.6);
+  k.lights.push({ x: door, z: z1 + 1.6, r: 9, color: '#ffe9c4', k: 0.5 });
+  k.lights.push({ x: x1 + 0.3, z: z1 + 0.5, r: 9, color: '#ffe2ae', k: 0.55 });
 }
 
 function shopsN2(k: Build, l: LotDef): void {
@@ -794,7 +957,7 @@ function towerN(k: Build, l: LotDef): void {
 }
 
 export const MODELS: Record<string, Model> = {
-  terminal, kams, burnham, here, 'tower-n': towerN, 'shops-n1': shopsN1, 'shops-n2': shopsN2, legends, murphys,
+  terminal, kams, burnham, here, 'tower-n': towerN, 'east-212': east212, 'shops-n2': shopsN2, legends, murphys,
 };
 
 // ---------------------------------------------------------------------------
