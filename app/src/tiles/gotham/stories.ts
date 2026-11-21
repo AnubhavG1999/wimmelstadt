@@ -59,8 +59,8 @@ const WAYS: Record<CastId, Way> = {
   superman: 'fly', wonderWoman: 'fly', flash: 'dash', greenLantern: 'fly', aquaman: 'foot', martianManhunter: 'fly',
 };
 
-/** Stories that are left out for now, by id. */
-const PAUSED: string[] = ['batcave', 'batwing', 'batwingDamian', 'batwingNightwing', 'batwingBatman'];
+/** Stories that are left out for now, by id. None is. */
+const PAUSED: string[] = [];
 
 export function buildStories(k: Build, W: World): Stories {
   const roster: Member[] = (Object.keys(WAYS) as CastId[]).map((id) => ({ id, look: LOOKS[id], way: WAYS[id], post: null }));
@@ -81,9 +81,9 @@ export function buildStories(k: Build, W: World): Stories {
       console.error(`Gotham: the stories of ${name} failed.`, e);
     }
   }
-  // While Wayne Manor is rebuilt and the Batcave hidden, the stories that were written for the open cave are left out:
-  // they are laid again on the new house, and this list is emptied then.
-  // (`?paused=none` on the development server plays them all the same, for whoever is laying them again.)
+  // A story that has to be laid again, because what it was written for was rebuilt, goes into `PAUSED` until it is:
+  // the show's check plays every story through at load, and one written for places that are gone can keep the page
+  // from loading. (`?paused=none` on the development server plays them all the same, for whoever is laying one again.)
   const paused = import.meta.env.DEV && new URLSearchParams(location.search).get('paused') === 'none' ? [] : PAUSED;
   const stories = book.stories.filter((s) => !paused.includes(s.id));
   return { roster, stories, opening: book.opening.filter((id) => !paused.includes(id)), always: (dt, clock) => { for (const f of book.always) f(dt, clock); } };
